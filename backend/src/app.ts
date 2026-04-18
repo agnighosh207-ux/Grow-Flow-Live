@@ -104,7 +104,8 @@ app.use("/api", router);
 
 // Serve the frontend automatically in production
 if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "BETA") {
-  const frontendPath = path.join(process.cwd(), "frontend", "dist", "public");
+  // Use __dirname to safely anchor the path regardless of where the node command is executed from
+  const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
   app.use(express.static(frontendPath));
   app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"));
