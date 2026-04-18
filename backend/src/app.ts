@@ -17,7 +17,7 @@ import { eq } from "drizzle-orm";
 const app: Express = express();
 
 app.set("trust proxy", 1);
-app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
 app.use(compression());
 
 app.use(
