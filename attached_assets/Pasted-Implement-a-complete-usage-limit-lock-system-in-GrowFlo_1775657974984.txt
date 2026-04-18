@@ -1,0 +1,153 @@
+Implement a complete usage limit + lock system in "GrowFlow AI".
+
+CORE GOAL:
+Limit free users to 3 lifetime generations and enforce upgrade after limit is reached.
+
+-----------------------------------
+
+1. USER USAGE TRACKING (BACKEND)
+
+For each user, store:
+
+- total_generations_used (number)
+- plan_type (free / creator / infinity)
+- generation_limit (based on plan)
+- trial_status (optional)
+
+LOGIC:
+
+IF plan = free:
+  generation_limit = 3 (lifetime)
+
+IF plan = creator:
+  generation_limit = 50 per month
+
+IF plan = infinity:
+  generation_limit = unlimited
+
+-----------------------------------
+
+2. GENERATION CONTROL LOGIC
+
+Before generating content:
+
+CHECK:
+- If user has reached limit
+
+IF limit reached:
+- BLOCK generation
+- Do NOT call AI API
+
+-----------------------------------
+
+3. LOCK SCREEN / POPUP (VERY IMPORTANT)
+
+When free user hits limit:
+
+SHOW MODAL POPUP:
+
+Title:
+"You’ve reached your free limit"
+
+Message:
+"You’ve unlocked only a small part of GrowFlow AI. Upgrade to continue generating high-performing content."
+
+Buttons:
+- "Upgrade to Creator"
+- "Get Infinity (Best Results)"
+
+Add:
+- Subtext:
+"Creators using Infinity grow faster with better-performing content"
+
+UI:
+- Clean, premium modal
+- Dark theme compatible
+- Smooth animation
+
+-----------------------------------
+
+4. MID-LIMIT WARNING (HIGH CONVERSION)
+
+When free user reaches:
+
+- 2 out of 3 generations used
+
+SHOW:
+
+"You’re about to reach your free limit"
+
+Add CTA:
+"Unlock unlimited growth with Infinity"
+
+-----------------------------------
+
+5. FEATURE LOCK SYSTEM
+
+For premium features:
+
+IF user is free:
+- Show blurred/disabled UI
+- Show lock icon 🔒
+
+On click:
+SHOW POPUP:
+
+"This feature is part of Infinity Plan — unlock to generate better content"
+
+-----------------------------------
+
+6. CREATOR PLAN LIMIT RESET
+
+For Creator plan:
+
+- Track monthly usage
+- Reset count every 30 days
+
+-----------------------------------
+
+7. SECURITY (BASIC ANTI-ABUSE)
+
+- Tie usage to:
+  - user account (email)
+  - AND local storage backup
+
+Store locally:
+- generation_count_backup
+
+If user clears local data:
+- still controlled by backend
+
+-----------------------------------
+
+8. ERROR HANDLING
+
+If generation blocked:
+- Show clean message
+- Do not crash
+
+-----------------------------------
+
+9. UI UPDATE
+
+Show on dashboard:
+
+- "Generations used: X / Limit"
+
+Example:
+"2 / 3 used"
+
+-----------------------------------
+
+IMPORTANT:
+
+- Do NOT break existing features
+- Integrate smoothly with current generation flow
+- Ensure backend enforcement (not only UI)
+- Keep code modular and clean
+
+-----------------------------------
+
+GOAL:
+
+Create a strong paywall system that encourages upgrade while maintaining a premium user experience.

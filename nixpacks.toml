@@ -1,0 +1,14 @@
+[providers]
+node = true
+
+[setup]
+pkgs = ["pnpm-10_x", "nodejs_20"]
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm run build"]
+
+[start]
+cmd = "pnpm run start"

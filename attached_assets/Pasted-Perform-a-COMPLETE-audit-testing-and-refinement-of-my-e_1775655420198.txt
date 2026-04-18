@@ -1,0 +1,159 @@
+Perform a COMPLETE audit, testing, and refinement of my entire app "GrowFlow AI".
+
+CORE GOAL:
+Make the app production-ready, bug-free, visually polished, and fully aligned with subscription plans.
+
+-----------------------------------
+
+1. FULL APP ANALYSIS
+
+Go through EVERY part of the app:
+
+- All pages
+- All tabs
+- All buttons
+- All forms
+- All user flows
+
+Check:
+- Navigation works properly
+- No broken links
+- No dead buttons
+- No missing functionality
+
+-----------------------------------
+
+2. UI / UX POLISH (VERY IMPORTANT)
+
+Carefully inspect and improve:
+
+- Text visibility (no low contrast)
+- Font readability
+- Proper spacing and alignment
+- Button sizes and placement
+- Mobile responsiveness
+
+Fix:
+- Overlapping text
+- Invisible placeholders
+- Poor contrast on dark backgrounds
+
+Enhance:
+- Premium SaaS look
+- Smooth layout consistency
+- Clean typography hierarchy
+
+-----------------------------------
+
+3. FUNCTIONAL TESTING
+
+Test all features end-to-end:
+
+- Content generation
+- Idea generation
+- Content packs
+- Hook generation
+- Rewrite tools
+- Dashboard stats
+- History & saved content
+
+Ensure:
+- No feature breaks
+- No empty responses
+- No loading issues
+
+-----------------------------------
+
+4. PLAN & FEATURE VALIDATION (CRITICAL)
+
+Check subscription system:
+
+Plans:
+- Free
+- Creator Plan (₹249/₹299)
+- Infinity Plan (₹399/₹499)
+
+Verify:
+
+- Each feature is correctly assigned to a plan
+- Free users cannot access premium features
+- Creator plan gets mid-level features
+- Infinity plan gets ALL advanced features
+
+Ensure:
+- Locked features show lock icons
+- Upgrade prompts appear correctly
+- No feature is accidentally free
+
+-----------------------------------
+
+-----------------------------------
+
+6. ERROR HANDLING
+
+Check all possible failures:
+
+- API failure
+- Network issues
+
+
+Ensure:
+- Clean error messages shown
+- App does not crash
+- User gets retry options
+
+-----------------------------------
+
+7. PERFORMANCE OPTIMIZATION
+
+Improve:
+
+- Loading speed
+- API efficiency
+- UI smoothness
+
+Remove:
+- Unnecessary re-renders
+- Laggy components
+
+-----------------------------------
+
+8. TRUST & FINAL POLISH
+
+Ensure presence of:
+
+- Privacy Policy
+- Terms & Conditions
+- Contact Support
+
+Improve:
+
+- Landing page clarity
+- Testimonials realism
+- Overall trust feel
+
+-----------------------------------
+
+See that all the features we provided are listed on premium plans we offer or not as many new features we implemented after making the premium plans page so check that if everything is synced correctly without any bugs or glitches...
+
+9. FINAL RESULT
+
+Make sure the app feels:
+
+- Premium
+- Smooth
+- Bug-free
+- Worth paying for
+
+Do NOT rewrite the whole app.
+
+Only:
+- Fix issues
+- Improve UI
+- Complete missing parts
+- Optimize performance
+
+-----------------------------------
+
+GOAL:
+Turn this into a fully polished, production-ready SaaS product ready for real users and payments.

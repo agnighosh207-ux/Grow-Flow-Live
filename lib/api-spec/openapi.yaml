@@ -1,0 +1,504 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Grow Flow AI API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: content
+    description: Content generation operations
+  - name: history
+    description: Generation history operations
+  - name: hooks
+    description: Viral hook generation operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /content/generate:
+    post:
+      operationId: generateContent
+      tags: [content]
+      summary: Generate multi-platform content
+      description: Generate content for Instagram, YouTube Shorts, Twitter thread, and LinkedIn
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateContentBody"
+      responses:
+        "200":
+          description: Generated content for all platforms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedContent"
+        "401":
+          description: Unauthorized
+        "400":
+          description: Bad request
+
+  /content/variations:
+    post:
+      operationId: generateVariations
+      tags: [content]
+      summary: Generate alternative content variations
+      description: Generate alternative versions of previously generated content
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateVariationsBody"
+      responses:
+        "200":
+          description: Alternative content variations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedContent"
+        "401":
+          description: Unauthorized
+
+  /content/history:
+    get:
+      operationId: getContentHistory
+      tags: [history]
+      summary: Get user's generation history
+      description: Returns all past content generations for the authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of past generations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+        "401":
+          description: Unauthorized
+
+  /content/history/{id}:
+    get:
+      operationId: getHistoryItem
+      tags: [history]
+      summary: Get a specific history item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: History item details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryItem"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: deleteHistoryItem
+      tags: [history]
+      summary: Delete a history item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+
+  /hooks/generate:
+    post:
+      operationId: generateHooks
+      tags: [hooks]
+      summary: Generate viral hooks
+      description: Generate multiple viral hook options for a given topic
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateHooksBody"
+      responses:
+        "200":
+          description: Generated viral hooks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedHooks"
+        "401":
+          description: Unauthorized
+
+  /improve-competitor:
+    post:
+      operationId: improveCompetitorContent
+      tags: [content]
+      summary: Improve competitor content
+      description: Generate a better version of competitor content
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImproveCompetitorContentBody"
+      responses:
+        "200":
+          description: Successful improvement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImproveCompetitorContentResult"
+        "401":
+          description: Unauthorized
+
+  /content/stats:
+    get:
+      operationId: getContentStats
+      tags: [history]
+      summary: Get content generation stats for the user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Stats overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentStats"
+        "401":
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    GenerateContentBody:
+      type: object
+      properties:
+        idea:
+          type: string
+          description: The content idea to generate from
+        contentType:
+          type: string
+          enum: [Educational, Story, Viral]
+        tone:
+          type: string
+          enum: [Casual, Professional, Aggressive]
+        language:
+          type: string
+          enum: [English, Hindi, Hinglish, Bengali]
+          description: Optional - language of the generated content
+      required:
+        - idea
+        - contentType
+        - tone
+
+    GenerateVariationsBody:
+      type: object
+      properties:
+        historyId:
+          type: integer
+          description: ID of the history item to generate variations for
+        idea:
+          type: string
+        contentType:
+          type: string
+          enum: [Educational, Story, Viral]
+        tone:
+          type: string
+          enum: [Casual, Professional, Aggressive]
+        language:
+          type: string
+          enum: [English, Hindi, Hinglish, Bengali]
+          description: Optional - language of the generated content
+        platform:
+          type: string
+          enum: [instagram, youtube, twitter, linkedin]
+          description: Optional - specific platform to vary
+      required:
+        - idea
+        - contentType
+        - tone
+
+    PlatformContent:
+      type: object
+      properties:
+        instagram:
+          type: object
+          properties:
+            caption:
+              type: string
+            hashtags:
+              type: string
+          required:
+            - caption
+            - hashtags
+        youtube:
+          type: object
+          properties:
+            hook:
+              type: string
+            script:
+              type: string
+          required:
+            - hook
+            - script
+        twitter:
+          type: object
+          properties:
+            tweets:
+              type: array
+              items:
+                type: string
+          required:
+            - tweets
+        linkedin:
+          type: object
+          properties:
+            post:
+              type: string
+          required:
+            - post
+      required:
+        - instagram
+        - youtube
+        - twitter
+        - linkedin
+
+    GeneratedContent:
+      type: object
+      properties:
+        id:
+          type: integer
+        idea:
+          type: string
+        contentType:
+          type: string
+        tone:
+          type: string
+        content:
+          $ref: "#/components/schemas/PlatformContent"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - idea
+        - contentType
+        - tone
+        - content
+        - createdAt
+
+    HistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        idea:
+          type: string
+        contentType:
+          type: string
+        tone:
+          type: string
+        content:
+          $ref: "#/components/schemas/PlatformContent"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - idea
+        - contentType
+        - tone
+        - content
+        - createdAt
+
+    HistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryItem"
+        total:
+          type: integer
+      required:
+        - items
+        - total
+
+    GenerateHooksBody:
+      type: object
+      properties:
+        topic:
+          type: string
+          description: The topic to generate hooks for
+        tone:
+          type: string
+          enum: [Casual, Professional, Aggressive]
+      required:
+        - topic
+        - tone
+
+    GeneratedHooks:
+      type: object
+      properties:
+        hooks:
+          type: array
+          items:
+            type: string
+      required:
+        - hooks
+
+    ContentStats:
+      type: object
+      properties:
+        totalGenerations:
+          type: integer
+        thisWeek:
+          type: integer
+        topContentType:
+          type: string
+        topTone:
+          type: string
+        platformBreakdown:
+          type: object
+          properties:
+            instagram:
+              type: integer
+            youtube:
+              type: integer
+            twitter:
+              type: integer
+            linkedin:
+              type: integer
+          required:
+            - instagram
+            - youtube
+            - twitter
+            - linkedin
+      required:
+        - totalGenerations
+        - thisWeek
+        - topContentType
+        - topTone
+        - platformBreakdown
+
+    ImproveCompetitorContentBody:
+      type: object
+      properties:
+        competitorContent:
+          type: string
+      required:
+        - competitorContent
+
+    ImproveCompetitorContentResult:
+      type: object
+      properties:
+        competitorWeaknesses:
+          type: array
+          items:
+            type: string
+        missedAngle:
+          type: string
+        improvedVersion:
+          type: string
+        strongerHook:
+          type: string
+        newAngle:
+          type: string
+        monetization:
+          type: object
+          properties:
+            ctaIdeas:
+              type: array
+              items:
+                type: string
+            affiliateSuggestions:
+              type: array
+              items:
+                type: string
+            howToEarn:
+              type: array
+              items:
+                type: string
+          required:
+            - ctaIdeas
+            - affiliateSuggestions
+            - howToEarn
+      required:
+        - competitorWeaknesses
+        - missedAngle
+        - improvedVersion
+        - strongerHook
+        - newAngle
+        - monetization
