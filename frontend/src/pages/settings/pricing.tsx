@@ -763,7 +763,7 @@ export default function PricingPage() {
                 { icon: Clock, label: "7-day free trial", desc: "No charge until your trial ends" },
                 { icon: X, label: "Cancel anytime", desc: "No lock-in — cancel in one click" },
                 { icon: Shield, label: "Secure payments", desc: "Powered by Razorpay, India's #1 gateway" },
-                { icon: Star, label: "4.8/5 rating", desc: "2,400+ creators love GrowFlow AI" },
+                { icon: Star, label: "4.1/5 rating", desc: "2,400+ creators love GrowFlow AI" },
               ].map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0 mt-0.5">

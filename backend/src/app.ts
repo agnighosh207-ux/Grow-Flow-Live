@@ -64,17 +64,22 @@ app.use((req: any, res, next) => {
 app.use(authSyncMiddleware);
 
 app.use(async (req, res, next) => {
-  if (req.path.startsWith("/api/admin")) {
-    return next(); // Always allow admin requests so they can toggle maintenance mode
-  }
-  try {
-    const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
-    if (settings?.maintenanceMode) {
-      res.status(503).json({ error: "Service Unavailable: Maintenance Mode" });
-      return;
+  // Only apply maintenance mode to API routes
+  if (req.path.startsWith("/api/")) {
+    // Always allow admin requests so they can toggle maintenance mode
+    if (req.path.startsWith("/api/admin")) {
+      return next(); 
     }
-  } catch (err) {
-    // ignore
+    
+    try {
+      const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
+      if (settings?.maintenanceMode) {
+        res.status(503).json({ error: "Service Unavailable: Maintenance Mode" });
+        return;
+      }
+    } catch (err) {
+      // ignore
+    }
   }
   next();
 });
