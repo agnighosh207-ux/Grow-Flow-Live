@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
-// BuyMeCoffee removed
 import { FoundersBanner } from "@/components/banners/FoundersBanner";
+import { useToast } from "@/hooks/use-toast";
 
 import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
@@ -108,6 +108,15 @@ function CellContent({ value, infinityLabel }: { value: boolean | string; infini
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity" }>({ open: false, plan: "starter" });
+  
+  const { data: sub } = useSubscriptionStatus();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  const currentPlan = sub?.planType ?? "free";
+  const starterPrice = BASE_PRICES.starter[billing];
+  const creatorPrice = BASE_PRICES.creator[billing];
+  const infinityPrice = BASE_PRICES.infinity[billing];
   const handlePlanClick = (plan: "starter" | "creator" | "infinity") => {
     if (!sub) {
       navigate("/sign-in");
@@ -730,11 +739,6 @@ export default function PricingPage() {
         onClose={() => setUpgradeModal((p) => ({ ...p, open: false }))}
         reason="limit"
         targetPlan={upgradeModal.plan === "infinity" ? "pro" : "starter"}
-      />
-      <BetaEnrollModal
-        open={betaEnrollPlan !== null}
-        onClose={() => setBetaEnrollPlan(null)}
-        plan={betaEnrollPlan}
       />
     </div>
   );
