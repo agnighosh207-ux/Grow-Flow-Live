@@ -98,8 +98,8 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
   // Fallback to free (or if canceled/blocked)
   return {
     plan: "free" as const, planType: "free" as const,
-    canGenerate: totalGenerations < 3,
-    trialDaysLeft: null, generationLimit: 3,
+    canGenerate: monthlyGenerations < 5,
+    trialDaysLeft: null, generationLimit: 5,
     monthlyGenerationsUsed: monthlyGenerations,
     totalGenerationsUsed: totalGenerations,
   };

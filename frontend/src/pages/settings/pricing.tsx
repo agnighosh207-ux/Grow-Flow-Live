@@ -59,8 +59,8 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
-  { key: "generations", label: "Content Generations", free: "3 lifetime", starter: "20 / month", creator: "60 / month", infinity: "Unlimited*", section: "core" },
-  { key: "regen", label: "Regenerations per Topic", free: false, starter: "Unlimited", creator: "Unlimited", infinity: "Unlimited", section: "core" },
+  { key: "generations", label: "Content Generations", free: "5 / month", starter: "20 / month", creator: "60 / month", infinity: "Unlimited*", section: "core" },
+  { key: "regen", label: "Regenerations per Topic", free: false, starter: "1 / topic", creator: "3 / topic", infinity: "Unlimited", section: "core" },
   { key: "platforms", label: "All 4 Platforms", free: true, starter: true, creator: true, infinity: true, section: "core" },
   { key: "language", label: "Multi-Language Output", free: "English Only", starter: "Eng + 1 Premium", creator: "10 Languages", infinity: "10 Languages", section: "core" },
   { key: "hooks", label: "Hooks, CTAs & Hashtags", free: false, starter: true, creator: true, infinity: true, section: "core" },
@@ -175,7 +175,7 @@ export default function PricingPage() {
                 </span>
               </h1>
               <p className="text-white/60 text-lg max-w-xl mx-auto">
-                Start free with 3 full-featured generations. Upgrade when you're ready to scale.
+                Start free with 5 monthly generations. Upgrade when you're ready to scale.
               </p>
               <p className="text-white/80 font-medium text-sm mt-3 bg-violet-500/10 inline-block px-4 py-2 rounded-lg border border-violet-500/20">
                 Content in your audience’s language = higher engagement 🚀
@@ -237,7 +237,7 @@ export default function PricingPage() {
 
             <div className="space-y-2.5 flex-1 mb-6">
               {[
-                "3 complete content generations",
+                "5 free monthly generations",
                 "All 4 platforms unlocked",
                 "Basic English Output",
                 "Full content history",
@@ -298,7 +298,7 @@ export default function PricingPage() {
             <div className="space-y-2.5 flex-1 mb-6">
               {[
                 "20 content generations / month",
-                "Unlimited regenerations",
+                "1 Regeneration per topic",
                 "All 4 platforms unlocked",
                 "English + 1 Premium Language",
                 "Idea Generator + Strategy Planner",
@@ -372,6 +372,7 @@ export default function PricingPage() {
             <div className="space-y-2.5 flex-1 mb-4">
               {[
                 "60 content generations / month",
+                "3 Regenerations per topic",
                 "Multi-Variation (3 outputs per gen)",
                 "Viral Score™ enabled",
                 "All 4 platforms",
@@ -466,6 +467,7 @@ export default function PricingPage() {
               </p>
               {[
                 { label: "Unlimited generations*", icon: InfinityIcon, desc: "Fair usage limits apply" },
+                { label: "Unlimited Regenerations", icon: RefreshCw },
                 { label: "AI Writing Styles", icon: Wand2 },
                 { label: "Trending Topics Feed", icon: TrendingUp },
                 { label: "Content Calendar", icon: CalendarDays },
@@ -717,7 +719,7 @@ export default function PricingPage() {
             <h3 className="font-bold mb-4 text-lg">Common questions</h3>
             <div className="space-y-4">
               {[
-                { q: "What happens after my 3 free generations?", a: "You'll hit your free limit and can't generate more content. You'll need to upgrade to continue." },
+                { q: "What happens after my 5 free generations?", a: "You'll hit your free limit for the month and can't generate more content until the next cycle. You'll need to upgrade to continue without waiting." },
                 { q: "Can I switch between Creator and Infinity?", a: "Yes — upgrade or downgrade anytime from your settings. Changes take effect immediately." },
                 { q: "Can I cancel my subscription easily?", a: "Absolutely. You can cancel with a single click anytime inside your settings page before your next billing cycle." },
                 { q: "What is Viral Score™?", a: "An AI score (0–100) predicting how likely your content is to go viral, based on hook strength, platform patterns, and engagement signals." },

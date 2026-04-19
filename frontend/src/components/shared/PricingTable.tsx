@@ -49,6 +49,7 @@ const plans: PricingPlan[] = [
     buttonText: "Upgrade Now",
     features: [
       "20 Generations / month",
+      "1 Regen / topic",
       "Premium Language Unlock",
       "Standard 8B Models",
       "Email Support",
@@ -66,6 +67,7 @@ const plans: PricingPlan[] = [
     buttonText: "Upgrade to Creator",
     features: [
       "60 Generations / month",
+      "3 Regens / topic",
       "Viral Score Prediction",
       "Multi-variation Output",
       "10 Premium Languages",
@@ -85,6 +87,7 @@ const plans: PricingPlan[] = [
     buttonText: "Join the Infinity Circle",
     features: [
       "Unlimited Generations",
+      "Unlimited Regens / topic",
       "Priority 70B Pro Models",
       "Agency Toolkit",
       "Unrestricted Viral Score",

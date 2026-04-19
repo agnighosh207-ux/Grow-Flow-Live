@@ -1080,7 +1080,7 @@ export default function Generate() {
             {generationsUsed}
           </span>
           <span className="text-white/30">/</span>
-          <span className="text-white/50">{generationLimit} lifetime</span>
+          <span className="text-white/50">{generationLimit} monthly</span>
         </motion.div>
       );
     }
@@ -1274,7 +1274,7 @@ export default function Generate() {
                 You've reached your free limit
               </p>
               <p className="text-violet-300/60 text-xs mt-0.5">
-                You've used all 3 lifetime free generations. Upgrade to continue.
+                You've used all 5 free monthly generations. Upgrade to continue.
               </p>
             </div>
           </div>

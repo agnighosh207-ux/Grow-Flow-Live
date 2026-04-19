@@ -25,7 +25,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "How many generations do I get on the free plan?",
-    a: "The free Explorer plan grants you 3 free trial generations across the platform so you can experience our AI capabilities. To unlock more power, upgrade to the Creator tier (₹249/mo) for 50 generations, or the Infinity tier (₹399/mo) for unlimited access.",
+    a: "The free Explorer plan grants you 5 free monthly generations across the platform so you can experience our AI capabilities. To unlock more power, upgrade to the Starter tier (₹109/mo) for 20 generations, Creator tier (₹249/mo) for 60 generations, or the Infinity tier (₹499/mo) for unlimited access.",
   },
   {
     q: "What is the 'Content Pack' Pro feature?",

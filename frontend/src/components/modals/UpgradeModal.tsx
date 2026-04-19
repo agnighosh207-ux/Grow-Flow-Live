@@ -49,16 +49,17 @@ const INFINITY_BENEFITS = [
 ];
 
 const STARTER_HIGHLIGHTS = [
-  "50 content generations per month",
+  "20 content generations per month",
+  "1 Regeneration per topic",
   "Instagram, YouTube, Twitter, LinkedIn",
   "Hooks, CTAs, hashtags — all structured",
   "Idea Generator + 7-Day Strategy Planner",
-  "Full content history & saved posts",
   "Cancel anytime",
 ];
 
 const PRO_HIGHLIGHTS = [
   "Unlimited content generations",
+  "Unlimited Regenerations per topic",
   "AI Writing Styles (Bold · Viral · Story · Pro)",
   "Viral Score™ — rate content virality 0–100",
   "Trending Topics Feed — daily fresh ideas",

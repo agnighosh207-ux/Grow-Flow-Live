@@ -381,20 +381,55 @@ router.post("/content/variations", requireAuth, async (req: any, res): Promise<v
   if (status !== "active" && status !== "trial") {
     res.status(402).json({
       error: "upgrade_required",
-      message: "Upgrade to generate variations.",
-    });
-    return;
-  }
-  
-  if (status === "active" && planType === "starter") {
-    res.status(403).json({
-      error: "forbidden",
-      message: "Multi-variation limits are reserved for Creator & Infinity plans. Upgrade to unlock.",
+      message: "Upgrade to a paid plan to use the Regenerate feature.",
     });
     return;
   }
 
   const { idea, contentType, tone, platform } = parsed.data;
+
+  // Track regenerations per topic
+  const [existingGeneration] = await db.select()
+    .from(contentGenerationsTable)
+    .where(
+      and(
+        eq(contentGenerationsTable.userId, req.userId),
+        eq(contentGenerationsTable.idea, idea)
+      )
+    )
+    .orderBy(desc(contentGenerationsTable.createdAt))
+    .limit(1);
+
+  let regenCount = 0;
+  if (existingGeneration && typeof existingGeneration.content === "object" && existingGeneration.content !== null) {
+    regenCount = (existingGeneration.content as any).regenerationsCount || 0;
+  }
+
+  if (planType === "starter" && regenCount >= 1) {
+    res.status(403).json({
+      error: "forbidden",
+      message: "Starter plan includes 1 regeneration per topic. Upgrade to Creator to unlock more.",
+    });
+    return;
+  }
+
+  if (status === "active" && planType === "creator" && regenCount >= 3) {
+    res.status(403).json({
+      error: "forbidden",
+      message: "Creator plan includes 3 regenerations per topic. Upgrade to Infinity for unlimited regenerations.",
+    });
+    return;
+  }
+
+  if (status === "trial" && user?.trialEndsAt && new Date(user.trialEndsAt) > new Date() && regenCount >= 3) {
+    res.status(403).json({
+      error: "forbidden",
+      message: "Trial includes 3 regenerations per topic. Upgrade to Infinity for unlimited access.",
+    });
+    return;
+  }
+
+
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
   const language = (parsed.data as any).language ?? "English";
 
@@ -476,6 +511,10 @@ Return ONLY this JSON:
   }
 
   try {
+    if (existingGeneration && typeof existingGeneration.content === "object" && existingGeneration.content !== null) {
+      const updatedContent = { ...(existingGeneration.content as any), regenerationsCount: regenCount + 1 };
+      await db.update(contentGenerationsTable).set({ content: updatedContent }).where(eq(contentGenerationsTable.id, existingGeneration.id));
+    }
     res.json({ variations: variations.variations ?? [] });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to save variation. Please try again." });
