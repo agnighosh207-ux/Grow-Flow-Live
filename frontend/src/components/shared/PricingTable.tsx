@@ -49,7 +49,7 @@ const plans: PricingPlan[] = [
     buttonText: "Upgrade Now",
     features: [
       "20 Generations / month",
-      "Regional Language Unlock",
+      "Premium Language Unlock",
       "Standard 8B Models",
       "Email Support",
     ],
@@ -68,7 +68,7 @@ const plans: PricingPlan[] = [
       "60 Generations / month",
       "Viral Score Prediction",
       "Multi-variation Output",
-      "Regional Languages",
+      "10 Premium Languages",
       "Priority Support",
     ],
   },

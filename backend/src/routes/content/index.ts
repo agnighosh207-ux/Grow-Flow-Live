@@ -57,7 +57,13 @@ async function generateContentWithAI(idea: string, contentType: string, tone: st
     English: ``,
     Hindi: `LANGUAGE — You MUST write the complete content deeply and fluently in raw Hindi using the Devanagari script (हिन्दी). Do NOT use English letters to write Hindi. The tone should be highly emotional and storytelling-driven.`,
     Hinglish: `LANGUAGE — You MUST write the complete content in Hinglish (Hindi written entirely in the Roman/English alphabet, mixed with casual English words). This needs to read incredibly casual, GenZ style, and highly relatable to young desis. Keep the energy viral and raw. Avoid formal Hindi words.`,
-    Bengali: `LANGUAGE — You MUST write the complete content natively and fluently in Bengali using the Bengali script (বাংলা). Do NOT use English letters to write Bengali. Keep the tone very engaging, culturally grounded, and natural sounding.`
+    Bengali: `LANGUAGE — You MUST write the complete content natively and fluently in Bengali using the Bengali script (বাংলা). Do NOT use English letters to write Bengali. Keep the tone very engaging, culturally grounded, and natural sounding.`,
+    Spanish: `LANGUAGE — You MUST write the complete content fluently in Spanish (Español). Keep the tone culturally appropriate and natural sounding.`,
+    French: `LANGUAGE — You MUST write the complete content fluently in French (Français). Keep the tone culturally appropriate and natural sounding.`,
+    German: `LANGUAGE — You MUST write the complete content fluently in German (Deutsch). Keep the tone culturally appropriate and natural sounding.`,
+    Marathi: `LANGUAGE — You MUST write the complete content fluently in Marathi using the Devanagari script (मराठी). Do NOT use English letters to write Marathi.`,
+    Tamil: `LANGUAGE — You MUST write the complete content fluently in Tamil using the Tamil script (தமிழ்). Do NOT use English letters to write Tamil.`,
+    Telugu: `LANGUAGE — You MUST write the complete content fluently in Telugu using the Telugu script (తెలుగు). Do NOT use English letters to write Telugu.`
   };
 
   const systemPrompt = `You are a world-class content strategist and viral copywriter. You have built multiple audiences past 500K followers across platforms. Your content gets studied, screenshot, and reposted because it says something true in a way nobody has said it before.
@@ -282,7 +288,7 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
     if (status !== "active" && status !== "trial") {
       res.status(402).json({
         error: "upgrade_required",
-        message: "🔥 Create content in Hindi & Hinglish to go viral in India. Unlock with premium!",
+        message: "🔥 Create content in 10 Premium Languages to reach a global audience. Unlock with premium!",
         plan: status,
         generationsUsed,
       });
@@ -381,7 +387,13 @@ router.post("/content/variations", requireAuth, async (req: any, res): Promise<v
     English: ``,
     Hindi: `LANGUAGE — Write deeply and fluently in raw Hindi using the Devanagari script (हिन्दी). Do NOT use English letters.`,
     Hinglish: `LANGUAGE — Write in Hinglish (Hindi written entirely in the Roman/English alphabet, mixed with casual English words). Casual, GenZ style.`,
-    Bengali: `LANGUAGE — Write natively and fluently in Bengali using the Bengali script (বাংলা). Do NOT use English letters.`
+    Bengali: `LANGUAGE — Write natively and fluently in Bengali using the Bengali script (বাংলা). Do NOT use English letters.`,
+    Spanish: `LANGUAGE — Write fluently in Spanish (Español).`,
+    French: `LANGUAGE — Write fluently in French (Français).`,
+    German: `LANGUAGE — Write fluently in German (Deutsch).`,
+    Marathi: `LANGUAGE — Write fluently in Marathi using the Devanagari script (मराठी). Do NOT use English letters.`,
+    Tamil: `LANGUAGE — Write fluently in Tamil using the Tamil script (தமிழ்). Do NOT use English letters.`,
+    Telugu: `LANGUAGE — Write fluently in Telugu using the Telugu script (తెలుగు). Do NOT use English letters.`
   };
 
   const variationSystemPrompt = `You are an elite viral content creator generating 3 completely distinct variations of the same content piece. Each variation must:

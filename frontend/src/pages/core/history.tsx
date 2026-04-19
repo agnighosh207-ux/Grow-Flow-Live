@@ -454,7 +454,7 @@ export default function History() {
             </SheetDescription>
           </SheetHeader>
           <div className="grid grid-cols-2 gap-3 pb-6">
-            {["Hindi", "Hinglish", "Bengali", "English"].map((lang) => (
+            {["English", "Hindi", "Hinglish", "Bengali", "Spanish", "French", "German", "Marathi", "Tamil", "Telugu"].map((lang) => (
               <button
                 key={lang}
                 onClick={() => performRemix(lang)}

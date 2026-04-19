@@ -290,7 +290,7 @@ const LOADING_MESSAGES = [
   "Almost there...",
 ];
 
-const LANGUAGES = ["English", "Hindi", "Hinglish", "Bengali"] as const;
+const LANGUAGES = ["English", "Hindi", "Hinglish", "Bengali", "Spanish", "French", "German", "Marathi", "Tamil", "Telugu"] as const;
 
 const formSchema = z.object({
   idea: z.string().min(5, "Idea must be at least 5 characters"),
@@ -986,8 +986,8 @@ export default function Generate() {
     typeof window !== "undefined" && localStorage.setItem("languagePreference", values.language);
     
     if (values.language !== "English" && isFreeUser) {
-      setProFeatureName("Regional Languages");
-      setGenerationBlockedMsg("🔥 Create content in Hindi & Hinglish to go viral in India");
+      setProFeatureName("Premium Languages");
+      setGenerationBlockedMsg("🔥 Create content in 10 Premium Languages to reach a global audience!");
       setUpgradeReason("pro_feature");
       setShowUpgradeModal(true);
       return;
@@ -1448,7 +1448,13 @@ export default function Generate() {
                               {lang === "Hinglish" && <motion.svg animate={{ y: [0, -2, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-pink-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></motion.svg>}
                               {lang === "Bengali" && <motion.svg animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-emerald-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 8a3 3 0 100-6 3 3 0 000 6zM8 8v12M16 11V8M16 11v9M16 11h-4" /></motion.svg>}
                               {lang === "English" && <motion.svg animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 10, ease: "linear" }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-blue-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></motion.svg>}
-                              {lang === "Hindi" ? "Hindi (Devanagari)" : lang === "Hinglish" ? "Hinglish (GenZ)" : lang}
+                              {lang === "Spanish" && <span className="text-xs">🇪🇸</span>}
+                              {lang === "French" && <span className="text-xs">🇫🇷</span>}
+                              {lang === "German" && <span className="text-xs">🇩🇪</span>}
+                              {lang === "Marathi" && <span className="text-xs">🇮🇳</span>}
+                              {lang === "Tamil" && <span className="text-xs">🇮🇳</span>}
+                              {lang === "Telugu" && <span className="text-xs">🇮🇳</span>}
+                              {lang === "Hindi" ? "Hindi (Devanagari)" : lang === "Hinglish" ? "Hinglish (GenZ)" : lang === "Marathi" ? "Marathi (मराठी)" : lang === "Tamil" ? "Tamil (தமிழ்)" : lang === "Telugu" ? "Telugu (తెలుగు)" : lang}
                             </span>
                           </SelectItem>
                         ))}
