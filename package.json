@@ -31,10 +31,5 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "stripe": "^22.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "drizzle-orm": "^0.36.0"
-    }
   }
 }
