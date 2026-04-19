@@ -128,12 +128,29 @@ export default function BioGenerator() {
   const [achievements, setAchievements] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BioResult | null>(null);
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+
+  const LOADING_MESSAGES = [
+    "Analyzing your profile...",
+    "Crafting perfect hooks...",
+    "Optimizing character limits...",
+    "Polishing the final bio...",
+  ];
+
+  React.useEffect(() => {
+    if (!loading) { setLoadingMsgIdx(0); return; }
+    const interval = setInterval(() => {
+      setLoadingMsgIdx(i => (i + 1) % LOADING_MESSAGES.length);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const generate = async () => {
     if (!role.trim()) {
       toast({ title: "Enter your role or title", description: "e.g. Fitness Coach, Indie Developer, Travel Blogger", variant: "destructive" });
       return;
     }
+    setResult(null);
     setLoading(true);
     try {
       const res = await fetch("/api/bio/generate", {
@@ -156,7 +173,7 @@ export default function BioGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="w-full">
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-3 mb-1">
@@ -292,8 +309,51 @@ export default function BioGenerator() {
           </button>
         </motion.div>
 
+        <AnimatePresence mode="wait">
+          {loading && !result && (
+            <motion.div
+              key="skeleton"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-8 space-y-4"
+            >
+              <div className="flex items-center gap-2.5 justify-center mb-6">
+                <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin shrink-0" />
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={loadingMsgIdx}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-sm text-violet-300 font-medium whitespace-nowrap"
+                  >
+                     {LOADING_MESSAGES[loadingMsgIdx]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-2xl bg-white/4 border border-white/8 p-5 animate-pulse">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="h-6 w-24 bg-white/10 rounded-full" />
+                    <div className="h-8 w-20 bg-white/10 rounded-xl" />
+                  </div>
+                  <div className="space-y-2.5 mb-4">
+                    <div className="h-4 w-full bg-white/10 rounded-md" />
+                    <div className="h-4 w-5/6 bg-white/10 rounded-md" />
+                    <div className="h-4 w-4/6 bg-white/10 rounded-md" />
+                  </div>
+                  <div className="h-2 w-full bg-white/5 rounded-full mt-4" />
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
-          {result && (
+          {!loading && result && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-white/70">

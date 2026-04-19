@@ -770,6 +770,7 @@ export default function Generate() {
   const [proFeatureName, setProFeatureName] = useState("");
   const [viralMode, setViralMode] = useState(false);
   const [multiVariation, setMultiVariation] = useState(false);
+  const [styleMode, setStyleMode] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   
   const { data: trendsData, isLoading: trendsLoading } = useQuery({
@@ -993,9 +994,13 @@ export default function Generate() {
     }
 
     const { niche, ...rest } = values;
-    const ideaWithNiche = niche && niche !== "General"
+    let ideaWithNiche = niche && niche !== "General"
       ? `[Niche: ${niche}] ${rest.idea}`
       : rest.idea;
+      
+    if (viralMode) ideaWithNiche += "\n[VIRAL MODE ENABLED: Ignore regular constraints. Optimize this heavily for maximum viral reach and engagement. Use aggressive open loops.]";
+    if (styleMode) ideaWithNiche += "\n[STYLE MODE ENABLED: Tell a bold, deeply personal story. Be very stylized.]";
+
     generateMutation.mutate({ data: { ...rest, idea: ideaWithNiche } } as any);
   }
 
@@ -1469,7 +1474,7 @@ export default function Generate() {
                   { id: "style", label: "Style Modes", desc: "Bold, Story & more", icon: "🎨" },
                 ] as const).map(({ id, label, desc, icon }) => {
                   const hasAdvancedFeatures = (sub?.planType === "creator" || sub?.planType === "infinity") && (sub?.plan === "active" || sub?.plan === "trial");
-                  const isOn = id === "viral" ? viralMode : id === "multi" ? multiVariation : false;
+                  const isOn = id === "viral" ? viralMode : id === "multi" ? multiVariation : id === "style" ? styleMode : false;
                   const btn = (
                     <button
                       key={id}
@@ -1482,6 +1487,7 @@ export default function Generate() {
                         } else {
                           if (id === "viral") setViralMode(v => !v);
                           if (id === "multi") setMultiVariation(v => !v);
+                          if (id === "style") setStyleMode(v => !v);
                         }
                       }}
                       className={`relative text-left p-3 rounded-xl border transition-all duration-200 group w-full

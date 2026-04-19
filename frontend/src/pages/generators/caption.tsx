@@ -160,7 +160,7 @@ export default function CaptionEnhancer() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="w-full">
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-3 mb-1">

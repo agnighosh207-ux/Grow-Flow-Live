@@ -70,12 +70,12 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
     `);
 
     const topReferrers = await db.execute(sql`
-      SELECT u.id, u.email, COUNT(r.id) as referralsCount
+      SELECT u.id, u.email, COUNT(r.id) as referralscount
       FROM users u
-      LEFT JOIN referrals r ON u.id = r.referrer_user_id
+      JOIN referrals r ON u.id = r.referrer_user_id
+      WHERE r.reward_granted = true
       GROUP BY u.id, u.email
-      HAVING COUNT(r.id) > 0
-      ORDER BY referralsCount DESC
+      ORDER BY referralscount DESC
       LIMIT 20
     `);
 
@@ -90,6 +90,11 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
     const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
     const maintenanceMode = settings?.maintenanceMode || false;
 
+    const activeAnnouncements = await db.select()
+      .from(globalAnnouncementsTable)
+      .where(eq(globalAnnouncementsTable.isActive, true))
+      .orderBy(desc(globalAnnouncementsTable.createdAt));
+
     res.json({
       maintenanceMode,
       totalUsers: Number(totalUsersResult[0].count) || 0,
@@ -100,7 +105,8 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
       generationsData: generationsDataList.rows || [],
       languageData,
       revenueData,
-      topReferrers: topReferrers.rows || []
+      topReferrers: topReferrers.rows || [],
+      activeAnnouncements
     });
   } catch (err: any) {
     console.error("Admin stats error:", err);
@@ -157,12 +163,6 @@ router.post("/admin/announcement", requireAuth, requireAdmin, async (req: any, r
   try {
     const { message, isActive, theme } = req.body;
     
-    if (isActive) {
-      // deactivate all others
-      await db.update(globalAnnouncementsTable)
-        .set({ isActive: false })
-        .where(eq(globalAnnouncementsTable.isActive, true));
-    }
     
     await db.insert(globalAnnouncementsTable).values({
       id: crypto.randomUUID(),
@@ -173,6 +173,15 @@ router.post("/admin/announcement", requireAuth, requireAdmin, async (req: any, r
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to save announcement" });
+  }
+});
+
+router.delete("/admin/announcement/:id", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    await db.delete(globalAnnouncementsTable).where(eq(globalAnnouncementsTable.id, req.params.id));
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete announcement" });
   }
 });
 

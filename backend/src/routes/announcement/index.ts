@@ -7,18 +7,13 @@ const router: IRouter = Router();
 // Public route to get active announcement
 router.get("/announcements/active", async (req: any, res: any) => {
   try {
-    const [active] = await db
+    const activeList = await db
       .select()
       .from(globalAnnouncementsTable)
       .where(eq(globalAnnouncementsTable.isActive, true))
-      .orderBy(desc(globalAnnouncementsTable.createdAt))
-      .limit(1);
+      .orderBy(desc(globalAnnouncementsTable.createdAt));
 
-    if (!active) {
-      return res.json({ announcement: null });
-    }
-
-    res.json({ announcement: active });
+    res.json({ announcements: activeList });
   } catch (error) {
     console.error("Failed to fetch announcement:", error);
     res.status(500).json({ error: "Failed to fetch announcement" });

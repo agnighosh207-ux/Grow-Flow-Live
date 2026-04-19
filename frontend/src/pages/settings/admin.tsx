@@ -23,6 +23,7 @@ interface AdminStats {
   revenueData?: any[];
   topReferrers?: any[];
   generationsData?: any[];
+  activeAnnouncements?: any[];
 }
 
 function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
@@ -158,7 +159,7 @@ export default function AdminDashboard() {
             </div>
             
             <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 px-4 py-2 rounded-xl">
-              <span className="text-red-400 font-bold text-sm">Panic Mode</span>
+              <span className="text-red-400 font-bold text-sm">Development Mode</span>
               <ToggleSwitch 
                 checked={stats?.maintenanceMode || false} 
                 onChange={(v) => toggleMaintenanceMutation.mutate(v)}
@@ -503,6 +504,41 @@ export default function AdminDashboard() {
                 </button>
               </form>
             </div>
+
+            {stats?.activeAnnouncements && stats.activeAnnouncements.length > 0 && (
+              <div className="p-6 border-t border-white/10">
+                <h4 className="text-lg font-bold mb-4 text-white/90">Active Announcements</h4>
+                <div className="space-y-3">
+                  {stats.activeAnnouncements.map((ann) => (
+                    <div key={ann.id} className="flex items-center justify-between bg-black/20 border border-white/5 p-4 rounded-xl">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-white/90">{ann.message}</span>
+                        <div className="flex gap-2 items-center mt-1">
+                          <span className="text-xs text-white/40">Theme: {ann.theme}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span className="text-xs text-emerald-400">Active</span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/admin/announcement/${ann.id}`, { method: "DELETE" });
+                            if (!res.ok) throw new Error("Failed to delete");
+                            toast({ title: "Announcement deleted" });
+                            window.location.reload();
+                          } catch (err) {
+                            toast({ variant: "destructive", title: "Failed to delete" });
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-semibold transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

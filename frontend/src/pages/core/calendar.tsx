@@ -95,7 +95,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070314] text-white/90 font-sans p-6 overflow-hidden relative">
+    <div className="w-full text-white/90 font-sans p-6 overflow-hidden relative">
       {/* Background gradients */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-fuchsia-600/10 blur-[120px] pointer-events-none" />

@@ -215,7 +215,13 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: radial-gradient(ellipse 80% 80% at 50% -10%, rgba(109,40,217,0.18), transparent 70%),
+                radial-gradient(circle at 10% 90%, rgba(124,58,237,0.06), transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(168,85,247,0.06), transparent 50%),
+                #070216;
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 

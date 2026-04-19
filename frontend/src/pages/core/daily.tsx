@@ -146,7 +146,7 @@ export default function DailyActionMode() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="flex w-full min-h-[50vh] items-center justify-center">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mx-auto" />
           <p className="text-white/40 text-sm">Loading today's plan...</p>
@@ -161,7 +161,7 @@ export default function DailyActionMode() {
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="w-full">
       <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-3 mb-1">

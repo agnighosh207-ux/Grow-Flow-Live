@@ -416,16 +416,10 @@ export function Layout({ children }: { children: ReactNode }) {
   const isPro = sub?.planType === "infinity" && sub?.plan === "active";
 
   return (
-    <div
-      className="min-h-screen text-foreground"
-      style={{
-        background:
-          "radial-gradient(ellipse 100% 60% at 50% -10%, rgba(109,40,217,0.18) 0%, #06011a 55%, #020010 100%)",
-      }}
-    >
+    <div className="min-h-screen text-foreground">
       <aside
         className="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-64 xl:w-72 border-r border-white/[0.06]"
-        style={{ background: "rgba(8,3,22,0.92)", backdropFilter: "blur(24px)" }}
+        style={{ background: "rgba(8,3,22,0.6)", backdropFilter: "blur(24px)" }}
       >
         <SidebarContent
           isPro={isPro}

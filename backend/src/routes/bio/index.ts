@@ -40,67 +40,61 @@ router.post("/bio/generate", requireAuth, requirePlanOrTrial("bio"), async (req:
 
   const platformInfo = PLATFORM_RULES[platform] || PLATFORM_RULES["Instagram"];
 
-  const systemPrompt = `Act as an expert Social Media Strategist and SEO Copywriter. Generate 3 distinct bio variations for ${platform} based on the user's details.
+  const systemPrompt = `Act as an elite Social Media Strategist and high-end Copywriter. Your goal is to generate 3 DISTINCT, HIGH-CONVERTING, and EXTREMELY IMPRESSIVE bio variations for ${platform}.
 
-Requirements for each bio:
-Structure: Use a multi-line format (2-3 lines) to maximize visual space and readability.
-SEO Optimization: Naturally weave in 2-3 high-traffic keywords related to their niche to improve searchability within the app.
-Word Count: Strictly adhere to the platform limit (${platformInfo.charLimit} characters).
-Hashtags: Include 2-3 hyper-relevant, niche-specific hashtags at the very end.
+CRITICAL RULES:
+1. EXTREMELY HIGH QUALITY: The bios must sound premium, authoritative, and extremely persuasive.
+2. MODERN DESIRABLE EMOJIS: You MUST use relevant, modern aesthetic emojis from the latest Google Keyboard (e.g., 🤌, 🪩, 🫶, 💅, 📈, 🧠, ⚡️, 🎯, 🌱, 💸). Place exactly ONE emoji at the BEGINNING of each line.
+3. STRICT MULTI-LINE STRUCTURE: You MUST use physical line breaks (\\n) to separate ideas. 
+   - NEVER return a single sentence.
+   - NEVER return a bio separated by pipes (|). That format is banned.
+   - Line 1: [Emoji] Hook & Authority
+   - Line 2: [Emoji] Value Proposition & Impact
+   - Line 3: [Emoji] Direct Call-To-Action (CTA) followed by 2-3 niche hashtags.
+4. ABSOLUTE HARD LIMIT: You MUST keep the TOTAL character count (including emojis and spaces) STRICTLY UNDER ${platformInfo.charLimit} characters. This is a hard technical limit. Do NOT exceed it under any circumstances, but try to use around 80% to 90% of it.
+5. PLATFORM VIBE: ${platformInfo.style}. Goal: ${platformInfo.goal}.
 
-Format:
-Line 1: The 'Hook' (Who you are + Authority).
-Line 2: The 'Value' (What you do/solve).
-Line 3: The 'Action' (CTA + Hashtags).
-
-Platform Specifics:
-Instagram: Max 150 chars. Use emojis for visual cues.
-Twitter/X: Max 160 chars. Focus on punchy, high-authority statements.
-LinkedIn: Max 220 chars (for headline). Focus on professional results and keywords.
-
-Return ONLY a JSON object with this structure (no markdown, no explanation):
+Return ONLY a valid JSON object matching this exact structure:
 {
   "platform": "${platform}",
   "niche": "${niche}",
   "variations": [
     {
-      "label": "SEO Focused",
-      "bio": "...",
+      "label": "SEO & Authority",
+      "bio": "First line here\\nSecond line here\\nThird line here",
       "charCount": 0,
-      "strategy": "One sentence explaining why this variation works"
+      "strategy": "One sentence explaining why this works"
     },
     {
-      "label": "Authority Builder",
+      "label": "Story & Connection",
       "bio": "...",
       "charCount": 0,
-      "strategy": "One sentence explaining why this variation works"
+      "strategy": "One sentence explaining why this works"
     },
     {
-      "label": "Bold & Punchy",
+      "label": "Bold & Aggressive",
       "bio": "...",
       "charCount": 0,
-      "strategy": "One sentence explaining why this variation works"
+      "strategy": "One sentence explaining why this works"
     }
   ],
-  "proTip": "One platform-specific SEO or strategy tip"
+  "proTip": "One valuable platform-specific tip"
 }`;
 
-  const userPrompt = `Generate 3 distinct bio variations for ${platform}.
+  const userPrompt = `Generate 3 completely distinct bio variations for ${platform} using the exact multi-line structure, heavy emoji usage, and premium copywriting.
 
 User Details:
-Role: ${role || niche}
+Role/Title: ${role || niche}
 Niche: ${niche}
-Expertise: ${expertise || "Not specified — infer from role and niche"}
+Expertise: ${expertise || "Top-tier strategies, premium results, and actionable insights"}
 Tone: ${tone}
-CTA: ${cta || "Suggest one based on niche"}
+CTA: ${cta || "Click below to transform your journey 👇"}
+Achievements: ${achievements}
 
-Requirements: follow the Hook -> Value -> Action format.
-
-Example of the "New" Output Style (for Bold tone, SaaS Founder, Tech & AI):
-🚀 Building the future of AI & SaaS.
-helping founders scale with Mtech-backed systems.
-👇 Grab the growth roadmap here:
-#SaaS #AIRevolution #TechFounder`;
+REMEMBER: 
+- Start every line with a modern aesthetic emoji (🫶, ⚡️, 🧠, etc.). 
+- STRICTLY ensure the total length is UNDER ${platformInfo.charLimit} characters!
+- Use physical line breaks (\\n), never pipes (|).`;
 
   try {
     const completion = await openai.chat.completions.create({
