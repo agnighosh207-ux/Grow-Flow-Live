@@ -2,19 +2,19 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Core Public Pages -->
   <url>
-    <loc>https://growflow.ai/</loc>
+    <loc>https://growflowai.space/</loc>
     <lastmod>2026-04-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://growflow.ai/pricing</loc>
+    <loc>https://growflowai.space/pricing</loc>
     <lastmod>2026-04-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://growflow.ai/support</loc>
+    <loc>https://growflowai.space/support</loc>
     <lastmod>2026-04-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -22,13 +22,13 @@
 
   <!-- Legal Pages -->
   <url>
-    <loc>https://growflow.ai/privacy</loc>
+    <loc>https://growflowai.space/privacy</loc>
     <lastmod>2026-04-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://growflow.ai/terms</loc>
+    <loc>https://growflowai.space/terms</loc>
     <lastmod>2026-04-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
@@ -36,13 +36,13 @@
   
   <!-- Auth Pages -->
   <url>
-    <loc>https://growflow.ai/sign-in</loc>
+    <loc>https://growflowai.space/sign-in</loc>
     <lastmod>2026-04-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://growflow.ai/sign-up</loc>
+    <loc>https://growflowai.space/sign-up</loc>
     <lastmod>2026-04-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>

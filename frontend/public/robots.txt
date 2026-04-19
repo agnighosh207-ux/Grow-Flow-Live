@@ -18,4 +18,4 @@ Disallow: /settings
 Disallow: /saved
 Disallow: /referrals
 
-Sitemap: https://growflow.ai/sitemap.xml
+Sitemap: https://growflowai.space/sitemap.xml
