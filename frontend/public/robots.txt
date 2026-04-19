@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /generate
+Disallow: /ideas
+Disallow: /trends
+Disallow: /strategy
+Disallow: /history
+Disallow: /hooks
+Disallow: /improve
+Disallow: /bio
+Disallow: /caption
+Disallow: /daily
+Disallow: /pack
+Disallow: /calendar
+Disallow: /insights
+Disallow: /settings
+Disallow: /saved
+Disallow: /referrals
+
+Sitemap: https://growflow.ai/sitemap.xml
