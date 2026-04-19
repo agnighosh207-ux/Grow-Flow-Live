@@ -11,7 +11,7 @@ import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
   Sparkles, TrendingUp, BarChart3, CalendarDays, Flame, Wand2,
   Shield, Clock, ChevronRight, Crown, Lock, AlertTriangle,
-  IndianRupee
+  IndianRupee, RefreshCw
 } from "lucide-react";
 
 type BillingPeriod = "monthly" | "quarterly" | "biannual" | "yearly";
