@@ -11,7 +11,7 @@ import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
   Sparkles, TrendingUp, BarChart3, CalendarDays, Flame, Wand2,
   Shield, Clock, ChevronRight, Crown, Lock, AlertTriangle,
-  DollarSign
+  IndianRupee
 } from "lucide-react";
 
 type BillingPeriod = "monthly" | "quarterly" | "biannual" | "yearly";
@@ -59,17 +59,17 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
-  { key: "generations", label: "Content Generations", free: "3 lifetime", starter: "20 / month", creator: "100 / month", infinity: "Unlimited*", section: "core" },
+  { key: "generations", label: "Content Generations", free: "3 lifetime", starter: "20 / month", creator: "60 / month", infinity: "Unlimited*", section: "core" },
   { key: "regen", label: "Regenerations per Topic", free: false, starter: "Unlimited", creator: "Unlimited", infinity: "Unlimited", section: "core" },
   { key: "platforms", label: "All 4 Platforms", free: true, starter: true, creator: true, infinity: true, section: "core" },
   { key: "language", label: "Multi-Language Output", free: "English Only", starter: "Eng + 1 Regional", creator: "Full Access*", infinity: "Full Access*", section: "core" },
-  { key: "hooks", label: "Hooks, CTAs & Hashtags", free: true, starter: true, creator: true, infinity: true, section: "core" },
-  { key: "formats", label: "Captions, Scripts & Threads", free: true, starter: true, creator: true, infinity: true, section: "core" },
-  { key: "ideas", label: "Idea Generator", free: true, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "strategy", label: "7-Day Strategy Planner", free: true, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "viralhooks", label: "Viral Hooks Generator", free: true, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "saved", label: "Saved Favorites & History", free: true, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "download", label: "Download as .txt", free: true, starter: true, creator: true, infinity: true, section: "tools" },
+  { key: "hooks", label: "Hooks, CTAs & Hashtags", free: false, starter: true, creator: true, infinity: true, section: "core" },
+  { key: "formats", label: "Captions, Scripts & Threads", free: false, starter: true, creator: true, infinity: true, section: "core" },
+  { key: "ideas", label: "Idea Generator", free: false, starter: true, creator: true, infinity: true, section: "tools" },
+  { key: "strategy", label: "7-Day Strategy Planner", free: false, starter: true, creator: true, infinity: true, section: "tools" },
+  { key: "viralhooks", label: "Viral Hooks Generator", free: false, starter: true, creator: true, infinity: true, section: "tools" },
+  { key: "saved", label: "Saved Favorites & History", free: false, starter: true, creator: true, infinity: true, section: "tools" },
+  { key: "download", label: "Download as .txt", free: false, starter: true, creator: true, infinity: true, section: "tools" },
   { key: "improve", label: "Improve Competitor Content", free: false, starter: true, creator: true, infinity: true, section: "tools" },
   { key: "styles", label: "AI Writing Styles", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Bold · Viral · Story · Pro" },
   { key: "viralscore", label: "Viral Score™", free: false, starter: false, creator: true, infinity: true, section: "infinity", infinityLabel: "AI rates 0–100" },
@@ -239,8 +239,7 @@ export default function PricingPage() {
               {[
                 "3 complete content generations",
                 "All 4 platforms unlocked",
-                "Every tool accessible",
-                "Ideas, strategy & hooks",
+                "Basic English Output",
                 "Full content history",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-2.5">
@@ -372,7 +371,7 @@ export default function PricingPage() {
 
             <div className="space-y-2.5 flex-1 mb-4">
               {[
-                "100 content generations / month",
+                "60 content generations / month",
                 "Multi-Variation (3 outputs per gen)",
                 "Viral Score™ enabled",
                 "All 4 platforms",
@@ -503,7 +502,7 @@ export default function PricingPage() {
           className="mb-16 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/30 to-purple-950/20 p-6 md:p-8"
         >
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-4 h-4 text-violet-400" />
+            <IndianRupee className="w-4 h-4 text-violet-400" />
             <p className="text-xs font-bold uppercase tracking-widest text-violet-400">What ₹249 actually gets you</p>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
@@ -692,9 +691,8 @@ export default function PricingPage() {
             </h3>
             <div className="space-y-3.5">
               {[
-                { icon: Clock, label: "7-day free trial", desc: "No charge until your trial ends" },
-                { icon: X, label: "Cancel anytime", desc: "No lock-in — cancel in one click" },
                 { icon: Shield, label: "Secure payments", desc: "Powered by Razorpay, India's #1 gateway" },
+                { icon: X, label: "Cancel anytime", desc: "No lock-in — cancel in one click" },
                 { icon: Star, label: "4.1/5 rating", desc: "2,400+ creators love GrowFlow AI" },
               ].map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="flex items-start gap-3">
@@ -719,9 +717,9 @@ export default function PricingPage() {
             <h3 className="font-bold mb-4 text-lg">Common questions</h3>
             <div className="space-y-4">
               {[
-                { q: "What happens after my 3 free generations?", a: "You'll be prompted to upgrade. No features are removed until you hit the limit." },
+                { q: "What happens after my 3 free generations?", a: "You'll hit your free limit and can't generate more content. You'll need to upgrade to continue." },
                 { q: "Can I switch between Creator and Infinity?", a: "Yes — upgrade or downgrade anytime from your settings. Changes take effect immediately." },
-                { q: "Is there really a 7-day free trial?", a: "Absolutely. You won't be charged until 7 days after subscribing. Cancel before then and pay nothing." },
+                { q: "Can I cancel my subscription easily?", a: "Absolutely. You can cancel with a single click anytime inside your settings page before your next billing cycle." },
                 { q: "What is Viral Score™?", a: "An AI score (0–100) predicting how likely your content is to go viral, based on hook strength, platform patterns, and engagement signals." },
               ].map(({ q, a }) => (
                 <div key={q}>

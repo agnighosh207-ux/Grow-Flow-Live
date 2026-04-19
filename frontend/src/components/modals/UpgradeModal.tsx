@@ -306,7 +306,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                         <span className="text-white/40 text-xs ml-1">/month</span>
                       </div>
                       <span className="text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1 font-semibold">
-                        7-day free trial
+                        Cancel anytime
                       </span>
                     </div>
 

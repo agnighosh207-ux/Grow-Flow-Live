@@ -256,7 +256,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
                 <Crown className="w-4 h-4 mr-2" />
                 Unlock {planLabel} Plan
               </Button>
-              <p className="text-white/20 text-xs">7-day free trial · Cancel anytime</p>
+              <p className="text-white/20 text-xs">Easy payments · Cancel anytime</p>
             </motion.div>
           </div>
         </motion.div>

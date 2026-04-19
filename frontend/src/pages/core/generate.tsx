@@ -1271,12 +1271,10 @@ export default function Generate() {
             <Crown className="w-5 h-5 text-violet-400 flex-shrink-0" />
             <div>
               <p className="text-violet-200 font-semibold text-sm">
-                {sub.plan === "trial" ? "Your trial has expired" : "You've reached your free limit"}
+                You've reached your free limit
               </p>
               <p className="text-violet-300/60 text-xs mt-0.5">
-                {sub.plan === "trial"
-                  ? "Your 7-day trial ended. Subscribe to keep generating."
-                  : "You've used all 3 free generations. Upgrade to continue."}
+                You've used all 3 lifetime free generations. Upgrade to continue.
               </p>
             </div>
           </div>
@@ -1473,7 +1471,7 @@ export default function Generate() {
                   { id: "multi", label: "Multi-Variation", desc: "Generate 3 variations", icon: "🔀" },
                   { id: "style", label: "Style Modes", desc: "Bold, Story & more", icon: "🎨" },
                 ] as const).map(({ id, label, desc, icon }) => {
-                  const hasAdvancedFeatures = (sub?.planType === "creator" || sub?.planType === "infinity") && (sub?.plan === "active" || sub?.plan === "trial");
+                  const hasAdvancedFeatures = (sub?.planType === "creator" || sub?.planType === "infinity") && sub?.plan === "active";
                   const isOn = id === "viral" ? viralMode : id === "multi" ? multiVariation : id === "style" ? styleMode : false;
                   const btn = (
                     <button
