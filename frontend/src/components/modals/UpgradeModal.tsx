@@ -2,11 +2,10 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Zap, Check, Loader2, Crown, Lock, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCreateSubscription, useVerifySubscription, useActivateBetaPlan, useValidateCoupon } from "@/hooks/useSubscription";
+import { useCreateSubscription, useVerifySubscription, useValidateCoupon } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { IS_BETA } from "@/config/appMode";
 
 declare global { interface Window { Razorpay: any; } }
 
@@ -78,7 +77,6 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
   );
   const createSub = useCreateSubscription();
   const verifySub = useVerifySubscription();
-  const activateBeta = useActivateBetaPlan();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [couponCode, setCouponCode] = useState("");
@@ -111,26 +109,8 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
     setPurchasedPlan(plan);
     setPaymentState("pending");
 
-    if (IS_BETA) {
-      try {
-        await activateBeta.mutateAsync({ planType: plan === "pro" ? "infinity" : "creator" });
-        queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
-        setPaymentState("success");
-        toast({
-          title: `${planLabelForCheckout} plan activated!`,
-          description: "You now have full access. Enjoy beta access — no payment required.",
-        });
-      } catch (err: any) {
-        toast({ variant: "destructive", title: err.message || "Failed to activate plan" });
-        setPaymentState("idle");
-      }
-      return;
-    }
-
-    // Razorpay payment flow (commented for future re-enabling when beta ends)
-    /*
     try {
-      const priceForCheckout = plan === "pro" ? "₹399" : "₹249";
+      const priceForCheckout = plan === "pro" ? "₹499" : "₹249";
       const loaded = await loadRazorpay();
       if (!loaded) {
         toast({ variant: "destructive", title: "Could not load payment gateway. Check your connection." });
@@ -174,7 +154,6 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
       toast({ variant: "destructive", title: err.message || "Failed to start checkout" });
       setPaymentState("idle");
     }
-    */
   };
 
   return (
@@ -327,7 +306,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                         <span className="text-white/40 text-xs ml-1">/month</span>
                       </div>
                       <span className="text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1 font-semibold">
-                        {IS_BETA ? "Beta — free access" : "7-day free trial"}
+                        7-day free trial
                       </span>
                     </div>
 
@@ -339,7 +318,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       {paymentState === "pending" ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
                       ) : (
-                        <><Zap className="w-4 h-4 mr-2" /> {IS_BETA ? "Get Infinity Free (Beta)" : "Unlock Full Power"}</>
+                        <><Zap className="w-4 h-4 mr-2" /> Unlock Full Power</>
                       )}
                     </Button>
 
@@ -377,7 +356,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                         {paymentState === "pending" ? (
                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
                         ) : (
-                          <>{IS_BETA ? "Get Creator Free (Beta)" : "Get Unlimited Access"}</>
+                          <>Get Unlimited Access</>
                         )}
                       </Button>
                       <Button
@@ -388,13 +367,13 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                         {paymentState === "pending" ? (
                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
                         ) : (
-                          <><Zap className="w-4 h-4 mr-1.5" /> {IS_BETA ? "Get Infinity Free" : "Unlock Full Power"}</>
+                          <><Zap className="w-4 h-4 mr-1.5" /> Unlock Full Power</>
                         )}
                       </Button>
                     </div>
 
                     <p className="text-center text-[11px] text-white/35 leading-relaxed mb-1">
-                      {IS_BETA ? "Beta access — no payment required" : "Creators using Infinity grow faster with better-performing content"}
+                      Creators using Infinity grow faster with better-performing content
                     </p>
 
                     <button
@@ -501,15 +480,12 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       disabled={paymentState === "pending"}
                     >
                       {paymentState === "pending" ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {IS_BETA ? "Activating..." : "Opening checkout..."}</>
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Opening checkout...</>
                       ) : (
-                        <><Zap className="w-4 h-4 mr-2" /> {IS_BETA ? `Get ${planLabel} Free (Beta)` : `Unlock Full Power`}</>
+                        <><Zap className="w-4 h-4 mr-2" /> Unlock Full Power</>
                       )}
                     </Button>
 
-                    {IS_BETA && (
-                      <p className="text-center text-white/30 text-xs mb-1">Beta access — no payment required</p>
-                    )}
 
                     <button
                       onClick={() => { handleClose(); setLocation("/pricing"); }}

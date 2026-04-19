@@ -6,9 +6,7 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
 // BuyMeCoffee removed
 import { FoundersBanner } from "@/components/banners/FoundersBanner";
-import { BetaEnrollModal, type BetaEnrollPlan } from "@/components/modals/BetaEnrollModal";
-import { useToast } from "@/hooks/use-toast";
-import { IS_BETA } from "@/config/appMode";
+
 import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
   Sparkles, TrendingUp, BarChart3, CalendarDays, Flame, Wand2,
@@ -110,66 +108,7 @@ function CellContent({ value, infinityLabel }: { value: boolean | string; infini
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity" }>({ open: false, plan: "starter" });
-  const [betaEnrollPlan, setBetaEnrollPlan] = useState<BetaEnrollPlan | null>(null);
-  const { data: sub } = useSubscriptionStatus();
-  const [, navigate] = useLocation();
-  const { toast } = useToast();
-
-  const currentPlan = sub?.planType ?? "free";
-  const starterPrice = BASE_PRICES.starter[billing];
-  const creatorPrice = BASE_PRICES.creator[billing];
-  const infinityPrice = BASE_PRICES.infinity[billing];
-
-  const BETA_PLANS: Record<"starter" | "creator" | "infinity", BetaEnrollPlan> = {
-    starter: {
-      name: "Starter",
-      planType: "starter",
-      color: "emerald",
-      price: `₹${starterPrice}`,
-      highlights: [
-        "20 content generations / month",
-        "Unlimited regenerations",
-        "All 4 platforms unlocked",
-        "Idea Generator + Strategy Planner",
-        "Viral Hooks Generator",
-        "Improve Competitor Content",
-      ],
-    },
-    creator: {
-      name: "Creator",
-      planType: "creator",
-      color: "violet",
-      price: `₹${creatorPrice}`,
-      highlights: [
-        "100 content generations / month",
-        "Multi-Variation Output (3× per gen)",
-        "Viral Score™ — rate content 0–100",
-        "All 4 platforms",
-        "Hooks, CTAs & hashtags",
-        "Idea Generator + 7-Day Strategy",
-        "Download as .txt",
-      ],
-    },
-    infinity: {
-      name: "Infinity",
-      planType: "infinity",
-      color: "purple",
-      price: `₹${infinityPrice}`,
-      highlights: [
-        "Unlimited generations (300 limit)",
-        "AI Writing Styles (Bold · Viral · Story)",
-        "Trending Topics Feed (daily)",
-        "Content Calendar + Performance Insights",
-        "Priority AI (2× faster) + Priority Support",
-      ],
-    },
-  };
-
   const handlePlanClick = (plan: "starter" | "creator" | "infinity") => {
-    if (IS_BETA) {
-      setBetaEnrollPlan(BETA_PLANS[plan]);
-      return;
-    }
     if (!sub) {
       navigate("/sign-in");
       return;
@@ -379,14 +318,9 @@ export default function PricingPage() {
               className="w-full bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-200 hover:text-white"
               onClick={() => handlePlanClick("starter")}
             >
-              {IS_BETA ? "Activate Free During Beta" : currentPlan === "starter" && sub?.plan === "active" ? "Current Plan" : "Get Starter →"}
+              {currentPlan === "starter" && sub?.plan === "active" ? "Current Plan" : "Get Starter →"}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
-            {IS_BETA && (
-              <p className="text-center text-emerald-400/40 text-xs mt-2">
-                ✨ Free during beta · No payment needed
-              </p>
-            )}
           </motion.div>
 
           {/* Creator */}
@@ -470,14 +404,9 @@ export default function PricingPage() {
               className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 border border-violet-500/30 text-white shadow-lg shadow-violet-500/25"
               onClick={() => handlePlanClick("creator")}
             >
-              {IS_BETA ? "Activate Free During Beta" : currentPlan === "creator" && sub?.plan === "active" ? "Current Plan" : "Get Creator →"}
+              {currentPlan === "creator" && sub?.plan === "active" ? "Current Plan" : "Get Creator →"}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
-            {IS_BETA && (
-              <p className="text-center text-white/35 text-xs mt-2">
-                ✨ Free during beta · No payment needed
-              </p>
-            )}
           </motion.div>
 
           {/* Infinity */}
@@ -550,16 +479,10 @@ export default function PricingPage() {
               className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white"
               onClick={() => handlePlanClick("infinity")}
             >
-              {IS_BETA ? "Activate Free During Beta" : currentPlan === "infinity" && sub?.plan === "active" ? "Current Plan" : "Unlock Infinity →"}
+              {currentPlan === "infinity" && sub?.plan === "active" ? "Current Plan" : "Unlock Infinity →"}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
-            {IS_BETA ? (
-              <p className="text-center text-purple-400/60 text-xs mt-2.5">✨ Free during beta</p>
-            ) : (
-              <>
-                <p className="text-center text-white/35 text-xs mt-2.5">Cancel anytime</p>
-              </>
-            )}
+            <p className="text-center text-white/35 text-xs mt-2.5">Cancel anytime</p>
           </motion.div>
         </div>
 
@@ -721,7 +644,7 @@ export default function PricingPage() {
                   className="w-full bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-200 text-xs"
                   onClick={() => handlePlanClick("starter")}
                 >
-                  {IS_BETA ? "Get Notified" : "Get Starter"}
+                  Get Starter
                 </Button>
               </div>
               <div>
@@ -730,7 +653,7 @@ export default function PricingPage() {
                   className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 border border-violet-500/30 text-white text-xs shadow-lg shadow-violet-500/25"
                   onClick={() => handlePlanClick("creator")}
                 >
-                  {IS_BETA ? "Get Notified" : "Get Creator"}
+                  Get Creator
                 </Button>
               </div>
               <div>
@@ -739,7 +662,7 @@ export default function PricingPage() {
                   className="w-full bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs"
                   onClick={() => handlePlanClick("infinity")}
                 >
-                  {IS_BETA ? "Get Notified" : "Get Infinity"}
+                  Get Infinity
                 </Button>
               </div>
             </div>

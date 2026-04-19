@@ -32,6 +32,39 @@ export function isPaidOrTrial(user: any): boolean {
   return false;
 }
 
+export const PLAN_RANKS: Record<string, number> = {
+  FREE: 0,
+  STARTER: 1,
+  CREATOR: 2,
+  INFINITY: 3
+};
+
+export function requireTierLevel(requiredTier: string) {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const user = await getOrCreateUser(req.userId);
+      req.user = user;
+      
+      const currentTier = (user.planType as string || "FREE").toUpperCase();
+      const required = requiredTier.toUpperCase();
+      
+      const currentRank = PLAN_RANKS[currentTier] ?? 0;
+      const requiredRank = PLAN_RANKS[required] ?? 0;
+      
+      if (currentRank >= requiredRank || currentTier === "INFINITY") {
+        return next();
+      }
+      
+      res.status(403).json({ 
+        error: "tier_locked",
+        message: `This feature requires the ${requiredTier} plan or higher. Please upgrade.`,
+      });
+    } catch {
+      res.status(500).json({ error: "Permission validation failed." });
+    }
+  };
+}
+
 export function requirePlanOrTrial(toolKey: string) {
   return async (req: any, res: any, next: any) => {
     try {

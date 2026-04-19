@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Rocket } from "lucide-react";
 import { useLocation } from "wouter";
-import { IS_BETA } from "@/config/appMode";
-
-const STORAGE_KEY = IS_BETA ? "early_access_banner_dismissed" : "founders_banner_dismissed";
+const STORAGE_KEY = "founders_banner_dismissed";
 
 export function FoundersBanner() {
   const [visible, setVisible] = useState(false);
@@ -23,9 +21,7 @@ export function FoundersBanner() {
     setVisible(false);
   };
 
-  const text = IS_BETA
-    ? { title: "🚀 Early Access — Premium plans accessibility launching soon", sub: "Sign up now to lock in founding member pricing" }
-    : { title: "🚀 Founders Offer: Early users get special discounted pricing", sub: "Limited-time access for early adopters" };
+  const text = { title: "🚀 Founders Offer: Early users get special discounted pricing", sub: "Limited-time access for early adopters" };
 
   return (
     <AnimatePresence>

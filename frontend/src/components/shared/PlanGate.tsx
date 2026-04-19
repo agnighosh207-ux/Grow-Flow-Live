@@ -6,8 +6,6 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useUser } from "@clerk/react";
 import { motion } from "framer-motion";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
-import { BetaEnrollModal, type BetaEnrollPlan } from "@/components/modals/BetaEnrollModal";
-import { IS_BETA } from "@/config/appMode";
 
 const PLAN_LEVEL: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3 };
 
@@ -50,7 +48,6 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
   const [initialTrialLoaded, setInitialTrialLoaded] = useState(false);
   const [trialError, setTrialError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showBetaEnroll, setShowBetaEnroll] = useState(false);
 
   const fetchTrialStatus = useCallback(async () => {
     if (!toolKey || !user) {
@@ -160,25 +157,14 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               }
             </p>
           </div>
-          {IS_BETA ? (
+          <Link href="/pricing">
             <Button
               size="sm"
               className="shrink-0 bg-violet-600 hover:bg-violet-500 text-white text-xs px-3 py-1.5 h-auto rounded-lg"
-              onClick={() => setShowBetaEnroll(true)}
             >
-              <Crown className="w-3 h-3 mr-1" />
-              Activate Free
+              Upgrade
             </Button>
-          ) : (
-            <Link href="/pricing">
-              <Button
-                size="sm"
-                className="shrink-0 bg-violet-600 hover:bg-violet-500 text-white text-xs px-3 py-1.5 h-auto rounded-lg"
-              >
-                Upgrade
-              </Button>
-            </Link>
-          )}
+          </Link>
         </motion.div>
         {children}
       </TrialContext.Provider>
@@ -187,35 +173,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
 
   const planLabel = requiredPlan === "infinity" ? "Infinity" : requiredPlan === "creator" ? "Creator" : "Starter";
 
-  const betaEnrollPlan: BetaEnrollPlan = requiredPlan === "infinity"
-    ? {
-        name: "Infinity",
-        planType: "infinity",
-        color: "purple",
-        price: "₹399",
-        highlights: [
-          "Unlimited content generations",
-          "AI Writing Styles (Bold · Viral · Story)",
-          "Viral Score™ — rate content 0–100",
-          "Trending Topics Feed (daily)",
-          "Multi-Variation Output (3× per gen)",
-          "Content Calendar + Performance Insights",
-        ],
-      }
-    : {
-        name: "Creator",
-        planType: "starter",
-        color: "violet",
-        price: "₹249",
-        highlights: [
-          "50 content generations / month",
-          "All 4 platforms",
-          "Hooks, CTAs & hashtags",
-          "Idea Generator + 7-Day Strategy",
-          "Viral Hooks Generator",
-          "Improve Competitor Content",
-        ],
-      };
+
 
   return (
     <>
@@ -227,11 +185,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
         message="This feature can boost your content performance. Unlock with Infinity."
         targetPlan={requiredPlan === "infinity" ? "pro" : "starter"}
       />
-      <BetaEnrollModal
-        open={showBetaEnroll}
-        onClose={() => setShowBetaEnroll(false)}
-        plan={betaEnrollPlan}
-      />
+
 
       <div className="relative min-h-[60vh] rounded-2xl overflow-hidden">
         <div
@@ -254,7 +208,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="relative z-10 flex items-center justify-center min-h-[60vh] p-6"
-          onClick={() => IS_BETA ? setShowBetaEnroll(true) : setShowUpgradeModal(true)}
+          onClick={() => setShowUpgradeModal(true)}
           style={{ cursor: "pointer" }}
         >
           <div
@@ -267,7 +221,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 15 }}
               className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto border border-violet-500/30 cursor-pointer"
               style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(109,40,217,0.08))" }}
-              onClick={() => IS_BETA ? setShowBetaEnroll(true) : setShowUpgradeModal(true)}
+              onClick={() => setShowUpgradeModal(true)}
             >
               <Lock className="w-8 h-8 text-violet-400" />
             </motion.div>
@@ -295,28 +249,14 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               transition={{ delay: 0.26 }}
               className="space-y-3"
             >
-              {IS_BETA ? (
-                <Button
-                  className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-violet-900/40"
-                  onClick={() => setShowBetaEnroll(true)}
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  Activate {planLabel} — Free
-                </Button>
-              ) : (
-                <Button
-                  className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-violet-900/40"
-                  onClick={() => setShowUpgradeModal(true)}
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  Unlock {planLabel} Plan
-                </Button>
-              )}
-              {IS_BETA ? (
-                <p className="text-violet-400/50 text-xs">✨ Free during beta · No payment needed</p>
-              ) : (
-                <p className="text-white/20 text-xs">7-day free trial · Cancel anytime</p>
-              )}
+              <Button
+                className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-violet-900/40"
+                onClick={() => setShowUpgradeModal(true)}
+              >
+                <Crown className="w-4 h-4 mr-2" />
+                Unlock {planLabel} Plan
+              </Button>
+              <p className="text-white/20 text-xs">7-day free trial · Cancel anytime</p>
             </motion.div>
           </div>
         </motion.div>

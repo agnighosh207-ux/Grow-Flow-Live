@@ -30,3 +30,4 @@ export * from './coupons';
 export * from './systemSettings';
 export * from './contentCalendar';
 export * from './globalAnnouncements';
+export * from './securityLogs';

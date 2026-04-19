@@ -139,6 +139,9 @@ importers:
       http-proxy-middleware:
         specifier: ^3.0.5
         version: 3.0.5
+      openai:
+        specifier: ^6.34.0
+        version: 6.34.0(zod@4.3.6)
       pino:
         specifier: ^9
         version: 9.14.0
@@ -188,9 +191,21 @@ importers:
 
   frontend:
     dependencies:
+      '@clerk/clerk-react':
+        specifier: ^5.61.3
+        version: 5.61.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@clerk/themes':
         specifier: ^2.4.57
         version: 2.4.57(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      canvas-confetti:
+        specifier: ^1.9.4
+        version: 1.9.4
+      react-helmet-async:
+        specifier: ^3.0.0
+        version: 3.0.0(react@19.1.0)
+      react-razorpay:
+        specifier: ^3.0.1
+        version: 3.0.1(react@19.1.0)
     devDependencies:
       '@clerk/react':
         specifier: ^6.2.0
@@ -288,6 +303,9 @@ importers:
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.98.0(react@19.1.0)
+      '@types/canvas-confetti':
+        specifier: ^1.9.0
+        version: 1.9.0
       '@types/node':
         specifier: 'catalog:'
         version: 25.6.0
@@ -714,6 +732,14 @@ packages:
   '@clerk/backend@3.2.8':
     resolution: {integrity: sha512-N9yqCQCdkn/4XpfiVnaoS6wXDeC2yQf85ioHGolOIOCWXOPwMd63fONUfRhwOZSlXGTAsgyUNZu87Ps0tcVYsg==}
     engines: {node: '>=20.9.0'}
+
+  '@clerk/clerk-react@5.61.3':
+    resolution: {integrity: sha512-W21aNEeHtqh3xJLuW5g2ydben/1D5pSnxsl/kCnv0IY1zma7lO+aIJ7Br2bR4FKKkiu695mPnjtY+fvkQmCXBg==}
+    engines: {node: '>=18.17.0'}
+    deprecated: 'This package is no longer supported. Please use @clerk/react instead. See the upgrade guide for more info: https://clerk.com/docs/guides/development/upgrading/upgrade-guides/core-3'
+    peerDependencies:
+      react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+      react-dom: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
 
   '@clerk/express@2.1.0':
     resolution: {integrity: sha512-PZl40IyJah1Ox2g9As5vaRVXYzNuHYPS5CulUUjgYrRA5DhlSn+3Hkv7FBXmar7rj2o2bxQe44JXVFs4xcqhmw==}
@@ -1990,6 +2016,9 @@ packages:
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
 
+  '@types/canvas-confetti@1.9.0':
+    resolution: {integrity: sha512-aBGj/dULrimR1XDZLtG9JwxX1b4HPRF6CX9Yfwh3NvstZEm1ZL7RBnel4keCPSqs1ANRu1u2Aoz9R+VmtjYuTg==}
+
   '@types/compression@1.8.1':
     resolution: {integrity: sha512-kCFuWS0ebDbmxs0AXYn6e2r2nrGAb5KwQhknjSPSPgJcGd8+HVSILlUyFhGqML2gk39HcG7D1ydW9/qpYkN00Q==}
 
@@ -2172,6 +2201,9 @@ packages:
 
   caniuse-lite@1.0.30001787:
     resolution: {integrity: sha512-mNcrMN9KeI68u7muanUpEejSLghOKlVhRqS/Za2IeyGllJ9I9otGpR9g3nsw7n4W378TE/LyIteA0+/FOZm4Kg==}
+
+  canvas-confetti@1.9.4:
+    resolution: {integrity: sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw==}
 
   chokidar@4.0.3:
     resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
@@ -2777,6 +2809,9 @@ packages:
     resolution: {integrity: sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg==}
     engines: {node: '>=12'}
 
+  invariant@2.2.4:
+    resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}
+
   ip-address@10.1.0:
     resolution: {integrity: sha512-XXADHxXmvT9+CRxhXg56LJovE+bmWnEWB78LB83VZTprKTmaC5QfruXocxzTZ2Kl0DNwKuBdlIhjL8LeY8Sf8Q==}
     engines: {node: '>= 12'}
@@ -3300,6 +3335,14 @@ packages:
     peerDependencies:
       react: ^19.1.0
 
+  react-fast-compare@3.2.2:
+    resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
+
+  react-helmet-async@3.0.0:
+    resolution: {integrity: sha512-nA3IEZfXiclgrz4KLxAhqJqIfFDuvzQwlKwpdmzZIuC1KNSghDEIXmyU0TKtbM+NafnkICcwx8CECFrZ/sL/1w==}
+    peerDependencies:
+      react: ^16.6.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   react-hook-form@7.72.1:
     resolution: {integrity: sha512-RhwBoy2ygeVZje+C+bwJ8g0NjTdBmDlJvAUHTxRjTmSUKPYsKfMphkS2sgEMotsY03bP358yEYlnUeZy//D9Ig==}
     engines: {node: '>=18.0.0'}
@@ -3316,6 +3359,11 @@ packages:
 
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
+
+  react-razorpay@3.0.1:
+    resolution: {integrity: sha512-43P6VB20quinlUDN3dUdg0XlMtoClzfvhgpPWnGrLwLE6Pr570fXdA4kC+92Wqof48A/x96TXRpLnrQ/J1eXyw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   react-refresh@0.18.0:
     resolution: {integrity: sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw==}
@@ -3467,6 +3515,9 @@ packages:
 
   setprototypeof@1.2.0:
     resolution: {integrity: sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==}
+
+  shallowequal@1.1.0:
+    resolution: {integrity: sha512-y0m1JoUZSlPAjXVtPPW70aZWfIL/dSP7AFkRnniLCrK/8MDKog3TySTBmckD+RObVxH0v4Tox67+F14PdED2oQ==}
 
   shebang-command@2.0.0:
     resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
@@ -3918,6 +3969,13 @@ snapshots:
     transitivePeerDependencies:
       - react
       - react-dom
+
+  '@clerk/clerk-react@5.61.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@clerk/shared': 3.47.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      tslib: 2.8.1
 
   '@clerk/express@2.1.0(express@5.2.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -5163,6 +5221,8 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/node': 25.6.0
 
+  '@types/canvas-confetti@1.9.0': {}
+
   '@types/compression@1.8.1':
     dependencies:
       '@types/express': 5.0.6
@@ -5365,6 +5425,8 @@ snapshots:
       get-intrinsic: 1.3.0
 
   caniuse-lite@1.0.30001787: {}
+
+  canvas-confetti@1.9.4: {}
 
   chokidar@4.0.3:
     dependencies:
@@ -5899,6 +5961,10 @@ snapshots:
 
   internmap@2.0.3: {}
 
+  invariant@2.2.4:
+    dependencies:
+      loose-envify: 1.4.0
+
   ip-address@10.1.0: {}
 
   ipaddr.js@1.9.1: {}
@@ -6365,6 +6431,15 @@ snapshots:
       react: 19.1.0
       scheduler: 0.26.0
 
+  react-fast-compare@3.2.2: {}
+
+  react-helmet-async@3.0.0(react@19.1.0):
+    dependencies:
+      invariant: 2.2.4
+      react: 19.1.0
+      react-fast-compare: 3.2.2
+      shallowequal: 1.1.0
+
   react-hook-form@7.72.1(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -6376,6 +6451,10 @@ snapshots:
   react-is@16.13.1: {}
 
   react-is@18.3.1: {}
+
+  react-razorpay@3.0.1(react@19.1.0):
+    dependencies:
+      react: 19.1.0
 
   react-refresh@0.18.0: {}
 
@@ -6553,6 +6632,8 @@ snapshots:
       - supports-color
 
   setprototypeof@1.2.0: {}
+
+  shallowequal@1.1.0: {}
 
   shebang-command@2.0.0:
     dependencies:

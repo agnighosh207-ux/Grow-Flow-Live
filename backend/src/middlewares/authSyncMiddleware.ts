@@ -24,6 +24,14 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     // Fast sync: check if user exists
     let [user] = await db.select().from(usersTable).where(eq(usersTable.id, uid));
     
+    // KILL SWITCH PRE-CHECK
+    if (user?.isBanned) {
+      return res.status(403).json({ 
+        error: "ACCESS_DENIED", 
+        message: "Account suspended for Fair Use violations. Contact growflowai.space/support." 
+      });
+    }
+    
     if (!user) {
       // First-time sync logic
       const email = typeof auth.sessionClaims?.email === "string" 
@@ -34,7 +42,11 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         .values({ 
           id: uid, 
           email: email,
-          lastLoginAt: new Date()
+          lastLoginAt: new Date(),
+          planTier: "FREE",
+          creditsRemaining: 5,
+          isBetaUser: false,
+          lastCreditReset: new Date()
         })
         .returning();
 
@@ -49,11 +61,41 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         }).catch(err => console.error("Welcome email dynamic import failed:", err));
       }
     } else {
-      // Update last active time for tracking retention
-      // Optional: throttle this to once per day if high traffic
-      await db.update(usersTable)
-        .set({ lastLoginAt: new Date() })
-        .where(eq(usersTable.id, uid));
+      const now = new Date();
+      let updateData: any = { lastLoginAt: now };
+      
+      const lastReset = user.lastCreditReset ? new Date(user.lastCreditReset) : null;
+      let shouldResetCredits = false;
+      
+      if (lastReset) {
+        const diffTime = Math.abs(now.getTime() - lastReset.getTime());
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        if (diffDays >= 30) {
+          shouldResetCredits = true;
+        }
+      } else {
+        shouldResetCredits = true;
+      }
+
+      if (shouldResetCredits) {
+        const planTier = (user.planTier as string) || "FREE";
+        const tierCredits: Record<string, number> = {
+          FREE: 5,
+          STARTER: 20,
+          CREATOR: 60,
+          INFINITY: 9999
+        };
+        
+        updateData.creditsRemaining = tierCredits[planTier] || 5;
+        updateData.lastCreditReset = now;
+      }
+
+      const [updatedUser] = await db.update(usersTable)
+        .set(updateData)
+        .where(eq(usersTable.id, uid))
+        .returning();
+        
+      user = updatedUser;
     }
 
     req.user = user;

@@ -54,37 +54,6 @@ export function useSubscriptionStatus() {
   });
 }
 
-export function useBetaActivate() {
-  const { getToken } = useAuth();
-  const { session } = useSession();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (params: { planType: "starter" | "creator" | "infinity" }) => {
-
-      // Get token
-      const token = await getToken();
-
-      if (!token) {
-        throw new Error("Authentication required - please sign in");
-      }
-
-      // Make request
-      const response = await fetchWithAuth(`${BASE}/api/subscription/activate-beta`, token, {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
-
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
-    },
-    onError: (error: any) => {
-      console.error("[useBetaActivate] Error:", error?.message || error);
-    },
-  });
-}
 
 export function useCreateSubscription() {
   const { getToken } = useAuth();
@@ -159,22 +128,6 @@ export function useRetrySubscription() {
   });
 }
 
-export function useActivateBetaPlan() {
-  const { getToken } = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (params: { planType: "starter" | "creator" | "infinity" }) => {
-      const token = await getToken();
-      return fetchWithAuth(`${BASE}/api/subscription/activate-beta`, token!, {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
-    },
-  });
-}
 
 export function useCreateTipOrder() {
   const { getToken } = useAuth();

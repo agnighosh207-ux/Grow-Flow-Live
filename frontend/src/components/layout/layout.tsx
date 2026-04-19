@@ -5,7 +5,6 @@ import { NotificationPermissionModal } from "@/components/modals/NotificationPer
 import { ReferralPopup } from "@/components/modals/ReferralPopup";
 import { FoundersBanner } from "@/components/banners/FoundersBanner";
 import { TopBanner } from "@/components/banners/TopBanner";
-import { BetaBanner } from "@/components/banners/BetaBanner";
 import { FeedbackModal, checkShouldShowFeedback } from "@/components/modals/FeedbackModal";
 import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
@@ -156,6 +155,47 @@ function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/15 text-red-300 border border-red-500/20">
       Blocked
     </span>
+  );
+}
+
+function CreditCounter({ sub }: { sub: any }) {
+  if (!sub || sub.plan === "blocked") return null;
+  
+  if (sub.planType === "infinity" || sub.plan === "infinity") {
+    return (
+      <div className="mx-3 mb-3 px-3 py-2 rounded-lg bg-violet-600/10 border border-violet-500/20">
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-white/60 font-medium">Credits Remaining</span>
+          <span className="text-violet-300 font-bold flex items-center gap-1"><Sparkles className="w-3 h-3"/> Unlimited</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Future-proof reading directly from backend or fallback to limit calc
+  const remaining = typeof sub.creditsRemaining === "number" ? sub.creditsRemaining : (sub.generationLimit ? Math.max(0, sub.generationLimit - (sub.monthlyGenerationsUsed || 0)) : (sub.plan === "free" ? 5 : 0));
+  const total = sub.generationLimit || (sub.planType === 'starter' ? 20 : (sub.planType === 'creator' ? 100 : 5));
+  
+  const percentage = Math.min(100, Math.max(0, (remaining / total) * 100));
+  
+  return (
+    <div className="mx-3 mb-3 px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+       <div className="flex justify-between items-center text-[11px] mb-1.5">
+          <span className="text-white/60 font-medium tracking-wide">Credits Remaining</span>
+          <span className="text-white font-bold">{remaining} <span className="text-white/40">/ {total}</span></span>
+       </div>
+       <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+          <div 
+             className={`h-full rounded-full transition-all duration-500 ${remaining < 3 ? 'bg-red-500' : 'bg-violet-500 shadow-[0_0_10px_rgba(124,58,237,0.5)]'}`}
+             style={{ width: `${percentage}%` }}
+          />
+       </div>
+       {remaining < 3 && (
+         <Link href="/pricing">
+          <div className="mt-1.5 text-[9px] text-red-400 hover:text-red-300 font-semibold cursor-pointer text-right transition-colors">Upgrade for more limits →</div>
+         </Link>
+       )}
+    </div>
   );
 }
 
@@ -354,6 +394,8 @@ function SidebarContent({
         </div>
       )}
 
+      {sub && <CreditCounter sub={sub} />}
+
       <div className="border-t border-white/[0.06] px-4 py-3">
         <div className="flex items-center gap-2.5 mb-2.5">
           {user?.imageUrl ? (
@@ -464,7 +506,6 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="md:pl-64 xl:pl-72 min-h-screen flex flex-col">
         <TopBanner />
         <ImpersonationBanner />
-        <BetaBanner />
         <div className="flex-1 w-full px-4 md:px-8 xl:px-12 py-6 md:py-10 pb-24 md:pb-12">
           <NotificationBanner />
           <FoundersBanner />
