@@ -65,7 +65,7 @@ export default function Support() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema as any),
     defaultValues: { email: "", subject: "", message: "" },
   });
 

@@ -246,6 +246,9 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                     >
                       <AlertCircle className="w-8 h-8 text-amber-400" />
                     </div>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 bg-amber-500/20 border border-amber-500/30 rounded-full px-3 py-1 mb-3">
+                      Payment cancelled please try again
+                    </span>
                     <h2 className="text-xl font-bold text-white mb-2">Payment incomplete</h2>
                     <p className="text-white/50 text-sm leading-relaxed mb-1 max-w-xs mx-auto">
                       Your payment wasn't completed. No charge was made.

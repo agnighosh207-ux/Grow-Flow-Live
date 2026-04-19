@@ -5,6 +5,7 @@ import { securityLogsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import pino from "pino";
 import crypto from "crypto";
+import { sendPaymentFailedEmail } from "../services/email";
 // Placeholder import, will not break since it's common practice to isolate external emailer
 // import { sendPremiumWelcomeEmail } from "../services/email-service"; 
 
@@ -70,6 +71,8 @@ router.post("/razorpay", async (req, res) => {
       // await sendPremiumWelcomeEmail(clerkUserId, planTier);
     } 
     else if (event.event === "payment.failed" || event.event === "subscription.cancelled" || event.event === "subscription.halted") {
+      const [userRecord] = await db.select().from(usersTable).where(eq(usersTable.id, clerkUserId));
+      
       await db.update(usersTable)
         .set({
           planType: "free",
@@ -85,6 +88,10 @@ router.post("/razorpay", async (req, res) => {
         eventType: "AUTH_FAILURE", // Best analog for payment halt/fail requirement
         metadata: { event: event.event, reason: "Payment execution failure or intentional cancellation" }
       });
+
+      if (userRecord?.email && event.event === "payment.failed") {
+        await sendPaymentFailedEmail(userRecord.email);
+      }
 
       logger.warn(`[Webhook] User ${clerkUserId} downgraded to FREE due to ${event.event}`);
     }
