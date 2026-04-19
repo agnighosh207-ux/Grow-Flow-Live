@@ -244,13 +244,13 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
     if (planType === "starter") {
       canGenerate = monthlyGenerationsUsed < 20;
     } else if (planType === "creator") {
-      canGenerate = monthlyGenerationsUsed < 100;
+      canGenerate = monthlyGenerationsUsed < 60;
     } else {
       // Infinity -> soft limit, technically can still run
       canGenerate = true;
     }
   } else if (status === "trial" && user?.trialEndsAt && new Date(user.trialEndsAt) > now) {
-    canGenerate = monthlyGenerationsUsed < 100; // Creator trial
+    canGenerate = monthlyGenerationsUsed < 60; // Creator trial
   } else {
     canGenerate = generationsUsed < 3;
   }
@@ -261,9 +261,9 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
       message: status === "trial"
         ? "Your trial has expired. Subscribe to continue generating."
         : status === "active" && planType === "starter" && monthlyGenerationsUsed >= 20
-          ? "You've reached your 20 generations/month limit on Starter. Upgrade to Creator for 100 generations."
-          : status === "active" && planType === "creator" && monthlyGenerationsUsed >= 100
-            ? "You've reached your 100 generations/month limit. Upgrade to Infinity for unlimited access."
+          ? "You've reached your 20 generations/month limit on Starter. Upgrade to Creator for 60 generations."
+          : status === "active" && planType === "creator" && monthlyGenerationsUsed >= 60
+            ? "You've reached your 60 generations/month limit. Upgrade to Infinity for unlimited access."
             : "🔥 You've unlocked the power — upgrade to continue your journey.",
       plan: status,
       generationsUsed,
@@ -339,6 +339,21 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
         content,
       })
       .returning();
+
+    const newGenerationsUsed = monthlyGenerationsUsed + 1;
+    if (freshUser?.email) {
+      const isLowCredits = 
+        (planType === "starter" && newGenerationsUsed === 18) ||
+        (planType === "creator" && newGenerationsUsed === 58) ||
+        (planType === "infinity" && newGenerationsUsed === 248);
+        
+      if (isLowCredits) {
+        // dynamic import or inline requires a top-level import
+        import("../../services/email").then(({ sendCreditWarningEmail }) => {
+          sendCreditWarningEmail(freshUser.email!, planType === "starter" ? 2 : planType === "creator" ? 2 : 250 - newGenerationsUsed, planType === "infinity");
+        }).catch(e => console.error("Could not load email service", e));
+      }
+    }
 
     res.json({
       id: savedGen.id,

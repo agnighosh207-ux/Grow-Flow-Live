@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@clerk/express": "^2.0.8",
+    "@sentry/node": "^10.49.0",
+    "@sentry/profiling-node": "^10.49.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",

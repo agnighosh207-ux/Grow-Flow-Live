@@ -1,10 +1,11 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { eq, count, gte, and } from "drizzle-orm";
+import { eq, count, gte, and, sql } from "drizzle-orm";
 import { db, usersTable, contentGenerationsTable, couponsTable } from "@workspace/db";
 import crypto from "crypto";
 import { FREE_TRIALS_PER_TOOL, isPaidOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
 import { ensureReferralCode, grantReferralReward } from "../referral";
+import { sendWelcomeEmail, sendPaymentFailedEmail } from "../../services/email";
 import { createSubscription } from "../../services/payment-service";
 
 const router: IRouter = Router();
@@ -423,11 +424,27 @@ router.post("/subscription/webhook", async (req: any, res): Promise<void> => {
     const updatedUsers = await db.update(usersTable)
       .set(updates)
       .where(eq(usersTable.razorpaySubscriptionId, subscriptionId))
-      .returning({ id: usersTable.id });
+      .returning({ id: usersTable.id, email: usersTable.email, planType: usersTable.planType });
 
     if (event.event === "subscription.charged" && updatedUsers.length > 0) {
       for (const u of updatedUsers) {
         grantReferralReward(u.id).catch(err => console.error("grantReferralReward webhook error:", err));
+        if (u.email) {
+          sendWelcomeEmail(u.email, u.planType === 'infinity' ? 'Infinity' : u.planType === 'creator' ? 'Creator' : 'Starter');
+        }
+      }
+    } else if (newStatus === "past_due" && updatedUsers.length > 0) {
+      for (const u of updatedUsers) {
+        if (u.email) sendPaymentFailedEmail(u.email);
+      }
+    }
+  } else if (event.event === "payment.failed") {
+    // Attempt to locate user by subscription ID in the payload
+    const subId = event?.payload?.payment?.entity?.subscription_id;
+    if (subId) {
+      const users = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.razorpaySubscriptionId, subId));
+      for (const u of users) {
+        if (u.email) sendPaymentFailedEmail(u.email);
       }
     }
   }

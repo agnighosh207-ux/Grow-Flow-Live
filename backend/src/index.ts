@@ -10,8 +10,11 @@ if (loadedEnv) {
   dotenv.config({ path: loadedEnv });
 }
 
-const { default: app } = await import("./app");
-const { logger } = await import("./lib/logger");
+import { initSentry, Sentry } from "./sentry.js";
+initSentry();
+
+const { default: app } = await import("./app.js");
+const { logger } = await import("./lib/logger.js");
 
 if (!loadedEnv) {
   logger.warn({ envFiles }, "No .env or .env.example file found; environment variables must be provided.");
@@ -47,6 +50,7 @@ for (const port of portsToTry) {
       logger.warn({ port }, `Port ${port} is already in use; trying the next available port.`);
       continue;
     }
+    Sentry.captureException(err);
     logger.error({ err, port }, "Failed to start server");
     process.exit(1);
   }
