@@ -20,6 +20,8 @@ if (!loadedEnv) {
   logger.warn({ envFiles }, "No .env or .env.example file found; environment variables must be provided.");
 }
 
+
+
 const desiredPort = Number(process.env.PORT) || 3000;
 const fallbackPorts = [3001, 3002, 3003, 3004];
 const portsToTry = [desiredPort, ...fallbackPorts.filter((port) => port !== desiredPort)];

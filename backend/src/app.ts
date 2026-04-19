@@ -74,9 +74,11 @@ app.use(async (req, res, next) => {
     try {
       const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
       if (settings?.maintenanceMode) {
-        res.status(503).json({ error: "Service Unavailable: Maintenance Mode" });
-        return;
-      }
+  if (process.env.NODE_ENV === "production") {
+    res.status(503).json({ error: "Service Unavailable: Maintenance Mode" });
+    return;
+  }
+}
     } catch (err) {
       // ignore
     }

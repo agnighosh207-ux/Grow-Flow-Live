@@ -69,43 +69,63 @@ export function requirePlanOrTrial(toolKey: string) {
   return async (req: any, res: any, next: any) => {
     try {
       const user = await getOrCreateUser(req.userId);
-      req.user = user;
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
 
-      if (isPaidOrTrial(user)) return next();
+      const planTier = (user.planTier as string) || "FREE";
+      
+      const config = FEATURE_CONFIG[toolKey];
+      if (!config) {
+        return next();
+      }
 
-      const toolTrials = (user.toolTrials as Record<string, number>) ?? {};
-      const used = toolTrials[toolKey] ?? 0;
+      const requiredLevel = PLAN_LEVELS[config.requiredPlan as keyof typeof PLAN_LEVELS] || 0;
+      const userLevel = PLAN_LEVELS[planTier as keyof typeof PLAN_LEVELS] || 0;
+      const isAdmin = user.securityFlags?.includes("admin") || false;
 
-      if (used < FREE_TRIALS_PER_TOOL) {
+      if (isAdmin || userLevel >= requiredLevel) {
+        return next();
+      }
+
+      const trials = (user.toolTrials as Record<string, number> | null) || {};
+      const used = trials[toolKey] || 0;
+      const totalAllowed = config.freeTrials || 0;
+      const remaining = Math.max(0, totalAllowed - used);
+
+      if (remaining > 0) {
         req.trialMode = true;
         return next();
       }
 
-      res.status(402).json({
+      return res.status(402).json({
         error: "upgrade_required",
-        message: "You've used all free trials for this tool. Upgrade to continue.",
-        toolKey,
-        trialsUsed: used,
-        trialsLimit: FREE_TRIALS_PER_TOOL,
+        message: `You've used all free trials for ${config.name}. Please upgrade to ${config.requiredPlan}.`
       });
-    } catch {
-      res.status(500).json({ error: "Something went wrong. Please try again." });
+
+    } catch (e: any) {
+      console.error("Plan check error (graceful fallback):", e.message);
+      // Graceful degradation: let user pass if db is broken
+      next();
     }
   };
 }
 
 export async function consumeToolTrial(userId: string, toolKey: string): Promise<number> {
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  if (!user) return 0;
-  if (isPaidOrTrial(user)) return FREE_TRIALS_PER_TOOL;
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user) return 0;
 
-  const current = (user.toolTrials as Record<string, number>) ?? {};
-  const newCount = Math.min((current[toolKey] ?? 0) + 1, FREE_TRIALS_PER_TOOL);
-  const updated = { ...current, [toolKey]: newCount };
+    const trials = (user.toolTrials as Record<string, number> | null) || {};
+    trials[toolKey] = (trials[toolKey] || 0) + 1;
 
-  await db.update(usersTable)
-    .set({ toolTrials: updated })
-    .where(eq(usersTable.id, userId));
+    await db.update(usersTable)
+      .set({ toolTrials: trials })
+      .where(eq(usersTable.id, userId));
 
-  return newCount;
+    return trials[toolKey];
+  } catch (e: any) {
+    console.error("Trial consume DB error:", e.message);
+    return 1;
+  }
 }

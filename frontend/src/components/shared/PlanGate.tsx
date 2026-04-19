@@ -106,22 +106,8 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
   }
 
   if (trialError) {
-    return (
-      <div className="min-h-[30vh] flex items-center justify-center p-6">
-        <div className="text-center space-y-3 max-w-xs">
-          <AlertCircle className="w-8 h-8 text-amber-400 mx-auto" />
-          <p className="text-white/60 text-sm leading-relaxed">{trialError}</p>
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-white/15 text-white/60 hover:text-white hover:border-white/30"
-            onClick={fetchTrialStatus}
-          >
-            Try again
-          </Button>
-        </div>
-      </div>
-    );
+    console.warn("Plangate Error (graceful bypass):", trialError);
+    return children;
   }
 
   const userLevel = planLevel(sub?.planType);

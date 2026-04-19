@@ -83,7 +83,7 @@ No markdown, no explanation, just the JSON object.`;
   try {
     const completion = await openai.chat.completions.create({
       model: "llama-3.1-8b-instant",
-    response_format: { type: "json_object" },
+      response_format: { type: "json_object" },
       max_tokens: 3500,
       messages: [
         { role: "system", content: systemPrompt },

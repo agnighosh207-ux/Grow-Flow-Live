@@ -6,6 +6,7 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
 import { FoundersBanner } from "@/components/banners/FoundersBanner";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@clerk/react";
 
 import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
@@ -109,7 +110,8 @@ export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity" }>({ open: false, plan: "starter" });
   
-  const { data: sub } = useSubscriptionStatus();
+  const { data: sub, isLoading: subLoading } = useSubscriptionStatus();
+  const { isSignedIn, isLoaded } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -117,15 +119,16 @@ export default function PricingPage() {
   const starterPrice = BASE_PRICES.starter[billing];
   const creatorPrice = BASE_PRICES.creator[billing];
   const infinityPrice = BASE_PRICES.infinity[billing];
+  
   const handlePlanClick = (plan: "starter" | "creator" | "infinity") => {
-    if (!sub) {
+    if (isLoaded && !isSignedIn) {
       navigate("/sign-in");
       return;
     }
-    if (
-      (plan === "starter" && currentPlan === "starter" && sub.plan === "active") ||
+    if (sub &&
+      ((plan === "starter" && currentPlan === "starter" && sub.plan === "active") ||
       (plan === "creator" && currentPlan === "creator" && sub.plan === "active") ||
-      (plan === "infinity" && currentPlan === "infinity" && sub.plan === "active")
+      (plan === "infinity" && currentPlan === "infinity" && sub.plan === "active"))
     ) {
       toast({ title: "Already on this plan", description: "You're already subscribed to this plan." });
       return;
