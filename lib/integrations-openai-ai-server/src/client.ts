@@ -14,7 +14,7 @@ const providers = [
   { name: "OpenAI", apiKey: openaiApiKey, baseURL: "https://api.openai.com/v1", modelMap: (m: string) => m }
 ];
 
-export const openai = new OpenAI({ apiKey: openaiApiKey || undefined }) as any;
+export const openai = new OpenAI({ apiKey: openaiApiKey || "dummy-key-to-prevent-sdk-crash" }) as any;
 
 const originalCreate = openai.chat.completions.create.bind(openai.chat.completions);
 
