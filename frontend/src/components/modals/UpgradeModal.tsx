@@ -23,7 +23,7 @@ function loadRazorpay(): Promise<boolean> {
 interface UpgradeModalProps {
   open: boolean;
   onClose: () => void;
-  reason?: "limit" | "expired" | "blocked" | "pro_feature";
+  reason?: "limit" | "expired" | "blocked" | "pro_feature" | "upgrade";
   featureName?: string;
   message?: string;
   targetPlan?: "starter" | "pro";
@@ -32,6 +32,10 @@ interface UpgradeModalProps {
 type PaymentState = "idle" | "pending" | "success" | "error";
 
 const REASONS = {
+  upgrade: {
+    title: "Upgrade your plan",
+    subtitle: "Unlock premium tools and scale your content creation faster.",
+  },
   limit: {
     title: "You've reached your free limit",
     subtitle: "You've reached your free limit. Upgrade to continue.",
