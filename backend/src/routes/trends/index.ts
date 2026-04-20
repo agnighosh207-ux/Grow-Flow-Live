@@ -19,17 +19,17 @@ const nicheContextMap: Record<string, string> = {
 };
 
 const nicheTrendDrivers: Record<string, string> = {
-  Fitness: "Research-backed training myths being debunked, ozempic and GLP-1 discourse, hybrid athlete trend, zone 2 cardio revival, cold exposure science, sleep optimization, ultra-processed food debate",
-  Finance: "Interest rate environment impacts, AI job displacement and income diversification, housing market reality checks, Gen Z wealth-building differently than millennials, bank failure fears, frugality vs investment debates",
-  Tech: "AI replacing junior roles, vibe coding and AI agents, no-code vs low-code, remote work reversals, big tech layoffs and indie hacker rise, cursor/claude/GPT workflow wars",
-  Motivation: "Dopamine detox backlash, identity-based change vs willpower-based, ADHD content creator explosion, therapy culture normalization, male mental health conversation shift",
-  Business: "AI-first business models, solo founder wins, content flywheel strategies, B2B creator economy, product-led growth, agency to SaaS pivots, community as moat",
-  Lifestyle: "Anti-hustle culture shift, portfolio careers, digital minimalism, work-life integration vs separation, slow living philosophy, intentional consumption",
-  Fashion: "De-influencing movement, quiet luxury vs maximalism, fast fashion backlash with alternatives, AI-generated fashion concepts, vintage resale culture",
-  Food: "Carnivore vs plant-based debate, seed oil controversy, glucose monitoring culture, ultra-processed food research, ancestral diet revival, food as medicine",
-  Parenting: "Gentle parenting backlash, phone-free childhood movement, helicopter vs free-range, parent burnout visibility, education system questioning",
-  Education: "College ROI crisis, skill-based hiring growth, micro-credential revolution, AI tutor adoption, content creator as educator",
-  General: "Short-form vs long-form debate, authenticity trend, AI-generated content detection fears, creator burnout conversation, niche vs broad audience strategy",
+  Fitness: "Longevity protocols replacing aesthetic goals, hyper-personalized biometric AI coaching, recovery as the primary training phase (cold plunges & red light), 'exercise snacks' and micro-workouts, hybrid fitness run clubs replacing nightlife",
+  Finance: "AI-driven predictive budgeting, 'loud budgeting' replacing financial secrecy, intentional mindful spending vs 'little treats', post-inflation normalization strategies, Gen-Z wealth-building, CD ladders and stable yields returning",
+  Tech: "Agentic AI executing multi-step workflows autonomously, physical AI converging with robotics, 'vibe coding' moving from hype to production, AI infrastructure costs reckoning, the rise of trusted AI governance, hybrid cloud resurgence",
+  Motivation: "Neurological reset protocols, identity-shifting over discipline, micro-dosing discomfort for resilience, therapy culture backlash toward actionable stoicism, AI as an accountability partner",
+  Business: "AI-first solopreneur models, hyper-personalization at scale through AI, fragmented micro-community marketing replacing mass audiences, authentic human-led counter-culture vs synthetic marketing, community as a moat",
+  Lifestyle: "Digital minimalism making a massive comeback, 'living well' over 'looking good', intentional friction in daily routines, localism vs extreme digital nomadism, biological age reversal protocols",
+  Fashion: "Hyper-personalized AI curation, anti-fast fashion regulation, modular capsule wardrobes, extreme quiet luxury evolving into 'stealth wealth', augmented reality try-ons",
+  Food: "Food as precision medicine, hyper-local foraging tech, continuous glucose monitors moving beyond diabetics, cellular agriculture market entry, the ancestral vs highly-processed debate peaking",
+  Parenting: "AI-tutor mediated screen time, smartphone-free childhood legislation impacts, hyper-local parent micro-communities, cognitive development optimization over traditional schooling",
+  Education: "The complete unbundling of traditional degrees, micro-credentialing matching agentic AI job displacement, AI serving as personalized 1-on-1 tutors, experiential human-led learning resurgence",
+  General: "Deep authenticity vs synthetic AI content, hyper-fragmented micro-communities, human-first storytelling, the death of mass broadcasting, highly experiential interactive content formats",
 };
 
 router.post("/trends/generate", requireAuth, requirePlanOrTrial("trends"), async (req: any, res): Promise<void> => {
