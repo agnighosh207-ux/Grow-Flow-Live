@@ -204,11 +204,11 @@ export default function Home() {
       className="min-h-screen bg-[#060312] text-foreground overflow-x-hidden selection:bg-cyan-500/30 font-sans"
     >
 
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-15%] left-[-15%] w-[55%] h-[55%] bg-cyan-700/25 blur-[140px] rounded-full" />
-        <div className="absolute bottom-[-20%] right-[-15%] w-[55%] h-[55%] bg-teal-700/25 blur-[140px] rounded-full" />
-        <div className="absolute top-[35%] right-[15%] w-[35%] h-[35%] bg-pink-700/15 blur-[120px] rounded-full" />
-        <div className="absolute top-[60%] left-[10%] w-[30%] h-[30%] bg-blue-700/10 blur-[100px] rounded-full" />
+      <div className="fixed inset-0 pointer-events-none z-0" style={{ transform: "translateZ(0)" }}>
+        <div className="absolute top-[-15%] left-[-15%] w-[55%] h-[55%] bg-cyan-700/25 blur-[140px] rounded-full" style={{ willChange: "transform" }} />
+        <div className="absolute bottom-[-20%] right-[-15%] w-[55%] h-[55%] bg-teal-700/25 blur-[140px] rounded-full" style={{ willChange: "transform" }} />
+        <div className="absolute top-[35%] right-[15%] w-[35%] h-[35%] bg-pink-700/15 blur-[120px] rounded-full" style={{ willChange: "transform" }} />
+        <div className="absolute top-[60%] left-[10%] w-[30%] h-[30%] bg-blue-700/10 blur-[100px] rounded-full" style={{ willChange: "transform" }} />
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -353,7 +353,7 @@ export default function Home() {
           className="w-[95%] sm:w-full max-w-5xl mx-auto mt-6"
         >
           {/* God Tier Cinematic Hero Console */}
-          <div className="relative min-h-[550px] sm:min-h-[650px] w-[110%] -ml-[5%] md:w-full md:ml-0 rounded-[20px] sm:rounded-[40px] overflow-hidden border border-[#00F2FF]/15 shadow-[0_0_150px_rgba(0,242,255,0.05),inset_0_0_40px_rgba(0,242,255,0.05)] flex flex-col items-center justify-center bg-[#050B0D]/90 backdrop-blur-3xl mt-16 group py-16 sm:py-20">
+          <div className="relative min-h-[550px] sm:min-h-[650px] w-[110%] -ml-[5%] md:w-full md:ml-0 rounded-[20px] sm:rounded-[40px] overflow-hidden border border-[#00F2FF]/15 shadow-[0_0_150px_rgba(0,242,255,0.05),inset_0_0_40px_rgba(0,242,255,0.05)] flex flex-col items-center justify-center bg-[#050B0D]/90 mt-16 group py-16 sm:py-20" style={{ transform: "translateZ(0)" }}>
              
              {/* Streaming Data Background */}
              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
@@ -382,6 +382,7 @@ export default function Home() {
                <motion.div 
                  animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }} 
                  transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                 style={{ willChange: "transform" }}
                  className="absolute -top-[30%] -left-[30%] w-[160%] h-[160%] bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,rgba(0,242,255,0.2)_90deg,transparent_180deg)] blur-[100px] opacity-70"
                />
                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#00F2FF]/5 to-[#050B0D] opacity-90"></div>
@@ -409,7 +410,7 @@ export default function Home() {
             </div>
                 
              <div className="relative w-full z-40 flex flex-col items-center justify-center p-4 sm:p-8 pointer-events-auto py-12 sm:py-20">
-               <div className="w-full max-w-2xl rounded-2xl border border-[#00F2FF]/30 bg-[#0B1215]/60 backdrop-blur-xl shadow-[inset_0_0_80px_rgba(0,242,255,0.05),0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-500">
+               <div className="w-full max-w-2xl rounded-2xl border border-[#00F2FF]/30 bg-[#0B1215]/80 shadow-[inset_0_0_80px_rgba(0,242,255,0.05),0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-500" style={{ transform: "translateZ(0)" }}>
                   <div className="flex items-center justify-between px-4 py-2 sm:py-3 border-b border-[#00F2FF]/20 bg-gradient-to-r from-transparent via-[#00F2FF]/10 to-transparent relative">
                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00F2FF]/50 to-transparent" />
                      <div className="flex items-center gap-2">
@@ -467,7 +468,7 @@ export default function Home() {
                     </AnimatePresence>
                   </div>
                </div>
-                <div className="mt-8 relative z-50 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#00F2FF]/30 bg-[rgba(5,11,13,0.9)] backdrop-blur-xl shadow-[0_0_30px_rgba(0,242,255,0.15)]">
+                 <div className="mt-8 relative z-50 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#00F2FF]/30 bg-[rgba(5,11,13,0.95)] shadow-[0_0_30px_rgba(0,242,255,0.15)]">
                  <span className="w-2 h-2 rounded-full bg-[#00F2FF] animate-[pulse_1.5s_ease-in-out_infinite] shadow-[0_0_8px_#00F2FF]" />
                  <span className="text-[#00F2FF] text-[10px] sm:text-xs tracking-[0.3em] font-mono font-bold uppercase drop-shadow-[0_0_5px_rgba(0,242,255,0.5)]">Engine Operational</span>
                </div>

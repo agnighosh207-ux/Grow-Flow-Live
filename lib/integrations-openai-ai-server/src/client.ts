@@ -14,7 +14,11 @@ const providers = [
   { name: "OpenAI", apiKey: openaiApiKey, baseURL: "https://api.openai.com/v1", modelMap: (m: string) => m }
 ];
 
-export const openai = new OpenAI({ apiKey: openaiApiKey || "dummy-key-to-prevent-sdk-crash" }) as any;
+export const openai = new OpenAI({ 
+  apiKey: openaiApiKey || "dummy-key-to-prevent-sdk-crash",
+  timeout: 12000,
+  maxRetries: 0
+}) as any;
 
 const originalCreate = openai.chat.completions.create.bind(openai.chat.completions);
 
@@ -26,7 +30,12 @@ openai.chat.completions.create = async (options: any, requestOptions?: any) => {
     
     try {
       console.log(`[AI Fallback Engine] Attempting generation via: ${provider.name}`);
-      const client = new OpenAI({ apiKey: provider.apiKey, baseURL: provider.baseURL });
+      const client = new OpenAI({ 
+        apiKey: provider.apiKey, 
+        baseURL: provider.baseURL,
+        timeout: 12000,
+        maxRetries: 0
+      });
       
       const providerOptions = { ...options };
       if (provider.modelMap && providerOptions.model) {

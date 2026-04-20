@@ -509,7 +509,6 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
       className={`relative rounded-2xl border ${config.borderColor} overflow-hidden flex flex-col`}
       style={{
         background: `linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)`,
-        backdropFilter: "blur(20px)",
         boxShadow: `0 0 40px 0 ${config.glowColor}, inset 0 1px 0 rgba(255,255,255,0.06)`,
       }}
     >
@@ -537,7 +536,6 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                id="tour-repurpose"
                 disabled={isRepurposing}
                 className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md bg-white/5 hover:bg-white/10 text-cyan-300 hover:text-cyan-200 border border-white/10 hover:border-cyan-500/30 transition-all font-medium disabled:opacity-50"
               >
@@ -1001,6 +999,10 @@ export default function Generate() {
     if (viralMode) ideaWithNiche += "\n[VIRAL MODE ENABLED: Ignore regular constraints. Optimize this heavily for maximum viral reach and engagement. Use aggressive open loops.]";
     if (styleMode) ideaWithNiche += "\n[STYLE MODE ENABLED: Tell a bold, deeply personal story. Be very stylized.]";
 
+    setGeneratedContent(null);
+    setContentAnalysis(null);
+    setAnalysisLoading(false);
+    
     generateMutation.mutate({ data: { ...rest, idea: ideaWithNiche } } as any);
   }
 
@@ -1640,7 +1642,7 @@ export default function Generate() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.35, ease: "easeOut" }}
               className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/8 px-4 py-3"
-              style={{ background: "rgba(124,58,237,0.06)", backdropFilter: "blur(12px)" }}
+              style={{ background: "rgba(124,58,237,0.06)" }}
             >
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
