@@ -551,12 +551,12 @@ export default function PricingPage() {
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/70 mb-2">The old way</p>
               <p className="text-3xl font-black text-red-300 mb-1">₹5,000–₹15,000</p>
-              <p className="text-white/50 text-sm">A freelance content writer for 50 pieces. Slow turnaround, inconsistent quality, and it's still just one platform.</p>
+              <p className="text-white/50 text-sm">A freelance content writer for 60 pieces. Slow turnaround, inconsistent quality, and it's still just one platform.</p>
             </div>
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400/70 mb-2">With Creator</p>
               <p className="text-3xl font-black text-emerald-300 mb-1">₹249</p>
-              <p className="text-white/50 text-sm">50 pieces of content across Instagram, YouTube, Twitter & LinkedIn. Instant. Optimized. Ready to post.</p>
+              <p className="text-white/50 text-sm">60 pieces of content across Instagram, YouTube, Twitter & LinkedIn. Instant. Optimized. Ready to post.</p>
             </div>
           </div>
           <p className="text-center text-white/35 text-xs mt-5">

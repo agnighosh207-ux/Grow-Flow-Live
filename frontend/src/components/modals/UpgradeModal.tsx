@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Zap, Check, Loader2, Crown, Lock, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ const STARTER_HIGHLIGHTS = [
 const CREATOR_HIGHLIGHTS = [
   "60 content generations per month",
   "3 Regenerations per topic",
+  "🌍 Multi-language (Hindi, Hinglish, Bengali)",
   "Multi-Variation (3 outputs per gen)",
   "Viral Score™ enabled",
   "Cancel anytime",
@@ -72,6 +73,7 @@ const CREATOR_HIGHLIGHTS = [
 const INFINITY_HIGHLIGHTS = [
   "Unlimited content generations",
   "Unlimited Regenerations per topic",
+  "🌍 10+ Global Languages supported",
   "AI Writing Styles (Bold · Viral · Story · Pro)",
   "Trending Topics Feed — daily fresh ideas",
   "Priority AI (2× faster) + Priority Support",
@@ -85,6 +87,14 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
   const [purchasedPlan, setPurchasedPlan] = useState<PlanType>(
     reason === "pro_feature" ? "infinity" : targetPlan
   );
+
+  // Sync selected plan when the modal opens
+  React.useEffect(() => {
+    if (open) {
+      setSelectedPlan(reason === "pro_feature" ? "infinity" : targetPlan);
+      setPurchasedPlan(reason === "pro_feature" ? "infinity" : targetPlan);
+    }
+  }, [open, targetPlan, reason]);
   const createSub = useCreateSubscription();
   const verifySub = useVerifySubscription();
   const { toast } = useToast();
