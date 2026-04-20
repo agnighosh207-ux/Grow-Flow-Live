@@ -169,7 +169,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
         reason="pro_feature"
         featureName={featureName}
         message="This feature can boost your content performance. Unlock with Infinity."
-        targetPlan={requiredPlan === "infinity" ? "pro" : "starter"}
+        targetPlan={requiredPlan}
       />
 
 

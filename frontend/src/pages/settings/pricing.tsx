@@ -775,7 +775,7 @@ export default function PricingPage() {
         open={upgradeModal.open}
         onClose={() => setUpgradeModal((p) => ({ ...p, open: false }))}
         reason="upgrade"
-        targetPlan={upgradeModal.plan === "infinity" ? "pro" : "starter"}
+        targetPlan={upgradeModal.plan}
       />
     </div>
   );

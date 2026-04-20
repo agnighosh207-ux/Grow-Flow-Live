@@ -1114,7 +1114,7 @@ export default function Generate() {
         onClose={() => setShowUpgradeModal(false)}
         reason={upgradeReason}
         featureName={proFeatureName}
-        targetPlan={upgradeReason === "pro_feature" ? "pro" : "starter"}
+        targetPlan={upgradeReason === "pro_feature" ? "infinity" : "starter"}
       />
       <FeedbackModal open={showRatingModal} onClose={() => setShowRatingModal(false)} trigger={ratingTrigger} />
 
