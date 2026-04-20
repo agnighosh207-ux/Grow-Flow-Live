@@ -1147,6 +1147,13 @@ export default function Generate() {
           </div>
         </div>
 
+        <div className="flex items-start gap-3 bg-[rgba(0,242,255,0.03)] border border-[#00F2FF]/15 rounded-xl p-3.5 mb-6 max-w-4xl shadow-[0_0_20px_rgba(0,242,255,0.03)] backdrop-blur-md">
+          <Wand2 className="w-4 h-4 text-[#00F2FF] shrink-0 mt-0.5" />
+          <p className="text-xs md:text-sm text-white/70 leading-relaxed">
+            <strong className="text-[#00F2FF] font-semibold">How it works:</strong> Type a single idea or topic below. GrowFlow AI will instantly architect it into a viral Instagram Carousel, an engaging Twitter Thread, a professional LinkedIn Post, and a script for YouTube Shorts—simultaneously formatted and ready to post.
+          </p>
+        </div>
+
         <div className="w-full mt-2 mb-4">
           <LiveActivityTicker />
         </div>
