@@ -90,8 +90,8 @@ export function EarlyAccessModal({ open, onClose, source = "pricing" }: EarlyAcc
               {!success ? (
                 <>
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-                      <Bell className="w-5 h-5 text-violet-300" />
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center">
+                      <Bell className="w-5 h-5 text-cyan-300" />
                     </div>
                     <div>
                       <h2 className="text-lg font-bold text-white">Get Early Access</h2>
@@ -104,7 +104,7 @@ export function EarlyAccessModal({ open, onClose, source = "pricing" }: EarlyAcc
                     border: "1px solid rgba(124,58,237,0.2)",
                   }}>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      🚀 GrowFlow AI is in <strong className="text-violet-300">early access</strong>. Premium plans accessibility is launching soon with{" "}
+                      🚀 GrowFlow AI is in <strong className="text-cyan-300">early access</strong>. Premium plans accessibility is launching soon with{" "}
                       <span className="text-white/85">special founding member pricing</span> for users who sign up now.
                     </p>
                   </div>
@@ -117,7 +117,7 @@ export function EarlyAccessModal({ open, onClose, source = "pricing" }: EarlyAcc
                         placeholder="your@email.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 bg-white/10 border-white/20 placeholder:text-white/35 focus:border-violet-500/50 focus:ring-violet-500/20 h-11"
+                        className="pl-10 bg-white/10 border-white/20 placeholder:text-white/35 focus:border-cyan-500/50 focus:ring-cyan-500/20 h-11"
                         style={{ color: '#ffffff' }}
                         required
                         disabled={loading}
@@ -131,7 +131,7 @@ export function EarlyAccessModal({ open, onClose, source = "pricing" }: EarlyAcc
                     <Button
                       type="submit"
                       disabled={loading || !email.trim()}
-                      className="w-full h-11 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-violet-500/25 disabled:opacity-50"
+                      className="w-full h-11 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-500/25 disabled:opacity-50"
                     >
                       {loading ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving your spot...</>
@@ -157,7 +157,7 @@ export function EarlyAccessModal({ open, onClose, source = "pricing" }: EarlyAcc
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">You're on the list! 🎉</h3>
                   <p className="text-white/55 text-sm leading-relaxed mb-6">
-                    We'll notify you when premium plans launch — with <strong className="text-violet-300">founding member pricing</strong> reserved for early subscribers like you.
+                    We'll notify you when premium plans launch — with <strong className="text-cyan-300">founding member pricing</strong> reserved for early subscribers like you.
                   </p>
                   <Button
                     onClick={handleClose}

@@ -47,7 +47,7 @@ if (!clerkPubKey) {
 
 const SuspenseFallback = () => (
   <div className="flex w-full h-[50vh] items-center justify-center">
-    <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+    <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
   </div>
 );
 
@@ -113,27 +113,27 @@ export function ClerkProviderWithRoutes() {
           borderRadius: '12px',
         },
         elements: {
-          card: 'bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 shadow-2xl shadow-violet-950/60',
+          card: 'bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/60',
           headerTitle: '!text-white font-bold',
-          headerSubtitle: '!text-purple-100',
-          formButtonPrimary: '!bg-violet-600 hover:!bg-violet-500 !text-white font-semibold shadow-[0_0_15px_rgba(139,92,246,0.4)] transition-all ease-out hover:scale-[1.02]',
-          formFieldInput: '!bg-white/5 !border !border-white/10 !text-white focus:!border-violet-500 rounded-xl transition-colors',
-          formFieldLabel: '!text-purple-100 font-medium',
+          headerSubtitle: '!text-teal-100',
+          formButtonPrimary: '!bg-cyan-600 hover:!bg-cyan-500 !text-white font-semibold shadow-[0_0_15px_rgba(139,92,246,0.4)] transition-all ease-out hover:scale-[1.02]',
+          formFieldInput: '!bg-white/5 !border !border-white/10 !text-white focus:!border-cyan-500 rounded-xl transition-colors',
+          formFieldLabel: '!text-teal-100 font-medium',
           dividerLine: '!bg-white/10',
           dividerText: '!text-white/40',
           formFieldErrorText: '!text-red-300 font-medium',
           formFieldSuccessText: '!text-emerald-400 font-medium',
-          formFieldInfoText: '!text-violet-300 font-medium',
+          formFieldInfoText: '!text-cyan-300 font-medium',
           alertText: '!text-red-200',
           socialButtonsBlockButton: '!bg-white/5 !border !border-white/10 !text-white hover:!bg-white/10 transition-colors',
           socialButtonsBlockButtonText: '!text-white',
           footerActionText: '!text-white/60',
-          footerActionLink: '!text-violet-400 hover:!text-violet-300',
+          footerActionLink: '!text-cyan-400 hover:!text-cyan-300',
           identityPreviewText: '!text-white',
-          identityPreviewEditButton: '!text-violet-400',
-          otpCodeFieldInput: '!bg-violet-900/40 !border-2 !border-violet-500/50 !text-white !text-2xl !font-bold !rounded-xl focus:!border-violet-400 focus:!shadow-[0_0_0_3px_rgba(139,92,246,0.25)] !w-11 !h-12',
+          identityPreviewEditButton: '!text-cyan-400',
+          otpCodeFieldInput: '!bg-cyan-900/40 !border-2 !border-cyan-500/50 !text-white !text-2xl !font-bold !rounded-xl focus:!border-cyan-400 focus:!shadow-[0_0_0_3px_rgba(139,92,246,0.25)] !w-11 !h-12',
           otpCodeField: '!gap-2',
-          formResendCodeLink: '!text-violet-400 hover:!text-violet-300',
+          formResendCodeLink: '!text-cyan-400 hover:!text-cyan-300',
         }
       }}
     >

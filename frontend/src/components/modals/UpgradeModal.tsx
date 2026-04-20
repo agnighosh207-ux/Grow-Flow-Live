@@ -173,14 +173,14 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative w-full max-w-md rounded-2xl border border-violet-500/25 overflow-hidden"
+            className="relative w-full max-w-md rounded-2xl border border-cyan-500/25 overflow-hidden"
             style={{
               background: "linear-gradient(135deg, rgba(15,8,35,0.97) 0%, rgba(20,10,45,0.97) 100%)",
               backdropFilter: "blur(24px)",
               boxShadow: "0 0 80px -10px rgba(124,58,237,0.4)",
             }}
           >
-            <div className="h-0.5 w-full bg-gradient-to-r from-violet-600 via-purple-500 to-violet-600" />
+            <div className="h-0.5 w-full bg-gradient-to-r from-cyan-600 via-teal-500 to-cyan-600" />
 
             <div className="p-6">
               <AnimatePresence mode="wait">
@@ -208,7 +208,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
                     >
-                      <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-3 py-1 mb-3">
+                      <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-3 py-1 mb-3">
                         <Sparkles className="w-3 h-3" /> {purchasedPlanLabel} plan activated
                       </div>
                       <h2 className="text-2xl font-bold text-white mb-2">You're all set! 🎉</h2>
@@ -226,7 +226,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       </ul>
 
                       <Button
-                        className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-violet-900/40"
+                        className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40"
                         onClick={handleClose}
                       >
                         <Zap className="w-4 h-4 mr-2" /> Start creating
@@ -258,7 +258,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       You can try again — your card details are pre-filled.
                     </p>
                     <Button
-                      className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-3"
+                      className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-3"
                       onClick={() => handleCheckout()}
                     >
                       <Zap className="w-4 h-4 mr-2" /> Try again
@@ -274,8 +274,8 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                   <motion.div key="pro_feature" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
-                          <Lock className="w-4 h-4 text-violet-400" />
+                        <div className="w-9 h-9 rounded-xl bg-cyan-600/20 border border-cyan-500/25 flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-cyan-400" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -287,8 +287,8 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       </button>
                     </div>
 
-                    <div className="rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-4 mb-5">
-                      <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-widest mb-3">
+                    <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 mb-5">
+                      <p className="text-[10px] font-semibold text-cyan-400 uppercase tracking-widest mb-3">
                         What you unlock
                       </p>
                       <ul className="space-y-2.5">
@@ -309,13 +309,13 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                         <span className="text-2xl font-bold text-white">₹399</span>
                         <span className="text-white/40 text-xs ml-1">/month</span>
                       </div>
-                      <span className="text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1 font-semibold">
+                      <span className="text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2.5 py-1 font-semibold">
                         Cancel anytime
                       </span>
                     </div>
 
                     <Button
-                      className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-2"
+                      className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-2"
                       onClick={() => handleCheckout("pro")}
                       disabled={paymentState === "pending"}
                     >
@@ -337,8 +337,8 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                   <motion.div key="limit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
-                          <Crown className="w-4 h-4 text-violet-400" />
+                        <div className="w-9 h-9 rounded-xl bg-cyan-600/20 border border-cyan-500/25 flex items-center justify-center">
+                          <Crown className="w-4 h-4 text-cyan-400" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -352,7 +352,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
 
                     <div className="flex gap-3 mb-5">
                       <Button
-                        className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-500/30 text-white/80 hover:text-white font-semibold text-sm rounded-xl transition-all duration-200"
+                        className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/30 text-white/80 hover:text-white font-semibold text-sm rounded-xl transition-all duration-200"
                         variant="outline"
                         onClick={() => handleCheckout("starter")}
                         disabled={paymentState === "pending"}
@@ -364,7 +364,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                         )}
                       </Button>
                       <Button
-                        className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-violet-900/40"
+                        className="flex-1 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-cyan-900/40"
                         onClick={() => handleCheckout("pro")}
                         disabled={paymentState === "pending"}
                       >
@@ -391,8 +391,8 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                   <motion.div key="checkout" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
-                          <Crown className="w-4 h-4 text-violet-400" />
+                        <div className="w-9 h-9 rounded-xl bg-cyan-600/20 border border-cyan-500/25 flex items-center justify-center">
+                          <Crown className="w-4 h-4 text-cyan-400" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -411,12 +411,12 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                           onClick={() => setSelectedPlan(p)}
                           className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
                             selectedPlan === p
-                              ? "bg-violet-600/25 border-violet-500/50 text-violet-200"
+                              ? "bg-cyan-600/25 border-cyan-500/50 text-cyan-200"
                               : "border-white/8 text-white/40 hover:text-white/60 hover:border-white/15"
                           }`}
                         >
                           {p === "pro" ? "Infinity · ₹399/mo" : "Creator · ₹249/mo"}
-                          {p === "pro" && <span className="ml-1 text-[9px] text-violet-400">★ Best</span>}
+                          {p === "pro" && <span className="ml-1 text-[9px] text-cyan-400">★ Best</span>}
                         </button>
                       ))}
                     </div>
@@ -434,7 +434,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                           )}
                         </span>
                         <span className="text-white/40 text-sm mb-0.5">/month</span>
-                        <span className="ml-auto inline-flex items-center gap-1 text-xs text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-0.5 font-medium">
+                        <span className="ml-auto inline-flex items-center gap-1 text-xs text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2.5 py-0.5 font-medium">
                           <Zap className="w-2.5 h-2.5" /> {planLabel} plan
                         </span>
                       </div>
@@ -471,7 +471,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       <ul className="space-y-1.5">
                         {highlights.map((h) => (
                           <li key={h} className="flex items-center gap-2 text-xs text-white/70">
-                            <Check className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
+                            <Check className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
                             {h}
                           </li>
                         ))}
@@ -479,7 +479,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                     </div>
 
                     <Button
-                      className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-2"
+                      className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-2"
                       onClick={() => handleCheckout()}
                       disabled={paymentState === "pending"}
                     >

@@ -13,9 +13,9 @@ const PLATFORM_CONFIG: Record<string, { icon: React.ReactNode; label: string; co
 };
 
 const CONTENT_TYPE_COLORS: Record<string, string> = {
-  Educational: "bg-violet-500",
-  Story: "bg-blue-500",
-  Viral: "bg-pink-500",
+  Educational: "bg-[#00F2FF]",
+  Story: "bg-[#00F2FF] opacity-80",
+  Viral: "bg-[#00F2FF] opacity-60",
 };
 
 function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value: string | number; sub?: string; icon: React.ReactNode; delay?: number }) {
@@ -29,7 +29,7 @@ function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-white/40 font-medium uppercase tracking-widest">{label}</span>
-        <div className="w-8 h-8 rounded-lg bg-violet-600/15 border border-violet-500/20 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-cyan-600/15 border border-cyan-500/20 flex items-center justify-center">
           {icon}
         </div>
       </div>
@@ -115,9 +115,9 @@ export default function Insights() {
       <div className="space-y-8 pb-16">
         <div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5 flex items-center gap-3">
-            <BarChart3 className="w-7 h-7 text-violet-400" />
+            <BarChart3 className="w-7 h-7 text-cyan-400" />
             Performance Insights
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-600/20 to-purple-600/20 border border-violet-500/25 text-violet-300">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-cyan-600/20 to-teal-600/20 border border-cyan-500/25 text-cyan-300">
               <Crown className="w-2.5 h-2.5" /> PRO
             </span>
           </h1>
@@ -125,10 +125,10 @@ export default function Insights() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Total generations" value={totalGenerations} sub="All time" icon={<Zap className="w-4 h-4 text-violet-400" />} delay={0} />
-          <StatCard label="This month" value={thisMonthGenerations} sub="Content pieces" icon={<TrendingUp className="w-4 h-4 text-violet-400" />} delay={0.05} />
-          <StatCard label="Best style" value={topType} sub="Most used format" icon={<Star className="w-4 h-4 text-violet-400" />} delay={0.1} />
-          <StatCard label="Current streak" value={`${streak} day${streak !== 1 ? "s" : ""}`} sub="Keep it going" icon={<Crown className="w-4 h-4 text-violet-400" />} delay={0.15} />
+          <StatCard label="Total generations" value={totalGenerations} sub="All time" icon={<Zap className="w-4 h-4 text-cyan-400" />} delay={0} />
+          <StatCard label="This month" value={thisMonthGenerations} sub="Content pieces" icon={<TrendingUp className="w-4 h-4 text-cyan-400" />} delay={0.05} />
+          <StatCard label="Best style" value={topType} sub="Most used format" icon={<Star className="w-4 h-4 text-cyan-400" />} delay={0.1} />
+          <StatCard label="Current streak" value={`${streak} day${streak !== 1 ? "s" : ""}`} sub="Keep it going" icon={<Crown className="w-4 h-4 text-cyan-400" />} delay={0.15} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -149,12 +149,12 @@ export default function Insights() {
                       <span className="text-xs font-medium text-white/70">{type}</span>
                       <span className="text-xs text-white/40">{pct}%</span>
                     </div>
-                    <div className="h-2 rounded-full bg-white/6 overflow-hidden">
+                    <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--surface-petrol)' }}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
                         transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-                        className={`h-full rounded-full ${CONTENT_TYPE_COLORS[type] ?? "bg-violet-500"}`}
+                        className={`h-full rounded-full ${CONTENT_TYPE_COLORS[type] ?? "bg-cyan-500"}`}
                       />
                     </div>
                   </div>
@@ -176,14 +176,14 @@ export default function Insights() {
                 const isToday = i === 6; // The last item in the array is always today based on our loop
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${height}%` }}
-                      transition={{ delay: 0.3 + i * 0.05, duration: 0.6, ease: "easeOut" }}
-                      className={`w-full rounded-t-sm ${isToday ? "bg-violet-500" : "bg-white/10"}`}
-                      style={{ minHeight: 2 }}
-                    />
-                    <span className={`text-[9px] font-medium ${isToday ? "text-violet-400" : "text-white/30"}`}>{weeklyDays[i]}</span>
+                      <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: `${height}%` }}
+                        transition={{ delay: 0.3 + i * 0.05, duration: 0.6, ease: "easeOut" }}
+                        className={`w-full rounded-t-sm ${isToday ? "bg-[#00F2FF]" : ""}`}
+                        style={{ minHeight: 2, backgroundColor: isToday ? '#00F2FF' : 'var(--surface-petrol)' }}
+                      />
+                      <span className={`text-[9px] font-medium ${isToday ? "text-[#00F2FF]" : "text-[var(--text-muted)]"}`}>{weeklyDays[i]}</span>
                   </div>
                 );
               })}

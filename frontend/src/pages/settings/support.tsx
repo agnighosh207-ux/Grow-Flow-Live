@@ -97,7 +97,7 @@ export default function Support() {
   }
 
   return (
-    <div className="min-h-screen bg-[#060312] text-foreground font-sans pt-12 px-4 selection:bg-violet-500/30">
+    <div className="min-h-screen bg-[#060312] text-foreground font-sans pt-12 px-4 selection:bg-cyan-500/30">
       <div className="max-w-3xl mx-auto mb-8">
         <Link href="/">
           <span className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer">
@@ -118,7 +118,7 @@ export default function Support() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
             { icon: MessageSquare, label: "Message Us", desc: "Use the form below", color: "text-blue-400", bg: "bg-blue-500/8 border-blue-500/15" },
-            { icon: Mail, label: "Email", desc: "growflowhelp@gmail.com", color: "text-violet-400", bg: "bg-violet-500/8 border-violet-500/15" },
+            { icon: Mail, label: "Email", desc: "growflowhelp@gmail.com", color: "text-cyan-400", bg: "bg-cyan-500/8 border-cyan-500/15" },
             { icon: Clock, label: "Response Time", desc: "Within 24 hours", color: "text-emerald-400", bg: "bg-emerald-500/8 border-emerald-500/15" },
           ].map(({ icon: Icon, label, desc, color, bg }) => (
             <div key={label} className={`rounded-xl border ${bg} p-4 flex items-center gap-3`}>

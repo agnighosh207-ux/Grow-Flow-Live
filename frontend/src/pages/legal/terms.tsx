@@ -87,7 +87,7 @@ export default function Terms() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">8. Contact Information</h2>
             <p className="text-[15px]">
-              For legal inquiries or disputes regarding these terms, please contact us at <a href="mailto:growflowhelp@gmail.com" className="text-violet-400 hover:text-violet-300">growflowhelp@gmail.com</a>.
+              For legal inquiries or disputes regarding these terms, please contact us at <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 hover:text-cyan-300">growflowhelp@gmail.com</a>.
             </p>
           </section>
         </div>

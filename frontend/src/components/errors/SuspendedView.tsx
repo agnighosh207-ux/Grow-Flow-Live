@@ -39,7 +39,7 @@ export function SuspendedView() {
           </div>
           
           <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-            <Clock className="w-5 h-5 text-violet-400 shrink-0 mt-0.5" />
+            <Clock className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-white text-sm font-semibold">Appeal Status</p>
               <p className="text-white/40 text-xs mt-1 leading-relaxed">

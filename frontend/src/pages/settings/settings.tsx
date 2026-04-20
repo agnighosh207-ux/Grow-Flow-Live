@@ -40,7 +40,7 @@ function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onCha
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none
-        ${checked ? "bg-violet-600" : "bg-white/15"}
+        ${checked ? "bg-cyan-600" : "bg-white/15"}
         ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
       `}
     >
@@ -305,7 +305,7 @@ export default function SettingsPage() {
   const trialPlanLabel = sub?.planType === "infinity" ? "Infinity Trial" : sub?.planType === "creator" ? "Creator Trial" : "Starter Trial";
   const planConfig = {
     free: { label: "Free", color: "text-white/50", bg: "bg-white/5 border-white/10", icon: <User className="w-3.5 h-3.5" /> },
-    trial: { label: trialPlanLabel, color: "text-violet-300", bg: "bg-violet-500/10 border-violet-500/20", icon: <Zap className="w-3.5 h-3.5" /> },
+    trial: { label: trialPlanLabel, color: "text-cyan-300", bg: "bg-cyan-500/10 border-cyan-500/20", icon: <Zap className="w-3.5 h-3.5" /> },
     active: { label: activePlanLabel, color: "text-emerald-300", bg: "bg-emerald-500/10 border-emerald-500/20", icon: <Crown className="w-3.5 h-3.5" /> },
     blocked: { label: "Expired", color: "text-red-300", bg: "bg-red-500/10 border-red-500/20", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
   };
@@ -433,7 +433,7 @@ export default function SettingsPage() {
             <div className="flex-1">
               <p className={`font-semibold text-sm ${plan.color}`}>{plan.label} Plan</p>
               {sub?.plan === "trial" && sub.trialDaysLeft !== null && (
-                <p className="text-violet-300/60 text-xs mt-0.5">{sub.trialDaysLeft} day{sub.trialDaysLeft !== 1 ? "s" : ""} remaining in trial</p>
+                <p className="text-cyan-300/60 text-xs mt-0.5">{sub.trialDaysLeft} day{sub.trialDaysLeft !== 1 ? "s" : ""} remaining in trial</p>
               )}
               {sub?.plan === "active" && (
                 <p className="text-emerald-300/60 text-xs mt-0.5">Unlimited generations active</p>
@@ -446,7 +446,7 @@ export default function SettingsPage() {
               <Button
                 size="sm"
                 onClick={() => navigate("/pricing")}
-                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-xs rounded-lg shrink-0 shadow shadow-violet-900/30"
+                className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs rounded-lg shrink-0 shadow shadow-cyan-900/30"
               >
                 <Zap className="w-3 h-3 mr-1.5" /> Upgrade
               </Button>
@@ -504,7 +504,7 @@ export default function SettingsPage() {
                   value={contentPrefs.niche}
                   onChange={e => setContentPrefs(p => ({ ...p, niche: e.target.value }))}
                   placeholder="e.g. Fitness, Finance, Tech, Marketing..."
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20"
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
                 />
               </div>
               <div className="space-y-1.5">
@@ -512,7 +512,7 @@ export default function SettingsPage() {
                 <select
                   value={contentPrefs.tonePreference}
                   onChange={e => setContentPrefs(p => ({ ...p, tonePreference: e.target.value }))}
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 appearance-none"
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 appearance-none"
                 >
                   <option value="" className="bg-[#0f0a1e]">Select your preferred tone</option>
                   {TONE_OPTIONS.filter(t => t !== "").map(t => (
@@ -525,7 +525,7 @@ export default function SettingsPage() {
                 <select
                   value={contentPrefs.platformPreference}
                   onChange={e => setContentPrefs(p => ({ ...p, platformPreference: e.target.value }))}
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 appearance-none"
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 appearance-none"
                 >
                   <option value="" className="bg-[#0f0a1e]">Select your preferred platform</option>
                   {PLATFORM_OPTIONS.filter(p => p !== "").map(p => (
@@ -536,7 +536,7 @@ export default function SettingsPage() {
               <Button
                 onClick={saveContentPrefs}
                 disabled={contentPrefsSaving}
-                className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl text-sm disabled:opacity-50 transition-all"
+                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl text-sm disabled:opacity-50 transition-all"
               >
                 {contentPrefsSaving ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> Saving...</>
@@ -550,11 +550,11 @@ export default function SettingsPage() {
       </section>
 
       {/* Your Rewards / Referral Program */}
-      <section className="rounded-2xl border border-violet-500/15 overflow-hidden" style={{ background: "rgba(139,92,246,0.03)" }}>
-        <div className="px-5 py-4 border-b border-violet-500/10 flex items-center gap-2">
-          <Gift className="w-4 h-4 text-violet-400/70" />
+      <section className="rounded-2xl border border-cyan-500/15 overflow-hidden" style={{ background: "rgba(139,92,246,0.03)" }}>
+        <div className="px-5 py-4 border-b border-cyan-500/10 flex items-center gap-2">
+          <Gift className="w-4 h-4 text-cyan-400/70" />
           <h2 className="text-white/80 font-semibold text-sm">Your Rewards</h2>
-          <span className="ml-auto text-[10px] font-semibold text-violet-300 bg-violet-500/15 border border-violet-500/20 rounded-full px-2 py-0.5">+15 Days Infinity/ref</span>
+          <span className="ml-auto text-[10px] font-semibold text-cyan-300 bg-cyan-500/15 border border-cyan-500/20 rounded-full px-2 py-0.5">+15 Days Infinity/ref</span>
         </div>
         <div className="p-5 space-y-4">
           <p className="text-white/40 text-xs leading-relaxed">
@@ -567,14 +567,14 @@ export default function SettingsPage() {
                 <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
                   <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Total Friends Referred</p>
                   <div className="flex items-center justify-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-violet-400" />
+                    <Users className="w-3.5 h-3.5 text-cyan-400" />
                     <p className="text-white font-bold text-lg">{referral.successfulReferrals}</p>
                   </div>
                 </div>
                 <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
                   <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Current Expiry Date</p>
                   <div className="flex items-center justify-center gap-1.5">
-                    <Crown className="w-3.5 h-3.5 text-violet-400" />
+                    <Crown className="w-3.5 h-3.5 text-cyan-400" />
                     <p className="text-white font-bold text-sm">
                       {sub?.trialDaysLeft ? `${sub.trialDaysLeft} Days Left` : "N/A"}
                     </p>
@@ -601,11 +601,11 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Your Referral Code</p>
-                <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-violet-500/15 px-4 py-3">
-                  <span className="flex-1 text-violet-300 font-mono font-bold text-base tracking-widest">{referral.referralCode}</span>
+                <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-cyan-500/15 px-4 py-3">
+                  <span className="flex-1 text-cyan-300 font-mono font-bold text-base tracking-widest">{referral.referralCode}</span>
                   <button
                     onClick={() => copyToClipboard(referral.referralCode, "code")}
-                    className="text-white/30 hover:text-violet-300 transition-colors p-1 rounded-lg hover:bg-violet-500/10"
+                    className="text-white/30 hover:text-cyan-300 transition-colors p-1 rounded-lg hover:bg-cyan-500/10"
                   >
                     {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
@@ -618,7 +618,7 @@ export default function SettingsPage() {
                   <span className="flex-1 text-white/50 text-xs truncate font-mono">{referral.shareableLink}</span>
                   <button
                     onClick={() => copyToClipboard(referral.shareableLink, "link")}
-                    className="text-white/30 hover:text-violet-300 transition-colors p-1 rounded-lg hover:bg-violet-500/10 shrink-0"
+                    className="text-white/30 hover:text-cyan-300 transition-colors p-1 rounded-lg hover:bg-cyan-500/10 shrink-0"
                   >
                     {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
@@ -662,7 +662,7 @@ export default function SettingsPage() {
               {/* Browser notification control */}
               <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/6">
                 <div className="flex items-start gap-3">
-                  <Bell className="w-4 h-4 mt-0.5 shrink-0 text-violet-400" />
+                  <Bell className="w-4 h-4 mt-0.5 shrink-0 text-cyan-400" />
                   <div>
                     <p className="text-white/80 text-sm font-medium">Browser Notifications</p>
                     <p className="text-white/35 text-xs mt-0.5 leading-relaxed">
@@ -682,7 +682,7 @@ export default function SettingsPage() {
                   <Button
                     size="sm"
                     onClick={requestBrowserNotif}
-                    className="bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/20 hover:border-violet-500/30 text-xs h-7 px-3 rounded-lg font-medium shrink-0"
+                    className="bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/20 hover:border-cyan-500/30 text-xs h-7 px-3 rounded-lg font-medium shrink-0"
                   >
                     Enable
                   </Button>
@@ -709,7 +709,7 @@ export default function SettingsPage() {
                   label: "Product Updates",
                   desc: "When we ship new features or improvements, we'll let you know. No fluff, just the good stuff.",
                   icon: Zap,
-                  iconColor: "text-violet-400",
+                  iconColor: "text-cyan-400",
                 },
                 {
                   key: "marketingEmails" as const,

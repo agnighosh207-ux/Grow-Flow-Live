@@ -30,7 +30,7 @@ const PLATFORM_ICONS = {
 
 const TONE_COLOR: Record<string, string> = {
   Casual: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  Professional: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+  Professional: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
   Aggressive: "bg-pink-500/10 text-pink-400 border-pink-500/20",
 };
 
@@ -168,9 +168,9 @@ export default function History() {
       value: stats?.totalGenerations ?? 0,
       sub: `${stats?.thisWeek ?? 0} this week`,
       icon: <BarChart2 className="w-5 h-5" />,
-      iconBg: "bg-violet-500/15",
-      iconColor: "text-violet-400",
-      accent: "from-violet-500/10",
+      iconBg: "bg-cyan-500/15",
+      iconColor: "text-cyan-400",
+      accent: "from-cyan-500/10",
     },
     {
       label: "Top Style",
@@ -249,7 +249,7 @@ export default function History() {
           <p className="text-white/35 text-sm max-w-xs mb-5">Generate your first content campaign to see it here.</p>
           <Button
             size="sm"
-            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-xs"
+            className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white text-xs"
             onClick={() => setLocation("/generate")}
           >
             <Zap className="w-3.5 h-3.5 mr-1.5" /> Generate Now
@@ -318,7 +318,7 @@ export default function History() {
                     </button>
                     <button
                       onClick={(e) => handleRegenerate(item, e)}
-                      className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium text-violet-300/70 hover:text-violet-300 bg-violet-500/6 hover:bg-violet-500/12 border border-violet-500/15 hover:border-violet-500/25 transition-all"
+                      className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-medium text-cyan-300/70 hover:text-cyan-300 bg-cyan-500/6 hover:bg-cyan-500/12 border border-cyan-500/15 hover:border-cyan-500/25 transition-all"
                     >
                       <RefreshCw className="w-3 h-3" /> Redo
                     </button>
@@ -374,7 +374,7 @@ export default function History() {
                       setLocation(`/generate?${p.toString()}`);
                       setSelectedItem(null);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-violet-500/10 hover:bg-violet-500/15 text-violet-300/80 hover:text-violet-300 border border-violet-500/20 transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-500/10 hover:bg-cyan-500/15 text-cyan-300/80 hover:text-cyan-300 border border-cyan-500/20 transition-all"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Regenerate
                   </button>

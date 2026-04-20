@@ -13,10 +13,10 @@ export default function ContactUs() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div>
-          <h2 className="text-xl font-bold text-violet-300 mb-6">Corporate Office</h2>
+          <h2 className="text-xl font-bold text-cyan-300 mb-6">Corporate Office</h2>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-violet-400 mt-0.5" />
+              <MapPin className="w-5 h-5 text-cyan-400 mt-0.5" />
               <div>
                 <p className="font-semibold text-white">Grow Flow AI (Registered Address)</p>
                 <p className="text-white/60 text-sm mt-1">
@@ -29,10 +29,10 @@ export default function ContactUs() {
             </div>
             
             <div className="flex items-center gap-3 pt-4">
-              <Mail className="w-5 h-5 text-violet-400" />
+              <Mail className="w-5 h-5 text-cyan-400" />
               <div>
                 <p className="font-semibold text-white">Email Address</p>
-                <a href="mailto:support@growflowai.space" className="text-violet-300 text-sm hover:underline">
+                <a href="mailto:support@growflowai.space" className="text-cyan-300 text-sm hover:underline">
                   support@growflowai.space
                 </a>
               </div>
@@ -55,7 +55,7 @@ export default function ContactUs() {
                <label className="text-xs font-semibold text-white/50">Message</label>
                <textarea className="w-full mt-1 bg-black/40 border border-white/10 rounded-lg p-2 text-white text-sm min-h-[100px]" placeholder="How can we help you?" />
              </div>
-             <Button className="w-full bg-violet-600 hover:bg-violet-500 font-bold text-white">Submit Ticket</Button>
+             <Button className="w-full bg-cyan-600 hover:bg-cyan-500 font-bold text-white">Submit Ticket</Button>
           </form>
         </div>
       </div>

@@ -100,7 +100,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
   if (subLoading || !initialTrialLoaded) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin" />
       </div>
     );
   }
@@ -132,21 +132,21 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-5 rounded-xl border border-violet-500/25 bg-violet-500/8 px-4 py-3 flex items-center justify-between gap-3"
+          className="mb-5 rounded-xl border border-cyan-500/25 bg-cyan-500/8 px-4 py-3 flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <Sparkles className="w-4 h-4 text-violet-400 shrink-0" />
+            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
             <p className="text-sm text-white/80 leading-tight">
               {trialsLeft === 1
-                ? <><span className="text-violet-300 font-semibold">Last free use</span> — upgrade to keep going</>
-                : <><span className="text-violet-300 font-semibold">{trialsLeft} free uses remaining</span> — explore before you decide</>
+                ? <><span className="text-cyan-300 font-semibold">Last free use</span> — upgrade to keep going</>
+                : <><span className="text-cyan-300 font-semibold">{trialsLeft} free uses remaining</span> — explore before you decide</>
               }
             </p>
           </div>
           <Link href="/pricing">
             <Button
               size="sm"
-              className="shrink-0 bg-violet-600 hover:bg-violet-500 text-white text-xs px-3 py-1.5 h-auto rounded-lg"
+              className="shrink-0 bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1.5 h-auto rounded-lg"
             >
               Upgrade
             </Button>
@@ -205,11 +205,11 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 15 }}
-              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto border border-violet-500/30 cursor-pointer"
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto border border-cyan-500/30 cursor-pointer"
               style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(109,40,217,0.08))" }}
               onClick={() => setShowUpgradeModal(true)}
             >
-              <Lock className="w-8 h-8 text-violet-400" />
+              <Lock className="w-8 h-8 text-cyan-400" />
             </motion.div>
 
             <motion.div
@@ -236,7 +236,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               className="space-y-3"
             >
               <Button
-                className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-violet-900/40"
+                className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold rounded-xl shadow-lg shadow-cyan-900/40"
                 onClick={() => setShowUpgradeModal(true)}
               >
                 <Crown className="w-4 h-4 mr-2" />

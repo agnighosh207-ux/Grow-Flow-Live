@@ -22,7 +22,7 @@ interface SavedItem {
 }
 
 const CONTENT_TYPE_COLORS: Record<string, string> = {
-  Educational: "bg-violet-500/15 text-violet-300 border-violet-500/20",
+  Educational: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20",
   Story: "bg-blue-500/15 text-blue-300 border-blue-500/20",
   Viral: "bg-orange-500/15 text-orange-300 border-orange-500/20",
 };
@@ -188,7 +188,7 @@ export default function Saved() {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleRegenerate(item)}
-                        className="text-violet-400/70 hover:text-violet-300 bg-violet-500/5 hover:bg-violet-500/12 border border-violet-500/15 text-xs rounded-lg"
+                        className="text-cyan-400/70 hover:text-cyan-300 bg-cyan-500/5 hover:bg-cyan-500/12 border border-cyan-500/15 text-xs rounded-lg"
                       >
                         <RefreshCw className="w-3 h-3 mr-1.5" /> Regenerate
                       </Button>

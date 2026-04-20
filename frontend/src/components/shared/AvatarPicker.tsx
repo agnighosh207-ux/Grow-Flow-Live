@@ -121,7 +121,7 @@ export function AvatarPicker({ open, onClose }: AvatarPickerProps) {
             {/* Header */}
             <div className="px-6 py-5 border-b border-white/10 flex justify-between items-center bg-white/[0.02]">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-violet-400" />
+                <ImageIcon className="w-5 h-5 text-cyan-400" />
                 Change Avatar
               </h2>
               <button 
@@ -137,11 +137,11 @@ export function AvatarPicker({ open, onClose }: AvatarPickerProps) {
               {/* Current Avatar Header */}
               <div className="flex flex-col items-center justify-center mb-8 relative">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-violet-500 rounded-full blur-xl opacity-40 animate-pulse" />
+                  <div className="absolute inset-0 bg-cyan-500 rounded-full blur-xl opacity-40 animate-pulse" />
                   <img
                     src={user.imageUrl}
                     alt="Current Avatar"
-                    className="w-24 h-24 rounded-full border-4 border-violet-500/50 object-cover shadow-lg relative z-10 bg-[#0f0428]"
+                    className="w-24 h-24 rounded-full border-4 border-cyan-500/50 object-cover shadow-lg relative z-10 bg-[#0f0428]"
                   />
                   {isUpdating && (
                     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-full rounded-full border-4 border-transparent">
@@ -165,7 +165,7 @@ export function AvatarPicker({ open, onClose }: AvatarPickerProps) {
                 disabled={isUpdating}
                 className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 flex items-center justify-center gap-2 py-6 rounded-xl font-medium mb-6 transition-all"
               >
-                <Upload className="w-5 h-5 text-violet-400" />
+                <Upload className="w-5 h-5 text-cyan-400" />
                 Upload Custom Photo
               </Button>
 
@@ -182,7 +182,7 @@ export function AvatarPicker({ open, onClose }: AvatarPickerProps) {
                     key={url}
                     disabled={isUpdating}
                     onClick={() => handleSelectPrebuilt(url)}
-                    className="relative group rounded-xl overflow-hidden aspect-square border-2 border-transparent hover:border-violet-500/50 transition-all focus:outline-none"
+                    className="relative group rounded-xl overflow-hidden aspect-square border-2 border-transparent hover:border-cyan-500/50 transition-all focus:outline-none"
                   >
                     <img src={url} alt={`AI Avatar ${i+1}`} className="w-full h-full object-cover bg-white/5" />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

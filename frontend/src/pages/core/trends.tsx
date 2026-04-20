@@ -27,7 +27,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   YouTube: "text-red-400 bg-red-500/10 border-red-500/20",
   Twitter: "text-sky-400 bg-sky-500/10 border-sky-500/20",
   LinkedIn: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  All: "text-violet-400 bg-violet-500/10 border-violet-500/20",
+  All: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
 };
 
 function TrendScoreBar({ score }: { score: number }) {
@@ -96,12 +96,12 @@ function TrendCard({ idea, index, onUseIdea }: { idea: any; index: number; onUse
         <div className="rounded-xl px-3 py-2.5 mb-3"
           style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.14)" }}>
           <div className="flex items-start justify-between gap-2">
-            <p className="text-xs text-violet-200/80 leading-relaxed italic flex-1">
+            <p className="text-xs text-cyan-200/80 leading-relaxed italic flex-1">
               "{idea.hook}"
             </p>
             <button
               onClick={copyHook}
-              className="shrink-0 p-1 rounded-md text-white/25 hover:text-violet-300 transition-colors"
+              className="shrink-0 p-1 rounded-md text-white/25 hover:text-cyan-300 transition-colors"
             >
               {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </button>
@@ -149,7 +149,7 @@ function TrendCard({ idea, index, onUseIdea }: { idea: any; index: number; onUse
         <Button
           size="sm"
           onClick={() => onUseIdea(idea.title)}
-          className="h-7 text-xs px-3 bg-violet-600/70 hover:bg-violet-600 text-white rounded-lg"
+          className="h-7 text-xs px-3 bg-cyan-600/70 hover:bg-cyan-600 text-white rounded-lg"
         >
           <Zap className="w-3 h-3 mr-1" /> Generate Content
         </Button>
@@ -294,7 +294,7 @@ export default function TrendEngine() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="mt-6 rounded-xl border border-violet-500/15 p-4 flex items-center justify-between gap-4"
+              className="mt-6 rounded-xl border border-cyan-500/15 p-4 flex items-center justify-between gap-4"
               style={{ background: "rgba(124,58,237,0.06)" }}
             >
               <div>
@@ -304,7 +304,7 @@ export default function TrendEngine() {
               <Button
                 onClick={() => navigate("/generate")}
                 size="sm"
-                className="shrink-0 bg-violet-600/70 hover:bg-violet-600 text-white rounded-xl text-xs h-8 px-4"
+                className="shrink-0 bg-cyan-600/70 hover:bg-cyan-600 text-white rounded-xl text-xs h-8 px-4"
               >
                 Go to Generator <ArrowRight className="w-3 h-3 ml-1.5" />
               </Button>

@@ -5,6 +5,7 @@ import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles, Crown, Zap, Shield, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCreateSubscription, useVerifySubscription } from "@/hooks/useSubscription";
 
 interface PricingPlan {
   id: string;
@@ -101,6 +102,8 @@ export function PricingTable() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const { user } = useUser();
   const { Razorpay } = useRazorpay();
+  const createSub = useCreateSubscription();
+  const verifySub = useVerifySubscription();
 
   const handleCheckout = useCallback(async (planId: string, planTier: string) => {
     if (!user) {
@@ -112,32 +115,35 @@ export function PricingTable() {
 
     try {
       setIsProcessing(planId);
+      const effectivePlan = planId as "starter" | "creator" | "infinity";
       
-      // Assume a custom endpoint exists in the project to hit createSubscription
-      const response = await fetch("/api/payment/create-subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planTier }),
-      });
-      
-      const { subscription_id } = await response.json();
+      const data = await createSub.mutateAsync({ planType: effectivePlan });
+      const { subscriptionId, keyId } = data;
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder",
-        subscription_id,
+        key: keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder",
+        subscription_id: subscriptionId,
         name: "Grow Flow AI",
         description: `${planTier.toUpperCase()} Plan Subscription`,
         image: "https://your-logo-url.com/logo.png",
-        handler: function (res: any) {
-          confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-          
-          alert(`Welcome to ${planTier.toUpperCase()}!\nPayment ID: ${res.razorpay_payment_id}`);
-          
-          setTimeout(() => {
-             // Force a hard refresh to pull the new Drizzle values immediately so 
-             // Phase 4 "Checkout-to-Dashboard" flow feels native.
-             window.location.href = "/dashboard";
-          }, 2000);
+        handler: async function (res: any) {
+          try {
+            await verifySub.mutateAsync({
+              razorpay_payment_id: res.razorpay_payment_id,
+              razorpay_subscription_id: res.razorpay_subscription_id,
+              razorpay_signature: res.razorpay_signature,
+              planType: effectivePlan
+            });
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            
+            alert(`Welcome to ${planTier.toUpperCase()}!\nPayment ID: ${res.razorpay_payment_id}`);
+            
+            setTimeout(() => {
+               window.location.href = "/dashboard";
+            }, 2000);
+          } catch(err) {
+            alert("Payment verification failed. Please contact support.");
+          }
         },
         prefill: {
           name: user.fullName || "User",
@@ -152,11 +158,11 @@ export function PricingTable() {
       });
       rzp.open();
     } catch (err: any) {
-      alert("Failed to initialize checkout.");
+      alert(err.message || "Failed to initialize checkout.");
     } finally {
       setIsProcessing(null);
     }
-  }, [Razorpay, user]);
+  }, [Razorpay, user, createSub, verifySub]);
 
   return (
     <div className="w-full max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
@@ -166,13 +172,13 @@ export function PricingTable() {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4"
         >
-          Supercharge Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">Content Journey</span>
+          Supercharge Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-400">Content Journey</span>
         </motion.h2>
         <motion.p 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-lg text-violet-200/60"
+          className="text-lg text-cyan-200/60"
         >
           Choose the perfect plan to hack algorithms, save hours of time, and build an audience on autopilot.
         </motion.p>
@@ -184,40 +190,24 @@ export function PricingTable() {
             key={plan.id}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1, duration: 0.4 }}
+            transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1, delay: i * 0.1 }}
             onMouseEnter={() => setHoveredPlan(plan.id)}
             onMouseLeave={() => setHoveredPlan("creator")}
-            className={`relative rounded-3xl transition-all duration-300 ${
+            className={`relative rounded-3xl transition-all duration-300 bg-[rgba(16,28,32,0.2)] backdrop-blur-xl ${
               plan.isRecommended 
-                ? "bg-gradient-to-b from-amber-500/80 to-orange-500/80 p-[2px] z-20 md:scale-105 lg:scale-110 shadow-2xl shadow-amber-900/30" 
+                ? "z-20 md:scale-105 lg:scale-110 shadow-[0_0_30px_rgba(0,242,255,0.1)] border border-[#00F2FF] animate-[pulse_3s_ease-in-out_infinite]" 
                 : plan.isInfinity
-                ? "bg-gradient-to-b from-zinc-800 to-black p-px z-10 border border-white/10"
-                : "bg-white/5 border border-white/10 hover:border-violet-500/30"
+                ? "z-10 border border-[#00F2FF]/20"
+                : "border border-[#00F2FF]/10 hover:border-[#00F2FF]/30"
             }`}
           >
-            {/* Pulsating glow strictly for Recommended plan */}
-            {plan.isRecommended && (
-              <motion.div
-                animate={{ boxShadow: ["0 0 0px 0px rgba(245, 158, 11, 0)", "0 0 30px 5px rgba(245, 158, 11, 0.4)", "0 0 0px 0px rgba(245, 158, 11, 0)"] }}
-                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-                className="absolute inset-0 rounded-3xl pointer-events-none"
-              />
-            )}
-
             {/* Badges */}
-            {plan.isRecommended && (
-              <div className="absolute -top-5 inset-x-0 flex justify-center z-30">
-                <span className="flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-500 text-black text-xs font-extrabold px-5 py-1.5 rounded-full shadow-lg">
-                  <plan.icon className="w-3.5 h-3.5" />
-                  {plan.label}
-                </span>
-              </div>
-            )}
+            {/* Removed Popular Badge per Wave 3 Instructions */}
             
             {plan.isInfinity && (
               <div className="absolute -top-3 inset-x-0 flex justify-center z-30 opacity-100">
-                <span className="bg-gradient-to-r from-slate-900 to-black text-violet-200 text-xs font-bold px-4 py-1 rounded-full border border-violet-500/30 shadow-[0_0_15px_rgba(124,58,237,0.3)]">
-                  <Crown className="w-3 h-3 inline-block mr-1.5 text-violet-400 -mt-0.5" />
+                <span className="bg-gradient-to-r from-slate-900 to-black text-cyan-200 text-xs font-bold px-4 py-1 rounded-full border border-cyan-500/30 shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+                  <Crown className="w-3 h-3 inline-block mr-1.5 text-cyan-400 -mt-0.5" />
                   {plan.label}
                 </span>
               </div>
@@ -225,43 +215,37 @@ export function PricingTable() {
 
             {!plan.isRecommended && !plan.isInfinity && (
               <div className="absolute -top-3 inset-x-0 flex justify-center z-20 transition-opacity duration-300" style={{ opacity: hoveredPlan === plan.id ? 1 : 0 }}>
-                <span className="bg-white/10 text-violet-200 text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-md border border-white/20">
+                <span className="bg-white/10 text-cyan-200 text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-md border border-white/20">
                   {plan.label}
                 </span>
               </div>
             )}
 
             {/* Inner Card Container */}
-            <div className={`h-full flex flex-col pt-8 pb-6 px-6 md:px-8 ${
-              plan.isRecommended 
-                ? "bg-[#0a041c] rounded-[calc(1.5rem-2px)]" 
-                : plan.isInfinity
-                ? "bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#130d26] via-[#05030a] to-[#000000] rounded-[calc(1.5rem-1px)] relative overflow-hidden"
-                : "rounded-3xl"
-            }`}>
+            <div className={`h-full flex flex-col pt-8 pb-6 px-6 md:px-8 rounded-3xl`}>
 
               {/* Infinity Exclusive Styling Overlay */}
               {plan.isInfinity && (
-                <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-violet-500/10 to-transparent pointer-events-none" />
+                <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
               )}
 
               <div className="mb-6 z-10">
-                <h3 className={`text-xl font-bold mb-2 ${plan.isInfinity ? "text-violet-100" : "text-white"}`}>{plan.name}</h3>
+                <h3 className={`text-xl font-bold mb-2 ${plan.isInfinity ? "text-cyan-100" : "text-white"}`}>{plan.name}</h3>
                 
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className={`text-4xl font-extrabold ${plan.isRecommended ? "text-amber-400" : plan.isInfinity ? "text-transparent bg-clip-text bg-gradient-to-r from-silver-300 to-white" : "text-white"}`}>
+                  <span className="text-4xl font-extrabold text-[#F1F5F9]">
                     {plan.price}
                   </span>
                   {plan.price !== "₹0" && <span className="text-sm font-medium text-white/40">{plan.period}</span>}
                 </div>
 
-                <p className={`text-sm ${plan.isInfinity ? "text-violet-200/80 font-medium" : "text-white/50"}`}>
+                <p className={`text-sm ${plan.isInfinity ? "text-cyan-200/80 font-medium" : "text-white/50"}`}>
                   {plan.description}
                 </p>
 
                 {/* Exclusive Value Prop text box for Infinity Plan */}
                 {plan.isInfinity && plan.valueProp && (
-                  <div className="mt-4 p-3 rounded-lg bg-white/[0.03] border border-violet-500/20 text-xs text-violet-300/90 italic font-medium leading-relaxed">
+                  <div className="mt-4 p-3 rounded-lg bg-white/[0.03] border border-cyan-500/20 text-xs text-cyan-300/90 italic font-medium leading-relaxed">
                     "{plan.valueProp}"
                   </div>
                 )}
@@ -272,11 +256,11 @@ export function PricingTable() {
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-3">
                       <div className={`p-0.5 rounded-full mt-1 shrink-0 ${
-                        plan.isRecommended ? "bg-amber-500/20 text-amber-400" : plan.isInfinity ? "bg-violet-500/20 text-violet-400" : "bg-white/5 text-white/40"
+                        plan.isRecommended ? "bg-amber-500/20 text-amber-400" : plan.isInfinity ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-white/40"
                       }`}>
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
-                      <span className={`text-sm ${plan.isInfinity ? "text-violet-100/70" : "text-white/70"}`}>{feature}</span>
+                      <span className={`text-sm ${plan.isInfinity ? "text-cyan-100/70" : "text-white/70"}`}>{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -285,13 +269,7 @@ export function PricingTable() {
               <Button 
                 onClick={() => handleCheckout(plan.id, plan.name)}
                 disabled={isProcessing === plan.id}
-                className={`w-full h-12 font-bold rounded-xl transition-all duration-300 group z-10 ${
-                  plan.isRecommended
-                    ? "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.5)] border-none"
-                    : plan.isInfinity
-                    ? "bg-gradient-to-r from-slate-800 to-black hover:from-slate-700 hover:to-zinc-900 text-silver-300 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.8)]"
-                    : "bg-white/5 hover:bg-white/10 text-white"
-                }`}
+                className="w-full h-12 font-bold transition-all duration-300 group z-10 bg-[#00F2FF] hover:bg-[#00D9E5] text-[#0B1215] rounded-[4px] border-none shadow-[0_0_15px_rgba(0,242,255,0.2)] hover:shadow-[0_0_25px_rgba(0,242,255,0.4)]"
               >
                 {isProcessing === plan.id ? "Processing..." : plan.buttonText}
                 <ChevronRight className="w-4 h-4 ml-1 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />

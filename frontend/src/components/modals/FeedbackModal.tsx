@@ -199,7 +199,7 @@ export function FeedbackModal({ open, onClose, trigger = "manual" }: FeedbackMod
                     placeholder="Any thoughts? (optional)"
                     rows={2}
                     maxLength={500}
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder:text-white/25 resize-none focus:outline-none focus:border-violet-500/40 transition-colors"
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder:text-white/25 resize-none focus:outline-none focus:border-cyan-500/40 transition-colors"
                   />
 
                   {submitError && (
@@ -211,7 +211,7 @@ export function FeedbackModal({ open, onClose, trigger = "manual" }: FeedbackMod
                   <Button
                     onClick={handleRate}
                     disabled={selected === 0 || submitting}
-                    className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl disabled:opacity-40 transition-all"
+                    className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold rounded-xl disabled:opacity-40 transition-all"
                   >
                     {submitting ? "Submitting..." : "Submit Feedback"}
                   </Button>

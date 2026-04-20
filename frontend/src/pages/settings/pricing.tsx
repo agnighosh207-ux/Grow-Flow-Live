@@ -83,7 +83,7 @@ const FEATURES: Feature[] = [
 ];
 
 const INFINITY_EXCLUSIVES = [
-  { icon: Wand2, color: "text-violet-400", label: "AI Writing Styles", desc: "Switch between Bold, Viral, Storytelling, and Professional tones — AI matches your unique voice." },
+  { icon: Wand2, color: "text-cyan-400", label: "AI Writing Styles", desc: "Switch between Bold, Viral, Storytelling, and Professional tones — AI matches your unique voice." },
   { icon: Flame, color: "text-orange-400", label: "Viral Score™", desc: "Every piece gets rated 0–100 for virality potential before you even post it." },
   { icon: TrendingUp, color: "text-emerald-400", label: "Trending Topics Feed", desc: "Fresh content ideas pulled from what's trending daily — never run out of inspiration." },
   { icon: Sparkles, color: "text-pink-400", label: "Multi-Variation Output", desc: "Get 3 completely different versions of each post and pick the one that hits hardest." },
@@ -147,8 +147,8 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#050210] text-white overflow-x-hidden">
       {/* Background orbs */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-violet-700/20 blur-[140px]" />
-        <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[400px] rounded-full bg-purple-800/15 blur-[140px]" />
+        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-cyan-700/20 blur-[140px]" />
+        <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[400px] rounded-full bg-teal-800/15 blur-[140px]" />
         <div className="absolute top-[40%] left-[50%] w-[400px] h-[400px] rounded-full bg-pink-800/10 blur-[140px]" />
       </div>
 
@@ -167,20 +167,20 @@ export default function PricingPage() {
 
           <div className="text-center">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-full px-4 py-1.5 mb-5">
+              <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-4 py-1.5 mb-5">
                 <Zap className="w-3.5 h-3.5" />
                 Simple, Transparent Pricing
               </span>
               <h1 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">
                 Pick your{" "}
-                <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-pink-400 bg-clip-text text-transparent">
                   growth plan
                 </span>
               </h1>
               <p className="text-white/60 text-lg max-w-xl mx-auto">
                 Start free with 5 monthly generations. Upgrade when you're ready to scale.
               </p>
-              <p className="text-white/80 font-medium text-sm mt-3 bg-violet-500/10 inline-block px-4 py-2 rounded-lg border border-violet-500/20">
+              <p className="text-white/80 font-medium text-sm mt-3 bg-cyan-500/10 inline-block px-4 py-2 rounded-lg border border-cyan-500/20">
                 Content in your audience’s language = higher engagement 🚀
               </p>
               <p className="text-white/35 text-sm mt-3">
@@ -204,7 +204,7 @@ export default function PricingPage() {
                 {billing === opt.key && (
                   <motion.div
                     layoutId="billingPill"
-                    className="absolute inset-0 bg-violet-600 rounded-lg"
+                    className="absolute inset-0 bg-cyan-600 rounded-lg"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                   />
                 )}
@@ -339,17 +339,17 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="relative rounded-2xl border border-violet-500/40 bg-gradient-to-b from-blue-950/20 to-violet-950/40 p-6 flex flex-col ring-1 ring-violet-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)]"
+            className="relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)]"
           >
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+              <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
                 <Flame className="w-3.5 h-3.5 text-yellow-300" />
                 MOST POPULAR
               </span>
             </div>
 
             <div className="mb-6 mt-2">
-              <p className="text-xs font-semibold tracking-widest uppercase text-violet-400 mb-2">Creator</p>
+              <p className="text-xs font-semibold tracking-widest uppercase text-cyan-400 mb-2">Creator</p>
               <div className="flex flex-col gap-1">
                 {billing === "monthly" && (
                     <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.creator}</span>
@@ -369,7 +369,7 @@ export default function PricingPage() {
                   <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.creator[billing]}</span>
                 </p>
               )}
-              <p className="text-[11px] text-violet-400/70 font-medium mt-0.5">Best for Indian creators 🇮🇳</p>
+              <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">Best for Indian creators 🇮🇳</p>
             </div>
 
             <div className="space-y-2.5 flex-1 mb-4">
@@ -386,7 +386,7 @@ export default function PricingPage() {
                 "Download as .txt",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-2.5">
-                  <Check className="w-4 h-4 text-violet-400 mt-0.5 shrink-0" />
+                  <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
                   <span className="text-white/75 text-sm">{f}</span>
                 </div>
               ))}
@@ -394,7 +394,7 @@ export default function PricingPage() {
               <div className="pt-3 border-t border-white/8 mt-1 space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-2">Unlock more with Infinity</p>
                 {[
-                  { icon: Wand2, label: "AI Writing Styles", color: "text-violet-400/60" },
+                  { icon: Wand2, label: "AI Writing Styles", color: "text-cyan-400/60" },
                   { icon: CalendarDays, label: "Content Calendar", color: "text-blue-400/60" }
                 ].map(({ icon: Icon, label, color }) => (
                   <div key={label} className="flex items-center gap-2 opacity-60">
@@ -405,7 +405,7 @@ export default function PricingPage() {
                 ))}
                 <button
                   onClick={() => handlePlanClick("infinity")}
-                  className="mt-1 text-[11px] text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1 font-medium"
+                  className="mt-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 font-medium"
                 >
                   Unlock with Infinity →
                 </button>
@@ -413,7 +413,7 @@ export default function PricingPage() {
             </div>
 
             <Button
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 border border-violet-500/30 text-white shadow-lg shadow-violet-500/25"
+              className="w-full bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
               onClick={() => handlePlanClick("creator")}
             >
               {currentPlan === "creator" && sub?.plan === "active" ? "Current Plan" : "Get Creator →"}
@@ -426,10 +426,10 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="relative rounded-2xl border border-purple-500/30 bg-gradient-to-b from-purple-950/40 to-pink-950/20 p-6 flex flex-col"
+            className="relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col"
           >
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+              <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
                 <Crown className="w-3.5 h-3.5" />
                 UNLIMITED POWER
               </span>
@@ -437,19 +437,19 @@ export default function PricingPage() {
 
             <div className="mb-6 mt-2">
               <div className="flex items-center gap-2 mb-2">
-                <p className="text-xs font-semibold tracking-widest uppercase text-purple-300">Infinity</p>
+                <p className="text-xs font-semibold tracking-widest uppercase text-teal-300">Infinity</p>
               </div>
               <div className="flex flex-col gap-1">
                 {billing === "monthly" && (
                     <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.infinity}</span>
                 )}
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">
+                  <span className="text-4xl font-black bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">
                     ₹{infinityPrice}
                   </span>
                   <span className="text-white/40 text-sm">/ mo</span>
                   {billing === "monthly" && (
-                    <span className="text-xs text-purple-400 ml-2 font-semibold bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">(Launching Offer)</span>
+                    <span className="text-xs text-teal-400 ml-2 font-semibold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">(Launching Offer)</span>
                   )}
                 </div>
               </div>
@@ -461,11 +461,11 @@ export default function PricingPage() {
                 </p>
               )}
               <p className="text-white/60 text-sm mt-1">For agencies & super users</p>
-              <p className="text-[11px] text-purple-400/70 font-medium mt-0.5">Introductory pricing for early users</p>
+              <p className="text-[11px] text-teal-400/70 font-medium mt-0.5">Introductory pricing for early users</p>
             </div>
 
             <div className="space-y-2.5 flex-1 mb-6">
-              <p className="text-[11px] text-purple-400 font-semibold uppercase tracking-wider mb-1.5">
+              <p className="text-[11px] text-teal-400 font-semibold uppercase tracking-wider mb-1.5">
                 Everything in Creator, plus:
               </p>
               {[
@@ -479,7 +479,7 @@ export default function PricingPage() {
                 { label: "Priority Support", icon: Shield },
               ].map(({ label, icon: Icon, desc }) => (
                 <div key={label} className="flex items-start gap-2.5">
-                  <Icon className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
+                  <Icon className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
                   <div>
                     <span className="text-white/85 text-sm">{label}</span>
                     {desc && <p className="text-white/40 text-[10px] m-0">{desc}</p>}
@@ -504,11 +504,11 @@ export default function PricingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-16 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/30 to-purple-950/20 p-6 md:p-8"
+          className="mb-16 rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-teal-950/20 p-6 md:p-8"
         >
           <div className="flex items-center gap-2 mb-2">
-            <IndianRupee className="w-4 h-4 text-violet-400" />
-            <p className="text-xs font-bold uppercase tracking-widest text-violet-400">What ₹249 actually gets you</p>
+            <IndianRupee className="w-4 h-4 text-cyan-400" />
+            <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">What ₹249 actually gets you</p>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
             Creator pays for itself in one post.
@@ -540,7 +540,7 @@ export default function PricingPage() {
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold mb-2">
               Why creators choose{" "}
-              <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
                 Infinity
               </span>
             </h2>
@@ -589,19 +589,19 @@ export default function PricingPage() {
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400">Starter</p>
                 <p className="text-emerald-100 font-bold mt-0.5 text-xs">₹{starterPrice}<span className="text-white/40 text-[10px] font-normal">/mo</span></p>
               </div>
-              <div className="p-3 text-center bg-violet-950/30 relative">
+              <div className="p-3 text-center bg-cyan-950/30 relative">
                 <div className="flex justify-center mb-0.5">
-                  <span className="text-[8px] bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full px-1.5 py-0.5 font-semibold">
+                  <span className="text-[8px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full px-1.5 py-0.5 font-semibold">
                     POPULAR
                   </span>
                 </div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-violet-400 text-shadow-sm">Creator</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-cyan-400 text-shadow-sm">Creator</p>
                 <p className="text-white font-bold mt-0.5 text-xs">
                   ₹{creatorPrice}<span className="text-white/40 text-[10px] font-normal">/mo</span>
                 </p>
               </div>
               <div className="p-3 text-center">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-purple-300">Infinity</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-teal-300">Infinity</p>
                 <p className="text-white font-bold mt-0.5 text-xs">
                   ₹{infinityPrice}<span className="text-white/40 text-[10px] font-normal">/mo</span>
                 </p>
@@ -610,8 +610,8 @@ export default function PricingPage() {
 
             {(["core", "tools", "infinity"] as const).map((section) => (
               <div key={section} className="min-w-[560px]">
-                <div className={`px-4 py-2 border-b border-white/5 ${section === "infinity" ? "bg-violet-950/20" : "bg-white/[0.01]"}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wider ${section === "infinity" ? "text-violet-400" : "text-white/30"}`}>
+                <div className={`px-4 py-2 border-b border-white/5 ${section === "infinity" ? "bg-cyan-950/20" : "bg-white/[0.01]"}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wider ${section === "infinity" ? "text-cyan-400" : "text-white/30"}`}>
                     {section === "core" ? "Core" : section === "tools" ? "Tools" : "Infinity Exclusives ✦"}
                   </p>
                 </div>
@@ -627,10 +627,10 @@ export default function PricingPage() {
                     <div className="p-3 flex items-center justify-center bg-emerald-950/10">
                       <CellContent value={feature.starter} />
                     </div>
-                    <div className={`p-3 flex items-center justify-center bg-violet-950/10`}>
+                    <div className={`p-3 flex items-center justify-center bg-cyan-950/10`}>
                       <CellContent value={feature.creator} />
                     </div>
-                    <div className={`p-3 flex items-center justify-center ${section === "infinity" ? "bg-violet-950/5" : ""}`}>
+                    <div className={`p-3 flex items-center justify-center ${section === "infinity" ? "bg-cyan-950/5" : ""}`}>
                       <CellContent value={feature.infinity} infinityLabel={feature.infinityLabel} />
                     </div>
                   </div>
@@ -663,7 +663,7 @@ export default function PricingPage() {
               <div>
                 <Button
                   size="sm"
-                  className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 border border-violet-500/30 text-white text-xs shadow-lg shadow-violet-500/25"
+                  className="w-full bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border border-cyan-500/30 text-white text-xs shadow-lg shadow-cyan-500/25"
                   onClick={() => handlePlanClick("creator")}
                 >
                   Get Creator
@@ -691,7 +691,7 @@ export default function PricingPage() {
             className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
           >
             <h3 className="font-bold mb-4 flex items-center gap-2 text-lg">
-              <Shield className="w-4 h-4 text-violet-400" />
+              <Shield className="w-4 h-4 text-cyan-400" />
               You're always protected
             </h3>
             <div className="space-y-3.5">
@@ -701,8 +701,8 @@ export default function PricingPage() {
                 { icon: Star, label: "4.1/5 rating", desc: "2,400+ creators love GrowFlow AI" },
               ].map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon className="w-3.5 h-3.5 text-violet-400" />
+                  <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="w-3.5 h-3.5 text-cyan-400" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white">{label}</p>

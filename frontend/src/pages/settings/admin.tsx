@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "referrals" | "announcements">("overview");
 
-  const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'];
+  const COLORS = ['#00F2FF', '#00D9E5', '#00BEC9', '#00A3AD', '#00848D'];
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
   if (!isLoaded || isLoading || user?.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) {
     return (
       <div className="min-h-screen bg-[#0b0416] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
             </button>
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-3">
-                <Shield className="text-violet-400 w-8 h-8" />
+                <Shield className="text-cyan-400 w-8 h-8" />
                 Admin Dashboard
               </h1>
                 <p className="text-white/60 text-sm mt-1">Grow Flow AI Secure Control Center</p>
@@ -171,19 +171,19 @@ export default function AdminDashboard() {
           <div className="flex gap-4 border-b border-white/10 mb-8">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`pb-3 px-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === "overview" ? "border-violet-500 text-violet-400" : "border-transparent text-white/50 hover:text-white"}`}
+            className={`pb-3 px-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === "overview" ? "border-cyan-500 text-cyan-400" : "border-transparent text-white/50 hover:text-white"}`}
           >
             Overview & Analytics
           </button>
           <button
             onClick={() => setActiveTab("referrals")}
-            className={`pb-3 px-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === "referrals" ? "border-violet-500 text-violet-400" : "border-transparent text-white/50 hover:text-white"}`}
+            className={`pb-3 px-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === "referrals" ? "border-cyan-500 text-cyan-400" : "border-transparent text-white/50 hover:text-white"}`}
           >
             Referrals Leaderboard
           </button>
           <button
             onClick={() => setActiveTab("announcements")}
-            className={`pb-3 px-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === "announcements" ? "border-violet-500 text-violet-400" : "border-transparent text-white/50 hover:text-white"}`}
+            className={`pb-3 px-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === "announcements" ? "border-cyan-500 text-cyan-400" : "border-transparent text-white/50 hover:text-white"}`}
           >
             Announcements
           </button>
@@ -192,17 +192,17 @@ export default function AdminDashboard() {
         {activeTab === "overview" && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 p-6 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.1)]">
             <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-violet-500/20 rounded-xl">
-                <Users className="text-violet-400 w-6 h-6" />
+              <div className="p-3 bg-cyan-500/20 rounded-xl">
+                <Users className="text-cyan-400 w-6 h-6" />
               </div>
               <h3 className="text-white/80 font-medium text-lg">Total Users</h3>
             </div>
             <p className="text-4xl font-bold">{stats?.totalUsers.toLocaleString()}</p>
           </div>
 
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 p-6 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.1)]">
             <div className="flex items-center gap-4 mb-4">
               <div className="p-3 bg-emerald-500/20 rounded-xl">
                 <Mail className="text-emerald-400 w-6 h-6" />
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
             <p className="text-4xl font-bold">{stats?.totalEmails.toLocaleString()}</p>
           </div>
 
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 p-6 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.1)]">
             <div className="flex items-center gap-4 mb-4">
               <div className="p-3 bg-cyan-500/20 rounded-xl">
                 <Zap className="text-cyan-400 w-6 h-6" />
@@ -224,47 +224,48 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 p-6 rounded-2xl">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl">
             <h3 className="text-lg font-bold mb-4">DAU (30 Days)</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats?.dauData || []}>
                   <defs>
                     <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#00F2FF" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#00F2FF" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="date" stroke="#ffffff40" fontSize={12} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})} />
-                  <YAxis stroke="#ffffff40" fontSize={12} />
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#0b0416', border: '1px solid #8b5cf640' }} />
-                  <Area type="monotone" dataKey="activeusers" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorUsers)" />
+                  <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={12} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})} />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#0B1215', border: '1px solid rgba(0, 242, 255, 0.2)' }} />
+                  <Area type="monotone" dataKey="activeusers" stroke="#00F2FF" fillOpacity={1} fill="url(#colorUsers)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 p-6 rounded-2xl">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl">
             <h3 className="text-lg font-bold mb-4">Generations (30 Days)</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats?.generationsData || []}>
                   <defs>
                     <linearGradient id="colorGens" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#00F2FF" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#00F2FF" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="date" stroke="#ffffff40" fontSize={12} tickFormatter={(val) => val ? new Date(val).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) : ''} />
-                  <YAxis stroke="#ffffff40" fontSize={12} />
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#0b0416', border: '1px solid #06b6d440' }} />
-                  <Area type="monotone" dataKey="generations" stroke="#06b6d4" fillOpacity={1} fill="url(#colorGens)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--text-muted)" strokeOpacity={0.1} />
+                  <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={12} tickFormatter={(val) => val ? new Date(val).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) : ''} />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#0B1215', border: '1px solid rgba(0, 242, 255, 0.2)' }} />
+                  <Area type="monotone" dataKey="generations" stroke="#00F2FF" fillOpacity={1} fill="url(#colorGens)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 p-6 rounded-2xl mt-6 lg:mt-0 lg:col-span-2 xl:col-span-1">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl mt-6 lg:mt-0 lg:col-span-2 xl:col-span-1">
             <h3 className="text-lg font-bold mb-4">Language Usage</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -274,7 +275,7 @@ export default function AdminDashboard() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#0b0416', border: '1px solid #8b5cf640' }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#0B1215', border: '1px solid rgba(0, 242, 255, 0.2)' }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex justify-center gap-4 mt-2">
@@ -288,26 +289,26 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 p-6 rounded-2xl lg:col-span-2">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl lg:col-span-2">
             <h3 className="text-lg font-bold mb-4">Revenue by Plan</h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats?.revenueData || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                  <XAxis dataKey="name" stroke="#ffffff40" fontSize={12} className="capitalize" />
-                  <YAxis stroke="#ffffff40" fontSize={12} tickFormatter={(val) => `₹${val}`} />
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#0b0416', border: '1px solid #8b5cf640' }} cursor={{fill: '#ffffff05'}} formatter={(val) => `₹${val}`} />
-                  <Bar dataKey="amount" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--text-muted)" strokeOpacity={0.2} vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} className="capitalize" />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={(val) => `₹${val}`} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#0B1215', border: '1px solid rgba(0, 242, 255, 0.2)' }} cursor={{fill: 'rgba(0, 242, 255, 0.05)'}} formatter={(val) => `₹${val}`} />
+                  <Bar dataKey="amount" fill="#00F2FF" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
 
-        <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+        <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.1)]">
           <div className="p-6 border-b border-white/10 flex items-center justify-between">
             <h3 className="text-xl font-bold flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-violet-400" />
+              <Calendar className="w-5 h-5 text-cyan-400" />
               Recent Signups
             </h3>
           </div>
@@ -321,7 +322,7 @@ export default function AdminDashboard() {
                 className="p-4 px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-white/[0.02] transition-colors"
               >
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center font-bold text-sm">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center font-bold text-sm">
                     {user.email ? user.email[0].toUpperCase() : "?"}
                   </div>
                   <div>
@@ -330,7 +331,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
                   <div className="text-left sm:text-right">
-                    <p className="text-sm font-bold capitalize text-violet-300">
+                    <p className="text-sm font-bold capitalize text-cyan-300">
                       {user.planType}
                     </p>
                     <p className="text-xs text-white/40">
@@ -341,7 +342,7 @@ export default function AdminDashboard() {
                   <div className="relative">
                     <button 
                       onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)}
-                      className="px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
                     >
                       Manage Access <ChevronDown className="w-3 h-3" />
                     </button>
@@ -352,7 +353,7 @@ export default function AdminDashboard() {
                           animate={{ opacity: 1, scale: 1, y: 0 }} 
                           exit={{ opacity: 0, scale: 0.95, y: -10 }} 
                           transition={{ duration: 0.15 }}
-                          className="absolute right-0 top-full mt-1 w-32 bg-[#1a0f30] border border-violet-500/30 rounded-xl shadow-2xl overflow-hidden z-50"
+                          className="absolute right-0 top-full mt-1 w-32 bg-[#1a0f30] border border-cyan-500/30 rounded-xl shadow-2xl overflow-hidden z-50"
                         >
                            {["free", "starter", "creator", "infinity"].map((plan) => (
                             <motion.button
@@ -391,7 +392,7 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "referrals" && (
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.1)]">
             <div className="p-6 border-b border-white/10 flex items-center justify-between">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Users className="w-5 h-5 text-emerald-400" />
@@ -439,7 +440,7 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "announcements" && (
-          <div className="bg-[#100726]/80 backdrop-blur-xl border border-violet-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.1)]">
             <div className="p-6 border-b border-white/10 flex items-center justify-between">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Presentation className="w-5 h-5 text-amber-400" />
@@ -474,7 +475,7 @@ export default function AdminDashboard() {
                   <input 
                     name="message"
                     required
-                    className="w-full bg-[#1a0f30] border border-violet-500/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                    className="w-full bg-[#1a0f30] border border-cyan-500/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500"
                     placeholder="We just launched a new feature! Try it out now."
                   />
                 </div>
@@ -483,7 +484,7 @@ export default function AdminDashboard() {
                     <label className="block text-sm font-medium text-white/80 mb-2">Theme</label>
                     <select 
                       name="theme" 
-                      className="w-full bg-[#1a0f30] border border-violet-500/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                      className="w-full bg-[#1a0f30] border border-cyan-500/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500"
                     >
                       <option value="info">Info (Blue)</option>
                       <option value="success">Success (Emerald)</option>
@@ -493,12 +494,12 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex items-center gap-3 pt-6">
                     <label className="text-sm font-medium text-white/80">Active:</label>
-                    <input type="checkbox" name="isActive" className="w-5 h-5 accent-violet-500" />
+                    <input type="checkbox" name="isActive" className="w-5 h-5 accent-cyan-500" />
                   </div>
                 </div>
                 <button 
                   type="submit"
-                  className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition-colors mt-2"
+                  className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl transition-colors mt-2"
                 >
                   Save Announcement
                 </button>

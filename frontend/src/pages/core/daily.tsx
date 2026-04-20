@@ -48,7 +48,7 @@ function StreakBadge({ streak }: { streak: number }) {
 
   const streakColor = streak >= 30 ? "from-amber-500 to-orange-500" :
     streak >= 14 ? "from-orange-500 to-red-500" :
-    streak >= 7 ? "from-violet-500 to-purple-500" :
+    streak >= 7 ? "from-cyan-500 to-teal-500" :
     "from-emerald-500 to-teal-500";
 
   return (
@@ -148,7 +148,7 @@ export default function DailyActionMode() {
     return (
       <div className="flex w-full min-h-[50vh] items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mx-auto" />
+          <div className="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto" />
           <p className="text-white/40 text-sm">Loading today's plan...</p>
         </div>
       </div>
@@ -224,8 +224,8 @@ export default function DailyActionMode() {
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-start gap-3 py-2.5 border-b border-white/6">
-                <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                  <Lightbulb className="w-3.5 h-3.5 text-violet-400" />
+                <div className="w-7 h-7 rounded-lg bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <Lightbulb className="w-3.5 h-3.5 text-cyan-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1">Today's Idea</p>
@@ -299,9 +299,9 @@ export default function DailyActionMode() {
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="rounded-2xl bg-white/[0.03] border border-white/8 p-6 text-center space-y-3">
-            <Sparkles className="w-8 h-8 text-violet-400/50 mx-auto" />
+            <Sparkles className="w-8 h-8 text-cyan-400/50 mx-auto" />
             <p className="text-white/50 text-sm">Couldn't load today's plan.</p>
-            <button onClick={fetchToday} className="px-4 py-2 rounded-xl bg-violet-500/15 text-violet-300 text-xs font-medium hover:bg-violet-500/25 transition-all">
+            <button onClick={fetchToday} className="px-4 py-2 rounded-xl bg-cyan-500/15 text-cyan-300 text-xs font-medium hover:bg-cyan-500/25 transition-all">
               Try Again
             </button>
           </motion.div>

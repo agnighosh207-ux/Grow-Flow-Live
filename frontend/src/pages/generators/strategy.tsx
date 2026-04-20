@@ -30,13 +30,13 @@ const PLATFORM_COLORS: Record<string, string> = {
 };
 
 const CONTENT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-  Educational: { icon: <BookOpen className="w-3.5 h-3.5" />, color: "bg-violet-500/15 text-violet-300 border-violet-500/20", label: "Educational" },
+  Educational: { icon: <BookOpen className="w-3.5 h-3.5" />, color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20", label: "Educational" },
   Story: { icon: <Repeat2 className="w-3.5 h-3.5" />, color: "bg-amber-500/15 text-amber-300 border-amber-500/20", label: "Story" },
   Viral: { icon: <Flame className="w-3.5 h-3.5" />, color: "bg-orange-500/15 text-orange-300 border-orange-500/20", label: "Viral" },
 };
 
 const DAY_ACCENT: string[] = [
-  "from-violet-600/30",
+  "from-cyan-600/30",
   "from-blue-600/30",
   "from-orange-600/30",
   "from-green-600/30",
@@ -101,7 +101,7 @@ function StrategyPlannerInner() {
     <div className="space-y-8 pb-16 max-w-4xl mx-auto">
       <div>
         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">
-          <CalendarDays className="w-7 h-7 text-violet-400" />
+          <CalendarDays className="w-7 h-7 text-cyan-400" />
           Content Strategy
         </h1>
         <p className="text-white/50 text-sm">A full week of content — platform-specific, psychologically sequenced, ready to execute.</p>
@@ -119,12 +119,12 @@ function StrategyPlannerInner() {
           <div className="space-y-2">
             <label className="text-white/70 text-sm font-medium">Your Niche</label>
             <Select value={niche} onValueChange={(v) => setNiche(v as any)}>
-              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-violet-500/40 rounded-xl">
+              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-cyan-500/40 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#0f0a1e] border-white/10">
                 {NICHES.map(n => (
-                  <SelectItem key={n} value={n} className="text-white/80 focus:text-white focus:bg-violet-600/20">{n}</SelectItem>
+                  <SelectItem key={n} value={n} className="text-white/80 focus:text-white focus:bg-cyan-600/20">{n}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -136,7 +136,7 @@ function StrategyPlannerInner() {
               value={goal}
               onChange={e => setGoal(e.target.value)}
               placeholder="e.g. establish authority..."
-              className="bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-violet-500/40 rounded-xl h-10"
+              className="bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-cyan-500/40 rounded-xl h-10"
               onKeyDown={e => e.key === "Enter" && generateStrategy()}
             />
           </div>
@@ -144,12 +144,12 @@ function StrategyPlannerInner() {
           <div className="space-y-2">
             <label className="text-white/70 text-sm font-medium">Duration</label>
             <Select value={duration} onValueChange={(v) => setDuration(v as any)}>
-              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-violet-500/40 rounded-xl">
+              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-cyan-500/40 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#0f0a1e] border-white/10">
-                <SelectItem value="7" className="text-white/80 focus:text-white focus:bg-violet-600/20">7 Days Blueprint</SelectItem>
-                <SelectItem value="30" className="text-white/80 focus:text-white focus:bg-violet-600/20">30 Days Calendar (PRO)</SelectItem>
+                <SelectItem value="7" className="text-white/80 focus:text-white focus:bg-cyan-600/20">7 Days Blueprint</SelectItem>
+                <SelectItem value="30" className="text-white/80 focus:text-white focus:bg-cyan-600/20">30 Days Calendar (PRO)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -159,7 +159,7 @@ function StrategyPlannerInner() {
           <Button
             onClick={generateStrategy}
             disabled={loading}
-            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-violet-900/40 rounded-xl px-6"
+            className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 rounded-xl px-6"
           >
             {loading ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
@@ -216,7 +216,7 @@ function StrategyPlannerInner() {
                     initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: Math.min(i * 0.04, 0.4) }}
-                    className={`rounded-xl border transition-colors overflow-hidden ${isExpanded ? "border-violet-500/40 shadow-lg shadow-violet-500/10" : "border-white/8"}`}
+                    className={`rounded-xl border transition-colors overflow-hidden ${isExpanded ? "border-cyan-500/40 shadow-lg shadow-cyan-500/10" : "border-white/8"}`}
                     style={{ background: "rgba(255,255,255,0.02)" }}
                   >
                     <button
@@ -271,8 +271,8 @@ function StrategyPlannerInner() {
                               </div>
                             </div>
 
-                            <div className="rounded-lg bg-white/5 border border-white/10 p-4 space-y-1.5 border-l-2 border-l-violet-500">
-                              <span className="flex items-center gap-1.5 text-[10px] font-semibold text-violet-300 uppercase tracking-wider">
+                            <div className="rounded-lg bg-white/5 border border-white/10 p-4 space-y-1.5 border-l-2 border-l-cyan-500">
+                              <span className="flex items-center gap-1.5 text-[10px] font-semibold text-cyan-300 uppercase tracking-wider">
                                 <Flame className="w-3 h-3" />
                                 Suggested Hook
                               </span>
@@ -283,7 +283,7 @@ function StrategyPlannerInner() {
                               <Button
                                 size="sm"
                                 onClick={() => useDay(day)}
-                                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-violet-900/40 rounded-xl px-4 transition-transform hover:scale-[1.03] active:scale-[0.98]"
+                                className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 rounded-xl px-4 transition-transform hover:scale-[1.03] active:scale-[0.98]"
                               >
                                 <Wand2 className="w-4 h-4 mr-2" />
                                 Generate This Content
@@ -307,8 +307,8 @@ function StrategyPlannerInner() {
             animate={{ opacity: 1 }}
             className="text-center py-16 space-y-3"
           >
-            <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center mx-auto">
-              <CalendarDays className="w-7 h-7 text-violet-400/60" />
+            <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/15 flex items-center justify-center mx-auto">
+              <CalendarDays className="w-7 h-7 text-cyan-400/60" />
             </div>
             <p className="text-white/40 text-sm">Select your niche, define your goal, and build your week.</p>
           </motion.div>

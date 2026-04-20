@@ -75,7 +75,7 @@ function SectionCard({
         </div>
         <span className={`text-sm font-semibold ${locked ? "text-white/30" : "text-white/80"}`}>{title}</span>
         {badge && (
-          <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border font-semibold ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-violet-500/12 text-violet-300 border-violet-500/20"}`}>
+          <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border font-semibold ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-cyan-500/12 text-cyan-300 border-cyan-500/20"}`}>
             {badge}
           </span>
         )}
@@ -192,13 +192,13 @@ export default function ContentPack() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/25 to-purple-500/25 border border-violet-500/20 flex items-center justify-center">
-              <Package2 className="w-5 h-5 text-violet-300" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/25 to-teal-500/25 border border-cyan-500/20 flex items-center justify-center">
+              <Package2 className="w-5 h-5 text-cyan-300" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-white">Content Kit Pro</h1>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/20 font-semibold">BETA</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-semibold">BETA</span>
               </div>
               <p className="text-white/40 text-sm">One idea → Complete cross-platform ecosystem</p>
             </div>
@@ -221,7 +221,7 @@ export default function ContentPack() {
           </div>
           {!isPro && isCreator && (
             <p className="text-[10px] text-white/30 mt-2 text-center">
-              Creator plan: Instagram + Twitter · <button onClick={() => setLocation("/pricing")} className="text-violet-400 hover:underline">Unlock all 5 formats + Strategy with Infinity</button>
+              Creator plan: Instagram + Twitter · <button onClick={() => setLocation("/pricing")} className="text-cyan-400 hover:underline">Unlock all 5 formats + Strategy with Infinity</button>
             </p>
           )}
           {isFree && (
@@ -240,7 +240,7 @@ export default function ContentPack() {
               <button 
                 onClick={enhanceIdea} 
                 disabled={enhancing || !idea.trim()}
-                className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-violet-400 hover:text-violet-300 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-50 transition-colors"
                >
                 <Wand2 className="w-3 h-3" /> {enhancing ? "Enhancing..." : "Magic Enhance"}
               </button>
@@ -250,7 +250,7 @@ export default function ContentPack() {
               onChange={(e) => setIdea(e.target.value)}
               placeholder="e.g. 5 productivity habits I stole from Navy SEALs..."
               rows={3}
-              className="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-violet-500/50 resize-none"
+              className="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-cyan-500/50 resize-none"
               style={{ color: "#ffffff" }}
             />
           </div>
@@ -281,7 +281,7 @@ export default function ContentPack() {
           <button
             onClick={generate}
             disabled={loading || !idea.trim() || isFree}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Building your kit...</>
@@ -303,7 +303,7 @@ export default function ContentPack() {
                       onClick={() => setActiveTab(tab)}
                       className={`flex-1 flex items-center justify-center py-2 text-xs font-semibold capitalize rounded-lg transition-all ${
                         activeTab === tab 
-                          ? "bg-violet-600 text-white shadow-lg" 
+                          ? "bg-cyan-600 text-white shadow-lg" 
                           : "text-white/40 hover:text-white/80"
                       }`}
                     >
@@ -410,14 +410,14 @@ export default function ContentPack() {
                        <p className="text-3xl font-bold text-white">{result.strategy?.viralityScore ?? 85}<span className="text-lg text-emerald-500">/100</span></p>
                     </div>
                     <div className="bg-white/[0.03] border border-white/8 p-4 rounded-2xl flex flex-col justify-center">
-                       <Target className="w-4 h-4 text-violet-400 mb-1.5" />
+                       <Target className="w-4 h-4 text-cyan-400 mb-1.5" />
                        <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Target Audience</p>
                        <p className="text-sm text-white/90 leading-snug">{result.strategy?.targetAudience ?? "Broad audience"}</p>
                     </div>
                   </div>
 
-                  <SectionCard icon={MessageSquare} title="Core Message" color="bg-violet-500/20 text-violet-300" delay={0.05}>
-                     <p className="text-lg font-semibold text-white/95 italic border-l-2 border-violet-500 pl-4 py-1">"{result.strategy?.coreMessage}"</p>
+                  <SectionCard icon={MessageSquare} title="Core Message" color="bg-cyan-500/20 text-cyan-300" delay={0.05}>
+                     <p className="text-lg font-semibold text-white/95 italic border-l-2 border-cyan-500 pl-4 py-1">"{result.strategy?.coreMessage}"</p>
                   </SectionCard>
 
                   {result.linkedin?.bestTimeToPost && (
@@ -447,14 +447,14 @@ export default function ContentPack() {
 
               {!isPro && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                  className="rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/8 border border-violet-500/20 p-4 flex items-center gap-3">
-                  <Crown className="w-5 h-5 text-violet-400 shrink-0" />
+                  className="rounded-xl bg-gradient-to-r from-cyan-500/10 to-teal-500/8 border border-cyan-500/20 p-4 flex items-center gap-3">
+                  <Crown className="w-5 h-5 text-cyan-400 shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-white/80">Get Full Strategy, Carousel Previews & Reels</p>
                     <p className="text-xs text-white/40 mt-0.5">Unlock all tools with Infinity plan</p>
                   </div>
                   <button onClick={() => setLocation("/pricing")}
-                    className="shrink-0 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-all">
+                    className="shrink-0 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all">
                     Upgrade
                   </button>
                 </motion.div>

@@ -137,7 +137,7 @@ export class WelcomeSequence {
         </div>
         
         <div style="text-align: center; margin-top: 30px;">
-          <a href="http://localhost:5173/generate" class="btn">Try It Out Now</a>
+          <a href="https://growflow.ai/generate" class="btn">Try It Out Now</a>
         </div>
       `;
       

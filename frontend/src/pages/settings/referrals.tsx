@@ -24,7 +24,7 @@ export default function ReferralsPage() {
     return (
       <Layout>
         <div className="flex h-64 items-center justify-center">
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
         </div>
       </Layout>
     );
@@ -43,7 +43,7 @@ export default function ReferralsPage() {
         {/* Header Block */}
         <div className="flex flex-col items-start text-left">
           <h1 className="text-3xl font-bold flex items-center gap-3 mb-2 text-white">
-            <GiftIcon className="text-purple-400 w-8 h-8" />
+            <GiftIcon className="text-teal-400 w-8 h-8" />
             Refer & Earn
           </h1>
           <p className="text-white/60">Invite your network and unlock 15 days of free unlimited access to the Infinity Plan.</p>
@@ -67,7 +67,7 @@ export default function ReferralsPage() {
                 className={`absolute right-1 top-1 bottom-1 px-4 font-bold text-xs rounded-lg transition-all duration-300 ${
                   copied 
                     ? "bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.5)]" 
-                    : "bg-purple-600 hover:bg-purple-500 text-white"
+                    : "bg-teal-600 hover:bg-teal-500 text-white"
                 }`}
               >
                 {copied ? "Copied!" : "Copy"}
@@ -85,7 +85,7 @@ export default function ReferralsPage() {
           >
             <div className={`flex flex-col sm:flex-row gap-6 h-full items-center justify-center w-full z-10 transition-opacity duration-300 ${referralCount === 0 ? 'opacity-40 grayscale' : ''}`}>
               <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <h3 className="text-purple-400 font-semibold mb-3 uppercase tracking-[0.1em] text-[11px] h-4 flex items-center justify-center whitespace-nowrap">Total Referrals</h3>
+                <h3 className="text-teal-400 font-semibold mb-3 uppercase tracking-[0.1em] text-[11px] h-4 flex items-center justify-center whitespace-nowrap">Total Referrals</h3>
                 <p className="text-4xl font-black text-white">{referralCount}</p>
               </div>
               
@@ -94,7 +94,7 @@ export default function ReferralsPage() {
               <div className="sm:hidden w-16 h-px bg-white/10" />
 
               <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <h3 className="text-purple-400 font-semibold mb-3 uppercase tracking-[0.1em] text-[11px] h-4 flex items-center justify-center whitespace-nowrap">Bonus Days Earned</h3>
+                <h3 className="text-teal-400 font-semibold mb-3 uppercase tracking-[0.1em] text-[11px] h-4 flex items-center justify-center whitespace-nowrap">Bonus Days Earned</h3>
                 <p className="text-4xl font-black text-white">{rewardsEarned}</p>
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function ReferralsPage() {
         >
           <div className="mb-5 flex items-center justify-between">
             <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-              <Target className="w-6 h-6 text-purple-400" /> Goal: 15 Days Extended Infinity Trial
+              <Target className="w-6 h-6 text-teal-400" /> Goal: 15 Days Extended Infinity Trial
             </h3>
             <span className="text-white font-mono text-sm tracking-wider bg-white/5 px-3 py-1 rounded-lg border border-white/10">
               {referralCount} / {target}
@@ -129,7 +129,7 @@ export default function ReferralsPage() {
               initial={{width: 0}} 
               animate={{width: `${progressPercent}%`}}
               transition={{duration: 1, ease: "easeOut"}}
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" 
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full" 
             />
           </div>
           <p className="text-white/40 text-xs mt-3">Re-triggerable reward. Every successful referral grants 15 days.</p>
@@ -141,18 +141,18 @@ export default function ReferralsPage() {
         >
           <h2 className="text-2xl font-bold mb-6 text-white border-b border-white/10 pb-4">How the Reward Scheme Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-slate-900/50 p-7 rounded-xl border border-white/10 shadow-lg relative overflow-hidden group hover:border-purple-500/30 transition-colors">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors" />
-              <div className="w-12 h-12 rounded-full bg-slate-950 text-purple-400 flex items-center justify-center font-bold text-lg mb-5 border border-purple-500/30">1</div>
+            <div className="bg-slate-900/50 p-7 rounded-xl border border-white/10 shadow-lg relative overflow-hidden group hover:border-teal-500/30 transition-colors">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/20 transition-colors" />
+              <div className="w-12 h-12 rounded-full bg-slate-950 text-teal-400 flex items-center justify-center font-bold text-lg mb-5 border border-teal-500/30">1</div>
               <h4 className="font-bold text-lg mb-3 text-white">Share Your Link</h4>
               <p className="text-white/60 text-sm leading-relaxed">
                 Send your unique invite link to creators, founders, and marketers in your network who need elite content generation.
               </p>
             </div>
             
-            <div className="bg-slate-900/50 p-7 rounded-xl border border-white/10 shadow-lg relative overflow-hidden group hover:border-purple-500/30 transition-colors">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors" />
-              <div className="w-12 h-12 rounded-full bg-slate-950 text-purple-400 flex items-center justify-center font-bold text-lg mb-5 border border-purple-500/30">2</div>
+            <div className="bg-slate-900/50 p-7 rounded-xl border border-white/10 shadow-lg relative overflow-hidden group hover:border-teal-500/30 transition-colors">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/20 transition-colors" />
+              <div className="w-12 h-12 rounded-full bg-slate-950 text-teal-400 flex items-center justify-center font-bold text-lg mb-5 border border-teal-500/30">2</div>
               <h4 className="font-bold text-lg mb-3 text-white">Friend Purchases Plan</h4>
               <p className="text-white/60 text-sm leading-relaxed">
                 Your referred friend must sign in using your specific link and successfully purchase a premium membership plan.

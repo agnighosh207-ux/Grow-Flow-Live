@@ -92,7 +92,7 @@ export function ReferralPopup() {
                     border: "1px solid rgba(124,58,237,0.3)",
                   }}
                 >
-                  <Gift className="w-5 h-5 text-violet-300" />
+                  <Gift className="w-5 h-5 text-cyan-300" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white leading-tight">
@@ -103,7 +103,7 @@ export function ReferralPopup() {
               </div>
 
               <p className="text-sm text-white/80 leading-relaxed mb-1.5">
-                Got a <span className="font-semibold text-violet-300">Referral Code</span>?
+                Got a <span className="font-semibold text-cyan-300">Referral Code</span>?
               </p>
               <p className="text-xs text-white/40 mb-5">
                 Enter it below to instantly unlock 15 days of Infinity Access for free!
@@ -115,14 +115,14 @@ export function ReferralPopup() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="e.g. A1B2C3D4"
-                  className="w-full h-11 bg-black/20 border border-white/10 rounded-xl px-4 text-center font-mono text-white text-lg tracking-widest placeholder:text-white/20 focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20"
+                  className="w-full h-11 bg-black/20 border border-white/10 rounded-xl px-4 text-center font-mono text-white text-lg tracking-widest placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
                 />
               </div>
 
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="w-full h-11 font-semibold text-sm rounded-xl mb-2.5 relative overflow-hidden bg-violet-600 hover:bg-violet-500 text-white"
+                className="w-full h-11 font-semibold text-sm rounded-xl mb-2.5 relative overflow-hidden bg-cyan-600 hover:bg-cyan-500 text-white"
               >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : code ? "Claim Free Days" : "Continue to App"}
               </Button>

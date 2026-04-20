@@ -141,7 +141,7 @@ function ImproveCompetitorInner() {
     <div className="space-y-8 max-w-4xl mx-auto pb-16">
       <div>
         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5 flex items-center gap-3">
-          <Swords className="w-7 h-7 text-purple-400" />
+          <Swords className="w-7 h-7 text-teal-400" />
           Improve Competitor Content
         </h1>
         <p className="text-white/50 text-sm">Paste any competitor content and get a stronger version, a sharper hook, a fresh angle — plus specific ways to monetize it.</p>
@@ -162,7 +162,7 @@ function ImproveCompetitorInner() {
             onChange={(e) => setContent(e.target.value)}
             placeholder="Paste a competitor's post, caption, tweet thread, LinkedIn article, or any content you want to outperform..."
             rows={8}
-            className="w-full rounded-xl bg-black/20 border border-white/10 text-white placeholder:text-white/25 text-sm px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/40 transition-all leading-relaxed"
+            className="w-full rounded-xl bg-black/20 border border-white/10 text-white placeholder:text-white/25 text-sm px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500/40 transition-all leading-relaxed"
           />
           <p className="text-white/25 text-xs">{content.length} characters</p>
         </div>
@@ -170,7 +170,7 @@ function ImproveCompetitorInner() {
         <Button
           onClick={handleSubmit}
           disabled={isLoading || content.trim().length < 50}
-          className="w-full sm:w-auto h-11 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold shadow-lg shadow-purple-900/40 rounded-xl px-8"
+          className="w-full sm:w-auto h-11 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-semibold shadow-lg shadow-teal-900/40 rounded-xl px-8"
         >
           {isLoading
             ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Analyzing...</>
@@ -215,7 +215,7 @@ function ImproveCompetitorInner() {
                 title="Improved Version"
                 icon={TrendingUp}
                 content={result.improvedVersion}
-                accentColor="bg-violet-500/15 text-violet-400"
+                accentColor="bg-cyan-500/15 text-cyan-400"
                 delay={0}
               />
               <ResultCard
@@ -259,7 +259,7 @@ function ImproveCompetitorInner() {
                   title="CTA Ideas"
                   icon={Megaphone}
                   items={result.monetization.ctaIdeas}
-                  accentColor="bg-violet-500/15 text-violet-400"
+                  accentColor="bg-cyan-500/15 text-cyan-400"
                 />
                 <div className="border-t border-white/5 pt-5">
                   <MonetizationList
@@ -289,8 +289,8 @@ function ImproveCompetitorInner() {
             animate={{ opacity: 1 }}
             className="text-center py-16 space-y-3"
           >
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/15 flex items-center justify-center mx-auto">
-              <Swords className="w-7 h-7 text-purple-400/60" />
+            <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center mx-auto">
+              <Swords className="w-7 h-7 text-teal-400/60" />
             </div>
             <div className="space-y-1">
               <p className="text-white/45 text-sm font-medium">Paste competitor content above</p>

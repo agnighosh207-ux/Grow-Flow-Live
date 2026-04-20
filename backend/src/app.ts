@@ -43,7 +43,11 @@ app.use(
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
 app.use(cors({ credentials: true, origin: true }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    (req as any).rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(clerkMiddleware());

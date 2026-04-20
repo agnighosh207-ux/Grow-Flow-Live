@@ -109,19 +109,19 @@ export function WeeklyReportCard() {
           className="relative z-10 overflow-hidden"
         >
           <div
-            className="relative rounded-2xl border border-violet-500/25 overflow-hidden"
+            className="relative rounded-2xl border border-cyan-500/25 overflow-hidden"
             style={{
               background:
                 "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(91,33,182,0.08) 50%, rgba(20,10,50,0.95) 100%)",
             }}
           >
-            <div className="h-0.5 w-full bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500" />
+            <div className="h-0.5 w-full bg-gradient-to-r from-cyan-500 via-teal-500 to-pink-500" />
 
             <div className="px-5 py-4">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center shrink-0">
-                    <BarChart3 className="w-5 h-5 text-violet-400" />
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center shrink-0">
+                    <BarChart3 className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white leading-tight">Your Weekly Performance Report</p>
@@ -140,7 +140,7 @@ export function WeeklyReportCard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div className="rounded-xl border border-white/8 px-4 py-3 bg-white/[0.02]">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-violet-400" />
+                    <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
                     <span className="text-[11px] text-white/40 font-medium uppercase tracking-wide">Content Generated</span>
                   </div>
                   <p className="text-2xl font-bold text-white">{stats.totalGenerations}</p>
@@ -149,7 +149,7 @@ export function WeeklyReportCard() {
 
                 <div className="rounded-xl border border-white/8 px-4 py-3 bg-white/[0.02]">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <CalendarDays className="w-3.5 h-3.5 text-violet-400" />
+                    <CalendarDays className="w-3.5 h-3.5 text-cyan-400" />
                     <span className="text-[11px] text-white/40 font-medium uppercase tracking-wide">Consistency Score</span>
                   </div>
                   <p className={`text-2xl font-bold ${consistencyColor}`}>{stats.consistencyLabel}</p>

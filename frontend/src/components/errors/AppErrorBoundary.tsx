@@ -30,7 +30,7 @@ export class AppErrorBoundary extends React.Component<{
               The app encountered an unexpected error. Please refresh the page or try again later.
             </p>
             <button
-              className="inline-flex items-center justify-center rounded-full bg-violet-600 px-5 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+              className="inline-flex items-center justify-center rounded-full bg-cyan-600 px-5 py-2 text-sm font-semibold text-white hover:bg-cyan-500"
               onClick={() => window.location.reload()}
             >
               Refresh the page

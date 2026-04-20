@@ -148,13 +148,13 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
     ? [
         { label: "Virality", score: analysis.viralityScore, color: "bg-red-400" },
         { label: "Hook Strength", score: analysis.hookStrength, color: "bg-pink-400" },
-        { label: "Engagement", score: analysis.engagementPotential, color: "bg-violet-400" },
+        { label: "Engagement", score: analysis.engagementPotential, color: "bg-cyan-400" },
         { label: "Shareability", score: analysis.shareability, color: "bg-emerald-400" },
       ]
     : [
         { label: "Virality", score: directViralScore ?? (78 + Math.floor(Math.random() * 18)), color: "bg-red-400" },
         { label: "Hook Strength", score: 80 + Math.floor(Math.random() * 16), color: "bg-pink-400" },
-        { label: "Engagement", score: 75 + Math.floor(Math.random() * 20), color: "bg-violet-400" },
+        { label: "Engagement", score: 75 + Math.floor(Math.random() * 20), color: "bg-cyan-400" },
         { label: "Shareability", score: 72 + Math.floor(Math.random() * 18), color: "bg-emerald-400" },
       ];
 
@@ -172,16 +172,16 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Brain className="w-3.5 h-3.5 text-violet-400" />
+            <Brain className="w-3.5 h-3.5 text-cyan-400" />
             <span className="text-xs font-semibold text-white/60">
               {analysisLoading ? "Analyzing content..." : "AI Content Score"}
             </span>
             {analysisLoading && (
-              <div className="w-3 h-3 border border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+              <div className="w-3 h-3 border border-cyan-400/40 border-t-cyan-400 rounded-full animate-spin" />
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <div className={`text-xl font-bold ${avg >= 85 ? 'text-emerald-400' : avg >= 75 ? 'text-violet-400' : 'text-amber-400'}`}>{avg}</div>
+            <div className={`text-xl font-bold ${avg >= 85 ? 'text-emerald-400' : avg >= 75 ? 'text-cyan-400' : 'text-amber-400'}`}>{avg}</div>
             <div className="text-[10px] text-white/25 font-medium">/100</div>
           </div>
         </div>
@@ -189,7 +189,7 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
         {/* Pro Tip Box below Viral Score */}
         {directSuggestion && (
           <div className="mb-4 rounded-lg px-3 py-2.5" style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.18)" }}>
-            <p className="text-[10px] font-bold text-violet-300/70 uppercase tracking-widest mb-1">💡 Pro Tip</p>
+            <p className="text-[10px] font-bold text-cyan-300/70 uppercase tracking-widest mb-1">💡 Pro Tip</p>
             <p className="text-xs text-white/60 leading-relaxed">{directSuggestion}</p>
           </div>
         )}
@@ -248,14 +248,14 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest flex items-center gap-1.5">
-                          <span className="text-violet-400">👥</span> Audience Reaction
+                          <span className="text-cyan-400">👥</span> Audience Reaction
                         </p>
                         <p className="text-xs text-white/65 leading-relaxed">{analysis.targetAudienceReaction}</p>
                       </div>
                       {analysis.improvementTip && (
                         <div className="rounded-lg px-3 py-2.5 mt-1"
                           style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.18)" }}>
-                          <p className="text-[10px] font-bold text-violet-300/70 uppercase tracking-widest mb-1">💡 Pro Tip</p>
+                          <p className="text-[10px] font-bold text-cyan-300/70 uppercase tracking-widest mb-1">💡 Pro Tip</p>
                           <p className="text-xs text-white/60 leading-relaxed">{analysis.improvementTip}</p>
                         </div>
                       )}
@@ -376,7 +376,7 @@ function ContentSection({ label, labelColor = "text-white/40", content, copyLabe
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className={`text-sm leading-relaxed whitespace-pre-wrap
-        ${isHashtags ? "text-violet-400/90 font-medium text-xs leading-loose" : "text-white/85"}
+        ${isHashtags ? "text-cyan-400/90 font-medium text-xs leading-loose" : "text-white/85"}
       `}>
         {content}
       </motion.div>
@@ -516,7 +516,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
       {isRegenerating && (
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-20 flex items-center justify-center rounded-2xl">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="w-7 h-7 text-violet-400 animate-spin" />
+            <Loader2 className="w-7 h-7 text-cyan-400 animate-spin" />
             <span className="text-xs text-white/60 font-medium">Regenerating...</span>
           </div>
         </div>
@@ -539,16 +539,16 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
               <button
                 id="tour-repurpose"
                 disabled={isRepurposing}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md bg-white/5 hover:bg-white/10 text-violet-300 hover:text-violet-200 border border-white/10 hover:border-violet-500/30 transition-all font-medium disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md bg-white/5 hover:bg-white/10 text-cyan-300 hover:text-cyan-200 border border-white/10 hover:border-cyan-500/30 transition-all font-medium disabled:opacity-50"
               >
                 {isRepurposing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                 Repurpose
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-[#100726]/90 backdrop-blur-xl border-violet-500/30 z-[100]">
+            <DropdownMenuContent align="end" className="w-48 bg-[#100726]/90 backdrop-blur-xl border-cyan-500/30 z-[100]">
               <DropdownMenuItem 
                 onClick={() => handleRepurpose("Convert to Twitter Thread")}
-                className="text-xs text-white/70 hover:text-white cursor-pointer focus:bg-violet-500/20"
+                className="text-xs text-white/70 hover:text-white cursor-pointer focus:bg-cyan-500/20"
               >
                 <Twitter className="w-3.5 h-3.5 mr-2 text-sky-400" /> Convert to Thread
               </DropdownMenuItem>
@@ -614,7 +614,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                     />
                   )}
                   {content.hashtags && (
-                    <ContentSection label="Hashtags" labelColor="text-violet-400/60" content={content.hashtags} copyLabel="Hashtags" isHashtags />
+                    <ContentSection label="Hashtags" labelColor="text-cyan-400/60" content={content.hashtags} copyLabel="Hashtags" isHashtags />
                   )}
                 </>
               )}
@@ -694,18 +694,18 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                     />
                   )}
                   {content.hashtags && (
-                    <ContentSection label="Hashtags" labelColor="text-violet-400/60" content={content.hashtags} copyLabel="Hashtags" isHashtags />
+                    <ContentSection label="Hashtags" labelColor="text-cyan-400/60" content={content.hashtags} copyLabel="Hashtags" isHashtags />
                   )}
                 </>
               )}
 
               {repurposedText && (
-                <div className="mt-4 border-t border-violet-500/20 pt-4">
+                <div className="mt-4 border-t border-cyan-500/20 pt-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400">Repurposed Content</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">Repurposed Content</span>
                     <CopyButton text={repurposedText} label="Repurposed Content" size="xs" />
                   </div>
-                  <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl px-4 py-3 text-white/90 text-sm whitespace-pre-wrap leading-relaxed">
+                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl px-4 py-3 text-white/90 text-sm whitespace-pre-wrap leading-relaxed">
                     {repurposedText}
                   </div>
                 </div>
@@ -1076,7 +1076,7 @@ export default function Generate() {
           animate={{ opacity: 1, scale: 1 }}
           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-[11px] font-semibold"
         >
-          <span className={generationsUsed >= generationLimit ? "text-red-400" : generationsUsed === generationLimit - 1 ? "text-amber-400" : "text-violet-300"}>
+          <span className={generationsUsed >= generationLimit ? "text-red-400" : generationsUsed === generationLimit - 1 ? "text-amber-400" : "text-cyan-300"}>
             {generationsUsed}
           </span>
           <span className="text-white/30">/</span>
@@ -1091,7 +1091,7 @@ export default function Generate() {
         animate={{ opacity: 1, scale: 1 }}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-[11px] font-semibold"
       >
-        <span className={generationsUsed >= limit && !isInfinityUser ? "text-red-400" : generationsUsed >= 300 && isInfinityUser ? "text-amber-400" : "text-violet-300"}>
+        <span className={generationsUsed >= limit && !isInfinityUser ? "text-red-400" : generationsUsed >= 300 && isInfinityUser ? "text-amber-400" : "text-cyan-300"}>
           {generationsUsed}
         </span>
         <span className="text-white/30">/</span>
@@ -1156,16 +1156,16 @@ export default function Generate() {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-violet-500/20 bg-violet-500/8 text-[11px] text-violet-300/80 font-medium"
+            className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/8 text-[11px] text-cyan-300/80 font-medium"
           >
-            <Sparkles className="w-3 h-3 text-violet-400" />
+            <Sparkles className="w-3 h-3 text-cyan-400" />
             Based on your previous content style
-            {savedPrefs.niche && <span className="text-violet-300/60">· {savedPrefs.niche}</span>}
-            {savedPrefs.tonePreference && <span className="text-violet-300/60">· {savedPrefs.tonePreference}</span>}
+            {savedPrefs.niche && <span className="text-cyan-300/60">· {savedPrefs.niche}</span>}
+            {savedPrefs.tonePreference && <span className="text-cyan-300/60">· {savedPrefs.tonePreference}</span>}
           </motion.div>
         )}
 
-        <div className="h-px bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-transparent mt-3" />
+        <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-3" />
       </div>
 
       <WeeklyReportCard />
@@ -1180,9 +1180,9 @@ export default function Generate() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
               onClick={() => handleTemplate(t)}
-              className="text-left px-3 py-2.5 rounded-xl border border-white/8 hover:border-violet-500/30 bg-white/[0.02] hover:bg-violet-500/8 transition-all duration-200 group relative overflow-hidden"
+              className="text-left px-3 py-2.5 rounded-xl border border-white/8 hover:border-cyan-500/30 bg-white/[0.02] hover:bg-cyan-500/8 transition-all duration-200 group relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-violet-500/0 group-hover:from-violet-600/5 group-hover:to-transparent transition-all duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-600/5 group-hover:to-transparent transition-all duration-300" />
               <div className="relative">
                 <div className="text-base mb-0.5">{t.icon}</div>
                 <div className="text-xs font-semibold text-white/75 group-hover:text-white leading-tight">{t.label}</div>
@@ -1214,7 +1214,7 @@ export default function Generate() {
               <div className="flex items-center gap-2 shrink-0">
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-xs shadow-lg shadow-violet-900/40 transition-transform hover:scale-[1.03] active:scale-[0.99]"
+                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs shadow-lg shadow-cyan-900/40 transition-transform hover:scale-[1.03] active:scale-[0.99]"
                   onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
                 >
                   Get 100 generations for ₹299
@@ -1265,22 +1265,22 @@ export default function Generate() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 rounded-xl border border-violet-500/25 bg-violet-500/8 px-5 py-4 flex items-center justify-between gap-4"
+          className="relative z-10 rounded-xl border border-cyan-500/25 bg-cyan-500/8 px-5 py-4 flex items-center justify-between gap-4"
         >
           <div className="flex items-center gap-3">
-            <Crown className="w-5 h-5 text-violet-400 flex-shrink-0" />
+            <Crown className="w-5 h-5 text-cyan-400 flex-shrink-0" />
             <div>
-              <p className="text-violet-200 font-semibold text-sm">
+              <p className="text-cyan-200 font-semibold text-sm">
                 You've reached your free limit
               </p>
-              <p className="text-violet-300/60 text-xs mt-0.5">
+              <p className="text-cyan-300/60 text-xs mt-0.5">
                 You've used all 5 free monthly generations. Upgrade to continue.
               </p>
             </div>
           </div>
           <Button
             size="sm"
-            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-xs shrink-0 shadow-lg shadow-violet-900/40 transition-transform hover:scale-[1.03] active:scale-[0.99]"
+            className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs shrink-0 shadow-lg shadow-cyan-900/40 transition-transform hover:scale-[1.03] active:scale-[0.99]"
             onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
           >
             <Crown className="w-4 h-4 mr-2" /> Upgrade Now
@@ -1290,14 +1290,14 @@ export default function Generate() {
 
       <div className="relative z-10 w-full mb-8">
       <div
-        className="w-full rounded-2xl border border-violet-500/15 p-5 md:p-6 lg:p-8 xl:px-12 relative overflow-hidden"
+        className="w-full rounded-2xl border border-cyan-500/15 p-5 md:p-6 lg:p-8 xl:px-12 relative overflow-hidden"
         style={{
           background: "linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(255,255,255,0.03) 100%)",
           backdropFilter: "blur(20px)",
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 40px rgba(124,58,237,0.08)",
         }}
       >
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/40 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
@@ -1311,28 +1311,28 @@ export default function Generate() {
                       <Textarea
                         id="tour-input"
                         placeholder="e.g. 5 ways AI is replacing junior developers — and what to do about it..."
-                        className="resize-none min-h-[140px] pt-4 pb-16 px-5 bg-slate-900/30 backdrop-blur-md border border-white/10 focus-visible:ring-purple-500/40 focus-visible:border-purple-500 text-white placeholder:text-white/25 text-base lg:text-lg rounded-2xl transition-all duration-200"
+                        className="resize-none min-h-[140px] pt-4 pb-16 px-5 bg-slate-900/30 backdrop-blur-md border border-white/10 focus-visible:ring-teal-500/40 focus-visible:border-teal-500 text-white placeholder:text-white/25 text-base lg:text-lg rounded-2xl transition-all duration-200"
                         {...field}
                       />
                       <div className="absolute bottom-3 right-3 flex justify-end">
                         {isLimited ? (
                           <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl blur-md opacity-60 group-hover:opacity-100 transition duration-500"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-sky-600 rounded-xl blur-md opacity-60 group-hover:opacity-100 transition duration-500"></div>
                             <Button
                               type="button"
                               onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                              className="relative bg-gradient-to-r from-violet-600/80 to-purple-600/80 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all duration-300"
+                              className="relative bg-gradient-to-r from-cyan-600/80 to-teal-600/80 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all duration-300"
                             >
                               <Crown className="w-4 h-4 mr-2" /> Unlock Full Power
                             </Button>
                           </motion.div>
                         ) : (
                           <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-pink-500 rounded-xl blur-md opacity-40 group-hover:opacity-100 transition duration-500 group-hover:animate-pulse"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-pink-500 rounded-xl blur-md opacity-40 group-hover:opacity-100 transition duration-500 group-hover:animate-pulse"></div>
                             <Button
                               type="submit"
                               disabled={isLoading}
-                              className="relative bg-gradient-to-r from-violet-600/90 to-purple-600/90 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-lg transition-all duration-300"
+                              className="relative bg-gradient-to-r from-cyan-600/90 to-teal-600/90 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-lg transition-all duration-300"
                             >
                               {isLoading ? (
                                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
@@ -1359,13 +1359,13 @@ export default function Generate() {
                     <FormLabel className="text-white/70 text-sm font-medium">Niche</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-violet-500/40 rounded-xl transition-colors hover:bg-white/10">
+                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10">
                           <SelectValue placeholder="Select niche" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-[#0f0a1e] border-white/10">
                         {NICHES.map(n => (
-                          <SelectItem key={n} value={n} className="text-white/80 focus:text-white focus:bg-violet-600/20">{n}</SelectItem>
+                          <SelectItem key={n} value={n} className="text-white/80 focus:text-white focus:bg-cyan-600/20">{n}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -1382,18 +1382,18 @@ export default function Generate() {
                     <FormLabel className="text-white/70 text-sm font-medium">Content Style</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-violet-500/40 rounded-xl transition-colors hover:bg-white/10">
+                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10">
                           <SelectValue placeholder="Select style" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-[#0f0a1e] border-white/10">
-                        <SelectItem value="Educational" className="text-white/80 focus:text-white focus:bg-violet-600/20">
-                          <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-violet-400" /> Educational</span>
+                        <SelectItem value="Educational" className="text-white/80 focus:text-white focus:bg-cyan-600/20">
+                          <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-cyan-400" /> Educational</span>
                         </SelectItem>
-                        <SelectItem value="Story" className="text-white/80 focus:text-white focus:bg-violet-600/20">
+                        <SelectItem value="Story" className="text-white/80 focus:text-white focus:bg-cyan-600/20">
                           <span className="flex items-center gap-2"><MessageCircle className="w-3.5 h-3.5 text-blue-400" /> Story / Personal</span>
                         </SelectItem>
-                        <SelectItem value="Viral" className="text-white/80 focus:text-white focus:bg-violet-600/20">
+                        <SelectItem value="Viral" className="text-white/80 focus:text-white focus:bg-cyan-600/20">
                           <span className="flex items-center gap-2"><Film className="w-3.5 h-3.5 text-pink-400" /> Viral / Controversial</span>
                         </SelectItem>
                       </SelectContent>
@@ -1411,14 +1411,14 @@ export default function Generate() {
                     <FormLabel className="text-white/70 text-sm font-medium">Tone of Voice</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-violet-500/40 rounded-xl transition-colors hover:bg-white/10">
+                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10">
                           <SelectValue placeholder="Select tone" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-[#0f0a1e] border-white/10">
-                        <SelectItem value="Casual" className="text-white/80 focus:text-white focus:bg-violet-600/20">Casual & Approachable</SelectItem>
-                        <SelectItem value="Professional" className="text-white/80 focus:text-white focus:bg-violet-600/20">Professional & Authoritative</SelectItem>
-                        <SelectItem value="Aggressive" className="text-white/80 focus:text-white focus:bg-violet-600/20">Punchy & Aggressive</SelectItem>
+                        <SelectItem value="Casual" className="text-white/80 focus:text-white focus:bg-cyan-600/20">Casual & Approachable</SelectItem>
+                        <SelectItem value="Professional" className="text-white/80 focus:text-white focus:bg-cyan-600/20">Professional & Authoritative</SelectItem>
+                        <SelectItem value="Aggressive" className="text-white/80 focus:text-white focus:bg-cyan-600/20">Punchy & Aggressive</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage className="text-red-400 text-xs" />
@@ -1432,17 +1432,17 @@ export default function Generate() {
                   <FormItem>
                     <FormLabel className="text-white/70 text-sm font-medium flex items-center gap-1.5">
                       Content Language
-                      {field.value !== "English" && <span className="text-[9px] font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30 px-1.5 py-0.5 rounded-full">PRO</span>}
+                      {field.value !== "English" && <span className="text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded-full">PRO</span>}
                     </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger id="tour-language" className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-violet-500/40 rounded-xl transition-colors hover:bg-white/10">
+                        <SelectTrigger id="tour-language" className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10">
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-[#0f0a1e]/90 backdrop-blur-xl border-white/10">
                         {LANGUAGES.map(lang => (
-                          <SelectItem key={lang} value={lang} className="text-white/80 focus:text-white focus:bg-violet-600/20">
+                          <SelectItem key={lang} value={lang} className="text-white/80 focus:text-white focus:bg-cyan-600/20">
                             <span className="flex items-center gap-2">
                               {lang === "Hindi" && <motion.svg animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 2 }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-orange-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h18M5 19L5 5M19 19L19 5M9 14l2-2 2 2m-2-2v6" /></motion.svg>}
                               {lang === "Hinglish" && <motion.svg animate={{ y: [0, -2, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-pink-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></motion.svg>}
@@ -1468,7 +1468,7 @@ export default function Generate() {
 
             <div className="rounded-xl border border-white/6 bg-white/[0.015] p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Crown className="w-3.5 h-3.5 text-violet-400" />
+                <Crown className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="text-[11px] font-semibold text-white/50 uppercase tracking-widest">Pro Features</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -1496,17 +1496,17 @@ export default function Generate() {
                       }}
                       className={`relative text-left p-3 rounded-xl border transition-all duration-200 group w-full
                         ${hasAdvancedFeatures && isOn
-                          ? "border-violet-500/40 bg-violet-500/10"
-                          : "border-white/6 hover:border-violet-500/20 hover:bg-violet-500/5"
+                          ? "border-cyan-500/40 bg-cyan-500/10"
+                          : "border-white/6 hover:border-cyan-500/20 hover:bg-cyan-500/5"
                         }
                       `}
                     >
                       <div className="flex items-start justify-between mb-1">
                         <span className="text-base">{icon}</span>
                         {!hasAdvancedFeatures ? (
-                          <Lock className="w-3 h-3 text-violet-500/60" />
+                          <Lock className="w-3 h-3 text-cyan-500/60" />
                         ) : isOn ? (
-                          <div className="w-3.5 h-3.5 rounded-full bg-violet-500 border border-violet-400" />
+                          <div className="w-3.5 h-3.5 rounded-full bg-cyan-500 border border-cyan-400" />
                         ) : (
                           <div className="w-3.5 h-3.5 rounded-full border border-white/20" />
                         )}
@@ -1521,7 +1521,7 @@ export default function Generate() {
                         <TooltipTrigger asChild>{btn}</TooltipTrigger>
                         <TooltipContent
                           side="top"
-                          className="bg-[#1a0d3d] border border-violet-500/30 text-violet-200 text-xs px-2.5 py-1.5"
+                          className="bg-[#1a0d3d] border border-cyan-500/30 text-cyan-200 text-xs px-2.5 py-1.5"
                         >
                           Available in Creator Plan
                         </TooltipContent>
@@ -1550,7 +1550,7 @@ export default function Generate() {
                       <button
                         type="button"
                         onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                        className="text-xs text-violet-400 hover:text-violet-300 underline mt-1 transition-colors"
+                        className="text-xs text-cyan-400 hover:text-cyan-300 underline mt-1 transition-colors"
                       >
                         Upgrade now to continue
                       </button>
@@ -1581,7 +1581,7 @@ export default function Generate() {
             exit={{ opacity: 0 }}
           >
             <div className="flex items-center gap-2.5 mb-5">
-              <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin shrink-0" />
+              <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin shrink-0" />
               <AnimatePresence mode="wait">
                 <motion.span
                   key={loadingMsgIdx}
@@ -1686,9 +1686,9 @@ export default function Generate() {
                   transition={{ duration: 0.3 }}
                   className="overflow-hidden"
                 >
-                  <div className="flex items-center justify-between gap-3 rounded-xl border border-violet-500/20 bg-violet-500/[0.06] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] px-4 py-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Sparkles className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                       <p className="text-xs text-white/65 truncate">
                         Imagine generating 10x more content like this...
                       </p>
@@ -1696,7 +1696,7 @@ export default function Generate() {
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                        className="text-xs font-semibold text-violet-300 hover:text-violet-200 transition-colors"
+                        className="text-xs font-semibold text-cyan-300 hover:text-cyan-200 transition-colors"
                       >
                         Unlock Full Power
                       </button>
@@ -1780,7 +1780,7 @@ export default function Generate() {
                     <div className="flex flex-wrap gap-2">
                       {generatedContent.content.hashtags.map((ht: string, i: number) => (
                         <div key={i} className="flex items-center">
-                          <span className="px-2 py-1 rounded-l-md bg-white/5 border border-white/10 border-r-0 text-xs text-violet-400/90 font-medium">
+                          <span className="px-2 py-1 rounded-l-md bg-white/5 border border-white/10 border-r-0 text-xs text-cyan-400/90 font-medium">
                             {ht.startsWith('#') ? ht : `#${ht}`}
                           </span>
                           <button
@@ -1822,13 +1822,13 @@ export default function Generate() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.85, duration: 0.5, ease: "easeOut" }}
-                className="relative rounded-2xl overflow-hidden border border-violet-500/25"
+                className="relative rounded-2xl overflow-hidden border border-cyan-500/25"
                 style={{
                   background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(168,85,247,0.06) 50%, rgba(10,5,30,0.95) 100%)",
                 }}
               >
                 <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-[-40%] left-[20%] w-[60%] h-[60%] bg-violet-600/15 blur-[70px] rounded-full" />
+                  <div className="absolute top-[-40%] left-[20%] w-[60%] h-[60%] bg-cyan-600/15 blur-[70px] rounded-full" />
                 </div>
                 <div className="relative z-10 p-6 flex flex-col sm:flex-row items-center gap-5">
                   <div className="flex-1 text-center sm:text-left">
@@ -1842,7 +1842,7 @@ export default function Generate() {
                   <div className="flex flex-col items-center gap-2 shrink-0">
                     <Button
                       onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                      className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold rounded-full px-7 py-2.5 shadow-xl shadow-violet-900/50 border border-violet-500/20 transition-all hover:scale-[1.03] active:scale-[0.98] whitespace-nowrap"
+                      className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold rounded-full px-7 py-2.5 shadow-xl shadow-cyan-900/50 border border-cyan-500/20 transition-all hover:scale-[1.03] active:scale-[0.98] whitespace-nowrap"
                     >
                       <Zap className="w-4 h-4 mr-2" /> Unlock Full Power
                     </Button>
@@ -1856,16 +1856,16 @@ export default function Generate() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/8 to-purple-500/6 p-4 flex items-center gap-3"
+              className="rounded-xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/8 to-teal-500/6 p-4 flex items-center gap-3"
             >
-              <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center text-lg shrink-0">📦</div>
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center text-lg shrink-0">📦</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white/80">Want Reel Script + Carousel + LinkedIn too?</p>
                 <p className="text-xs text-white/40 mt-0.5">Content Pack generates all 5 formats from one idea</p>
               </div>
               <a
                 href={`/pack?idea=${encodeURIComponent(generatedContent?.idea ?? "")}`}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-all"
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all"
               >
                 <Crown className="w-3.5 h-3.5" /> Try Pack
               </a>

@@ -18,7 +18,7 @@ export default function RefundPolicy() {
         </div>
 
         <section>
-          <h2 className="text-xl font-bold text-violet-300 mb-2">Subscription Cancellations</h2>
+          <h2 className="text-xl font-bold text-cyan-300 mb-2">Subscription Cancellations</h2>
           <p>You may cancel your Monthly recurring subscription via the Razorpay Customer Portal at any moment. Your premium tier limits will remain fully active until the end of the billing period.</p>
         </section>
       </div>

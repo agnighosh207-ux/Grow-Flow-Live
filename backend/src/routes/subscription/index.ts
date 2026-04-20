@@ -212,8 +212,9 @@ router.post("/subscription/create", requireAuth, async (req: any, res): Promise<
       ghostMode: false
     });
   } catch (err: any) {
-    console.error("Subscription create error:", err);
-    res.status(500).json({ error: err?.message || "Failed to create subscription" });
+    const errorMsg = err?.error?.description || err?.message || "Failed to create subscription";
+    console.error("Subscription create error:", err?.error || err);
+    res.status(500).json({ error: errorMsg });
   }
 });
 
@@ -225,7 +226,7 @@ router.post("/subscription/verify", requireAuth, async (req: any, res): Promise<
     return;
   }
 
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  const keySecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
   if (!keySecret) {
     res.status(503).json({ error: "Payment gateway not configured" });
     return;
@@ -396,7 +397,7 @@ router.post("/subscription/webhook", async (req: any, res): Promise<void> => {
     const signature = req.headers["x-razorpay-signature"];
     const expectedSig = crypto
       .createHmac("sha256", webhookSecret)
-      .update(JSON.stringify(req.body))
+      .update(req.rawBody || JSON.stringify(req.body))
       .digest("hex");
     if (signature !== expectedSig) {
       res.status(400).json({ error: "Invalid webhook signature" });

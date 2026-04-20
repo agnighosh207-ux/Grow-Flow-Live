@@ -13,7 +13,7 @@ import { Loader2, Copy, Check, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const HOOK_PATTERN_LABELS = [
-  { type: "Curiosity Gap", color: "bg-violet-500/15 text-violet-300 border-violet-500/20" },
+  { type: "Curiosity Gap", color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20" },
   { type: "Bold Claim", color: "bg-orange-500/15 text-orange-300 border-orange-500/20" },
   { type: "Relatable Pain", color: "bg-blue-500/15 text-blue-300 border-blue-500/20" },
   { type: "Controversial", color: "bg-red-500/15 text-red-300 border-red-500/20" },
@@ -68,7 +68,7 @@ function HooksGeneratorInner() {
     <div className="space-y-8 max-w-4xl mx-auto pb-16">
       <div>
         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5 flex items-center gap-3">
-          <Zap className="w-7 h-7 text-purple-400" />
+          <Zap className="w-7 h-7 text-teal-400" />
           Viral Hook Generator
         </h1>
         <p className="text-white/50 text-sm">10 hooks, 10 different psychological triggers. The first line is everything.</p>
@@ -93,7 +93,7 @@ function HooksGeneratorInner() {
                   <FormControl>
                     <Input
                       placeholder="e.g. Why most diets fail in the first 2 weeks..."
-                      className="bg-black/20 border-white/10 h-11 rounded-xl text-white placeholder:text-white/25 focus-visible:ring-purple-500/40"
+                      className="bg-black/20 border-white/10 h-11 rounded-xl text-white placeholder:text-white/25 focus-visible:ring-teal-500/40"
                       {...field}
                     />
                   </FormControl>
@@ -110,14 +110,14 @@ function HooksGeneratorInner() {
                   <FormLabel className="text-white/70 text-sm font-medium">Tone</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-purple-500/40 rounded-xl h-11">
+                      <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-teal-500/40 rounded-xl h-11">
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-[#0f0a1e] border-white/10">
-                      <SelectItem value="Casual" className="text-white/80 focus:text-white focus:bg-purple-600/20">Casual</SelectItem>
-                      <SelectItem value="Professional" className="text-white/80 focus:text-white focus:bg-purple-600/20">Professional</SelectItem>
-                      <SelectItem value="Aggressive" className="text-white/80 focus:text-white focus:bg-purple-600/20">Aggressive</SelectItem>
+                      <SelectItem value="Casual" className="text-white/80 focus:text-white focus:bg-teal-600/20">Casual</SelectItem>
+                      <SelectItem value="Professional" className="text-white/80 focus:text-white focus:bg-teal-600/20">Professional</SelectItem>
+                      <SelectItem value="Aggressive" className="text-white/80 focus:text-white focus:bg-teal-600/20">Aggressive</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -128,7 +128,7 @@ function HooksGeneratorInner() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full sm:w-auto h-11 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold shadow-lg shadow-purple-900/40 rounded-xl px-6"
+              className="w-full sm:w-auto h-11 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-semibold shadow-lg shadow-teal-900/40 rounded-xl px-6"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Zap className="w-4 h-4 mr-1.5" /> Generate</>}
             </Button>
@@ -218,8 +218,8 @@ function HooksGeneratorInner() {
             animate={{ opacity: 1 }}
             className="text-center py-16 space-y-3"
           >
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/15 flex items-center justify-center mx-auto">
-              <Zap className="w-7 h-7 text-purple-400/60" />
+            <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center mx-auto">
+              <Zap className="w-7 h-7 text-teal-400/60" />
             </div>
             <p className="text-white/35 text-sm">Enter your topic and generate 10 psychologically-targeted hooks.</p>
           </motion.div>

@@ -12,13 +12,13 @@ export function Logo({ size = "md", showText = true }: LogoProps) {
 
   return (
     <div className="flex items-center gap-2 select-none">
-      <div className={`${iconSize} rounded-xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-900/40`}>
+      <div className={`${iconSize} rounded-xl bg-gradient-to-br from-cyan-500 to-teal-700 flex items-center justify-center shadow-lg shadow-cyan-900/40`}>
         <TrendingUp className={`${innerIcon} text-white`} strokeWidth={2.5} />
       </div>
       {showText && (
         <span className={`font-extrabold ${textSize} tracking-tight leading-none`}>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/90">Grow</span>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-400">Flow</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-400">Flow</span>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-white/60 to-white/40"> AI</span>
         </span>
       )}

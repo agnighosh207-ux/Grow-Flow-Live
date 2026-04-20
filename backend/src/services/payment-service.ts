@@ -31,7 +31,7 @@ export const createSubscription = async (userId: string, planTier: string, custo
 
     const options = {
       plan_id: planId,
-      customer_notify: 1,
+      customer_notify: 0,
       total_count: 120, // Example: 10 year theoretical maximum cycles
       notes: {
         clerk_user_id: userId,

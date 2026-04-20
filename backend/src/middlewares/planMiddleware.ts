@@ -65,6 +65,19 @@ export function requireTierLevel(requiredTier: string) {
   };
 }
 
+export const PLAN_LEVELS = {
+  FREE: 0,
+  STARTER: 1,
+  CREATOR: 2,
+  INFINITY: 3
+};
+
+export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string; freeTrials?: number }> = {
+  ideas: { name: "Idea Generator", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
+  strategy: { name: "7-Day Strategy", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
+  hooks: { name: "Viral Hooks", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
+};
+
 export function requirePlanOrTrial(toolKey: string) {
   return async (req: any, res: any, next: any) => {
     try {

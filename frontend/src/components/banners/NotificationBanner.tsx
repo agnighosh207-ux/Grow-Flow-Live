@@ -131,7 +131,7 @@ export function NotificationBanner() {
               <span className="text-white/55 text-xs">{msg}</span>
             </div>
             <Link href={b.href}>
-              <span className="text-violet-400 text-xs font-semibold whitespace-nowrap hover:text-violet-300 cursor-pointer transition-colors">
+              <span className="text-cyan-400 text-xs font-semibold whitespace-nowrap hover:text-cyan-300 cursor-pointer transition-colors">
                 {b.cta}
               </span>
             </Link>

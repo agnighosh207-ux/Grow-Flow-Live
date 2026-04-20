@@ -107,7 +107,7 @@ function CaptionCard({ title, subtitle, caption, changes, accent, delay }: {
         <div className="mt-3 pt-3 border-t border-white/6 space-y-1">
           {changes.map((c, i) => (
             <div key={i} className="flex items-start gap-1.5 text-[11px] text-white/40">
-              <ChevronRight className="w-3 h-3 mt-0.5 shrink-0 text-violet-400/60" />
+              <ChevronRight className="w-3 h-3 mt-0.5 shrink-0 text-cyan-400/60" />
               {c}
             </div>
           ))}
@@ -184,7 +184,7 @@ export default function CaptionEnhancer() {
               onChange={(e) => setCaption(e.target.value)}
               placeholder="Paste any caption here — Instagram, LinkedIn, YouTube description, tweet, anything. The worse it is, the more dramatic the transformation."
               rows={5}
-              className="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/7 resize-none leading-relaxed"
+              className="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-white/7 resize-none leading-relaxed"
               style={{ color: "#ffffff" }}
             />
             <div className="flex justify-between mt-1">
@@ -202,7 +202,7 @@ export default function CaptionEnhancer() {
                 <select
                   value={platform}
                   onChange={(e) => setPlatform(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 appearance-none cursor-pointer"
                   style={{ color: "#ffffff" }}
                 >
                   {PLATFORMS.map((p) => <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>)}
@@ -216,7 +216,7 @@ export default function CaptionEnhancer() {
                 <select
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 appearance-none cursor-pointer"
                   style={{ color: "#ffffff" }}
                 >
                   {GOALS.map((g) => <option key={g} value={g} className="bg-[#1a1a2e]">{g}</option>)}
@@ -235,7 +235,7 @@ export default function CaptionEnhancer() {
                   onClick={() => setFocus(opt.value)}
                   className={`text-left px-3 py-2 rounded-xl border text-xs transition-all leading-snug ${
                     focus === opt.value
-                      ? "bg-violet-500/15 border-violet-500/40 text-violet-200"
+                      ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-200"
                       : "bg-white/3 border-white/8 text-white/40 hover:bg-white/5 hover:text-white/60"
                   }`}
                 >
@@ -294,7 +294,7 @@ export default function CaptionEnhancer() {
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                   className="rounded-2xl bg-white/[0.03] border border-white/8 p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-4 h-4 text-violet-400" />
+                    <TrendingUp className="w-4 h-4 text-cyan-400" />
                     <span className="text-sm font-semibold text-white/80">Hook Score</span>
                     <span className="ml-auto text-xs text-white/30">out of 10</span>
                   </div>
@@ -329,7 +329,7 @@ export default function CaptionEnhancer() {
                   subtitle={result.fullRewrite.whyItWorks}
                   caption={result.fullRewrite.caption}
                   changes={result.fullRewrite.changesMade}
-                  accent="bg-violet-500/12 text-violet-300 border-violet-500/20"
+                  accent="bg-cyan-500/12 text-cyan-300 border-cyan-500/20"
                   delay={0.2}
                 />
               )}

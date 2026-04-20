@@ -152,7 +152,7 @@ export function RatingModal({ open, onClose }: RatingModalProps) {
                   <Button
                     onClick={handleRate}
                     disabled={selected === 0}
-                    className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold rounded-xl disabled:opacity-40 transition-all"
+                    className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold rounded-xl disabled:opacity-40 transition-all"
                   >
                     Submit Rating
                   </Button>

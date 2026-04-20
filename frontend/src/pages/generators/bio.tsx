@@ -69,7 +69,7 @@ function VariationCard({ v, platform, idx }: { v: BioVariation; platform: string
   const limit = CHAR_LIMITS[platform] || 150;
 
   const labelColors: Record<string, string> = {
-    Authority: "bg-violet-500/15 text-violet-300 border-violet-500/20",
+    Authority: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20",
     Story: "bg-blue-500/15 text-blue-300 border-blue-500/20",
     Bold: "bg-amber-500/15 text-amber-300 border-amber-500/20",
   };
@@ -107,7 +107,7 @@ function VariationCard({ v, platform, idx }: { v: BioVariation; platform: string
 
       {v.strategy && (
         <p className="mt-3 text-white/40 text-xs flex items-start gap-1.5">
-          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-violet-400/70" />
+          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-cyan-400/70" />
           {v.strategy}
         </p>
       )}
@@ -177,8 +177,8 @@ export default function BioGenerator() {
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/25 to-purple-500/25 border border-violet-500/20 flex items-center justify-center">
-              <User className="w-5 h-5 text-violet-300" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/25 to-teal-500/25 border border-cyan-500/20 flex items-center justify-center">
+              <User className="w-5 h-5 text-cyan-300" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Bio Generator</h1>
@@ -199,7 +199,7 @@ export default function BioGenerator() {
                   onClick={() => setPlatform(p)}
                   className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-xs font-medium transition-all ${
                     platform === p
-                      ? "bg-violet-500/15 border-violet-500/40 text-violet-200"
+                      ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-200"
                       : "bg-white/3 border-white/8 text-white/40 hover:bg-white/6 hover:text-white/60"
                   }`}
                 >
@@ -218,7 +218,7 @@ export default function BioGenerator() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="e.g. Fitness Coach, SaaS Founder"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/7"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-white/7"
                 style={{ color: "#ffffff" }}
               />
             </div>
@@ -228,7 +228,7 @@ export default function BioGenerator() {
                 <select
                   value={niche}
                   onChange={(e) => setNiche(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 appearance-none cursor-pointer"
                   style={{ color: "#ffffff" }}
                 >
                   {NICHES.map((n) => <option key={n} value={n} className="bg-[#1a1a2e]">{n}</option>)}
@@ -245,7 +245,7 @@ export default function BioGenerator() {
               value={expertise}
               onChange={(e) => setExpertise(e.target.value)}
               placeholder="e.g. strength training, keto nutrition, injury rehab"
-              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/7"
+              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-white/7"
               style={{ color: "#ffffff" }}
             />
           </div>
@@ -257,7 +257,7 @@ export default function BioGenerator() {
                 <select
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 appearance-none cursor-pointer"
                   style={{ color: "#ffffff" }}
                 >
                   {TONES.map((t) => <option key={t} value={t} className="bg-[#1a1a2e]">{t}</option>)}
@@ -272,7 +272,7 @@ export default function BioGenerator() {
                 value={cta}
                 onChange={(e) => setCta(e.target.value)}
                 placeholder="e.g. DM me 'START'"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/7"
+                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-white/7"
                 style={{ color: "#ffffff" }}
               />
             </div>
@@ -285,7 +285,7 @@ export default function BioGenerator() {
               value={achievements}
               onChange={(e) => setAchievements(e.target.value)}
               placeholder="e.g. Helped 500+ clients, 100K followers, Forbes 30 Under 30"
-              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/7"
+              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-white/7"
               style={{ color: "#ffffff" }}
             />
           </div>
@@ -293,7 +293,7 @@ export default function BioGenerator() {
           <button
             onClick={generate}
             disabled={loading || !role.trim()}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
@@ -319,7 +319,7 @@ export default function BioGenerator() {
               className="mt-8 space-y-4"
             >
               <div className="flex items-center gap-2.5 justify-center mb-6">
-                <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin shrink-0" />
+                <div className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin shrink-0" />
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={loadingMsgIdx}
@@ -327,7 +327,7 @@ export default function BioGenerator() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
                     transition={{ duration: 0.3 }}
-                    className="text-sm text-violet-300 font-medium whitespace-nowrap"
+                    className="text-sm text-cyan-300 font-medium whitespace-nowrap"
                   >
                      {LOADING_MESSAGES[loadingMsgIdx]}
                   </motion.span>
@@ -371,11 +371,11 @@ export default function BioGenerator() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="rounded-xl bg-violet-500/8 border border-violet-500/15 p-3.5 flex items-start gap-2.5"
+                  className="rounded-xl bg-cyan-500/8 border border-cyan-500/15 p-3.5 flex items-start gap-2.5"
                 >
-                  <Zap className="w-4 h-4 text-violet-400 mt-0.5 shrink-0" />
+                  <Zap className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-xs font-semibold text-violet-300 mb-0.5">Pro Tip</p>
+                    <p className="text-xs font-semibold text-cyan-300 mb-0.5">Pro Tip</p>
                     <p className="text-xs text-white/60">{result.proTip}</p>
                   </div>
                 </motion.div>
