@@ -26,9 +26,10 @@ interface UpgradeModalProps {
   reason?: "limit" | "expired" | "blocked" | "pro_feature" | "upgrade";
   featureName?: string;
   message?: string;
-  targetPlan?: "starter" | "pro";
+  targetPlan?: "starter" | "creator" | "infinity";
 }
 
+type PlanType = "starter" | "creator" | "infinity";
 type PaymentState = "idle" | "pending" | "success" | "error";
 
 const REASONS = {
@@ -56,29 +57,33 @@ const STARTER_HIGHLIGHTS = [
   "20 content generations per month",
   "1 Regeneration per topic",
   "Instagram, YouTube, Twitter, LinkedIn",
-  "Hooks, CTAs, hashtags — all structured",
-  "Idea Generator + 7-Day Strategy Planner",
+  "Basic English + 1 Premium Language",
   "Cancel anytime",
 ];
 
-const PRO_HIGHLIGHTS = [
+const CREATOR_HIGHLIGHTS = [
+  "60 content generations per month",
+  "3 Regenerations per topic",
+  "Multi-Variation (3 outputs per gen)",
+  "Viral Score™ enabled",
+  "Cancel anytime",
+];
+
+const INFINITY_HIGHLIGHTS = [
   "Unlimited content generations",
   "Unlimited Regenerations per topic",
   "AI Writing Styles (Bold · Viral · Story · Pro)",
-  "Viral Score™ — rate content virality 0–100",
   "Trending Topics Feed — daily fresh ideas",
-  "Multi-Variation Output (3× per generation)",
-  "Content Calendar + Performance Insights",
   "Priority AI (2× faster) + Priority Support",
 ];
 
 export function UpgradeModal({ open, onClose, reason = "limit", featureName, message, targetPlan = "starter" }: UpgradeModalProps) {
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
-  const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro">(
-    reason === "pro_feature" ? "pro" : targetPlan
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>(
+    reason === "pro_feature" ? "infinity" : targetPlan
   );
-  const [purchasedPlan, setPurchasedPlan] = useState<"starter" | "pro">(
-    reason === "pro_feature" ? "pro" : targetPlan
+  const [purchasedPlan, setPurchasedPlan] = useState<PlanType>(
+    reason === "pro_feature" ? "infinity" : targetPlan
   );
   const createSub = useCreateSubscription();
   const verifySub = useVerifySubscription();
@@ -97,10 +102,10 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
       ? `${featureName} is exclusive to Infinity. Upgrade to unlock it and all premium features.`
       : subtitle;
 
-  const highlights = selectedPlan === "pro" ? PRO_HIGHLIGHTS : STARTER_HIGHLIGHTS;
-  const price = selectedPlan === "pro" ? "₹399" : "₹249";
-  const planLabel = selectedPlan === "pro" ? "Infinity" : "Creator";
-  const purchasedPlanLabel = purchasedPlan === "pro" ? "Infinity" : "Creator";
+  const highlights = selectedPlan === "infinity" ? INFINITY_HIGHLIGHTS : selectedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS;
+  const price = selectedPlan === "infinity" ? "₹499" : selectedPlan === "creator" ? "₹249" : "₹109";
+  const planLabel = selectedPlan === "infinity" ? "Infinity" : selectedPlan === "creator" ? "Creator" : "Starter";
+  const purchasedPlanLabel = purchasedPlan === "infinity" ? "Infinity" : purchasedPlan === "creator" ? "Creator" : "Starter";
 
   const handleClose = () => {
     if (paymentState === "pending") return;
@@ -108,14 +113,14 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
     onClose();
   };
 
-  const handleCheckout = async (forcePlan?: "starter" | "pro") => {
+  const handleCheckout = async (forcePlan?: PlanType) => {
     const plan = forcePlan ?? selectedPlan;
-    const planLabelForCheckout = plan === "pro" ? "Infinity" : "Creator";
+    const planLabelForCheckout = plan === "infinity" ? "Infinity" : plan === "creator" ? "Creator" : "Starter";
     setPurchasedPlan(plan);
     setPaymentState("pending");
 
     try {
-      const priceForCheckout = plan === "pro" ? "₹499" : "₹249";
+      const priceForCheckout = plan === "infinity" ? "₹499" : plan === "creator" ? "₹249" : "₹109";
       const loaded = await loadRazorpay();
       if (!loaded) {
         toast({ variant: "destructive", title: "Could not load payment gateway. Check your connection." });
@@ -123,7 +128,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
         return;
       }
 
-      const data = await createSub.mutateAsync({ planType: plan === "pro" ? "infinity" : "creator", couponCode: discountPercent > 0 ? couponCode : undefined });
+      const data = await createSub.mutateAsync({ planType: plan, couponCode: discountPercent > 0 ? couponCode : undefined });
 
       const options = {
         key: data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -138,7 +143,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_subscription_id: response.razorpay_subscription_id,
               razorpay_signature: response.razorpay_signature,
-              planType: plan === "pro" ? "infinity" : "creator",
+              planType: plan,
             });
             queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
             setPaymentState("success");
@@ -221,7 +226,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       </p>
 
                       <ul className="space-y-1.5 text-left mb-6 max-w-xs mx-auto">
-                        {(purchasedPlan === "pro" ? PRO_HIGHLIGHTS : STARTER_HIGHLIGHTS).slice(0, 3).map(h => (
+                        {(purchasedPlan === "infinity" ? INFINITY_HIGHLIGHTS : purchasedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS).slice(0, 3).map(h => (
                           <li key={h} className="flex items-center gap-2 text-xs text-white/60">
                             <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                             {h}
@@ -310,7 +315,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
 
                     <div className="flex items-center justify-between mb-4 px-1">
                       <div>
-                        <span className="text-2xl font-bold text-white">₹399</span>
+                        <span className="text-2xl font-bold text-white">₹499</span>
                         <span className="text-white/40 text-xs ml-1">/month</span>
                       </div>
                       <span className="text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2.5 py-1 font-semibold">
@@ -320,7 +325,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
 
                     <Button
                       className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-2"
-                      onClick={() => handleCheckout("pro")}
+                      onClick={() => handleCheckout("infinity")}
                       disabled={paymentState === "pending"}
                     >
                       {paymentState === "pending" ? (
@@ -358,18 +363,18 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       <Button
                         className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/30 text-white/80 hover:text-white font-semibold text-sm rounded-xl transition-all duration-200"
                         variant="outline"
-                        onClick={() => handleCheckout("starter")}
+                        onClick={() => handleCheckout("creator")}
                         disabled={paymentState === "pending"}
                       >
                         {paymentState === "pending" ? (
                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
                         ) : (
-                          <>Get Unlimited Access</>
+                          <>Get More Credits</>
                         )}
                       </Button>
                       <Button
                         className="flex-1 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-cyan-900/40"
-                        onClick={() => handleCheckout("pro")}
+                        onClick={() => handleCheckout("infinity")}
                         disabled={paymentState === "pending"}
                       >
                         {paymentState === "pending" ? (
@@ -408,19 +413,23 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                       </button>
                     </div>
 
-                    <div className="flex gap-2 mb-4">
-                      {(["starter", "pro"] as const).map(p => (
+                    <div className="flex gap-2 mb-4 overflow-x-auto pb-1 hide-scrollbar">
+                      {(["starter", "creator", "infinity"] as const).map((p) => (
                         <button
                           key={p}
                           onClick={() => setSelectedPlan(p)}
-                          className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
+                          className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold border transition-all duration-200 whitespace-nowrap min-w-[100px] ${
                             selectedPlan === p
                               ? "bg-cyan-600/25 border-cyan-500/50 text-cyan-200"
                               : "border-white/8 text-white/40 hover:text-white/60 hover:border-white/15"
                           }`}
                         >
-                          {p === "pro" ? "Infinity · ₹399/mo" : "Creator · ₹249/mo"}
-                          {p === "pro" && <span className="ml-1 text-[9px] text-cyan-400">★ Best</span>}
+                          <div className="flex flex-col gap-0.5">
+                            <span>{p === "infinity" ? "Infinity" : p === "creator" ? "Creator" : "Starter"}</span>
+                            <span className="text-[10px] font-normal opacity-80">
+                              {p === "infinity" ? "₹499/mo" : p === "creator" ? "₹249/mo" : "₹109/mo"}
+                            </span>
+                          </div>
                         </button>
                       ))}
                     </div>
