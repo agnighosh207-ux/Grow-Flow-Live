@@ -404,9 +404,10 @@ export default function Home() {
                {/* Pulsing Quantum Core */}
                <div className="relative w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-[#00F2FF] shadow-[0_0_80px_#00F2FF,inset_0_0_20px_#FFF] flex items-center justify-center animate-pulse z-20">
                  <div className="w-full h-full rounded-full border-2 border-white/40 absolute scale-110 animate-ping opacity-30 delay-150" />
-               </div>
-             </div>
-               
+                </div>
+              </div>
+            </div>
+                
              <div className="relative w-full z-40 flex flex-col items-center justify-center p-4 sm:p-8 pointer-events-auto py-12 sm:py-20">
                <div className="w-full max-w-2xl rounded-2xl border border-[#00F2FF]/30 bg-[#0B1215]/60 backdrop-blur-xl shadow-[inset_0_0_80px_rgba(0,242,255,0.05),0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-500">
                   <div className="flex items-center justify-between px-4 py-2 sm:py-3 border-b border-[#00F2FF]/20 bg-gradient-to-r from-transparent via-[#00F2FF]/10 to-transparent relative">
