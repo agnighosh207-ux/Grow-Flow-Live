@@ -106,6 +106,8 @@ function CellContent({ value, infinityLabel }: { value: boolean | string; infini
   return <X className="w-4 h-4 text-white/20 mx-auto" />;
 }
 
+const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3 };
+
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity" }>({ open: false, plan: "starter" });
@@ -116,23 +118,39 @@ export default function PricingPage() {
   const { toast } = useToast();
 
   const currentPlan = sub?.planType ?? "free";
+  const currentRank = PLAN_RANK[currentPlan] ?? 0;
+  const isActivePaidUser = sub?.plan === "active" || sub?.plan === "trial";
   const starterPrice = BASE_PRICES.starter[billing];
   const creatorPrice = BASE_PRICES.creator[billing];
   const infinityPrice = BASE_PRICES.infinity[billing];
+
+  // Returns button state for each plan
+  const getPlanState = (plan: "starter" | "creator" | "infinity"): "current" | "upgrade" | "downgrade" | "cta" => {
+    if (!sub || !isActivePaidUser) return "cta";
+    const targetRank = PLAN_RANK[plan] ?? 0;
+    if (plan === currentPlan) return "current";
+    if (targetRank > currentRank) return "upgrade";
+    return "downgrade";
+  };
   
   const handlePlanClick = (plan: "starter" | "creator" | "infinity") => {
     if (isLoaded && !isSignedIn) {
       navigate("/sign-in");
       return;
     }
-    if (sub &&
-      ((plan === "starter" && currentPlan === "starter" && sub.plan === "active") ||
-      (plan === "creator" && currentPlan === "creator" && sub.plan === "active") ||
-      (plan === "infinity" && currentPlan === "infinity" && sub.plan === "active"))
-    ) {
-      toast({ title: "Already on this plan", description: "You're already subscribed to this plan." });
+    const state = getPlanState(plan);
+    if (state === "current") {
+      toast({ title: "You're already on this plan", description: "You're already on this plan. Manage it from Settings.", });
       return;
     }
+    if (state === "downgrade") {
+      toast({
+        title: "You're on a higher plan 👑",
+        description: `You're already on ${currentPlan}. To switch to a lower plan, cancel your current subscription first from Settings.`,
+      });
+      return;
+    }
+    // Only open the modal for upgrade or new users
     setUpgradeModal({ open: true, plan });
   };
 
@@ -326,11 +344,17 @@ export default function PricingPage() {
             </div>
 
             <Button
-              className="w-full bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-200 hover:text-white"
+              className={`w-full border transition-all ${
+                getPlanState("starter") === "current"
+                  ? "bg-emerald-600/30 border-emerald-500/40 text-emerald-300 cursor-default"
+                  : getPlanState("starter") === "downgrade"
+                  ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
+                  : "bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 text-emerald-200 hover:text-white"
+              }`}
               onClick={() => handlePlanClick("starter")}
             >
-              {currentPlan === "starter" && sub?.plan === "active" ? "Current Plan" : "Get Starter →"}
-              <ChevronRight className="w-4 h-4 ml-1" />
+              {getPlanState("starter") === "current" ? "✓ Current Plan" : getPlanState("starter") === "downgrade" ? "Lower Plan" : "Get Starter →"}
+              {getPlanState("starter") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
             </Button>
           </motion.div>
 
@@ -413,11 +437,17 @@ export default function PricingPage() {
             </div>
 
             <Button
-              className="w-full bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
+              className={`w-full border transition-all ${
+                getPlanState("creator") === "current"
+                  ? "bg-cyan-600/30 border-cyan-500/40 text-cyan-300 cursor-default"
+                  : getPlanState("creator") === "downgrade"
+                  ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
+                  : "bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
+              }`}
               onClick={() => handlePlanClick("creator")}
             >
-              {currentPlan === "creator" && sub?.plan === "active" ? "Current Plan" : "Get Creator →"}
-              <ChevronRight className="w-4 h-4 ml-1" />
+              {getPlanState("creator") === "current" ? "✓ Current Plan" : getPlanState("creator") === "downgrade" ? "Lower Plan" : "Get Creator →"}
+              {getPlanState("creator") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
             </Button>
           </motion.div>
 
@@ -489,11 +519,15 @@ export default function PricingPage() {
             </div>
 
             <Button
-              className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white"
+              className={`w-full border transition-all ${
+                getPlanState("infinity") === "current"
+                  ? "bg-teal-600/30 border-teal-500/40 text-teal-300 cursor-default"
+                  : "bg-white/10 hover:bg-white/20 border-white/20 text-white"
+              }`}
               onClick={() => handlePlanClick("infinity")}
             >
-              {currentPlan === "infinity" && sub?.plan === "active" ? "Current Plan" : "Unlock Infinity →"}
-              <ChevronRight className="w-4 h-4 ml-1" />
+              {getPlanState("infinity") === "current" ? "✓ Current Plan" : "Unlock Infinity →"}
+              {getPlanState("infinity") !== "current" && <ChevronRight className="w-4 h-4 ml-1" />}
             </Button>
             <p className="text-center text-white/35 text-xs mt-2.5">Cancel anytime</p>
           </motion.div>
@@ -740,7 +774,7 @@ export default function PricingPage() {
       <UpgradeModal
         open={upgradeModal.open}
         onClose={() => setUpgradeModal((p) => ({ ...p, open: false }))}
-        reason="limit"
+        reason={isActivePaidUser ? "blocked" : "limit"}
         targetPlan={upgradeModal.plan === "infinity" ? "pro" : "starter"}
       />
     </div>
