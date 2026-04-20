@@ -353,7 +353,7 @@ export default function Home() {
           className="w-[95%] sm:w-full max-w-5xl mx-auto mt-6"
         >
           {/* God Tier Cinematic Hero Console */}
-          <div className="relative aspect-[4/3] sm:aspect-[21/9] w-[110%] -ml-[5%] md:w-full md:ml-0 rounded-[20px] sm:rounded-[40px] overflow-hidden border border-[#00F2FF]/15 shadow-[0_0_150px_rgba(0,242,255,0.05),inset_0_0_40px_rgba(0,242,255,0.05)] flex items-center justify-center bg-[#050B0D]/90 backdrop-blur-3xl mt-16 group">
+          <div className="relative min-h-[550px] sm:min-h-[650px] w-[110%] -ml-[5%] md:w-full md:ml-0 rounded-[20px] sm:rounded-[40px] overflow-hidden border border-[#00F2FF]/15 shadow-[0_0_150px_rgba(0,242,255,0.05),inset_0_0_40px_rgba(0,242,255,0.05)] flex flex-col items-center justify-center bg-[#050B0D]/90 backdrop-blur-3xl mt-16 group py-16 sm:py-20">
              
              {/* Streaming Data Background */}
              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
@@ -388,7 +388,8 @@ export default function Home() {
              </div>
              
              {/* 3D Kinetic Neural Array */}
-             <div className="relative w-40 h-40 sm:w-64 sm:h-64 rounded-full border border-dashed border-[#00F2FF]/20 shadow-[0_0_100px_rgba(0,242,255,0.1)] flex items-center justify-center">
+             <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-10">
+               <div className="relative w-40 h-40 sm:w-64 sm:h-64 rounded-full border border-dashed border-[#00F2FF]/20 shadow-[0_0_100px_rgba(0,242,255,0.1)] flex items-center justify-center">
                <motion.div 
                  animate={{ rotate: 360 }} 
                  transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
@@ -406,7 +407,7 @@ export default function Home() {
                </div>
              </div>
                
-             <div className="absolute inset-0 z-40 flex flex-col items-center justify-center p-4 sm:p-8 pointer-events-auto mt-4 sm:mt-0">
+             <div className="relative w-full z-40 flex flex-col items-center justify-center p-4 sm:p-8 pointer-events-auto py-12 sm:py-20">
                <div className="w-full max-w-2xl rounded-2xl border border-[#00F2FF]/30 bg-[#0B1215]/60 backdrop-blur-xl shadow-[inset_0_0_80px_rgba(0,242,255,0.05),0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-500">
                   <div className="flex items-center justify-between px-4 py-2 sm:py-3 border-b border-[#00F2FF]/20 bg-gradient-to-r from-transparent via-[#00F2FF]/10 to-transparent relative">
                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00F2FF]/50 to-transparent" />
@@ -450,7 +451,7 @@ export default function Home() {
                         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                         exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
                         transition={{ duration: 0.3 }}
-                        className={`relative rounded-xl border ${PLATFORMS[activePlatform].border} p-5 sm:p-6 overflow-hidden bg-[#050B0D]/90 isolate shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]`}
+                        className={`relative rounded-xl border ${PLATFORMS[activePlatform].border} p-5 sm:p-6 overflow-hidden bg-[#050B0D]/90 isolate shadow-[inset_0_0_30px_rgba(0,0,0,0.5)] min-h-[160px] sm:min-h-[180px] flex flex-col justify-center`}
                       >
                         <div className={`absolute inset-0 bg-gradient-to-br ${PLATFORMS[activePlatform].bg} pointer-events-none opacity-40 -z-10`} />
                         <div className="relative z-10">
@@ -465,10 +466,9 @@ export default function Home() {
                     </AnimatePresence>
                   </div>
                </div>
-               
-               <div className="mt-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00F2FF]/30 bg-[#050B0D]/80 backdrop-blur-md shadow-[0_0_20px_rgba(0,242,255,0.1)]">
-                 <span className="w-1.5 h-1.5 rounded-full bg-[#00F2FF] animate-pulse" />
-                 <span className="text-[#00F2FF] text-[9px] sm:text-[10px] tracking-[0.3em] font-mono font-bold uppercase">Engine Operational</span>
+                <div className="mt-8 relative z-50 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#00F2FF]/30 bg-[rgba(5,11,13,0.9)] backdrop-blur-xl shadow-[0_0_30px_rgba(0,242,255,0.15)]">
+                 <span className="w-2 h-2 rounded-full bg-[#00F2FF] animate-[pulse_1.5s_ease-in-out_infinite] shadow-[0_0_8px_#00F2FF]" />
+                 <span className="text-[#00F2FF] text-[10px] sm:text-xs tracking-[0.3em] font-mono font-bold uppercase drop-shadow-[0_0_5px_rgba(0,242,255,0.5)]">Engine Operational</span>
                </div>
              </div>
           </div>
