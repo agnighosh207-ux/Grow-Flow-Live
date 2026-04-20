@@ -30,7 +30,11 @@ router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), async (
   const nicheContext = nicheContextMap[niche] || nicheContextMap["General"];
   const painPoint = nichePainPoints[niche] || nichePainPoints["General"];
 
+  const currentYear = new Date().getFullYear();
+
   const systemPrompt = `You are a content strategist who has reverse-engineered why certain pieces of content get millions of views while identical content on the same topic gets ignored. You know it comes down to three things: the SPECIFICITY of the angle, the PSYCHOLOGICAL PRECISION of the hook, and whether the idea hits the audience's EXACT current pain point.
+
+IMPORTANT CONTEXT: The current year is ${currentYear}. ALL scenarios, examples, dates, and trends MUST reflect the reality of ${currentYear} or later. NEVER generate ideas referencing 2024 or earlier.
 
 Your content ideas are used by creators who go from 0 to 100K followers because each idea:
 - Targets ONE specific person in ONE specific situation (not "fitness people" — "the person who's been training for 2 years and still doesn't look like they train")

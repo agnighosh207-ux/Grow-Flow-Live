@@ -66,7 +66,11 @@ router.post("/content/pack", requireAuth, async (req: any, res): Promise<void> =
     return;
   }
 
+  const currentYear = new Date().getFullYear();
+
   const systemPrompt = `You are an elite multi-platform content strategist. You strictly apply expert copywriting frameworks (like AIDA, PAS, or hook-story-offer). For the SINGLE IDEA below, create a complete Pro-Tier Content Kit.
+
+IMPORTANT CONTEXT: The current year is ${currentYear}. ALL references, strategies, examples, and dates MUST reflect the reality of ${currentYear} or later. NEVER generate ideas referencing 2024 or earlier.
 
 IDEA: "${idea}"
 TONE: ${tone}

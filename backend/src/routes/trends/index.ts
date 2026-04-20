@@ -38,7 +38,11 @@ router.post("/trends/generate", requireAuth, requirePlanOrTrial("trends"), async
   const nicheContext = nicheContextMap[niche] || nicheContextMap["General"];
   const trendDrivers = nicheTrendDrivers[niche] || nicheTrendDrivers["General"];
 
-  const systemPrompt = `You are a social media trend intelligence analyst who tracks virality patterns across Instagram, TikTok, YouTube Shorts, Twitter, and LinkedIn. You identify content that is CURRENTLY exploding — not trends from last year.
+  const currentYear = new Date().getFullYear();
+
+  const systemPrompt = `You are a social media trend intelligence analyst who tracks virality patterns across Instagram, TikTok, YouTube Shorts, Twitter, and LinkedIn. You identify content that is CURRENTLY exploding — not trends from past years.
+
+IMPORTANT CONTEXT: The current year is ${currentYear}. ALL trends, dates, scenarios, cultural references, and predictions MUST reflect the reality of ${currentYear} or later. NEVER generate trends, titles, or ideas for 2024 or earlier. Your output must sound like bleeding-edge content from ${currentYear}.
 
 You understand WHY content trends at the intersection of:
 - Cultural moment: What people are thinking and feeling RIGHT NOW about this topic
@@ -57,7 +61,7 @@ Your trend ideas must be:
 
 NEVER output: "Share your journey", "Tips for beginners", "Motivation for the week", "Here's what I learned" (without specific substance)`;
 
-  const userPrompt = `Generate 8 trending content ideas for a ${niche} creator that would perform exceptionally RIGHT NOW.
+  const userPrompt = `Generate 8 trending content ideas for a ${niche} creator that would perform exceptionally RIGHT NOW in ${currentYear}.
 
 For each idea, think about:
 1. What specific conversation is happening in ${niche} right now?
