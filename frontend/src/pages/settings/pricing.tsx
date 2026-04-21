@@ -245,7 +245,7 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex flex-col"
+            className="hyper-hover-card rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex flex-col"
           >
             <div className="mb-6">
               <p className="text-xs font-semibold tracking-widest uppercase text-white/40 mb-2">Explorer</p>
@@ -287,7 +287,7 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 }}
-            className="rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/30 to-teal-950/20 p-6 flex flex-col"
+            className="hyper-hover-card rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/30 to-teal-950/20 p-6 flex flex-col"
           >
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-2">
@@ -363,7 +363,7 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)]"
+            className="hyper-hover-card relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)]"
           >
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
               <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
@@ -442,7 +442,7 @@ export default function PricingPage() {
                   ? "bg-cyan-600/30 border-cyan-500/40 text-cyan-300 cursor-default"
                   : getPlanState("creator") === "downgrade"
                   ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
-                  : "bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
+                  : "shine-effect bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
               }`}
               onClick={() => handlePlanClick("creator")}
             >
@@ -456,7 +456,7 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col"
+            className="hyper-hover-card relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col"
           >
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
               <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
@@ -522,7 +522,7 @@ export default function PricingPage() {
               className={`w-full border transition-all ${
                 getPlanState("infinity") === "current"
                   ? "bg-teal-600/30 border-teal-500/40 text-teal-300 cursor-default"
-                  : "bg-white/10 hover:bg-white/20 border-white/20 text-white"
+                  : "shine-effect bg-gradient-to-r from-teal-600/80 to-pink-600/80 hover:from-teal-500 hover:to-pink-500 border border-white/20 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)]"
               }`}
               onClick={() => handlePlanClick("infinity")}
             >

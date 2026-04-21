@@ -1,5 +1,5 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import { motion, animate } from "framer-motion";
 import { BarChart3, Crown, TrendingUp, Zap, Linkedin, Twitter, Star } from "lucide-react";
 import { SiInstagram, SiYoutube } from "react-icons/si";
 import { PlanGate } from "@/components/shared/PlanGate";
@@ -18,13 +18,33 @@ const CONTENT_TYPE_COLORS: Record<string, string> = {
   Viral: "bg-[#00F2FF] opacity-60",
 };
 
+function AnimatedCounter({ value }: { value: number | string }) {
+  const [count, setCount] = useState(typeof value === "number" ? 0 : value);
+  
+  useEffect(() => {
+    if (typeof value === "number") {
+      const controls = animate(0, value, {
+        duration: 1.5,
+        ease: "easeOut",
+        onUpdate: (v) => setCount(Math.floor(v)),
+      });
+      return controls.stop;
+    } else {
+      setCount(value);
+    }
+  }, [value]);
+  
+  return <>{count}</>;
+}
+
 function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value: string | number; sub?: string; icon: React.ReactNode; delay?: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, scale: 1.02 }}
       transition={{ delay }}
-      className="rounded-2xl border border-white/8 p-5"
+      className="hyper-hover-card rounded-2xl border border-white/8 p-5"
       style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(255,255,255,0.02) 100%)" }}
     >
       <div className="flex items-center justify-between mb-3">
@@ -33,7 +53,9 @@ function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value
           {icon}
         </div>
       </div>
-      <div className="text-3xl font-bold text-white">{value}</div>
+      <div className="text-3xl font-bold text-white">
+        <AnimatedCounter value={value} />
+      </div>
       {sub && <div className="text-xs text-white/40 mt-1">{sub}</div>}
     </motion.div>
   );
@@ -180,7 +202,7 @@ export default function Insights() {
                         initial={{ height: 0 }}
                         animate={{ height: `${height}%` }}
                         transition={{ delay: 0.3 + i * 0.05, duration: 0.6, ease: "easeOut" }}
-                        className={`w-full rounded-t-sm ${isToday ? "bg-[#00F2FF]" : ""}`}
+                        className={`w-full rounded-t-md ${isToday ? "bg-[#00F2FF] shadow-[0_0_12px_#00F2FF]" : ""}`}
                         style={{ minHeight: 2, backgroundColor: isToday ? '#00F2FF' : 'var(--surface-petrol)' }}
                       />
                       <span className={`text-[9px] font-medium ${isToday ? "text-[#00F2FF]" : "text-[var(--text-muted)]"}`}>{weeklyDays[i]}</span>

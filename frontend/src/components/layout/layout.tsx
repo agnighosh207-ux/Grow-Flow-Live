@@ -253,14 +253,18 @@ function NavItem({
         `}
       >
         {isActive && (
-          <span className="absolute left-0 inset-y-1 w-0.5 rounded-r-full bg-cyan-500" />
+          <motion.span
+            layoutId="activeNavIndicator"
+            className="absolute left-0 inset-y-1 w-0.5 rounded-r-full bg-cyan-500 shadow-[0_0_10px_#00F2FF]"
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          />
         )}
         <Icon
-          className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-cyan-400" : ""}`}
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-cyan-400" : ""}`}
         />
         <span className="text-sm flex-1 truncate">{label}</span>
         {badge}
-        {isLocked && <Lock className="w-3 h-3 text-cyan-500/40 flex-shrink-0" />}
+        {isLocked && <Lock className="w-3 h-3 text-cyan-500/40 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />}
         {pro && isPro && (
           <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0">
             PRO
@@ -300,7 +304,7 @@ function SidebarContent({
     <>
       <div className="px-5 py-4 flex items-center gap-2">
         <Logo size="sm" />
-        <span className="text-[10px] font-semibold text-white/20 bg-white/5 border border-white/8 rounded px-1.5 py-0.5 ml-auto">
+        <span className="text-[10px] font-semibold text-white/40 bg-white/10 border border-white/10 rounded px-1.5 py-0.5 ml-auto shadow-sm">
           v2.0
         </span>
       </div>
@@ -342,10 +346,10 @@ function SidebarContent({
 
       {sub && (sub.plan === "free" || sub.plan === "blocked") && (
         <Link href="/pricing">
-          <div id="tour-upgrade" className="mx-3 mb-3 p-3 rounded-xl cursor-pointer group"
+          <div id="tour-upgrade" className="mx-3 mb-3 p-3 rounded-xl cursor-pointer group pulse-glow transition-all duration-300 hover:scale-[1.02]"
             style={{
               background: "linear-gradient(135deg, rgba(124,58,237,0.18) 0%, rgba(168,85,247,0.1) 100%)",
-              border: "1px solid rgba(124,58,237,0.25)",
+              border: "1px solid rgba(124,58,237,0.4)",
             }}>
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
@@ -539,10 +543,10 @@ export function Layout({ children }: { children: ReactNode }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={location}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 30, mass: 1 }}
               className="w-full"
             >
               {children}
@@ -584,8 +588,15 @@ export function Layout({ children }: { children: ReactNode }) {
                 `}
               >
 
-                <Icon className="w-5 h-5" />
+                <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
                 <span className="text-[9px] font-medium">{label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="mobileNavIndicator"
+                    className="absolute -bottom-1 w-1 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_#00F2FF]"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                )}
               </span>
             </Link>
           );

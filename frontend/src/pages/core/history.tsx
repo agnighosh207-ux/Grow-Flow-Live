@@ -217,7 +217,7 @@ export default function History() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: STAT_CARDS.indexOf(card) * 0.04 }}
-              className={`rounded-2xl border border-white/6 p-4 bg-gradient-to-br ${card.accent} to-transparent`}
+              className={`hyper-hover-card rounded-2xl border border-white/6 p-4 bg-gradient-to-br ${card.accent} to-transparent`}
               style={{ background: `rgba(255,255,255,0.025)` }}
             >
               <div className={`w-8 h-8 rounded-lg ${card.iconBg} ${card.iconColor} flex items-center justify-center mb-3`}>
@@ -266,9 +266,8 @@ export default function History() {
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ delay: Math.min(idx * 0.04, 0.25), duration: 0.22 }}
                 onClick={() => setSelectedItem(item)}
-                className="group rounded-2xl border border-white/6 p-5 cursor-pointer hover:border-white/12 transition-all duration-200 relative flex flex-col"
+                className="hyper-hover-card group rounded-2xl border border-white/6 p-5 cursor-pointer hover:border-white/12 transition-all duration-500 relative flex flex-col"
                 style={{ background: "rgba(255,255,255,0.025)" }}
-                whileHover={{ y: -2 }}
               >
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
