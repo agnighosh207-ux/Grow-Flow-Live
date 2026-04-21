@@ -161,12 +161,13 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
   const avg = analysis?.viralityScore ?? directViralScore ?? Math.round(scores.reduce((a, s) => a + s.score, 0) / scores.length);
 
   return (
-    <motion.div
-      id="tour-viral-score"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
-      className="rounded-xl border border-white/8 overflow-hidden"
+      <motion.div
+        id="tour-viral-score"
+        initial={{ opacity: 0, y: 12 }}
+        whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="hyper-hover-card rounded-xl border border-white/8 overflow-hidden shadow-[0_5px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_30px_rgba(0,242,255,0.2)]"
       style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(255,255,255,0.02) 100%)" }}
     >
       <div className="p-4">
@@ -1330,7 +1331,7 @@ export default function Generate() {
                             <Button
                               type="button"
                               onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                              className="relative bg-gradient-to-r from-cyan-600/80 to-teal-600/80 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all duration-300"
+                              className="shine-effect relative bg-gradient-to-r from-cyan-600/80 to-teal-600/80 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all duration-300"
                             >
                               <Crown className="w-4 h-4 mr-2" /> Unlock Full Power
                             </Button>
@@ -1341,7 +1342,7 @@ export default function Generate() {
                             <Button
                               type="submit"
                               disabled={isLoading}
-                              className="relative bg-gradient-to-r from-cyan-600/90 to-teal-600/90 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-lg transition-all duration-300"
+                              className="shine-effect relative bg-gradient-to-r from-cyan-600/90 to-teal-600/90 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-lg transition-all duration-300"
                             >
                               {isLoading ? (
                                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
@@ -1503,7 +1504,7 @@ export default function Generate() {
                           if (id === "style") setStyleMode(v => !v);
                         }
                       }}
-                      className={`relative text-left p-3 rounded-xl border transition-all duration-200 group w-full
+                      className={`hyper-hover-card group relative text-left p-3 rounded-xl border transition-all duration-200 group w-full
                         ${hasAdvancedFeatures && isOn
                           ? "border-cyan-500/40 bg-cyan-500/10"
                           : "border-white/6 hover:border-cyan-500/20 hover:bg-cyan-500/5"
@@ -1610,7 +1611,7 @@ export default function Generate() {
               return (
                 <div
                   key={p}
-                  className="rounded-2xl border border-white/6 overflow-hidden"
+                  className="hyper-hover-card rounded-2xl border border-white/6 overflow-hidden"
                   style={{ background: "rgba(255,255,255,0.02)" }}
                 >
                   <div className={`h-0.5 bg-gradient-to-r ${config.accentColor} opacity-40`} />

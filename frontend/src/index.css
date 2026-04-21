@@ -195,3 +195,44 @@
 .orb-3 { animation: orb-float-3 10s ease-in-out infinite; background-color: var(--accent-cyan); }
 .score-bar { animation: score-fill 1.2s ease-out forwards; background-color: var(--accent-cyan); }
 .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+@keyframes sweep-shine {
+  0% { transform: translateX(-150%) skewX(-45deg); opacity: 0; }
+  20% { transform: translateX(150%) skewX(-45deg); opacity: 0.5; }
+  100% { transform: translateX(150%) skewX(-45deg); opacity: 0; }
+}
+
+@keyframes pulse-intense {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.4)); }
+  50% { filter: drop-shadow(0 0 25px rgba(0, 242, 255, 0.8)); }
+}
+
+.hyper-hover-card {
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+
+.hyper-hover-card:hover {
+  transform: translateY(-5px) scale(1.02) !important;
+  box-shadow: 0 20px 50px -15px rgba(0, 242, 255, 0.3), inset 0 0 30px rgba(0, 242, 255, 0.1) !important;
+  border-color: rgba(0, 242, 255, 0.5) !important;
+}
+
+.glow-text-intense {
+  text-shadow: 0 0 15px rgba(0, 242, 255, 0.6), 0 0 30px rgba(0, 242, 255, 0.3);
+}
+
+.shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 150%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: sweep-shine 4s infinite;
+}

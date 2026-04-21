@@ -238,7 +238,7 @@ export default function Home() {
             </span>
           </Link>
           <Link href="/sign-up">
-            <Button className="bg-transparent border-2 border-[#00F2FF] text-[#00F2FF] hover:bg-[#00F2FF] hover:text-[#0B1215] font-semibold rounded-full px-4 sm:px-5 text-sm transition-all duration-300 shadow-[0_0_15px_rgba(0,242,255,0.15)] hover:shadow-[0_0_25px_rgba(0,242,255,0.4)]">
+            <Button className="shine-effect relative overflow-hidden bg-transparent border-2 border-[#00F2FF] text-[#00F2FF] hover:bg-[#00F2FF] hover:text-[#0B1215] font-semibold rounded-full px-4 sm:px-5 text-sm transition-all duration-300 shadow-[0_0_15px_rgba(0,242,255,0.15)] hover:shadow-[0_0_35px_rgba(0,242,255,0.6)] hover:scale-105 active:scale-95">
               Get Started Free
             </Button>
           </Link>
@@ -286,7 +286,7 @@ export default function Home() {
           transition={{ duration: 0.55, delay: 0.05 }}
           className="text-5xl md:text-7xl lg:text-[88px] font-bold tracking-tight mb-6 leading-[1.05]"
         >
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#F1F5F9] to-[#00F2FF]">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#F1F5F9] via-[#00F2FF] to-[#F1F5F9] animate-gradient-xy glow-text-intense inline-block hover:scale-[1.02] transition-transform duration-300 cursor-default">
             Stop writing.<br />
             Start growing.
           </span>
@@ -330,9 +330,9 @@ export default function Home() {
           <Link href="/sign-up">
             <Button
               size="lg"
-              className="w-full sm:w-auto bg-transparent border-2 border-[#00F2FF] text-[#00F2FF] hover:bg-[#00F2FF] hover:text-[#0B1215] font-semibold rounded-full px-10 h-14 text-base transition-all duration-300 shadow-[0_0_15px_rgba(0,242,255,0.15)] hover:shadow-[0_0_30px_rgba(0,242,255,0.4)]"
+              className="shine-effect w-full sm:w-auto bg-transparent border-2 border-[#00F2FF] text-[#00F2FF] hover:bg-[#00F2FF] hover:text-[#0B1215] font-bold rounded-full px-10 h-14 text-lg transition-all duration-300 shadow-[0_0_20px_rgba(0,242,255,0.2)] hover:shadow-[0_0_40px_rgba(0,242,255,0.6)] hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group"
             >
-              Start Creating Free <ArrowRight className="w-4 h-4 ml-2" />
+              Start Creating Free <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
             </Button>
           </Link>
           <Link href="/pricing">
@@ -518,7 +518,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.12 }}
-                  className={`relative rounded-2xl border ${step.border} p-7 text-center overflow-hidden`}
+                  className={`hyper-hover-card relative rounded-2xl border ${step.border} p-7 text-center overflow-hidden`}
                   style={{ background: "rgba(255,255,255,0.02)" }}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${step.bg} to-transparent pointer-events-none`} />
@@ -555,7 +555,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ type: "spring", stiffness: 90, damping: 20, mass: 1, delay: i * 0.1 }}
-                className={`relative rounded-[28px] border border-[#00F2FF]/15 p-8 sm:p-10 group overflow-hidden ${span} glass-panel shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:shadow-[0_20px_60px_rgba(0,242,255,0.08),inset_0_0_80px_rgba(0,242,255,0.03)] transition-all duration-700 hover:-translate-y-1 bg-[#050B0D]/90 isolate`}
+                className={`hyper-hover-card relative rounded-[28px] border border-[#00F2FF]/20 p-8 sm:p-10 group overflow-hidden ${span} glass-panel shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-500 bg-[#050B0D]/90 isolate`}
               >
                 {/* Advanced Light Leak Effects */}
                 <div className={`absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(0,242,255,0.08)_0%,transparent_50%)] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
@@ -680,7 +680,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className="relative rounded-2xl border border-white/8 p-6 overflow-hidden group"
+                className="hyper-hover-card relative rounded-2xl border border-white/10 p-6 overflow-hidden group shadow-[0_5px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,242,255,0.15)] transition-all duration-500"
                 style={{ background: "rgba(255,255,255,0.025)" }}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
