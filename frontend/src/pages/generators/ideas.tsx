@@ -180,7 +180,7 @@ function IdeasGeneratorInner() {
               <span className="text-white/50 text-sm">10 ideas for <span className={`font-semibold ${nicheColor}`}>{niche}</span> creators</span>
             </div>
 
-            {ideas.map((idea, i) => {
+            {Array.isArray(ideas) && ideas.map((idea, i) => {
               const isExpanded = expandedIndex === i;
               const patternColor = PATTERN_COLORS[idea.pattern] || "bg-white/8 text-white/60 border-white/10";
 

@@ -458,7 +458,7 @@ function buildPlatformText(platform: Platform, content: any): string {
         content.script && `\nSCRIPT:\n${content.script}`,
       ].filter(Boolean).join("\n");
     case "twitter":
-      return (content.tweets || []).map((t: string, i: number) => `[${i + 1}/${content.tweets.length}] ${t}`).join("\n\n");
+      return Array.isArray(content.tweets) ? content.tweets.map((t: string, i: number) => `[${i + 1}/${content.tweets.length}] ${t}`).join("\n\n") : "";
     case "linkedin":
       return [
         content.headline && `${content.headline}`,
@@ -639,7 +639,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                 </>
               )}
 
-              {platform === "twitter" && content?.tweets && (
+              {platform === "twitter" && Array.isArray(content?.tweets) && content.tweets.length > 0 && (
                 <div className="space-y-3">
                   {content.tweets.map((tweet: string, i: number) => (
                     <div
@@ -1759,7 +1759,7 @@ export default function Generate() {
                   <h3 className="text-sm font-semibold text-white/80">Social SEO</h3>
                 </div>
                 
-                {generatedContent.content.seo_keywords && generatedContent.content.seo_keywords.length > 0 && (
+                {Array.isArray(generatedContent.content?.seo_keywords) && generatedContent.content.seo_keywords.length > 0 && (
                   <div className="mb-4">
                     <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mb-2">Keywords</p>
                     <div className="flex flex-wrap gap-2">
@@ -1783,7 +1783,7 @@ export default function Generate() {
                   </div>
                 )}
                 
-                {generatedContent.content.hashtags && generatedContent.content.hashtags.length > 0 && (
+                {Array.isArray(generatedContent.content?.hashtags) && generatedContent.content.hashtags.length > 0 && (
                   <div>
                     <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mb-2">Hashtags</p>
                     <div className="flex flex-wrap gap-2">

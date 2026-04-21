@@ -269,7 +269,7 @@ export default function CaptionEnhancer() {
                     <span className="text-sm font-semibold text-white/80">Diagnosis</span>
                   </div>
                   <p className="text-sm text-amber-300/80 mb-3 leading-relaxed">{result.diagnosis.mainIssue}</p>
-                  {result.diagnosis.weaknesses?.length > 0 && (
+                  {Array.isArray(result.diagnosis.weaknesses) && result.diagnosis.weaknesses.length > 0 && (
                     <div className="space-y-1">
                       {result.diagnosis.weaknesses.map((w, i) => (
                         <div key={i} className="flex items-start gap-1.5 text-[11px] text-white/40">
@@ -278,7 +278,7 @@ export default function CaptionEnhancer() {
                       ))}
                     </div>
                   )}
-                  {result.diagnosis.strengths?.length > 0 && (
+                  {Array.isArray(result.diagnosis.strengths) && result.diagnosis.strengths.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {result.diagnosis.strengths.map((s, i) => (
                         <div key={i} className="flex items-start gap-1.5 text-[11px] text-white/40">

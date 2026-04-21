@@ -362,7 +362,7 @@ export default function BioGenerator() {
                 <span className="text-xs text-white/30">{result.niche}</span>
               </div>
 
-              {result.variations?.map((v, i) => (
+              {Array.isArray(result.variations) && result.variations.map((v, i) => (
                 <VariationCard key={i} v={v} platform={result.platform} idx={i} />
               ))}
 

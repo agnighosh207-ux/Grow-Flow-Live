@@ -166,7 +166,7 @@ function HooksGeneratorInner() {
               10 Hooks — Each with a different psychological trigger
             </p>
 
-            {hooks.map((hook, i) => {
+            {Array.isArray(hooks) && hooks.map((hook, i) => {
               const pattern = HOOK_PATTERN_LABELS[i];
               const isCopied = copiedIndex === i;
 

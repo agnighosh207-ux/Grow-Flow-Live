@@ -403,9 +403,9 @@ export default function History() {
                 {
                   label: "X / Twitter Thread",
                   icon: <Twitter className="w-4 h-4 text-white/60" />,
-                  content: selectedItem.content.twitter?.tweets?.map((t: string, i: number) => ({
+                  content: Array.isArray(selectedItem.content.twitter?.tweets) ? selectedItem.content.twitter.tweets.map((t: string, i: number) => ({
                     tag: `Tweet ${i + 1}`, text: t,
-                  })) ?? [],
+                  })) : [],
                 },
                 {
                   label: "LinkedIn",
@@ -425,7 +425,7 @@ export default function History() {
                   </div>
                   <div className="rounded-xl border border-white/6 p-4 space-y-3"
                     style={{ background: "rgba(255,255,255,0.02)" }}>
-                    {content.filter((c: { tag: string; text?: string }) => c.text).map(({ tag, text }: { tag: string; text: string }) => (
+                    {Array.isArray(content) && content.filter((c: { tag: string; text?: string }) => c.text).map(({ tag, text }: { tag: string; text: string }) => (
                       <div key={tag} className="group/section space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] font-bold uppercase tracking-widest text-white/30">{tag}</span>

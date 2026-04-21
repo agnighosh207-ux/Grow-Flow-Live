@@ -203,7 +203,7 @@ function StrategyPlannerInner() {
             )}
             
             <div className="space-y-2">
-              {plan.map((day, i) => {
+              {Array.isArray(plan) && plan.map((day, i) => {
                 const isExpanded = expandedDay === day.day;
                 const accentGrad = DAY_ACCENT[i % DAY_ACCENT.length] || DAY_ACCENT[0];
                 const platformColor = PLATFORM_COLORS[day.platform] || "bg-white/8 text-white/60 border-white/10";

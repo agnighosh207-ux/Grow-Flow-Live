@@ -334,7 +334,7 @@ export default function ContentPack() {
                   {result.twitter && (
                     <SectionCard icon={() => <span className="text-sm">🐦</span>} title="Twitter Thread" color="bg-sky-500/20 text-sky-300" delay={0.05}>
                       <div className="space-y-2">
-                        {result.twitter.thread.map((tweet, i) => (
+                        {Array.isArray(result.twitter?.thread) && result.twitter.thread.map((tweet, i) => (
                           <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/4 border border-white/6">
                             <span className="text-[10px] text-white/30 font-mono mt-0.5 w-4 shrink-0">{i + 1}/</span>
                             <p className="text-white/80 text-sm flex-1 leading-snug">{tweet}</p>
@@ -342,7 +342,7 @@ export default function ContentPack() {
                           </div>
                         ))}
                       </div>
-                      <div className="mt-3 flex justify-end"><CopyBtn text={result.twitter.thread.join("\n\n")} label="Copy Thread" /></div>
+                      <div className="mt-3 flex justify-end"><CopyBtn text={Array.isArray(result.twitter?.thread) ? result.twitter.thread.join("\n\n") : ""} label="Copy Thread" /></div>
                     </SectionCard>
                   )}
                   {result.linkedin ? (
@@ -383,7 +383,7 @@ export default function ContentPack() {
                   {result.instagram?.carouselSlides ? (
                     <SectionCard icon={() => <span className="text-sm">🃏</span>} title="Interactive Carousel Preview" badge="Infinity" color="bg-amber-500/20 text-amber-300" delay={0.05}>
                       <div className="flex overflow-x-auto gap-3 pb-4 snap-x no-scrollbar">
-                        {result.instagram.carouselSlides.map((slide, i) => (
+                        {Array.isArray(result.instagram?.carouselSlides) && result.instagram.carouselSlides.map((slide, i) => (
                           <div key={i} className="shrink-0 w-64 h-64 snap-center bg-gradient-to-br from-[#1a1a2e] to-[#0f0f1a] border border-white/10 rounded-2xl p-6 flex flex-col justify-center text-center relative group">
                             <span className="absolute top-4 left-4 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white/50">{i + 1}</span>
                             <p className="text-white font-bold text-lg leading-snug">{slide}</p>
@@ -392,7 +392,7 @@ export default function ContentPack() {
                       </div>
                       <div className="mt-1 flex items-center justify-between">
                          <p className="text-[10px] text-white/30">Swipe to view slides</p>
-                         <CopyBtn text={result.instagram.carouselSlides.join("\n\n")} label="Copy All Texts" />
+                         <CopyBtn text={Array.isArray(result.instagram?.carouselSlides) ? result.instagram.carouselSlides.join("\n\n") : ""} label="Copy All Texts" />
                       </div>
                     </SectionCard>
                   ) : (
