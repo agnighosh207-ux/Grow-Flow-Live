@@ -115,7 +115,14 @@ Return ONLY valid JSON with this exact structure:
     });
 
     const raw = completion.choices[0]?.message?.content ?? "{}";
-    const parsed = JSON.parse(raw);
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error("Failed to parse JSON from AI response.");
+    }
     res.json({ ...parsed, isPro, isCreator });
   } catch (err: any) {
     console.error("Content pack error:", err);
