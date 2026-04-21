@@ -31,6 +31,7 @@ function AnimatedCounter({ value }: { value: number | string }) {
       return controls.stop;
     } else {
       setCount(value);
+      return () => {};
     }
   }, [value]);
   
