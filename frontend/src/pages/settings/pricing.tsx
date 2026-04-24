@@ -12,8 +12,10 @@ import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
   Sparkles, TrendingUp, BarChart3, CalendarDays, Flame, Wand2,
   Shield, Clock, ChevronRight, Crown, Lock, AlertTriangle,
-  IndianRupee, RefreshCw
+  IndianRupee, RefreshCw, Brain
 } from "lucide-react";
+import { MagneticButton } from "@/components/shared/MagneticButton";
+import { Hover3DCard } from "@/components/shared/Hover3DCard";
 
 type BillingPeriod = "monthly" | "quarterly" | "biannual" | "yearly";
 
@@ -164,10 +166,14 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-[#050210] text-white overflow-x-hidden">
       {/* Background orbs */}
-      <div className="fixed inset-0 pointer-events-none">
+      <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-cyan-700/20 blur-[140px]" />
         <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[400px] rounded-full bg-teal-800/15 blur-[140px]" />
         <div className="absolute top-[40%] left-[50%] w-[400px] h-[400px] rounded-full bg-pink-800/10 blur-[140px]" />
+        
+        {/* Floating Graphics */}
+        <motion.div className="absolute top-[15%] right-[5%] opacity-[0.07] animate-float" style={{ animationDelay: '0.5s' }}><Brain className="w-64 h-64 text-cyan-400" /></motion.div>
+        <motion.div className="absolute bottom-[20%] left-[10%] opacity-[0.05] animate-float" style={{ animationDelay: '2s' }}><Zap className="w-48 h-48 text-teal-400" /></motion.div>
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-10 pb-24">
@@ -245,41 +251,47 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="hyper-hover-card rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex flex-col"
+            className="w-full"
           >
-            <div className="mb-6">
-              <p className="text-xs font-semibold tracking-widest uppercase text-white/40 mb-2">Explorer</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black">₹0</span>
-                <span className="text-white/40 text-sm">/ forever</span>
-              </div>
-              <p className="text-white/50 text-sm mt-1">Try it all before you commit</p>
-            </div>
-
-            <div className="space-y-2.5 flex-1 mb-6">
-              {[
-                "5 free monthly generations",
-                "All 4 platforms unlocked",
-                "Basic English Output",
-                "Full content history",
-              ].map((f) => (
-                <div key={f} className="flex items-start gap-2.5">
-                  <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                  <span className="text-white/70 text-sm">{f}</span>
+            <Hover3DCard className="h-full">
+              <div className="hyper-hover-card rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex flex-col h-full">
+                <div className="mb-6">
+                  <p className="text-xs font-semibold tracking-widest uppercase text-white/40 mb-2">Explorer</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black">₹0</span>
+                    <span className="text-white/40 text-sm">/ forever</span>
+                  </div>
+                  <p className="text-white/50 text-sm mt-1">Try it all before you commit</p>
                 </div>
-              ))}
-              <div className="pt-2 border-t border-white/10 mt-1">
-                <p className="text-white/30 text-xs italic">No credit card required</p>
-              </div>
-            </div>
 
-            <Button
-              variant="outline"
-              className="w-full border-white/20 text-white/60 hover:bg-white/5"
-              onClick={() => navigate(sub ? "/generate" : "/sign-in")}
-            >
-              {sub ? "Start Exploring" : "Start Exploring Free"}
-            </Button>
+                <div className="space-y-2.5 flex-1 mb-6">
+                  {[
+                    "5 free monthly generations",
+                    "All 4 platforms unlocked",
+                    "Basic English Output",
+                    "Full content history",
+                  ].map((f) => (
+                    <div key={f} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                      <span className="text-white/70 text-sm">{f}</span>
+                    </div>
+                  ))}
+                  <div className="pt-2 border-t border-white/10 mt-1">
+                    <p className="text-white/30 text-xs italic">No credit card required</p>
+                  </div>
+                </div>
+
+                <MagneticButton>
+                  <Button
+                    variant="outline"
+                    className="w-full border-white/20 text-white/60 hover:bg-white/5"
+                    onClick={() => navigate(sub ? "/generate" : "/sign-in")}
+                  >
+                    {sub ? "Start Exploring" : "Start Exploring Free"}
+                  </Button>
+                </MagneticButton>
+              </div>
+            </Hover3DCard>
           </motion.div>
 
           {/* Starter */}
@@ -287,75 +299,81 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 }}
-            className="hyper-hover-card rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/30 to-teal-950/20 p-6 flex flex-col"
+            className="w-full"
           >
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-xs font-semibold tracking-widest uppercase text-emerald-400">Starter</p>
-              </div>
-              <div className="flex flex-col gap-1">
-                {billing === "monthly" && (
-                    <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.starter}</span>
-                )}
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-emerald-100">₹{starterPrice}</span>
-                  <span className="text-white/40 text-sm">/ mo</span>
-                  {billing === "monthly" && (
-                    <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
+            <Hover3DCard className="h-full">
+              <div className="hyper-hover-card rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/30 to-teal-950/20 p-6 flex flex-col h-full">
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-xs font-semibold tracking-widest uppercase text-emerald-400">Starter</p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {billing === "monthly" && (
+                        <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.starter}</span>
+                    )}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black text-emerald-100">₹{starterPrice}</span>
+                      <span className="text-white/40 text-sm">/ mo</span>
+                      {billing === "monthly" && (
+                        <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
+                      )}
+                    </div>
+                  </div>
+                  {billing !== "monthly" && (
+                    <p className="text-white/40 text-xs mt-1">
+                      ₹{BILLING_TOTALS.starter[billing]} billed {billingLabel(billing)}
+                      {" "}·{" "}
+                      <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.starter[billing]}</span>
+                    </p>
                   )}
+                  <p className="text-white/40 text-[11px] mt-0.5">Introductory pricing for early users</p>
+                  <p className="text-white/55 text-sm mt-1">For creators just getting started</p>
                 </div>
-              </div>
-              {billing !== "monthly" && (
-                <p className="text-white/40 text-xs mt-1">
-                  ₹{BILLING_TOTALS.starter[billing]} billed {billingLabel(billing)}
-                  {" "}·{" "}
-                  <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.starter[billing]}</span>
-                </p>
-              )}
-              <p className="text-white/40 text-[11px] mt-0.5">Introductory pricing for early users</p>
-              <p className="text-white/55 text-sm mt-1">For creators just getting started</p>
-            </div>
 
-            <div className="space-y-2.5 flex-1 mb-6">
-              {[
-                "20 content generations / month",
-                "1 Regeneration per topic",
-                "All 4 platforms unlocked",
-                "English + 1 Premium Language",
-                "Idea Generator + Strategy Planner",
-                "Viral Hooks Generator",
-                "Improve Competitor Content",
-                "Saved Favorites & History",
-              ].map((f) => (
-                <div key={f} className="flex items-start gap-2.5">
-                  <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                  <span className="text-white/70 text-sm">{f}</span>
+                <div className="space-y-2.5 flex-1 mb-6">
+                  {[
+                    "20 content generations / month",
+                    "1 Regeneration per topic",
+                    "All 4 platforms unlocked",
+                    "English + 1 Premium Language",
+                    "Idea Generator + Strategy Planner",
+                    "Viral Hooks Generator",
+                    "Improve Competitor Content",
+                    "Saved Favorites & History",
+                  ].map((f) => (
+                    <div key={f} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                      <span className="text-white/70 text-sm">{f}</span>
+                    </div>
+                  ))}
+                  <div className="pt-2 border-t border-emerald-500/10 mt-1">
+                    <p className="text-emerald-400/60 text-xs">✦ Perfect to try before upgrading</p>
+                  </div>
+                  <div className="rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2 flex items-start gap-2 mt-2">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-amber-300/80 text-[11px] leading-relaxed">
+                      Basic tools only. No viral score or multi-variation.
+                    </p>
+                  </div>
                 </div>
-              ))}
-              <div className="pt-2 border-t border-emerald-500/10 mt-1">
-                <p className="text-emerald-400/60 text-xs">✦ Perfect to try before upgrading</p>
-              </div>
-              <div className="rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2 flex items-start gap-2 mt-2">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-amber-300/80 text-[11px] leading-relaxed">
-                  Basic tools only. No viral score or multi-variation.
-                </p>
-              </div>
-            </div>
 
-            <Button
-              className={`w-full border transition-all ${
-                getPlanState("starter") === "current"
-                  ? "bg-emerald-600/30 border-emerald-500/40 text-emerald-300 cursor-default"
-                  : getPlanState("starter") === "downgrade"
-                  ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
-                  : "bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 text-emerald-200 hover:text-white"
-              }`}
-              onClick={() => handlePlanClick("starter")}
-            >
-              {getPlanState("starter") === "current" ? "✓ Current Plan" : getPlanState("starter") === "downgrade" ? "Lower Plan" : "Get Starter →"}
-              {getPlanState("starter") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
-            </Button>
+                <MagneticButton>
+                  <Button
+                    className={`w-full border transition-all ${
+                      getPlanState("starter") === "current"
+                        ? "bg-emerald-600/30 border-emerald-500/40 text-emerald-300 cursor-default"
+                        : getPlanState("starter") === "downgrade"
+                        ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
+                        : "bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 text-emerald-200 hover:text-white"
+                    }`}
+                    onClick={() => handlePlanClick("starter")}
+                  >
+                    {getPlanState("starter") === "current" ? "✓ Current Plan" : getPlanState("starter") === "downgrade" ? "Lower Plan" : "Get Starter →"}
+                    {getPlanState("starter") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
+                  </Button>
+                </MagneticButton>
+              </div>
+            </Hover3DCard>
           </motion.div>
 
           {/* Creator */}
@@ -363,92 +381,98 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="hyper-hover-card relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)]"
+            className="w-full"
           >
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                <Flame className="w-3.5 h-3.5 text-yellow-300" />
-                MOST POPULAR
-              </span>
-            </div>
-
-            <div className="mb-6 mt-2">
-              <p className="text-xs font-semibold tracking-widest uppercase text-cyan-400 mb-2">Creator</p>
-              <div className="flex flex-col gap-1">
-                {billing === "monthly" && (
-                    <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.creator}</span>
-                )}
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-white">₹{creatorPrice}</span>
-                  <span className="text-white/40 text-sm">/ mo</span>
-                  {billing === "monthly" && (
-                    <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
-                  )}
+            <Hover3DCard className="h-full">
+              <div className="hyper-hover-card relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)] h-full">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                    <Flame className="w-3.5 h-3.5 text-yellow-300" />
+                    MOST POPULAR
+                  </span>
                 </div>
-              </div>
-              {billing !== "monthly" && (
-                <p className="text-white/40 text-xs mt-1">
-                  ₹{BILLING_TOTALS.creator[billing]} billed {billingLabel(billing)}
-                  {" "}·{" "}
-                  <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.creator[billing]}</span>
-                </p>
-              )}
-              <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">Best for Indian creators 🇮🇳</p>
-            </div>
 
-            <div className="space-y-2.5 flex-1 mb-4">
-              {[
-                "60 content generations / month",
-                "3 Regenerations per topic",
-                "Multi-Variation (3 outputs per gen)",
-                "Viral Score™ enabled",
-                "All 4 platforms",
-                "Hooks, CTAs & hashtags",
-                "Idea Generator + 7-Day Strategy",
-                "🌍 Multi-language content (Hindi, Hinglish, Bengali)",
-                "Improve Competitor Content",
-                "Download as .txt",
-              ].map((f) => (
-                <div key={f} className="flex items-start gap-2.5">
-                  <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
-                  <span className="text-white/75 text-sm">{f}</span>
-                </div>
-              ))}
-
-              <div className="pt-3 border-t border-white/8 mt-1 space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-2">Unlock more with Infinity</p>
-                {[
-                  { icon: Wand2, label: "AI Writing Styles", color: "text-cyan-400/60" },
-                  { icon: CalendarDays, label: "Content Calendar", color: "text-blue-400/60" }
-                ].map(({ icon: Icon, label, color }) => (
-                  <div key={label} className="flex items-center gap-2 opacity-60">
-                    <Lock className="w-3 h-3 text-white/20 shrink-0" />
-                    <Icon className={`w-3 h-3 ${color} shrink-0`} />
-                    <span className="text-white/35 text-xs line-through">{label}</span>
+                <div className="mb-6 mt-2">
+                  <p className="text-xs font-semibold tracking-widest uppercase text-cyan-400 mb-2">Creator</p>
+                  <div className="flex flex-col gap-1">
+                    {billing === "monthly" && (
+                        <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.creator}</span>
+                    )}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black text-white">₹{creatorPrice}</span>
+                      <span className="text-white/40 text-sm">/ mo</span>
+                      {billing === "monthly" && (
+                        <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
+                      )}
+                    </div>
                   </div>
-                ))}
-                <button
-                  onClick={() => handlePlanClick("infinity")}
-                  className="mt-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 font-medium"
-                >
-                  Unlock with Infinity →
-                </button>
-              </div>
-            </div>
+                  {billing !== "monthly" && (
+                    <p className="text-white/40 text-xs mt-1">
+                      ₹{BILLING_TOTALS.creator[billing]} billed {billingLabel(billing)}
+                      {" "}·{" "}
+                      <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.creator[billing]}</span>
+                    </p>
+                  )}
+                  <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">Best for Indian creators 🇮🇳</p>
+                </div>
 
-            <Button
-              className={`w-full border transition-all ${
-                getPlanState("creator") === "current"
-                  ? "bg-cyan-600/30 border-cyan-500/40 text-cyan-300 cursor-default"
-                  : getPlanState("creator") === "downgrade"
-                  ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
-                  : "shine-effect bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
-              }`}
-              onClick={() => handlePlanClick("creator")}
-            >
-              {getPlanState("creator") === "current" ? "✓ Current Plan" : getPlanState("creator") === "downgrade" ? "Lower Plan" : "Get Creator →"}
-              {getPlanState("creator") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
-            </Button>
+                <div className="space-y-2.5 flex-1 mb-4">
+                  {[
+                    "60 content generations / month",
+                    "3 Regenerations per topic",
+                    "Multi-Variation (3 outputs per gen)",
+                    "Viral Score™ enabled",
+                    "All 4 platforms",
+                    "Hooks, CTAs & hashtags",
+                    "Idea Generator + 7-Day Strategy",
+                    "🌍 Multi-language content (Hindi, Hinglish, Bengali)",
+                    "Improve Competitor Content",
+                    "Download as .txt",
+                  ].map((f) => (
+                    <div key={f} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                      <span className="text-white/75 text-sm">{f}</span>
+                    </div>
+                  ))}
+
+                  <div className="pt-3 border-t border-white/8 mt-1 space-y-1.5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-2">Unlock more with Infinity</p>
+                    {[
+                      { icon: Wand2, label: "AI Writing Styles", color: "text-cyan-400/60" },
+                      { icon: CalendarDays, label: "Content Calendar", color: "text-blue-400/60" }
+                    ].map(({ icon: Icon, label, color }) => (
+                      <div key={label} className="flex items-center gap-2 opacity-60">
+                        <Lock className="w-3 h-3 text-white/20 shrink-0" />
+                        <Icon className={`w-3 h-3 ${color} shrink-0`} />
+                        <span className="text-white/35 text-xs line-through">{label}</span>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => handlePlanClick("infinity")}
+                      className="mt-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 font-medium"
+                    >
+                      Unlock with Infinity →
+                    </button>
+                  </div>
+                </div>
+
+                <MagneticButton>
+                  <Button
+                    className={`w-full border transition-all ${
+                      getPlanState("creator") === "current"
+                        ? "bg-cyan-600/30 border-cyan-500/40 text-cyan-300 cursor-default"
+                        : getPlanState("creator") === "downgrade"
+                        ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
+                        : "shine-effect bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
+                    }`}
+                    onClick={() => handlePlanClick("creator")}
+                  >
+                    {getPlanState("creator") === "current" ? "✓ Current Plan" : getPlanState("creator") === "downgrade" ? "Lower Plan" : "Get Creator →"}
+                    {getPlanState("creator") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
+                  </Button>
+                </MagneticButton>
+              </div>
+            </Hover3DCard>
           </motion.div>
 
           {/* Infinity */}
@@ -456,80 +480,86 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="hyper-hover-card relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col"
+            className="w-full"
           >
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                <Crown className="w-3.5 h-3.5" />
-                UNLIMITED POWER
-              </span>
-            </div>
-
-            <div className="mb-6 mt-2">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-xs font-semibold tracking-widest uppercase text-teal-300">Infinity</p>
-              </div>
-              <div className="flex flex-col gap-1">
-                {billing === "monthly" && (
-                    <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.infinity}</span>
-                )}
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">
-                    ₹{infinityPrice}
+            <Hover3DCard className="h-full">
+              <div className="hyper-hover-card relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col h-full">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                    <Crown className="w-3.5 h-3.5" />
+                    UNLIMITED POWER
                   </span>
-                  <span className="text-white/40 text-sm">/ mo</span>
-                  {billing === "monthly" && (
-                    <span className="text-xs text-teal-400 ml-2 font-semibold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">(Launching Offer)</span>
-                  )}
                 </div>
-              </div>
-              {billing !== "monthly" && (
-                <p className="text-white/40 text-xs mt-1">
-                  ₹{BILLING_TOTALS.infinity[billing]} billed {billingLabel(billing)}
-                  {" "}·{" "}
-                  <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.infinity[billing]}</span>
-                </p>
-              )}
-              <p className="text-white/60 text-sm mt-1">For agencies & super users</p>
-              <p className="text-[11px] text-teal-400/70 font-medium mt-0.5">Introductory pricing for early users</p>
-            </div>
 
-            <div className="space-y-2.5 flex-1 mb-6">
-              <p className="text-[11px] text-teal-400 font-semibold uppercase tracking-wider mb-1.5">
-                Everything in Creator, plus:
-              </p>
-              {[
-                { label: "Unlimited generations*", icon: InfinityIcon, desc: "Fair usage limits apply" },
-                { label: "Unlimited Regenerations", icon: RefreshCw },
-                { label: "AI Writing Styles", icon: Wand2 },
-                { label: "Trending Topics Feed", icon: TrendingUp },
-                { label: "Content Calendar", icon: CalendarDays },
-                { label: "Performance Insights", icon: BarChart3 },
-                { label: "Priority AI (2× faster)", icon: Zap },
-                { label: "Priority Support", icon: Shield },
-              ].map(({ label, icon: Icon, desc }) => (
-                <div key={label} className="flex items-start gap-2.5">
-                  <Icon className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="text-white/85 text-sm">{label}</span>
-                    {desc && <p className="text-white/40 text-[10px] m-0">{desc}</p>}
+                <div className="mb-6 mt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-xs font-semibold tracking-widest uppercase text-teal-300">Infinity</p>
                   </div>
+                  <div className="flex flex-col gap-1">
+                    {billing === "monthly" && (
+                        <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.infinity}</span>
+                    )}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">
+                        ₹{infinityPrice}
+                      </span>
+                      <span className="text-white/40 text-sm">/ mo</span>
+                      {billing === "monthly" && (
+                        <span className="text-xs text-teal-400 ml-2 font-semibold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">(Launching Offer)</span>
+                      )}
+                    </div>
+                  </div>
+                  {billing !== "monthly" && (
+                    <p className="text-white/40 text-xs mt-1">
+                      ₹{BILLING_TOTALS.infinity[billing]} billed {billingLabel(billing)}
+                      {" "}·{" "}
+                      <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.infinity[billing]}</span>
+                    </p>
+                  )}
+                  <p className="text-white/60 text-sm mt-1">For agencies & super users</p>
+                  <p className="text-[11px] text-teal-400/70 font-medium mt-0.5">Introductory pricing for early users</p>
                 </div>
-              ))}
-            </div>
 
-            <Button
-              className={`w-full border transition-all ${
-                getPlanState("infinity") === "current"
-                  ? "bg-teal-600/30 border-teal-500/40 text-teal-300 cursor-default"
-                  : "shine-effect bg-gradient-to-r from-teal-600/80 to-pink-600/80 hover:from-teal-500 hover:to-pink-500 border border-white/20 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)]"
-              }`}
-              onClick={() => handlePlanClick("infinity")}
-            >
-              {getPlanState("infinity") === "current" ? "✓ Current Plan" : "Unlock Infinity →"}
-              {getPlanState("infinity") !== "current" && <ChevronRight className="w-4 h-4 ml-1" />}
-            </Button>
-            <p className="text-center text-white/35 text-xs mt-2.5">Cancel anytime</p>
+                <div className="space-y-2.5 flex-1 mb-6">
+                  <p className="text-[11px] text-teal-400 font-semibold uppercase tracking-wider mb-1.5">
+                    Everything in Creator, plus:
+                  </p>
+                  {[
+                    { label: "Unlimited generations*", icon: InfinityIcon, desc: "Fair usage limits apply" },
+                    { label: "Unlimited Regenerations", icon: RefreshCw },
+                    { label: "AI Writing Styles", icon: Wand2 },
+                    { label: "Trending Topics Feed", icon: TrendingUp },
+                    { label: "Content Calendar", icon: CalendarDays },
+                    { label: "Performance Insights", icon: BarChart3 },
+                    { label: "Priority AI (2× faster)", icon: Zap },
+                    { label: "Priority Support", icon: Shield },
+                  ].map(({ label, icon: Icon, desc }) => (
+                    <div key={label} className="flex items-start gap-2.5">
+                      <Icon className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
+                      <div>
+                        <span className="text-white/85 text-sm">{label}</span>
+                        {desc && <p className="text-white/40 text-[10px] m-0">{desc}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <MagneticButton>
+                  <Button
+                    className={`w-full border transition-all ${
+                      getPlanState("infinity") === "current"
+                        ? "bg-teal-600/30 border-teal-500/40 text-teal-300 cursor-default"
+                        : "shine-effect bg-gradient-to-r from-teal-600/80 to-pink-600/80 hover:from-teal-500 hover:to-pink-500 border border-white/20 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)]"
+                    }`}
+                    onClick={() => handlePlanClick("infinity")}
+                  >
+                    {getPlanState("infinity") === "current" ? "✓ Current Plan" : "Unlock Infinity →"}
+                    {getPlanState("infinity") !== "current" && <ChevronRight className="w-4 h-4 ml-1" />}
+                  </Button>
+                </MagneticButton>
+                <p className="text-center text-white/35 text-xs mt-2.5">Cancel anytime</p>
+              </div>
+            </Hover3DCard>
           </motion.div>
         </div>
 

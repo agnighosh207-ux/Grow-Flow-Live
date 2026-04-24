@@ -41,6 +41,8 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useReferralInfo } from "@/hooks/useReferral";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/layout/Logo";
+import { CustomCursor } from "@/components/shared/Cursor";
+import { useMotionValue, useSpring as useFramerSpring } from "framer-motion";
 
 function ImpersonationBanner() {
   const [impersonatedUser, setImpersonatedUser] = useState<string | null>(null);
@@ -312,34 +314,52 @@ function SidebarContent({
       <div className="flex-1 overflow-y-auto px-3 py-1 space-y-5">
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
-            <p className="text-[10px] font-semibold text-white/20 uppercase tracking-widest px-3 mb-1.5">
-              {group.label}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map(({ path, label, icon, pro }) => (
-                <NavItem
-                  key={path}
-                  path={path}
-                  label={label}
-                  icon={icon}
-                  pro={pro}
-                  isPro={isPro}
-                  isActive={location === path}
-                  onClick={onClick}
-                  showDot={
-                    path === "/pricing" &&
-                    sub?.plan === "free" &&
-                    (sub?.generationsUsed ?? 0) >= 1 &&
-                    !(pro && !isPro)
+              <p className="text-[10px] font-semibold text-white/20 uppercase tracking-widest px-3 mb-1.5">
+                {group.label}
+              </p>
+              <motion.div 
+                className="space-y-0.5"
+                variants={{
+                  show: {
+                    transition: {
+                      staggerChildren: 0.05
+                    }
                   }
-                  badge={path === "/daily" && streak > 0 ? (
-                    <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0 flex items-center gap-0.5">
-                      🔥{streak}
-                    </span>
-                  ) : undefined}
-                />
-              ))}
-            </div>
+                }}
+                initial="hidden"
+                animate="show"
+              >
+                {group.items.map(({ path, label, icon, pro }) => (
+                  <motion.div
+                    key={path}
+                    variants={{
+                      hidden: { opacity: 0, x: -10 },
+                      show: { opacity: 1, x: 0 }
+                    }}
+                  >
+                    <NavItem
+                      path={path}
+                      label={label}
+                      icon={icon}
+                      pro={pro}
+                      isPro={isPro}
+                      isActive={location === path}
+                      onClick={onClick}
+                      showDot={
+                        path === "/pricing" &&
+                        sub?.plan === "free" &&
+                        (sub?.generationsUsed ?? 0) >= 1 &&
+                        !(pro && !isPro)
+                      }
+                      badge={path === "/daily" && streak > 0 ? (
+                        <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0 flex items-center gap-0.5">
+                          🔥{streak}
+                        </span>
+                      ) : undefined}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
           </div>
         ))}
       </div>
@@ -488,7 +508,12 @@ export function Layout({ children }: { children: ReactNode }) {
   const isPro = sub?.planType === "infinity" && sub?.plan === "active";
 
   return (
-    <div className="min-h-screen text-foreground">
+    <div className="min-h-screen text-foreground relative overflow-hidden">
+      {/* God-Tier Global Graphics */}
+      <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-40" />
+      <div className="bg-scanlines" />
+      <div className="animate-scan" />
+      <CustomCursor />
       <aside
         className="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-64 xl:w-72 border-r border-white/[0.06]"
         style={{ background: "rgba(8,3,22,0.6)", backdropFilter: "blur(24px)" }}
@@ -543,9 +568,9 @@ export function Layout({ children }: { children: ReactNode }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={location}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 1.02, filter: "blur(10px)" }}
               transition={{ type: "spring", stiffness: 200, damping: 30, mass: 1 }}
               className="w-full"
             >

@@ -9,6 +9,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/layout/Logo";
 import { SiInstagram, SiYoutube, SiX } from "react-icons/si";
+import { MagneticButton } from "@/components/shared/MagneticButton";
+import { Hover3DCard } from "@/components/shared/Hover3DCard";
+import { Brain } from "lucide-react";
 
 const TAGLINES = [
   "Built for creators worldwide",
@@ -209,6 +212,12 @@ export default function Home() {
         <div className="absolute bottom-[-20%] right-[-15%] w-[55%] h-[55%] bg-teal-700/25 blur-[140px] rounded-full" style={{ willChange: "transform" }} />
         <div className="absolute top-[35%] right-[15%] w-[35%] h-[35%] bg-pink-700/15 blur-[120px] rounded-full" style={{ willChange: "transform" }} />
         <div className="absolute top-[60%] left-[10%] w-[30%] h-[30%] bg-blue-700/10 blur-[100px] rounded-full" style={{ willChange: "transform" }} />
+        
+        {/* Floating God-Level Icons */}
+        <motion.div className="absolute top-[10%] right-[10%] opacity-10 animate-float" style={{ animationDelay: '1s' }}><Brain className="w-48 h-48 text-[var(--accent-cyan)]" /></motion.div>
+        <motion.div className="absolute bottom-[10%] left-[5%] opacity-10 animate-float" style={{ animationDelay: '2.5s' }}><Zap className="w-64 h-64 text-purple-500" /></motion.div>
+        <motion.div className="absolute top-[50%] left-[2%] opacity-10 animate-float" style={{ animationDelay: '4s' }}><Sparkles className="w-32 h-32 text-pink-500" /></motion.div>
+
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -327,23 +336,27 @@ export default function Home() {
           transition={{ duration: 0.5, delay: 0.18 }}
           className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mb-16"
         >
-          <Link href="/sign-up">
-            <Button
-              size="lg"
-              className="shine-effect w-full sm:w-auto bg-transparent border-2 border-[#00F2FF] text-[#00F2FF] hover:bg-[#00F2FF] hover:text-[#0B1215] font-bold rounded-full px-10 h-14 text-lg transition-all duration-300 shadow-[0_0_20px_rgba(0,242,255,0.2)] hover:shadow-[0_0_40px_rgba(0,242,255,0.6)] hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group"
-            >
-              Start Creating Free <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button
-              size="lg"
-              variant="ghost"
-              className="w-full sm:w-auto rounded-full px-8 h-14 text-base border border-white/10 text-white/60 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]"
-            >
-              View Pricing
-            </Button>
-          </Link>
+          <MagneticButton>
+            <Link href="/sign-up">
+              <Button
+                size="lg"
+                className="shine-effect w-full sm:w-auto bg-transparent border-2 border-[#00F2FF] text-[#00F2FF] hover:bg-[#00F2FF] hover:text-[#0B1215] font-bold rounded-full px-10 h-14 text-lg transition-all duration-300 shadow-[0_0_20px_rgba(0,242,255,0.2)] hover:shadow-[0_0_40px_rgba(0,242,255,0.6)] hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group"
+              >
+                Start Creating Free <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
+              </Button>
+            </Link>
+          </MagneticButton>
+          <MagneticButton>
+            <Link href="/pricing">
+              <Button
+                size="lg"
+                variant="ghost"
+                className="w-full sm:w-auto rounded-full px-8 h-14 text-base border border-white/10 text-white/60 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]"
+              >
+                View Pricing
+              </Button>
+            </Link>
+          </MagneticButton>
         </motion.div>
 
         <motion.div
@@ -518,18 +531,24 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.12 }}
-                  className={`hyper-hover-card relative rounded-2xl border ${step.border} p-7 text-center overflow-hidden`}
-                  style={{ background: "rgba(255,255,255,0.02)" }}
+                  className="w-full"
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${step.bg} to-transparent pointer-events-none`} />
-                  <div className="relative">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/8 mb-4 mx-auto">
-                      <Icon className={`w-5 h-5 ${step.color}`} />
+                  <Hover3DCard className="h-full">
+                    <div
+                      className={`hyper-hover-card relative rounded-2xl border ${step.border} p-7 text-center overflow-hidden h-full`}
+                      style={{ background: "rgba(255,255,255,0.02)" }}
+                    >
+                      <div className={`absolute inset-0 bg-gradient-to-br ${step.bg} to-transparent pointer-events-none`} />
+                      <div className="relative">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/8 mb-4 mx-auto">
+                          <Icon className={`w-5 h-5 ${step.color}`} />
+                        </div>
+                        <div className="text-[10px] font-bold text-white/20 tracking-[0.2em] mb-2">{step.num}</div>
+                        <h3 className="font-bold text-white text-lg mb-2">{step.title}</h3>
+                        <p className="text-white/45 text-sm leading-relaxed">{step.desc}</p>
+                      </div>
                     </div>
-                    <div className="text-[10px] font-bold text-white/20 tracking-[0.2em] mb-2">{step.num}</div>
-                    <h3 className="font-bold text-white text-lg mb-2">{step.title}</h3>
-                    <p className="text-white/45 text-sm leading-relaxed">{step.desc}</p>
-                  </div>
+                  </Hover3DCard>
                 </motion.div>
               );
             })}
@@ -555,99 +574,105 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ type: "spring", stiffness: 90, damping: 20, mass: 1, delay: i * 0.1 }}
-                className={`hyper-hover-card relative rounded-[28px] border border-[#00F2FF]/20 p-8 sm:p-10 group overflow-hidden ${span} glass-panel shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-500 bg-[#050B0D]/90 isolate`}
+                className={`w-full ${span}`}
               >
-                {/* Advanced Light Leak Effects */}
-                <div className={`absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(0,242,255,0.08)_0%,transparent_50%)] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
-                <div className={`absolute bottom-0 right-0 w-[100%] h-[100%] bg-[radial-gradient(circle_at_bottom_right,rgba(0,242,255,0.04)_0%,transparent_60%)] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
-                
-                <div className="relative z-10 flex flex-col h-full">
-                  <div className="flex items-start justify-between mb-6">
-                    {/* Exquisite Icon Plaque */}
-                    <div className="relative w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#101C20] to-[#0A1114] border border-[#00F2FF]/30 flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,242,255,0.1),0_0_20px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-700 ease-out">
-                      <div className="absolute inset-0 rounded-[20px] bg-[#00F2FF]/10 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      <Icon className={`w-7 h-7 ${color} drop-shadow-[0_0_12px_rgba(0,242,255,0.6)] relative z-10`} />
-                    </div>
-                    {/* Glassmorphic PRO Badge */}
-                    {pro && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] text-[#00F2FF] bg-[#00F2FF]/[0.03] border border-[#00F2FF]/30 shadow-[0_0_15px_rgba(0,242,255,0.15)] backdrop-blur-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#00F2FF] animate-pulse shadow-[0_0_5px_#00F2FF]" />
-                        PRO Access
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Neural Visual Payloads */}
-                  <div className="flex-1 w-full flex items-center justify-center min-h-[120px] pb-8 pointer-events-none">
-                     {label === "Multi-Platform Native" && (
-                        <div className="flex gap-4 opacity-40 group-hover:opacity-100 transition-opacity duration-700 scale-90 sm:scale-100">
-                           <div className="flex flex-col gap-2 w-16 sm:w-20">
-                              <div className="w-full h-2 rounded-full bg-[#00F2FF]/40 shadow-[0_0_8px_#00F2FF]" />
-                              <div className="w-3/4 h-2 rounded-full bg-[#00F2FF]/20" />
-                              <div className="w-full h-28 rounded-lg bg-gradient-to-b from-[#00F2FF]/30 to-transparent mt-2 border-t border-[#00F2FF]/50" />
-                           </div>
-                           <div className="flex flex-col gap-2 w-16 sm:w-20 translate-y-6">
-                              <div className="w-full h-2 rounded-full bg-pink-500/40 shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
-                              <div className="w-1/2 h-2 rounded-full bg-pink-500/20" />
-                              <div className="w-full h-32 rounded-lg bg-gradient-to-b from-pink-500/30 to-transparent mt-2 border-t border-pink-500/50" />
-                           </div>
-                           <div className="flex flex-col gap-2 w-16 sm:w-20 -translate-y-4">
-                              <div className="w-full h-2 rounded-full bg-blue-500/40 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-                              <div className="w-4/5 h-2 rounded-full bg-blue-500/20" />
-                              <div className="w-full h-20 rounded-lg bg-gradient-to-b from-blue-500/30 to-transparent mt-2 border-t border-blue-500/50" />
-                           </div>
+                <Hover3DCard className="h-full">
+                  <div
+                    className={`hyper-hover-card relative rounded-[28px] border border-[#00F2FF]/20 p-8 sm:p-10 group overflow-hidden glass-panel shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-500 bg-[#050B0D]/90 isolate h-full`}
+                  >
+                    {/* Advanced Light Leak Effects */}
+                    <div className={`absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(0,242,255,0.08)_0%,transparent_50%)] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
+                    <div className={`absolute bottom-0 right-0 w-[100%] h-[100%] bg-[radial-gradient(circle_at_bottom_right,rgba(0,242,255,0.04)_0%,transparent_60%)] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
+                    
+                    <div className="relative z-10 flex flex-col h-full">
+                      <div className="flex items-start justify-between mb-6">
+                        {/* Exquisite Icon Plaque */}
+                        <div className="relative w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#101C20] to-[#0A1114] border border-[#00F2FF]/30 flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,242,255,0.1),0_0_20px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-700 ease-out">
+                          <div className="absolute inset-0 rounded-[20px] bg-[#00F2FF]/10 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          <Icon className={`w-7 h-7 ${color} drop-shadow-[0_0_12px_rgba(0,242,255,0.6)] relative z-10`} />
                         </div>
-                     )}
-                     {label === "Deep Performance Intelligence" && (
-                        <div className="w-full relative h-28 flex items-end justify-between px-6 sm:px-12 gap-1.5 sm:gap-3 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-4">
-                           {[40, 25, 60, 45, 80, 55, 95, 70, 100, 85].map((h, j) => (
-                             <div key={j} className="w-full rounded-t-sm bg-gradient-to-t from-[#00F2FF]/40 to-[#00F2FF]/90 relative group-hover:scale-y-[1.15] transition-transform origin-bottom duration-500" style={{ height: `${h}%`, transitionDelay: `${j * 40}ms` }}>
-                                <div className="absolute -top-1 left-0 right-0 h-1 bg-white opacity-90 shadow-[0_0_10px_#00F2FF]" />
-                             </div>
-                           ))}
-                           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00F2FF]/60 to-transparent shadow-[0_0_5px_#00F2FF]" />
-                        </div>
-                     )}
-                     {label === "Omni-Channel Calendar" && (
-                        <div className="grid grid-cols-7 gap-2 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-2">
-                           {Array.from({length: 21}).map((_, j) => (
-                              <div key={j} className={`w-5 h-5 sm:w-7 sm:h-7 rounded-[4px] ${[2, 5, 8, 12, 17, 19].includes(j) ? 'bg-[#00F2FF]/80 shadow-[0_0_12px_rgba(0,242,255,0.6)] animate-pulse' : 'bg-white/5 border border-white/5'}`} />
-                           ))}
-                        </div>
-                     )}
-                     {label === "Viral Hook Injector" && (
-                        <div className="w-full flex flex-col gap-3 opacity-40 group-hover:opacity-100 transition-opacity duration-700 mt-4 max-w-[80%] mx-auto">
-                           <div className="w-full h-1.5 rounded-full bg-[#00F2FF]/20 overflow-hidden"><div className="w-[85%] h-full bg-[#00F2FF] shadow-[0_0_10px_#00F2FF]" /></div>
-                           <div className="w-4/5 h-1.5 rounded-full bg-pink-500/20 overflow-hidden"><div className="w-[60%] h-full bg-pink-500 shadow-[0_0_10px_#ec4899]" /></div>
-                           <div className="w-full h-1.5 rounded-full bg-[#00F2FF]/10 overflow-hidden"><div className="w-[40%] h-full bg-[#00F2FF]/50" /></div>
-                        </div>
-                     )}
-                     {label === "Hyper-Speed Pipeline" && (
-                        <div className="w-full flex items-center justify-center gap-1.5 opacity-50 group-hover:opacity-100 transition-opacity duration-700 h-16">
-                           {[1,2,3,4,5,6,7].map(j => (
-                             <motion.div 
-                               initial={{ height: 12 }}
-                               animate={{ height: [12, 48, 12] }}
-                               transition={{ duration: 1.2, repeat: Infinity, delay: j * 0.15 }}
-                               key={j} className="w-1.5 rounded-full bg-[#00F2FF]/80 shadow-[0_0_10px_rgba(0,242,255,0.6)]" 
-                             />
-                           ))}
-                        </div>
-                     )}
-                     {label === "Dynamic Style Modes" && (
-                        <div className="relative w-24 h-24 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity duration-700">
-                           <div className="absolute inset-0 rounded-full border border-[#00F2FF]/30 border-t-[#00F2FF] animate-spin shadow-[0_0_15px_rgba(0,242,255,0.3)]" style={{ animationDuration: '3s' }} />
-                           <div className="absolute inset-3 rounded-full border border-[#00F2FF]/20 border-b-pink-500 animate-[spin_2s_linear_infinite_reverse]" />
-                           <div className="w-8 h-8 rounded-full bg-[#00F2FF]/80 shadow-[0_0_20px_#00F2FF] animate-pulse" />
-                        </div>
-                     )}
-                  </div>
+                        {/* Glassmorphic PRO Badge */}
+                        {pro && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] text-[#00F2FF] bg-[#00F2FF]/[0.03] border border-[#00F2FF]/30 shadow-[0_0_15px_rgba(0,242,255,0.15)] backdrop-blur-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00F2FF] animate-pulse shadow-[0_0_5px_#00F2FF]" />
+                            PRO Access
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Neural Visual Payloads */}
+                      <div className="flex-1 w-full flex items-center justify-center min-h-[120px] pb-8 pointer-events-none">
+                         {label === "Multi-Platform Native" && (
+                            <div className="flex gap-4 opacity-40 group-hover:opacity-100 transition-opacity duration-700 scale-90 sm:scale-100">
+                               <div className="flex flex-col gap-2 w-16 sm:w-20">
+                                  <div className="w-full h-2 rounded-full bg-[#00F2FF]/40 shadow-[0_0_8px_#00F2FF]" />
+                                  <div className="w-3/4 h-2 rounded-full bg-[#00F2FF]/20" />
+                                  <div className="w-full h-28 rounded-lg bg-gradient-to-b from-[#00F2FF]/30 to-transparent mt-2 border-t border-[#00F2FF]/50" />
+                               </div>
+                               <div className="flex flex-col gap-2 w-16 sm:w-20 translate-y-6">
+                                  <div className="w-full h-2 rounded-full bg-pink-500/40 shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
+                                  <div className="w-1/2 h-2 rounded-full bg-pink-500/20" />
+                                  <div className="w-full h-32 rounded-lg bg-gradient-to-b from-pink-500/30 to-transparent mt-2 border-t border-pink-500/50" />
+                               </div>
+                               <div className="flex flex-col gap-2 w-16 sm:w-20 -translate-y-4">
+                                  <div className="w-full h-2 rounded-full bg-blue-500/40 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                                  <div className="w-4/5 h-2 rounded-full bg-blue-500/20" />
+                                  <div className="w-full h-20 rounded-lg bg-gradient-to-b from-blue-500/30 to-transparent mt-2 border-t border-blue-500/50" />
+                               </div>
+                            </div>
+                         )}
+                         {label === "Deep Performance Intelligence" && (
+                            <div className="w-full relative h-28 flex items-end justify-between px-6 sm:px-12 gap-1.5 sm:gap-3 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-4">
+                               {[40, 25, 60, 45, 80, 55, 95, 70, 100, 85].map((h, j) => (
+                                 <div key={j} className="w-full rounded-t-sm bg-gradient-to-t from-[#00F2FF]/40 to-[#00F2FF]/90 relative group-hover:scale-y-[1.15] transition-transform origin-bottom duration-500" style={{ height: `${h}%`, transitionDelay: `${j * 40}ms` }}>
+                                    <div className="absolute -top-1 left-0 right-0 h-1 bg-white opacity-90 shadow-[0_0_10px_#00F2FF]" />
+                                 </div>
+                               ))}
+                               <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00F2FF]/60 to-transparent shadow-[0_0_5px_#00F2FF]" />
+                            </div>
+                         )}
+                         {label === "Omni-Channel Calendar" && (
+                            <div className="grid grid-cols-7 gap-2 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-2">
+                               {Array.from({length: 21}).map((_, j) => (
+                                  <div key={j} className={`w-5 h-5 sm:w-7 sm:h-7 rounded-[4px] ${[2, 5, 8, 12, 17, 19].includes(j) ? 'bg-[#00F2FF]/80 shadow-[0_0_12px_rgba(0,242,255,0.6)] animate-pulse' : 'bg-white/5 border border-white/5'}`} />
+                               ))}
+                            </div>
+                         )}
+                         {label === "Viral Hook Injector" && (
+                            <div className="w-full flex flex-col gap-3 opacity-40 group-hover:opacity-100 transition-opacity duration-700 mt-4 max-w-[80%] mx-auto">
+                               <div className="w-full h-1.5 rounded-full bg-[#00F2FF]/20 overflow-hidden"><div className="w-[85%] h-full bg-[#00F2FF] shadow-[0_0_10px_#00F2FF]" /></div>
+                               <div className="w-4/5 h-1.5 rounded-full bg-pink-500/20 overflow-hidden"><div className="w-[60%] h-full bg-pink-500 shadow-[0_0_10px_#ec4899]" /></div>
+                               <div className="w-full h-1.5 rounded-full bg-[#00F2FF]/10 overflow-hidden"><div className="w-[40%] h-full bg-[#00F2FF]/50" /></div>
+                            </div>
+                         )}
+                         {label === "Hyper-Speed Pipeline" && (
+                            <div className="w-full flex items-center justify-center gap-1.5 opacity-50 group-hover:opacity-100 transition-opacity duration-700 h-16">
+                               {[1,2,3,4,5,6,7].map(j => (
+                                 <motion.div 
+                                   initial={{ height: 12 }}
+                                   animate={{ height: [12, 48, 12] }}
+                                   transition={{ duration: 1.2, repeat: Infinity, delay: j * 0.15 }}
+                                   key={j} className="w-1.5 rounded-full bg-[#00F2FF]/80 shadow-[0_0_10px_rgba(0,242,255,0.6)]" 
+                                 />
+                               ))}
+                            </div>
+                         )}
+                         {label === "Dynamic Style Modes" && (
+                            <div className="relative w-24 h-24 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity duration-700">
+                               <div className="absolute inset-0 rounded-full border border-[#00F2FF]/30 border-t-[#00F2FF] animate-spin shadow-[0_0_15px_rgba(0,242,255,0.3)]" style={{ animationDuration: '3s' }} />
+                               <div className="absolute inset-3 rounded-full border border-[#00F2FF]/20 border-b-pink-500 animate-[spin_2s_linear_infinite_reverse]" />
+                               <div className="w-8 h-8 rounded-full bg-[#00F2FF]/80 shadow-[0_0_20px_#00F2FF] animate-pulse" />
+                            </div>
+                         )}
+                      </div>
 
-                  <div className="mt-auto pt-4 relative z-20">
-                    <h3 className="font-extrabold text-2xl md:text-[28px] leading-tight mb-3 text-[#F1F5F9] tracking-tight">{label}</h3>
-                    <p className="text-sm md:text-base text-[#94A3B8] leading-relaxed max-w-md font-medium">{desc}</p>
+                      <div className="mt-auto pt-4 relative z-20">
+                        <h3 className="font-extrabold text-2xl md:text-[28px] leading-tight mb-3 text-[#F1F5F9] tracking-tight">{label}</h3>
+                        <p className="text-sm md:text-base text-[#94A3B8] leading-relaxed max-w-md font-medium">{desc}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </Hover3DCard>
               </motion.div>
             ))}
           </div>
