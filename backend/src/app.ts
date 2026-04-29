@@ -42,7 +42,25 @@ app.use(
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:5173", "http://localhost:3000", "https://growflowai.space", "https://www.growflowai.space"];
+
+app.use(
+  cors({
+    credentials: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  }),
+);
 app.use(express.json({
   verify: (req, res, buf) => {
     (req as any).rawBody = buf;
@@ -52,14 +70,16 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(clerkMiddleware());
 app.use((req: any, res, next) => {
-  const impUser = req.headers["x-impersonate-user"];
-  if (impUser && req.auth) {
-    const adminEmail = "agnighosh207@gmail.com";
-    const userEmail = req.auth.sessionClaims?.email || req.auth.claims?.email;
-    if (userEmail === adminEmail) {
-      req.auth.userId = impUser;
-      if (req.auth.sessionClaims) {
-        req.auth.sessionClaims.userId = impUser;
+  if (req.path.startsWith("/api/admin")) {
+    const impUser = req.headers["x-impersonate-user"];
+    if (impUser && req.auth) {
+      const adminEmail = process.env.ADMIN_EMAIL;
+      const userEmail = req.auth.sessionClaims?.email || req.auth.claims?.email;
+      if (adminEmail && userEmail === adminEmail) {
+        req.auth.userId = impUser;
+        if (req.auth.sessionClaims) {
+          req.auth.sessionClaims.userId = impUser;
+        }
       }
     }
   }
@@ -110,6 +130,12 @@ app.use("/api/strategy/generate", enforceGenerationLimit);
 app.use("/api/hooks/generate", enforceGenerationLimit);
 app.use("/api/trends/generate", enforceGenerationLimit);
 app.use("/api/content/analyze", enforceGenerationLimit);
+app.use("/api/caption/generate", enforceGenerationLimit);
+app.use("/api/bio/generate", enforceGenerationLimit);
+app.use("/api/daily/generate", enforceGenerationLimit);
+app.use("/api/repurpose/generate", enforceGenerationLimit);
+app.use("/api/improve-competitor/generate", enforceGenerationLimit);
+app.use("/api/content-pack/generate", enforceGenerationLimit);
 
 app.use("/api", router);
 

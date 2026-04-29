@@ -107,14 +107,13 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
 
 function getMonthlyWindowStart(user: any): Date {
   const now = new Date();
-  if ((user.subscriptionStatus === "active" || user.subscriptionStatus === "trial") && user.trialStartDate) {
-    const subStart = new Date(user.trialStartDate);
-    const msIn30Days = 30 * 24 * 60 * 60 * 1000;
-    const msSinceStart = now.getTime() - subStart.getTime();
-    const cycleNumber = Math.floor(msSinceStart / msIn30Days);
-    return new Date(subStart.getTime() + cycleNumber * msIn30Days);
-  }
-  return new Date(now.getFullYear(), now.getMonth(), 1);
+  // Use trialStartDate for paid users, fallback to createdAt for free users to ensure 30-day rolling window for all
+  const baseDate = user.trialStartDate || user.createdAt || now;
+  const subStart = new Date(baseDate);
+  const msIn30Days = 30 * 24 * 60 * 60 * 1000;
+  const msSinceStart = now.getTime() - subStart.getTime();
+  const cycleNumber = Math.floor(msSinceStart / msIn30Days);
+  return new Date(subStart.getTime() + cycleNumber * msIn30Days);
 }
 
 router.get("/subscription/status", requireAuth, async (req: any, res): Promise<void> => {
@@ -202,11 +201,11 @@ router.post("/subscription/create", requireAuth, async (req: any, res): Promise<
 
     res.json({
       subscriptionId: subscription.id,
-      keyId: process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID,
+      // keyId: process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID, // DEPRECATED: Leak
       planName: `GrowFlow AI ${effectivePlan.toUpperCase()}`,
       planType: effectivePlan,
       billingPeriod: "monthly",
-      amount: planType === "infinity" ? 49900 : planType === "creator" ? 24900 : 10900,
+      amount: planType === "infinity" ? 49900 : planType === "creator" ? 29900 : 10900,
       currency: "INR",
       trialEndsAt: trialEndsAt.toISOString(),
       ghostMode: false
@@ -245,7 +244,7 @@ router.post("/subscription/verify", requireAuth, async (req: any, res): Promise<
   const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
 
   await db.update(usersTable)
-    .set({ subscriptionStatus: "trial", planType: effectivePlan })
+    .set({ subscriptionStatus: "trial", planType: effectivePlan, planTier: effectivePlan.toUpperCase() as any })
     .where(eq(usersTable.id, req.userId));
 
   grantReferralReward(req.userId).catch(err => console.error("grantReferralReward error:", err));
@@ -282,9 +281,9 @@ router.post("/subscription/cancel", requireAuth, async (req: any, res): Promise<
     }
   }
 
-  await db.update(usersTable)
-    .set({ subscriptionStatus: "canceled", planType: "free" })
-    .where(eq(usersTable.id, req.userId));
+  // We do NOT downgrade immediately in the DB.
+  // Razorpay will keep the subscription active until the end of the period (cancel_at_cycle_end: 1).
+  // The /subscription/webhook handler will process 'subscription.cancelled' and downgrade the user then.
 
   res.json({ success: true, message: "Subscription cancelled" });
 });
@@ -339,15 +338,14 @@ router.get("/trial/status", requireAuth, async (req: any, res): Promise<void> =>
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
     if (!user) {
-      res.json({ ideas: 0, strategy: 0, hooks: 0, limit: FREE_TRIALS_PER_TOOL, isPaid: false });
+      res.json({ ideas: 0, strategy: 0, hooks: 0, limit: 0, isPaid: false });
       return;
     }
-    const toolTrials = (user.toolTrials as Record<string, number>) ?? {};
     res.json({
-      ideas: toolTrials["ideas"] ?? 0,
-      strategy: toolTrials["strategy"] ?? 0,
-      hooks: toolTrials["hooks"] ?? 0,
-      limit: FREE_TRIALS_PER_TOOL,
+      ideas: 0,
+      strategy: 0,
+      hooks: 0,
+      limit: user.generationsRemaining,
       isPaid: isPaidOrTrial(user),
     });
   } catch {
@@ -371,7 +369,8 @@ router.post("/trial/use", requireAuth, async (req: any, res): Promise<void> => {
     }
 
     const newCount = await consumeToolTrial(req.userId, toolKey);
-    res.json({ used: newCount, limit: FREE_TRIALS_PER_TOOL, isPaid: false });
+    const [updatedUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+    res.json({ used: 0, limit: updatedUser?.generationsRemaining ?? 0, isPaid: false });
   } catch {
     res.status(500).json({ error: "Failed to record trial usage." });
   }
@@ -421,7 +420,22 @@ router.post("/subscription/webhook", async (req: any, res): Promise<void> => {
   const newStatus = statusMap[event.event];
   if (newStatus) {
     const updates: any = { subscriptionStatus: newStatus };
-    if (newStatus === "canceled") updates.planType = "free";
+    
+    // Sync planTier and planType
+    if (newStatus === "canceled" || newStatus === "expired") {
+      updates.planType = "free";
+      updates.planTier = "FREE";
+    } else if (newStatus === "active" || event.event === "subscription.activated") {
+      const planId = event?.payload?.subscription?.entity?.plan_id;
+      if (planId) {
+        let pType = "starter";
+        if (planId === process.env.RAZORPAY_PLAN_INFINITY) pType = "infinity";
+        else if (planId === process.env.RAZORPAY_PLAN_CREATOR) pType = "creator";
+        
+        updates.planType = pType;
+        updates.planTier = pType.toUpperCase() as any;
+      }
+    }
     const updatedUsers = await db.update(usersTable)
       .set(updates)
       .where(eq(usersTable.razorpaySubscriptionId, subscriptionId))

@@ -34,6 +34,11 @@ export const enforceGenerationLimit = async (req: any, res: any, next: any) => {
       });
     }
 
+    // Decrement generation count
+    await db.update(usersTable)
+      .set({ generationsRemaining: user.generationsRemaining - 1 })
+      .where(eq(usersTable.id, req.userId));
+
     next();
   } catch (error: any) {
     console.error("Enforce limit DB error (bypassing for robustness):", error?.message);

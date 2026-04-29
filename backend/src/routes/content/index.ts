@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { eq, desc, count, sql, and, gte } from "drizzle-orm";
-import { db, contentGenerationsTable, usersTable } from "@workspace/db";
+import { db, contentGenerationsTable, usersTable, usageLogsTable } from "@workspace/db";
 import {
   GenerateContentBody,
   GenerateVariationsBody,
@@ -18,6 +18,15 @@ import {
 import { openai } from "@workspace/integrations-openai-ai-server";
 
 const router: IRouter = Router();
+
+function sanitizeInput(text: string, maxLength: number = 500): string {
+  if (!text) return "";
+  return text
+    .substring(0, maxLength)
+    .replace(/[`<>{}\\]/g, "")
+    .replace(/[\n\r]+/g, " ")
+    .trim();
+}
 
 const requireAuth = (req: any, res: any, next: any) => {
   const auth = getAuth(req);
@@ -137,7 +146,7 @@ ${nicheAdaptation[niche] || ""}
 ${platformHint}
 ${languageInstructions[language] || ""}
 
-TOPIC: "${idea}"
+TOPIC: "${sanitizeInput(idea)}"
 
 Generate elite-level content for all 4 platforms following the system instructions exactly.
 Ensure keywords and hashtags match the selected language (e.g., if Bengali is selected, provide Bengali/English mix hashtags).
@@ -340,6 +349,12 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
       })
       .returning();
 
+    await db.insert(usageLogsTable).values({
+      userId: req.userId,
+      promptLanguage: language,
+      action: "GENERATE_CONTENT"
+    });
+
     const newGenerationsUsed = monthlyGenerationsUsed + 1;
     if (freshUser?.email) {
       const isLowCredits = 
@@ -457,7 +472,7 @@ ${languageInstructions[language] || ""}
 
 If variation 1 uses a story arc, variation 2 should use a bold claim, variation 3 should use a framework/listicle structure. Force genuine creative diversity.`;
 
-  const variationUserPrompt = `Generate 3 completely distinct ${platform} content variations for this topic: "${idea}"
+  const variationUserPrompt = `Generate 3 completely distinct ${platform} content variations for this topic: "${sanitizeInput(idea)}"
 Content type: ${contentType} | Tone: ${tone} | Niche: ${niche} | Language: ${language}
 
 Each variation must feel like it was written by a different creator with a different creative perspective.

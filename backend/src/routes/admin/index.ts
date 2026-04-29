@@ -17,7 +17,7 @@ const requireAuth = (req: any, res: any, next: any) => {
 const requireAdmin = async (req: any, res: any, next: any) => {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    if (!user || user.email !== "agnighosh207@gmail.com") {
+    if (!user || !process.env.ADMIN_EMAIL || user.email !== process.env.ADMIN_EMAIL) {
       return res.status(403).json({ error: "Forbidden" });
     }
     next();
@@ -48,17 +48,18 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
       count: sql<number>`count(*)`
     }).from(usersTable).where(eq(usersTable.subscriptionStatus, 'active')).groupBy(usersTable.planType);
     
-    // Calculate simple language breakdown (assuming from contentGenerations table, joining metadata if stored there, or just placeholder if not easily queriable)
-    // Actually we don't have language in the generation schema directly. I will mock it based on plan types or random distribution for now.
-    const languageData = [
-      { name: "English", value: 65 },
-      { name: "Hinglish", value: 25 },
-      { name: "Bengali", value: 10 }
-    ];
+    const languageStats = await db.select({
+      name: usageLogsTable.promptLanguage,
+      value: sql<number>`count(*)`
+    }).from(usageLogsTable).groupBy(usageLogsTable.promptLanguage);
+
+    const languageData = languageStats.length > 0 
+      ? languageStats.map(s => ({ name: s.name, value: Number(s.value) }))
+      : [{ name: "No Data", value: 0 }];
 
     const revenueData = revenueResult.map(r => ({
       name: r.plan || "free",
-      amount: (r.plan === "starter" ? 249 : r.plan === "creator" ? 499 : r.plan === "infinity" ? 999 : 0) * Number(r.count)
+      amount: (r.plan === "starter" ? 109 : r.plan === "creator" ? 299 : r.plan === "infinity" ? 499 : 0) * Number(r.count)
     })).filter(r => r.amount > 0);
 
     const dauDataList = await db.execute(sql`
@@ -137,6 +138,7 @@ router.patch("/admin/modify-user", requireAuth, requireAdmin, async (req: any, r
     await db.update(usersTable)
       .set({
         planType: newPlan,
+        planTier: newPlan.toUpperCase() as any,
         subscriptionStatus: newStatus,
         generationsRemaining: generationsLimit
       })

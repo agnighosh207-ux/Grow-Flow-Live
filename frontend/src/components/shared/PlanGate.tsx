@@ -122,8 +122,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
     );
   }
 
-  const trialsUsed = trialStatus?.used ?? 0;
-  const trialsLeft = Math.max(0, freeTrials - trialsUsed);
+  const trialsLeft = trialStatus?.limit ?? 0;
   const hasFreeAccess = freeTrials > 0 && trialsLeft > 0;
 
   if (hasFreeAccess) {

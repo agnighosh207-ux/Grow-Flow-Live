@@ -56,7 +56,7 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
   if (referrerUser.id === referredUserId) return;
 
   const referralId = crypto.randomUUID();
-  const fifteenDays = 7 * 24 * 60 * 60 * 1000;
+  const fifteenDays = 15 * 24 * 60 * 60 * 1000;
   const now = new Date();
 
   await db.transaction(async (tx) => {

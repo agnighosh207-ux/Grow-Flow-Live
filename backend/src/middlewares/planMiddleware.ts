@@ -2,7 +2,7 @@ import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
-export const FREE_TRIALS_PER_TOOL = 3000;
+export const FREE_TRIALS_PER_TOOL = 3;
 
 export const requireAuth = (req: any, res: any, next: any) => {
   const auth = getAuth(req);
@@ -101,19 +101,14 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
-      const trials = (user.toolTrials as Record<string, number> | null) || {};
-      const used = trials[toolKey] || 0;
-      const totalAllowed = config.freeTrials || 0;
-      const remaining = Math.max(0, totalAllowed - used);
-
-      if (remaining > 0) {
+      if (user.generationsRemaining > 0) {
         req.trialMode = true;
         return next();
       }
 
       return res.status(402).json({
         error: "upgrade_required",
-        message: `You've used all free trials for ${config.name}. Please upgrade to ${config.requiredPlan}.`
+        message: `You've used all your generations. Please upgrade to ${config.requiredPlan}.`
       });
 
     } catch (e: any) {
@@ -129,14 +124,13 @@ export async function consumeToolTrial(userId: string, toolKey: string): Promise
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
     if (!user) return 0;
 
-    const trials = (user.toolTrials as Record<string, number> | null) || {};
-    trials[toolKey] = (trials[toolKey] || 0) + 1;
+    const newGenerations = Math.max(0, user.generationsRemaining - 1);
 
     await db.update(usersTable)
-      .set({ toolTrials: trials })
+      .set({ generationsRemaining: newGenerations })
       .where(eq(usersTable.id, userId));
 
-    return trials[toolKey];
+    return 1;
   } catch (e: any) {
     console.error("Trial consume DB error:", e.message);
     return 1;

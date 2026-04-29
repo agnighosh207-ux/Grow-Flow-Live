@@ -43,7 +43,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
           id: uid, 
           email: email,
           lastLoginAt: new Date(),
-          planTier: "FREE",
+          planTier: "FREE", planType: "free",
           creditsRemaining: 5,
           isBetaUser: false,
           lastCreditReset: new Date()
@@ -78,15 +78,15 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       }
 
       if (shouldResetCredits) {
-        const planTier = (user.planTier as string) || "FREE";
+        const planTier = (user.planTier as string) || (user.planType ? user.planType.toUpperCase() : "FREE");
         const tierCredits: Record<string, number> = {
           FREE: 5,
           STARTER: 20,
-          CREATOR: 60,
+          CREATOR: 100,
           INFINITY: 9999
         };
         
-        updateData.creditsRemaining = tierCredits[planTier] || 5;
+        updateData.generationsRemaining = tierCredits[planTier] || 5;
         updateData.lastCreditReset = now;
       }
 
