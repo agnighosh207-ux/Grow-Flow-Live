@@ -140,27 +140,17 @@ router.post("/referral/claim", requireAuth, async (req: any, res): Promise<void>
         .set({ referralUsedCode: normalizedCode })
         .where(eq(usersTable.id, req.userId));
 
-      // 4. Grant +10 generations to Referrer and +5 to Current User (Referral logic from prompt)
-      // "Invite 1 friend, get 10 generations."
-      await tx.update(usersTable)
-        .set({ generationsRemaining: sql`${usersTable.generationsRemaining} + 10` })
-        .where(eq(usersTable.id, referrer.id));
-        
-      await tx.update(usersTable)
-        .set({ generationsRemaining: sql`${usersTable.generationsRemaining} + 5` })
-        .where(eq(usersTable.id, req.userId));
-
-      // 5. Log the referral
+      // 4. Log the referral (Pending Reward)
       await tx.insert(referralsTable).values({
         id: crypto.randomUUID(),
         referrerUserId: referrer.id,
         referredUserId: req.userId,
-        rewardGranted: true,
+        rewardGranted: false, // Wait for payment
         rewardSeen: false,
       }).onConflictDoNothing();
     });
 
-    res.json({ success: true, message: "Referral code applied successfully. +5 generations granted!" });
+    res.json({ success: true, message: "Referral code applied! Your bonus credits will be granted after your first successful subscription." });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

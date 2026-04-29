@@ -412,6 +412,7 @@ router.post("/subscription/webhook", async (req: any, res): Promise<void> => {
   const statusMap: Record<string, string> = {
     "subscription.activated": "active",
     "subscription.charged": "active",
+    "subscription.updated": "active",
     "subscription.halted": "past_due",
     "subscription.cancelled": "canceled",
     "subscription.expired": "canceled",
@@ -425,7 +426,7 @@ router.post("/subscription/webhook", async (req: any, res): Promise<void> => {
     if (newStatus === "canceled" || newStatus === "expired") {
       updates.planType = "free";
       updates.planTier = "FREE";
-    } else if (newStatus === "active" || event.event === "subscription.activated") {
+    } else if (newStatus === "active" || event.event === "subscription.activated" || event.event === "subscription.updated") {
       const planId = event?.payload?.subscription?.entity?.plan_id;
       if (planId) {
         let pType = "starter";
