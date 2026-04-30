@@ -2,15 +2,19 @@ import OpenAI from "openai";
 import pino from "pino";
 import crypto from "crypto";
 
+const isProduction = process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION";
+
 const logger = pino({
-  transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      translateTime: "HH:MM:ss Z",
-      ignore: "pid,hostname",
+  ...(isProduction ? {} : {
+    transport: {
+      target: "pino-pretty",
+      options: {
+        colorize: true,
+        translateTime: "HH:MM:ss Z",
+        ignore: "pid,hostname",
+      },
     },
-  },
+  })
 });
 
 export interface GenerateContentOptions {
