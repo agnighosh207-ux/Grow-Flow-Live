@@ -1,5 +1,5 @@
 import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../types";
 import { getAuth } from "@clerk/express";
@@ -33,7 +33,6 @@ export async function getOrCreateUser(userId: string, email?: string) {
   }
   if (!user.referralCode) {
     try {
-      // Dynamic import to prevent circular dependency with referral routes
       const { ensureReferralCode } = await import("../routes/referral");
       await ensureReferralCode(userId);
       const [updatedUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
@@ -48,7 +47,7 @@ export async function getOrCreateUser(userId: string, email?: string) {
 export function isPaidOrTrial(user: any): boolean {
   const status = user?.subscriptionStatus ?? "free";
   if (status === "active") return true;
-  if ((status === "trial" || status === "active") && user?.trialEndsAt && new Date(user.trialEndsAt) > new Date()) return true;
+  if (user?.trialEndsAt && new Date(user.trialEndsAt) > new Date()) return true;
   return false;
 }
 
@@ -71,7 +70,7 @@ export function requireTierLevel(requiredTier: "FREE" | "STARTER" | "CREATOR" | 
       const currentRank = PLAN_RANKS[currentTier] ?? 0;
       const requiredRank = PLAN_RANKS[required] ?? 0;
       
-      if (currentRank >= requiredRank || currentTier === "INFINITY") {
+      if (user.isAdmin || currentRank >= requiredRank || currentTier === "INFINITY") {
         return next();
       }
       
@@ -96,6 +95,7 @@ export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string
   ideas: { name: "Idea Generator", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
   strategy: { name: "7-Day Strategy", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
   hooks: { name: "Viral Hooks", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
+  trends: { name: "Trend Engine", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
 };
 
 export function requirePlanOrTrial(toolKey: string) {
@@ -115,7 +115,7 @@ export function requirePlanOrTrial(toolKey: string) {
 
       const requiredLevel = PLAN_LEVELS[config.requiredPlan as keyof typeof PLAN_LEVELS] || 0;
       const userLevel = PLAN_LEVELS[planTier as keyof typeof PLAN_LEVELS] || 0;
-      const isAdmin = user.securityFlags?.includes("admin") || false;
+      const isAdmin = user.isAdmin === true;
 
       if (isAdmin || userLevel >= requiredLevel) {
         return next();
@@ -133,7 +133,6 @@ export function requirePlanOrTrial(toolKey: string) {
 
     } catch (e: any) {
       console.error("Plan check error (graceful fallback):", e.message);
-      // Graceful degradation: let user pass if db is broken
       next();
     }
   };
@@ -141,13 +140,12 @@ export function requirePlanOrTrial(toolKey: string) {
 
 export async function consumeToolTrial(userId: string, toolKey: string): Promise<number> {
   try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    if (!user) return 0;
-
-    const newGenerations = Math.max(0, user.generationsRemaining - 1);
-
+    // Atomic update to prevent race conditions
     await db.update(usersTable)
-      .set({ generationsRemaining: newGenerations })
+      .set({ 
+        generationsRemaining: sql`GREATEST(0, ${usersTable.generationsRemaining} - 1)`,
+        totalGenerations: sql`${usersTable.totalGenerations} + 1`
+      })
       .where(eq(usersTable.id, userId));
 
     return 1;

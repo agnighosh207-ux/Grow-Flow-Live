@@ -46,13 +46,21 @@ if (!clerkPubKey) {
 }
 
 const SuspenseFallback = () => (
-  <div className="w-full flex flex-col gap-6 animate-pulse">
-    <div className="h-20 w-full bg-white/[0.05] rounded-xl" />
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="h-64 w-full bg-white/[0.05] rounded-xl" />
-      <div className="h-64 w-full bg-white/[0.05] rounded-xl md:col-span-2" />
+  <div className="w-full max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-2">
+      <div className="h-10 w-64 bg-white/5 rounded-lg" />
+      <div className="h-4 w-96 bg-white/5 rounded-lg" />
     </div>
-    <div className="h-40 w-full bg-white/[0.05] rounded-xl" />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-48 bg-white/5 rounded-2xl border border-white/10 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-shimmer" />
+        </div>
+      ))}
+    </div>
+    <div className="h-64 bg-white/5 rounded-2xl border border-white/10 overflow-hidden relative">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-shimmer" />
+    </div>
   </div>
 );
 
@@ -176,7 +184,7 @@ export function ClerkProviderWithRoutes() {
             <Route path="/referrals"><ProtectedRoute component={ReferralsPage} /></Route>
             <Route path="/privacy"><Privacy /></Route>
             <Route path="/terms"><Terms /></Route>
-            <Route path="/admin"><AdminDashboard /></Route>
+            <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
             
             <Route component={NotFound} />
           </Switch>

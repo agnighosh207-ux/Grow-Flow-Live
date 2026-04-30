@@ -29,17 +29,24 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     const userId = auth?.sessionClaims?.userId || auth?.userId;
     
     if (!userId) {
-      return next(); // Unauthenticated route, move on
+      return next(); 
     }
 
     const uid = userId as string;
     
     if (syncCache.has(uid) && Date.now() - syncCache.get(uid)! < 60000) {
       req.userId = uid;
+      // Re-attach impersonated user if it exists in cache
+      if (req.headers["x-impersonate-user"]) {
+        const adminEmail = process.env.ADMIN_EMAIL;
+        const userEmail = auth.sessionClaims?.email;
+        if (adminEmail && userEmail === adminEmail) {
+          req.userId = req.headers["x-impersonate-user"];
+        }
+      }
       return next();
     }
     
-    // Attach verified user ID to request
     req.userId = uid;
 
     // Fast sync: check if user exists
@@ -49,16 +56,15 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     if (user?.isBanned) {
       return res.status(403).json({ 
         error: "ACCESS_DENIED", 
-        message: "Account suspended for Fair Use violations. Contact growflowai.space/support." 
+        message: "Account suspended for Fair Use violations." 
       });
     }
     
+    const email = typeof auth.sessionClaims?.email === "string" 
+                    ? auth.sessionClaims.email 
+                    : null;
+
     if (!user) {
-      // First-time sync logic
-      const email = typeof auth.sessionClaims?.email === "string" 
-                      ? auth.sessionClaims.email 
-                      : null;
-                      
       [user] = await db.insert(usersTable)
         .values({ 
           id: uid, 
@@ -68,11 +74,11 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
           generationsRemaining: 5,
           creditsRemaining: 5,
           isBetaUser: false,
-          lastCreditReset: new Date()
+          lastCreditReset: new Date(),
+          isAdmin: email === process.env.ADMIN_EMAIL
         })
         .returning();
 
-      // Ensure their referral code is created atomically right after sync
       if (!user.referralCode) {
         const { ensureReferralCode } = await import("../routes/referral/index.js");
         await ensureReferralCode(uid);
@@ -85,6 +91,11 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       const now = new Date();
       let updateData: any = { lastLoginAt: now };
       
+      // Keep isAdmin synced with email
+      if (email === process.env.ADMIN_EMAIL && !user.isAdmin) {
+        updateData.isAdmin = true;
+      }
+
       const anchorDate = user.trialStartDate || user.createdAt || now;
       const msIn30Days = 30 * 24 * 60 * 60 * 1000;
       const elapsed = now.getTime() - anchorDate.getTime();
@@ -117,17 +128,24 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       user = updatedUser;
     }
 
-    req.user = user;
+    // IMPERSONATION LOGIC
+    const impUser = req.headers["x-impersonate-user"];
+    if (impUser && user.isAdmin) {
+      req.userId = impUser;
+      const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, impUser));
+      if (targetUser) {
+        req.user = targetUser;
+      } else {
+        req.user = user; // Fallback to admin if target not found
+      }
+    } else {
+      req.user = user;
+    }
+
     syncCache.set(uid, Date.now());
-    
-    // Note: To make RLS work with Drizzle in the identical connection pool,
-    // you would typically wrap subsequent queries:
-    // await db.execute(sql`set default_transaction_isolation = 'read committed'; set LOCAL request.jwt.claim.sub = ${userId};`);
-    
     next();
   } catch (err) {
     console.error("Auth Sync Error:", err);
-    // Don't kill the request if it's just a sync logging issue, but be safe
     next();
   }
 };
