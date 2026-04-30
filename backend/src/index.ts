@@ -2,17 +2,18 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
-import app from "./app.js";
-import { initSentry, Sentry } from "./sentry.js";
-import { logger } from "./lib/logger.js";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../");
 const envFiles = [path.join(rootDir, ".env"), path.join(rootDir, ".env.example")];
 const loadedEnv = envFiles.find((file) => fs.existsSync(file));
-
 if (loadedEnv) {
   dotenv.config({ path: loadedEnv });
 }
+
+// Load modules dynamically AFTER dotenv has run
+const { default: app } = await import("./app.js");
+const { initSentry, Sentry } = await import("./sentry.js");
+const { logger } = await import("./lib/logger.js");
 
 console.log("[BOOT] Starting GrowFlow AI Server...");
 console.log("[BOOT] Node Version:", process.version);
