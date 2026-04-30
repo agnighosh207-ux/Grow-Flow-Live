@@ -152,10 +152,12 @@ app.use("/api", router);
 if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA") {
   // Use __dirname to safely anchor the path regardless of where the node command is executed from
   const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
-  app.use(express.static(frontendPath));
+  // Serve static files from the root
+  app.use("/", express.static(frontendPath));
   
   // Catch-all for SPA routing (must be AFTER all other routes)
-  app.get("*path", (req, res, next) => {
+  // Using explicit regex for Express 5 compatibility
+  app.get(/(.*)/, (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
     res.sendFile(path.join(frontendPath, "index.html"));
   });

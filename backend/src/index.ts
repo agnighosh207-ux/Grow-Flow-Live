@@ -1,26 +1,39 @@
 import dotenv from "dotenv";
-import fs from "node:fs";
-import path from "node:path";
 import { fileURLToPath } from "node:url";
+import path from "node:path";
+import fs from "node:fs";
+import app from "./app.js";
+import { initSentry, Sentry } from "./sentry.js";
+import { logger } from "./lib/logger.js";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../");
 const envFiles = [path.join(rootDir, ".env"), path.join(rootDir, ".env.example")];
 const loadedEnv = envFiles.find((file) => fs.existsSync(file));
+
 if (loadedEnv) {
   dotenv.config({ path: loadedEnv });
 }
 
-import { initSentry, Sentry } from "./sentry.js";
-initSentry();
+console.log("[BOOT] Starting GrowFlow AI Server...");
+console.log("[BOOT] Node Version:", process.version);
+console.log("[BOOT] CWD:", process.cwd());
+console.log("[BOOT] PORT ENV:", process.env.PORT);
 
-const { default: app } = await import("./app.js");
-const { logger } = await import("./lib/logger.js");
+process.on("uncaughtException", (err) => {
+  console.error("[CRITICAL] Uncaught Exception:", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[CRITICAL] Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
+});
+
+initSentry();
 
 if (!loadedEnv) {
   logger.warn({ envFiles }, "No .env or .env.example file found; environment variables must be provided.");
 }
-
-
 
 const desiredPort = Number(process.env.PORT) || 3000;
 const isProduction = process.env.NODE_ENV === "production";
