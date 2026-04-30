@@ -16,52 +16,35 @@ import { eq } from "drizzle-orm";
 
 const app: Express = express();
 
-// Emergency Request Logger (Plain console.log for maximum visibility in cloud logs)
-app.use((req, _res, next) => {
-  console.log(`[REQUEST] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
-  next();
-});
-
-// ABSOLUTE TOP Health Check for Cloud Probes
+// ─── 1. HEALTH CHECK — Must be the absolute first route (no middleware) ──────
 app.get("/api/health", (_req, res) => {
-  res.status(200).send("OK");
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString(), uptime: process.uptime() });
 });
 
+// ─── 2. Standard middleware ──────────────────────────────────────────────────
 app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
 app.use(compression());
 
-// Health check must be at the top to satisfy cloud proxy health checks ASAP
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ 
-    status: "ok", 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-
 app.use(
   pinoHttp({
     logger,
+    autoLogging: { ignore: (req: any) => req.url === "/api/health" },
     serializers: {
       req(req) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
+        return { id: req.id, method: req.method, url: req.url?.split("?")[0] };
       },
       res(res) {
-        return {
-          statusCode: res.statusCode,
-        };
+        return { statusCode: res.statusCode };
       },
     },
   }),
 );
 
+// ─── 3. Clerk proxy (must be before express.json) ────────────────────────────
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
+// ─── 4. CORS ─────────────────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : ["http://localhost:5173", "http://localhost:3000", "https://growflowai.space", "https://www.growflowai.space"];
@@ -70,9 +53,7 @@ app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-
       if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
         callback(null, true);
       } else {
@@ -81,6 +62,8 @@ app.use(
     },
   }),
 );
+
+// ─── 5. Body parsing ────────────────────────────────────────────────────────
 app.use(express.json({
   verify: (req, res, buf) => {
     (req as any).rawBody = buf;
@@ -88,6 +71,7 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true }));
 
+// ─── 6. Auth ────────────────────────────────────────────────────────────────
 app.use(clerkMiddleware());
 app.use((req: any, res, next) => {
   if (req.path.startsWith("/api/admin")) {
@@ -107,13 +91,12 @@ app.use((req: any, res, next) => {
 });
 app.use(authSyncMiddleware);
 
+// ─── 7. Maintenance mode (cached) ──────────────────────────────────────────
 let maintenanceModeCache = { value: false, lastChecked: 0 };
 
 app.use(async (req, res, next) => {
-  // Only apply maintenance mode to API routes
   if (req.path.startsWith("/api/")) {
-    // Always allow admin requests so they can toggle maintenance mode
-    if (req.path.startsWith("/api/admin")) {
+    if (req.path.startsWith("/api/admin") || req.path === "/api/health") {
       return next(); 
     }
     
@@ -123,7 +106,8 @@ app.use(async (req, res, next) => {
         const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
         maintenanceModeCache = { value: !!settings?.maintenanceMode, lastChecked: now };
       } catch (err) {
-        // ignore
+        // DB unavailable — assume not in maintenance
+        maintenanceModeCache = { value: false, lastChecked: now };
       }
     }
 
@@ -135,6 +119,7 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// ─── 8. Rate limiting ──────────────────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 300,
@@ -143,9 +128,6 @@ const generalLimiter = rateLimit({
   message: { error: "Too many requests. Please slow down and try again." },
   skip: (req) => req.path.startsWith(CLERK_PROXY_PATH),
 });
-
-// Using enforceGenerationLimit globally for the content endpoints instead
-
 
 app.use("/api", generalLimiter);
 app.use("/api/content/generate", enforceGenerationLimit);
@@ -162,26 +144,32 @@ app.use("/api/repurpose/generate", enforceGenerationLimit);
 app.use("/api/improve-competitor/generate", enforceGenerationLimit);
 app.use("/api/content-pack/generate", enforceGenerationLimit);
 
+// ─── 9. API router ─────────────────────────────────────────────────────────
 app.use("/api", router);
 
-// Serve the frontend automatically in production/beta modes
+// ─── 10. Frontend serving (production only) ─────────────────────────────────
 if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA") {
-  // Use __dirname to safely anchor the path regardless of where the node command is executed from
   const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
-  // Serve static files from the root
-  app.use("/", express.static(frontendPath));
+  app.use(express.static(frontendPath));
   
-  // Catch-all for SPA routing (must be AFTER all other routes)
-  // Using explicit regex for Express 5 compatibility
+  // SPA catch-all — regex for Express 5 compat
   app.get(/(.*)/, (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
-    res.sendFile(path.join(frontendPath, "index.html"));
+    res.sendFile(path.join(frontendPath, "index.html"), (err) => {
+      if (err) {
+        // Frontend files not found — this is expected when frontend is hosted separately (Vercel)
+        res.status(200).send("GrowFlow AI API is running. Frontend is hosted separately.");
+      }
+    });
   });
 }
 
-app.use((err: any, req: any, res: any, next: any) => {
+// ─── 11. Error handler ──────────────────────────────────────────────────────
+app.use((err: any, req: any, res: any, _next: any) => {
   logger.error({ err }, "Unhandled application error");
-  res.status(500).json({ error: "Internal Server Error" });
+  if (!res.headersSent) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 export default app;

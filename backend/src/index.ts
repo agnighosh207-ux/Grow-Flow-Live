@@ -2,7 +2,9 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
+import http from "node:http";
 
+// ─── 1. Load .env BEFORE any application code ────────────────────────────────
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../");
 const envFiles = [path.join(rootDir, ".env"), path.join(rootDir, ".env.example")];
 const loadedEnv = envFiles.find((file) => fs.existsSync(file));
@@ -10,78 +12,37 @@ if (loadedEnv) {
   dotenv.config({ path: loadedEnv });
 }
 
-// Load modules dynamically AFTER dotenv has run
-const { default: app } = await import("./app.js");
-const { initSentry, Sentry } = await import("./sentry.js");
-const { logger } = await import("./lib/logger.js");
-
-console.log("[BOOT] Starting GrowFlow AI Server...");
-console.log("[BOOT] Node Version:", process.version);
-console.log("[BOOT] CWD:", process.cwd());
-console.log("[BOOT] PORT ENV:", process.env.PORT);
-
+// ─── 2. Process-level crash handlers (installed BEFORE any imports can throw) ─
 process.on("uncaughtException", (err) => {
   console.error("[CRITICAL] Uncaught Exception:", err);
   process.exit(1);
 });
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("[CRITICAL] Unhandled Rejection at:", promise, "reason:", reason);
+process.on("unhandledRejection", (reason) => {
+  console.error("[CRITICAL] Unhandled Rejection:", reason);
   process.exit(1);
 });
 
+// ─── 3. Boot diagnostics ─────────────────────────────────────────────────────
+const PORT = Number(process.env.PORT) || 3000;
+console.log("[BOOT] Starting GrowFlow AI Server...");
+console.log("[BOOT] Node:", process.version, "| CWD:", process.cwd());
+console.log("[BOOT] PORT:", PORT, "| NODE_ENV:", process.env.NODE_ENV);
+console.log("[BOOT] DATABASE_URL set:", !!process.env.DATABASE_URL);
+
+// ─── 4. Dynamic-import the Express app AFTER env is ready ────────────────────
+const { default: app } = await import("./app.js");
+const { initSentry } = await import("./sentry.js");
+
 initSentry();
 
-if (!loadedEnv) {
-  logger.warn({ envFiles }, "No .env or .env.example file found; environment variables must be provided.");
-}
+// ─── 5. Create server with explicit http.createServer + 0.0.0.0 binding ─────
+const server = http.createServer(app);
 
-const desiredPort = Number(process.env.PORT) || 3000;
-const isProduction = process.env.NODE_ENV === "production";
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`[BOOT] ✅ Server listening on 0.0.0.0:${PORT}`);
+});
 
-// In production, we MUST listen on the provided PORT or fail. Fallbacks cause 502s on Railway.
-const portsToTry = isProduction ? [desiredPort] : [desiredPort, 3001, 3002, 3003];
-
-function listenOnPort(port: number) {
-  return new Promise<number>((resolve, reject) => {
-    try {
-      const server = app.listen(port, () => {
-        resolve(port);
-      });
-
-      server.once("error", (err: any) => {
-        if (err?.code === "EADDRINUSE") {
-          server.close();
-          reject(err);
-        } else {
-          reject(err);
-        }
-      });
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-let boundPort: number | undefined;
-for (const port of portsToTry) {
-  try {
-    boundPort = await listenOnPort(port);
-    break;
-  } catch (err: any) {
-    if (err?.code === "EADDRINUSE" && !isProduction) {
-      logger.warn({ port }, `Port ${port} is already in use; trying the next available port.`);
-      continue;
-    }
-    Sentry.captureException(err);
-    logger.error({ err, port }, "CRITICAL: Failed to bind to port. This will cause a 502 Bad Gateway.");
-    process.exit(1);
-  }
-}
-
-if (!boundPort) {
-  logger.error({ ports: portsToTry }, "Unable to bind the server to any available port.");
+server.on("error", (err: any) => {
+  console.error("[CRITICAL] Server failed to start:", err);
   process.exit(1);
-}
-
-logger.info({ port: boundPort }, `Server listening on http://localhost:${boundPort}`);
+});
