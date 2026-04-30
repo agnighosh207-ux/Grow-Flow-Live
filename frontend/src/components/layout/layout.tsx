@@ -42,6 +42,7 @@ import { useReferralInfo } from "@/hooks/useReferral";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/layout/Logo";
 import { MoreHorizontal } from "lucide-react";
+import { LiveActivityTicker } from "@/components/shared/LiveActivityTicker";
 
 function ImpersonationBanner() {
   const [impersonatedUser, setImpersonatedUser] = useState<string | null>(null);
@@ -624,6 +625,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </nav>
       <NotificationPermissionModal />
       <ReferralPopup />
+      <LiveActivityTicker />
 
       {user && (
         <>
