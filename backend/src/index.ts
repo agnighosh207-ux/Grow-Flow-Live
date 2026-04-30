@@ -45,7 +45,7 @@ const portsToTry = isProduction ? [desiredPort] : [desiredPort, 3001, 3002, 3003
 function listenOnPort(port: number) {
   return new Promise<number>((resolve, reject) => {
     try {
-      const server = app.listen(port, "0.0.0.0", () => {
+      const server = app.listen(port, () => {
         resolve(port);
       });
 

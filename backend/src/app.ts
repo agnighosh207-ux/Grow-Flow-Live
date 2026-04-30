@@ -16,6 +16,17 @@ import { eq } from "drizzle-orm";
 
 const app: Express = express();
 
+// Emergency Request Logger (Plain console.log for maximum visibility in cloud logs)
+app.use((req, _res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  next();
+});
+
+// ABSOLUTE TOP Health Check for Cloud Probes
+app.get("/api/health", (_req, res) => {
+  res.status(200).send("OK");
+});
+
 app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
 app.use(compression());
