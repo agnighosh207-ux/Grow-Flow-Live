@@ -165,15 +165,27 @@ app.use("/api", router);
 
 // ─── 10. Frontend serving (production only) ─────────────────────────────────
 if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA") {
-  const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
-  app.use(express.static(frontendPath));
+  const frontendPath = path.resolve(__dirname, "../../frontend/dist");
+  
+  // Static assets (hashed files) can be cached for a long time
+  app.use(express.static(frontendPath, {
+    maxAge: '1y',
+    etag: true,
+    immutable: true,
+    index: false // Don't serve index.html from here to control its caching separately
+  }));
   
   // SPA catch-all — regex for Express 5 compat
   app.get(/(.*)/, (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
+    
+    // Ensure index.html is NEVER cached so users always get the latest version
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.sendFile(path.join(frontendPath, "index.html"), (err) => {
       if (err) {
-        // Frontend files not found — this is expected when frontend is hosted separately (Vercel)
         res.status(200).send("GrowFlow AI API is running. Frontend is hosted separately.");
       }
     });

@@ -32,63 +32,52 @@ const nicheTrendDrivers: Record<string, string> = {
   General: "Deep authenticity vs synthetic AI content, hyper-fragmented micro-communities, human-first storytelling, the death of mass broadcasting, highly experiential interactive content formats",
 };
 
+const TRENDS_CACHE = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 router.post("/trends/generate", requireAuth, requirePlanOrTrial("trends"), async (req: any, res): Promise<void> => {
   const { niche = "General" } = req.body as { niche?: string };
+
+  // Check cache
+  const cached = TRENDS_CACHE.get(niche);
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    if (req.trialMode) await consumeToolTrial(req.userId, "trends");
+    res.json(cached.data);
+    return;
+  }
 
   const nicheContext = nicheContextMap[niche] || nicheContextMap["General"];
   const trendDrivers = nicheTrendDrivers[niche] || nicheTrendDrivers["General"];
 
   const currentYear = new Date().getFullYear();
 
-  const systemPrompt = `You are a social media trend intelligence analyst who tracks virality patterns across Instagram, TikTok, YouTube Shorts, Twitter, and LinkedIn. You identify content that is CURRENTLY exploding — not trends from past years.
-
-IMPORTANT CONTEXT: The current year is ${currentYear}. ALL trends, dates, scenarios, cultural references, and predictions MUST reflect the reality of ${currentYear} or later. NEVER generate trends, titles, or ideas for 2024 or earlier. Your output must sound like bleeding-edge content from ${currentYear}.
-
-You understand WHY content trends at the intersection of:
-- Cultural moment: What people are thinking and feeling RIGHT NOW about this topic
-- Platform algorithm: What content format/emotion the algorithm is currently rewarding
-- Audience psychology: What specific desire, fear, or identity signal is activated
-
+  const systemPrompt = `You are a social media trend intelligence analyst. Identify 8 content ideas that are EXPLODING in ${currentYear}. 
 NICHE: ${niche}
 CONTENT TERRITORY: ${nicheContext}
 CURRENT CULTURAL DRIVERS: ${trendDrivers}
 
-Your trend ideas must be:
-- CURRENT: Reflecting real conversations happening in this niche RIGHT NOW (not evergreen best practices)
-- CONTROVERSIAL ENOUGH: Takes a side, makes a point, or reveals something the audience didn't know
-- SPECIFIC: Targets a specific pain point or desire, not a broad topic
-- EXECUTABLE: A creator can make this TODAY, using only their expertise and a phone
+Return ONLY a valid JSON object with a "trends" key containing an array of 8 objects. No markdown.`;
 
-NEVER output: "Share your journey", "Tips for beginners", "Motivation for the week", "Here's what I learned" (without specific substance)`;
-
-  const userPrompt = `Generate 8 trending content ideas for a ${niche} creator that would perform exceptionally RIGHT NOW in ${currentYear}.
-
-For each idea, think about:
-1. What specific conversation is happening in ${niche} right now?
-2. What angle on that conversation would create the most engagement (agreement, disagreement, or "I never thought of it that way")?
-3. Which platform would the algorithm push this hardest on?
-
-    Return ONLY a valid JSON object containing a "trends" key with an array of 8 objects:
+  const userPrompt = `Generate 8 trending content ideas for ${niche} in ${currentYear}.
+JSON schema:
 {
   "trends": [
     {
-      "title": "Scroll-stopping content title...",
-      "hook": "The exact first sentence...",
-      "angle": "The unique content angle...",
-      "whyItWorks": "2 sentences...",
-      "trendScore": 85,
-      "platform": "Instagram"
+      "title": "string",
+      "hook": "string",
+      "angle": "string",
+      "whyItWorks": "string",
+      "trendScore": number,
+      "platform": "string"
     }
   ]
-}
-
-No markdown, no explanation, just the JSON object.`;
+}`;
 
   try {
     const completion = await openai.chat.completions.create({
       model: "llama-3.1-8b-instant",
       response_format: { type: "json_object" },
-      max_tokens: 3500,
+      max_tokens: 1200, // Reduced from 3500 for lightning speed
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -99,25 +88,22 @@ No markdown, no explanation, just the JSON object.`;
 
     let trends: any[] = [];
     try {
-      const cleaned = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
-      const parsed = JSON.parse(cleaned);
-      trends = Array.isArray(parsed.trends) ? parsed.trends : (Array.isArray(parsed) ? parsed : []);
+      const parsed = JSON.parse(raw);
+      trends = Array.isArray(parsed.trends) ? parsed.trends : [];
     } catch {
-      console.error("Failed to parse AI response. Raw text was:", raw);
-      res.status(500).json({ error: "Failed to parse trend ideas" });
+      res.status(500).json({ error: "Failed to parse trends" });
       return;
     }
 
-    if (!Array.isArray(trends)) {
-      res.status(500).json({ error: "Invalid trend data format" });
-      return;
-    }
+    const responseData = { trends, niche };
+    
+    // Save to cache
+    TRENDS_CACHE.set(niche, { data: responseData, timestamp: Date.now() });
 
     if (req.trialMode) await consumeToolTrial(req.userId, "trends");
-    res.json({ trends, niche });
+    res.json(responseData);
   } catch (err: any) {
-    console.error("Trends AI Error:", err);
-    res.status(500).json({ error: "Failed to generate trending ideas", details: err?.message });
+    res.status(500).json({ error: "Generation failed" });
   }
 });
 
