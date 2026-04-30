@@ -21,11 +21,15 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+const isProduction = process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION";
+
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 40,
+  max: 20, // Reduced for pooling efficiency
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 10000,
+  // Supabase Pooler (6543) requires SSL.
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 export const db = drizzle(pool, { schema });
 
