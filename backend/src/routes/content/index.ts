@@ -577,7 +577,7 @@ router.get("/content/stats", requireAuth, async (req: AuthenticatedRequest, res:
     }
   });
 
-  const statsResponse: GetContentStatsResponse & { thisMonth: number } = {
+  const statsResponse: GetContentStatsResponse & { thisMonth: number; platformBreakdown: any } = {
     totalGenerations: Number(statsData?.total ?? 0),
     thisWeek: Number(statsData?.thisWeek ?? 0),
     thisMonth: Number(statsData?.thisMonth ?? 0),
