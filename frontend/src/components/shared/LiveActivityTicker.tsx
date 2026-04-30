@@ -43,7 +43,7 @@ export function LiveActivityTicker() {
   }, []);
 
   return (
-    <div className="fixed bottom-20 md:bottom-16 right-4 z-50 pointer-events-none max-w-[320px]">
+    <div className="fixed bottom-24 md:bottom-8 left-4 md:left-[280px] xl:left-[312px] z-50 pointer-events-none max-w-[320px]">
       <AnimatePresence mode="wait">
         {activity && (
           <motion.div
