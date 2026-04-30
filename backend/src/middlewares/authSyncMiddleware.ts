@@ -1,7 +1,7 @@
 import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { ensureReferralCode } from "../routes/referral";
+// Dynamic import used below to prevent circular dependency with referral routes
 import { WelcomeSequence } from "../lib/WelcomeSequence";
 
 const syncCache = new Map<string, number>();
@@ -74,6 +74,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
 
       // Ensure their referral code is created atomically right after sync
       if (!user.referralCode) {
+        const { ensureReferralCode } = await import("../routes/referral/index.js");
         await ensureReferralCode(uid);
       }
       

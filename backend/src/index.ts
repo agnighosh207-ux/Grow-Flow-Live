@@ -23,22 +23,29 @@ if (!loadedEnv) {
 
 
 const desiredPort = Number(process.env.PORT) || 3000;
-const fallbackPorts = [3001, 3002, 3003, 3004];
-const portsToTry = [desiredPort, ...fallbackPorts.filter((port) => port !== desiredPort)];
+const isProduction = process.env.NODE_ENV === "production";
+
+// In production, we MUST listen on the provided PORT or fail. Fallbacks cause 502s on Railway.
+const portsToTry = isProduction ? [desiredPort] : [desiredPort, 3001, 3002, 3003];
 
 function listenOnPort(port: number) {
   return new Promise<number>((resolve, reject) => {
-    const server = app.listen(port);
+    try {
+      const server = app.listen(port, "0.0.0.0", () => {
+        resolve(port);
+      });
 
-    server.once("listening", () => resolve(port));
-    server.once("error", (err: any) => {
-      if (err?.code === "EADDRINUSE") {
-        server.close(() => {});
-        reject(err);
-        return;
-      }
+      server.once("error", (err: any) => {
+        if (err?.code === "EADDRINUSE") {
+          server.close();
+          reject(err);
+        } else {
+          reject(err);
+        }
+      });
+    } catch (err) {
       reject(err);
-    });
+    }
   });
 }
 
@@ -48,12 +55,12 @@ for (const port of portsToTry) {
     boundPort = await listenOnPort(port);
     break;
   } catch (err: any) {
-    if (err?.code === "EADDRINUSE") {
+    if (err?.code === "EADDRINUSE" && !isProduction) {
       logger.warn({ port }, `Port ${port} is already in use; trying the next available port.`);
       continue;
     }
     Sentry.captureException(err);
-    logger.error({ err, port }, "Failed to start server");
+    logger.error({ err, port }, "CRITICAL: Failed to bind to port. This will cause a 502 Bad Gateway.");
     process.exit(1);
   }
 }

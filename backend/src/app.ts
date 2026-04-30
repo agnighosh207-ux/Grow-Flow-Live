@@ -142,14 +142,21 @@ app.use("/api/repurpose/generate", enforceGenerationLimit);
 app.use("/api/improve-competitor/generate", enforceGenerationLimit);
 app.use("/api/content-pack/generate", enforceGenerationLimit);
 
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 app.use("/api", router);
 
-// Serve the frontend automatically in production
-if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "BETA") {
+// Serve the frontend automatically in production/beta modes
+if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA") {
   // Use __dirname to safely anchor the path regardless of where the node command is executed from
   const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
   app.use(express.static(frontendPath));
-  app.get(/(.*)/, (req, res) => {
+  
+  // Catch-all for SPA routing (must be AFTER all other routes)
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/")) return next();
     res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
