@@ -20,6 +20,15 @@ app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
 app.use(compression());
 
+// Health check must be at the top to satisfy cloud proxy health checks ASAP
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 app.use(
   pinoHttp({
     logger,
@@ -141,10 +150,6 @@ app.use("/api/daily/generate", enforceGenerationLimit);
 app.use("/api/repurpose/generate", enforceGenerationLimit);
 app.use("/api/improve-competitor/generate", enforceGenerationLimit);
 app.use("/api/content-pack/generate", enforceGenerationLimit);
-
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
-});
 
 app.use("/api", router);
 
