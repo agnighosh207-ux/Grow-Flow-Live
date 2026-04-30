@@ -67,19 +67,19 @@ function LiveActivityTicker() {
   }, []);
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-50 pointer-events-none max-w-[320px]">
       <AnimatePresence mode="wait">
         {activity && (
           <motion.div
             key={`${activity.user}-${activity.action}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-[#100726]/80 backdrop-blur-md border border-white/5 shadow-2xl"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-[#100726]/90 backdrop-blur-md border border-white/5 shadow-2xl"
           >
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <div className="text-[11px] text-white/70">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <div className="text-[11px] text-white/70 leading-tight">
               <span className="font-semibold text-white/90">{activity.user}</span> {activity.action}
               <span className={`ml-1.5 font-medium ${PLATFORMS.find(p => p.name === activity.platform)?.color}`}>
                 on {activity.platform}
