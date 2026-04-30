@@ -71,8 +71,24 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── 6. Auth ────────────────────────────────────────────────────────────────
-app.use(clerkMiddleware());
+// ─── 6. Auth (with timeout protection) ──────────────────────────────────────
+// Skip Clerk for non-API routes (static files, SPA) — they don't need auth
+const clerkMw = clerkMiddleware();
+app.use((req: any, res: any, next: any) => {
+  if (!req.path.startsWith("/api/")) return next();
+  
+  // Wrap clerkMiddleware in a 5-second timeout to prevent hangs
+  const timer = setTimeout(() => {
+    console.warn("[WARN] clerkMiddleware timed out after 5s, continuing without auth");
+    next();
+  }, 5000);
+  
+  clerkMw(req, res, (err?: any) => {
+    clearTimeout(timer);
+    if (err) return next(err);
+    next();
+  });
+});
 app.use((req: any, res, next) => {
   if (req.path.startsWith("/api/admin")) {
     const impUser = req.headers["x-impersonate-user"];

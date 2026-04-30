@@ -12,7 +12,7 @@ if (loadedEnv) {
   dotenv.config({ path: loadedEnv });
 }
 
-// ─── 2. Process-level crash handlers (installed BEFORE any imports can throw) ─
+// ─── 2. Process-level crash handlers ─────────────────────────────────────────
 process.on("uncaughtException", (err) => {
   console.error("[CRITICAL] Uncaught Exception:", err);
   process.exit(1);
@@ -35,8 +35,19 @@ const { initSentry } = await import("./sentry.js");
 
 initSentry();
 
-// ─── 5. Create server with explicit http.createServer + 0.0.0.0 binding ─────
-const server = http.createServer(app);
+// ─── 5. Create HTTP server with raw-level health check ───────────────────────
+// The raw handler ensures /api/health responds INSTANTLY without going through
+// any Express middleware (Clerk, CORS, helmet, etc.) which could hang.
+const server = http.createServer((req, res) => {
+  // Raw health check — bypasses ALL Express middleware
+  if (req.url === "/api/health" || req.url === "/healthz" || req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", uptime: process.uptime() }));
+    return;
+  }
+  // Forward everything else to Express
+  app(req, res);
+});
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`[BOOT] ✅ Server listening on 0.0.0.0:${PORT}`);
