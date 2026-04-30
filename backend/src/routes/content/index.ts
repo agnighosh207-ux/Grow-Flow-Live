@@ -20,9 +20,7 @@ import { requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
 import { sendCreditWarningEmail } from "../../services/email";
 import { AuthenticatedRequest } from "../../types";
 import { Response } from "express";
-import OpenAI from "openai";
-
-const openai = new OpenAI();
+// OpenAI is handled via the centralized fallback engine in ai-engine.ts
 
 const router: IRouter = Router();
 
