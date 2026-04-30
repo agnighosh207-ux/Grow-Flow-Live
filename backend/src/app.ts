@@ -165,17 +165,17 @@ app.use("/api", router);
 
 // ─── 10. Frontend serving (production only) ─────────────────────────────────
 if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA") {
-  const frontendPath = path.resolve(__dirname, "../../frontend/dist");
+  const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
   
   // Static assets (hashed files) can be cached for a long time
   app.use(express.static(frontendPath, {
     maxAge: '1y',
     etag: true,
     immutable: true,
-    index: false // Don't serve index.html from here to control its caching separately
+    index: false 
   }));
   
-  // SPA catch-all — regex for Express 5 compat
+  // SPA catch-all
   app.get(/(.*)/, (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
     
