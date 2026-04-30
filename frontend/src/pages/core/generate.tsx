@@ -40,60 +40,54 @@ const ACTIONS = {
   "YouTube": ["created a YouTube script", "generated video hooks", "created a video description", "built a viral shorts script"]
 };
 
-function generateLiveItem() {
-  const firstName = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
-  const lastInitial = LAST_INITIALS[Math.floor(Math.random() * LAST_INITIALS.length)];
-  const name = `${firstName} ${lastInitial}.`;
-  
-  const platformObj = PLATFORMS[Math.floor(Math.random() * PLATFORMS.length)];
-  const platform = platformObj.name;
-  const platformActions = ACTIONS[platform as keyof typeof ACTIONS];
-  const action = platformActions[Math.floor(Math.random() * platformActions.length)];
-  const time = `${Math.floor(Math.random() * 15) + 1}s ago`;
-  const color = platformObj.color;
-  
-  return { name, action, platform, time, color };
-}
-
 function LiveActivityTicker() {
-  const [idx, setIdx] = useState(0);
-  const [visibleItems, setVisibleItems] = useState([generateLiveItem(), generateLiveItem(), generateLiveItem()]);
+  const [activity, setActivity] = useState<any>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setVisibleItems(prev => [prev[1], prev[2], generateLiveItem()]);
-      setIdx(i => i + 1);
-    }, 4000);
+    const updateActivity = () => {
+      if (document.hidden) return;
+      const platforms = Object.keys(ACTIONS) as (keyof typeof ACTIONS)[];
+      const platform = platforms[Math.floor(Math.random() * platforms.length)];
+      const actionList = ACTIONS[platform];
+      const action = actionList[Math.floor(Math.random() * actionList.length)];
+      const name = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+      const initial = LAST_INITIALS[Math.floor(Math.random() * LAST_INITIALS.length)];
+      
+      setActivity({
+        user: `${name} ${initial}.`,
+        action,
+        platform,
+        time: "just now"
+      });
+    };
+    
+    updateActivity();
+    const interval = setInterval(updateActivity, 8000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="flex items-center gap-6 overflow-hidden bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-full px-4 py-2 w-full max-w-full">
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="flex w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-        <span className="text-[10px] uppercase font-bold tracking-widest text-white/30 hidden sm:inline-block">Live</span>
-      </div>
-      
-      <div className="flex items-center gap-8 overflow-hidden w-full">
-        {visibleItems.map((item, i) => (
+    <div className="fixed bottom-4 left-4 z-50 pointer-events-none">
+      <AnimatePresence mode="wait">
+        {activity && (
           <motion.div
-            key={`${idx}-${i}`}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.3, delay: i * 0.1 }}
-            className={`flex items-center gap-1.5 text-[11px] whitespace-nowrap min-w-fit
-              ${i > 0 ? "hidden md:flex" : "flex"}
-              ${i > 1 ? "hidden lg:flex" : ""}
-            `}
+            key={`${activity.user}-${activity.action}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-[#100726]/80 backdrop-blur-md border border-white/5 shadow-2xl"
           >
-            <span className="font-semibold text-white/70">{item.name}</span>
-            <span className="text-white/40">{item.action}</span>
-            <span className={`font-semibold ${item.color}`}>· {item.platform}</span>
-            <span className="text-white/20">· {item.time}</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="text-[11px] text-white/70">
+              <span className="font-semibold text-white/90">{activity.user}</span> {activity.action}
+              <span className={`ml-1.5 font-medium ${PLATFORMS.find(p => p.name === activity.platform)?.color}`}>
+                on {activity.platform}
+              </span>
+            </div>
           </motion.div>
-        ))}
-      </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -114,14 +108,14 @@ function AnimatedOrbs() {
 function ContentScoreBadge({ score, label, color }: { score: number; label: string; color: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-white/40 font-medium w-20 shrink-0">{label}</span>
+      <span className="text-xs text-white/40 font-medium w-20 shrink-0">{label}</span>
       <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
         <div
           className={`h-full rounded-full score-bar ${color}`}
           style={{ "--score-width": `${score}%` } as any}
         />
       </div>
-      <span className={`text-[11px] font-bold ${color.replace('bg-', 'text-')}`}>{score}</span>
+      <span className={`text-xs font-bold ${color.replace('bg-', 'text-')}`}>{score}</span>
     </div>
   );
 }
@@ -195,7 +189,7 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
           </div>
         )}
 
-        <div className="space-y-2.5">
+        <div className="space-y-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
           {scores.map(s => (
             <ContentScoreBadge key={s.label} score={s.score} label={s.label} color={s.color} />
           ))}
@@ -794,7 +788,7 @@ export default function Generate() {
   const [generationBlockedMsg, setGenerationBlockedMsg] = useState<string | null>(null);
   const [savedPrefs, setSavedPrefs] = useState<{ niche: string | null; tonePreference: string | null; platformPreference: string | null } | null>(null);
   const prefsLoadedRef = useRef(false);
-  const [showPostGenNudge, setShowPostGenNudge] = useState(false);
+  const [showPostGenUpsell, setShowPostGenUpsell] = useState(false);
   const { toast } = useToast();
   const { data: sub, refetch: refetchSub } = useSubscriptionStatus();
   const [, navigate] = useLocation();
@@ -851,11 +845,9 @@ export default function Generate() {
         }
         refetchSub();
         try {
-          const nudgeDismissed = sessionStorage.getItem("postGenNudgeDismissed");
-          const nudgeShown = sessionStorage.getItem("postGenNudgeShown");
-          if (!nudgeDismissed && !nudgeShown && sub && sub.plan === "free" && !showUpgradeModal) {
-            sessionStorage.setItem("postGenNudgeShown", "1");
-            setShowPostGenNudge(true);
+          const upsellShown = sessionStorage.getItem("shown_post_gen_upsell");
+          if (!upsellShown && sub && sub.plan === "free" && (sub.generationsRemaining ?? 0) <= 1 && !showUpgradeModal) {
+            setShowPostGenUpsell(true);
           }
         } catch {}
         try {
@@ -982,6 +974,7 @@ export default function Generate() {
   }, []);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    if (generateMutation.isPending) return;
     typeof window !== "undefined" && localStorage.setItem("languagePreference", values.language);
     
     if (values.language !== "English" && isFreeUser) {
@@ -1157,9 +1150,7 @@ export default function Generate() {
           </p>
         </div>
 
-        <div className="w-full mt-2 mb-4">
-          <LiveActivityTicker />
-        </div>
+        <div className="w-full mt-2 mb-4" />
 
         {savedPrefs && (savedPrefs.niche || savedPrefs.tonePreference || savedPrefs.platformPreference) && (
           <motion.div
@@ -1687,39 +1678,44 @@ export default function Generate() {
             </motion.div>
 
             <AnimatePresence>
-              {showPostGenNudge && !showUpgradeModal && (
+              {showPostGenUpsell && isFreeUser && (sub?.generationsRemaining ?? 0) <= 1 && (
                 <motion.div
-                  key="post-gen-nudge"
-                  initial={{ opacity: 0, y: -8, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -8, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 via-teal-500/5 to-transparent p-5 relative overflow-hidden group shadow-lg shadow-cyan-950/20"
                 >
-                  <div className="flex items-center justify-between gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] px-4 py-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <p className="text-xs text-white/65 truncate">
-                        Imagine generating 10x more content like this...
+                  <div className="absolute top-0 right-0 p-2">
+                    <button 
+                      onClick={() => {
+                        setShowPostGenUpsell(false);
+                        try { sessionStorage.setItem("shown_post_gen_upsell", "true"); } catch(e) {}
+                      }}
+                      className="p-1.5 rounded-lg text-white/20 hover:text-white/40 hover:bg-white/5 transition-all"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col md:flex-row items-center gap-5 pr-8">
+                    <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center text-xl shrink-0 animate-bounce-subtle">
+                      ⚡
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                      <h4 className="text-sm font-bold text-white mb-1">
+                        You got {generatedContent?.content?.viral_score ?? 85}/100 on this post.
+                      </h4>
+                      <p className="text-xs text-white/50 leading-relaxed">
+                        Unlock Creator to generate 100 more like this every month. All premium features included.
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                        className="text-xs font-semibold text-cyan-300 hover:text-cyan-200 transition-colors"
+                    <div className="flex flex-col items-center gap-2 shrink-0">
+                      <Button
+                        onClick={() => { setShowUpgradeModal(true); }}
+                        className="bg-cyan-500 hover:bg-cyan-400 text-white font-bold rounded-xl px-6 py-2 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-cyan-500/20"
                       >
-                        Unlock Full Power
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowPostGenNudge(false);
-                          try { sessionStorage.setItem("postGenNudgeDismissed", "1"); } catch {}
-                        }}
-                        className="text-white/25 hover:text-white/50 transition-colors"
-                        aria-label="Dismiss"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                        Upgrade Now for ₹249 →
+                      </Button>
+                      <span className="text-[10px] text-white/25">Cancel anytime · No hidden fees</span>
                     </div>
                   </div>
                 </motion.div>
@@ -1884,6 +1880,7 @@ export default function Generate() {
         )}
       </AnimatePresence>
       </div>
+      <LiveActivityTicker />
     </motion.div>
   );
 }

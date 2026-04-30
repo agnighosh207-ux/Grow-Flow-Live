@@ -192,7 +192,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative w-full max-w-md rounded-2xl border border-cyan-500/25 overflow-hidden"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-cyan-500/25"
             style={{
               background: "linear-gradient(135deg, rgba(15,8,35,0.97) 0%, rgba(20,10,45,0.97) 100%)",
               backdropFilter: "blur(24px)",

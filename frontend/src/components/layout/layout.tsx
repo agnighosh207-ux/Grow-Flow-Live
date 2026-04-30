@@ -8,7 +8,7 @@ import { TopBanner } from "@/components/banners/TopBanner";
 import { FeedbackModal, checkShouldShowFeedback } from "@/components/modals/FeedbackModal";
 import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
-import Lenis from "lenis";
+import { useQuery } from "@tanstack/react-query";
 import {
   Wand2,
   History,
@@ -41,8 +41,7 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useReferralInfo } from "@/hooks/useReferral";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/layout/Logo";
-import { CustomCursor } from "@/components/shared/Cursor";
-import { useMotionValue, useSpring as useFramerSpring } from "framer-motion";
+import { MoreHorizontal } from "lucide-react";
 
 function ImpersonationBanner() {
   const [impersonatedUser, setImpersonatedUser] = useState<string | null>(null);
@@ -120,6 +119,7 @@ const BOTTOM_NAV = [
   { path: "/ideas", label: "Ideas", icon: Lightbulb },
   { path: "/saved", label: "Saved", icon: Heart },
   { path: "/history", label: "History", icon: History },
+  { path: "menu", label: "More", icon: MoreHorizontal },
 ];
 
 function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
@@ -228,6 +228,7 @@ function NavItem({
   onClick,
   showDot,
   badge,
+  isAccountGroup,
 }: {
   path: string;
   label: string;
@@ -238,8 +239,14 @@ function NavItem({
   onClick?: () => void;
   showDot?: boolean;
   badge?: ReactNode;
+  isAccountGroup?: boolean;
 }) {
   const isLocked = pro && !isPro;
+
+  let baseColorClass = "text-white/55 hover:bg-white/[0.06] hover:text-white/90";
+  if (isAccountGroup) {
+    baseColorClass = "text-white/40 hover:bg-white/[0.06] hover:text-white/70";
+  }
 
   return (
     <Link key={path} href={path}>
@@ -250,7 +257,7 @@ function NavItem({
             ? "bg-cyan-600/20 text-white font-medium"
             : isLocked
             ? "text-white/25 hover:bg-white/3 hover:text-white/40"
-            : "text-white/55 hover:bg-white/[0.06] hover:text-white/90"
+            : baseColorClass
           }
         `}
       >
@@ -293,14 +300,13 @@ function SidebarContent({
   location: string;
   onClick?: () => void;
 }) {
-  const [streak, setStreak] = useState<number>(0);
-  useEffect(() => {
-    if (!user) return;
-    fetch("/api/daily/streak")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.streak) setStreak(d.streak); })
-      .catch(() => {});
-  }, [user]);
+  const { data: streakData } = useQuery({ 
+    queryKey: ['daily-streak'], 
+    queryFn: () => fetch('/api/daily/streak').then(r => r.json()), 
+    staleTime: 5 * 60 * 1000, 
+    enabled: !!user 
+  });
+  const streak = streakData?.streak ?? 0;
 
   return (
     <>
@@ -311,10 +317,10 @@ function SidebarContent({
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-5">
+      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-6">
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
-              <p className="text-[10px] font-semibold text-white/20 uppercase tracking-widest px-3 mb-1.5">
+              <p className="text-[11px] font-semibold text-white/20 uppercase tracking-widest mb-1.5 border-l-2 border-white/10 pl-2 ml-3">
                 {group.label}
               </p>
               <motion.div 
@@ -345,6 +351,7 @@ function SidebarContent({
                       isPro={isPro}
                       isActive={location === path}
                       onClick={onClick}
+                      isAccountGroup={group.label === "Account"}
                       showDot={
                         path === "/pricing" &&
                         sub?.plan === "free" &&
@@ -376,7 +383,7 @@ function SidebarContent({
               <span className="text-xs font-semibold text-white/80">Unlock Full Power</span>
             </div>
             <p className="text-[11px] text-white/40 mb-2.5 leading-relaxed">
-              50 generations/month · All tools · No limits
+              Unlock all tools · Multi-language · Priority AI
             </p>
             <div className="flex items-center gap-1 text-xs font-semibold text-cyan-300 group-hover:text-cyan-200 transition-colors">
               Get unlimited access <ChevronRight className="w-3.5 h-3.5" />
@@ -480,40 +487,14 @@ export function Layout({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  // Liquid Motion logic: Smooth scrolling
-  useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.5,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: "vertical",
-      gestureOrientation: "vertical",
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 2,
-    });
 
-    let rafId: number;
-    function raf(time: number) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    }
-    rafId = requestAnimationFrame(raf);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
-    };
-  }, []);
 
   const isPro = sub?.planType === "infinity" && sub?.plan === "active";
 
   return (
     <div className="min-h-screen text-foreground relative overflow-hidden">
       {/* God-Tier Global Graphics */}
-      <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-40" />
-      <div className="bg-scanlines" />
-      <div className="animate-scan" />
-      <CustomCursor />
+      <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
       <aside
         className="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-64 xl:w-72 border-r border-white/[0.06]"
         style={{ background: "rgba(8,3,22,0.6)", backdropFilter: "blur(24px)" }}
@@ -531,9 +512,10 @@ export function Layout({ children }: { children: ReactNode }) {
         className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/[0.06] sticky top-0 z-50"
         style={{ background: "rgba(10,4,28,0.92)", backdropFilter: "blur(20px)" }}
       >
-        <Logo size="sm" />
-        <div className="flex items-center gap-2">
-          {sub && <PlanPill plan={sub.plan} planType={sub.planType} />}
+        <div className="flex items-center justify-center w-full">
+          <Logo size="sm" />
+        </div>
+        <div className="hidden">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 text-white/60">
@@ -568,10 +550,10 @@ export function Layout({ children }: { children: ReactNode }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={location}
-              initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 1.02, filter: "blur(10px)" }}
-              transition={{ type: "spring", stiffness: 200, damping: 30, mass: 1 }}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               className="w-full"
             >
               {children}
@@ -604,11 +586,24 @@ export function Layout({ children }: { children: ReactNode }) {
         style={{ background: "rgba(10,4,28,0.96)", backdropFilter: "blur(20px)" }}
       >
         {BOTTOM_NAV.map(({ path, label, icon: Icon }) => {
+          if (path === "menu") {
+            return (
+              <span
+                key={path}
+                onClick={() => setIsSheetOpen(true)}
+                className="flex flex-col items-center gap-0.5 p-2 rounded-lg min-w-[3.5rem] relative text-white/35 group cursor-pointer"
+              >
+                <Icon className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
+                <span className="text-[9px] font-medium">{label}</span>
+              </span>
+            );
+          }
+          
           const isActive = location === path;
           return (
             <Link key={path} href={path}>
               <span
-                className={`flex flex-col items-center gap-0.5 p-2 rounded-lg min-w-[3.5rem] relative
+                className={`group flex flex-col items-center gap-0.5 p-2 rounded-lg min-w-[3.5rem] relative cursor-pointer
                   ${isActive ? "text-cyan-400" : "text-white/35"}
                 `}
               >

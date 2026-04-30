@@ -67,7 +67,7 @@ const plans: PricingPlan[] = [
     icon: Zap,
     buttonText: "Upgrade to Creator",
     features: [
-      "60 Generations / month",
+      "100 Generations / month",
       "3 Regens / topic",
       "Viral Score Prediction",
       "Multi-variation Output",

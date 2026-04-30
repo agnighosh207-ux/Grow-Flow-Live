@@ -9,8 +9,9 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
-const ADMIN_EMAIL = "agnighosh207@gmail.com";
+// Admin access is now managed by the isAdmin flag from the backend (Flaw 7 fix)
 
 interface AdminStats {
   totalUsers: number;
@@ -57,16 +58,17 @@ export default function AdminDashboard() {
 
   const COLORS = ['#00F2FF', '#00D9E5', '#00BEC9', '#00A3AD', '#00848D'];
 
+  const { data: subData } = useSubscriptionStatus();
+
   useEffect(() => {
-    if (isLoaded && user) {
-      const email = user.primaryEmailAddress?.emailAddress;
-      if (email !== ADMIN_EMAIL) {
+    if (isLoaded && subData) {
+      if (!subData.isAdmin) {
         setLocation("/");
       }
     } else if (isLoaded && !user) {
       setLocation("/");
     }
-  }, [isLoaded, user, setLocation]);
+  }, [isLoaded, user, subData, setLocation]);
 
   const { data: stats, isLoading } = useQuery<AdminStats>({
     queryKey: ["admin_stats"],
@@ -75,7 +77,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error("Not authorized or failed to fetch");
       return res.json();
     },
-    enabled: isLoaded && user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL,
+    enabled: isLoaded && !!subData?.isAdmin,
   });
 
   const modifyUserMutation = useMutation({
@@ -124,7 +126,7 @@ export default function AdminDashboard() {
     setLocation("/");
   };
 
-  if (!isLoaded || isLoading || user?.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) {
+  if (!isLoaded || isLoading || !subData?.isAdmin) {
     return (
       <div className="min-h-screen bg-[#0b0416] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />

@@ -2,6 +2,18 @@ import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { ensureReferralCode } from "../routes/referral";
+import { WelcomeSequence } from "../lib/WelcomeSequence";
+
+const syncCache = new Map<string, number>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [uid, timestamp] of syncCache.entries()) {
+    if (now - timestamp > 60000) {
+      syncCache.delete(uid);
+    }
+  }
+}, 10 * 60 * 1000);
 
 /**
  * Validates the Clerk session and ensures the user is securely registered in Supabase.
@@ -9,6 +21,10 @@ import { ensureReferralCode } from "../routes/referral";
  */
 export const authSyncMiddleware = async (req: any, res: any, next: any) => {
   try {
+    if (req.path.startsWith("/api/health") || req.path.startsWith("/api/webhooks")) {
+      return next();
+    }
+
     const auth = getAuth(req);
     const userId = auth?.sessionClaims?.userId || auth?.userId;
     
@@ -17,6 +33,11 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     }
 
     const uid = userId as string;
+    
+    if (syncCache.has(uid) && Date.now() - syncCache.get(uid)! < 60000) {
+      req.userId = uid;
+      return next();
+    }
     
     // Attach verified user ID to request
     req.userId = uid;
@@ -44,6 +65,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
           email: email,
           lastLoginAt: new Date(),
           planTier: "FREE", planType: "free",
+          generationsRemaining: 5,
           creditsRemaining: 5,
           isBetaUser: false,
           lastCreditReset: new Date()
@@ -56,24 +78,20 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       }
       
       if (email) {
-        import("../lib/WelcomeSequence").then(seq => {
-          seq.WelcomeSequence.sendWelcomeToBeta(email, "");
-        }).catch(err => console.error("Welcome email dynamic import failed:", err));
+        await WelcomeSequence.sendWelcomeToBeta(email, "").catch(err => console.error("sendWelcomeToBeta error:", err));
       }
     } else {
       const now = new Date();
       let updateData: any = { lastLoginAt: now };
       
-      const lastReset = user.lastCreditReset ? new Date(user.lastCreditReset) : null;
-      let shouldResetCredits = false;
+      const anchorDate = user.trialStartDate || user.createdAt || now;
+      const msIn30Days = 30 * 24 * 60 * 60 * 1000;
+      const elapsed = now.getTime() - anchorDate.getTime();
+      const intervals = Math.floor(elapsed / msIn30Days);
+      const currentCycleStart = new Date(anchorDate.getTime() + intervals * msIn30Days);
       
-      if (lastReset) {
-        const diffTime = Math.abs(now.getTime() - lastReset.getTime());
-        const diffDays = diffTime / (1000 * 60 * 60 * 24);
-        if (diffDays >= 30) {
-          shouldResetCredits = true;
-        }
-      } else {
+      let shouldResetCredits = false;
+      if (!user.lastCreditReset || new Date(user.lastCreditReset).getTime() < currentCycleStart.getTime()) {
         shouldResetCredits = true;
       }
 
@@ -87,7 +105,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         };
         
         updateData.generationsRemaining = tierCredits[planTier] || 5;
-        updateData.lastCreditReset = now;
+        updateData.lastCreditReset = currentCycleStart;
       }
 
       const [updatedUser] = await db.update(usersTable)
@@ -99,6 +117,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     }
 
     req.user = user;
+    syncCache.set(uid, Date.now());
     
     // Note: To make RLS work with Drizzle in the identical connection pool,
     // you would typically wrap subsequent queries:

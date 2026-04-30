@@ -99,12 +99,13 @@ function StrategyPlannerInner() {
 
   return (
     <div className="space-y-8 pb-16 max-w-4xl mx-auto">
-      <div>
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">
-          <CalendarDays className="w-7 h-7 text-cyan-400" />
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
+          <CalendarDays className="w-6 h-6 text-cyan-400" />
           Content Strategy
         </h1>
         <p className="text-white/50 text-sm">A full week of content — platform-specific, psychologically sequenced, ready to execute.</p>
+        <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-5" />
       </div>
 
       <div

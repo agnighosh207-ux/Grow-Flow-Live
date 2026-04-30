@@ -1,12 +1,16 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { eq, count, gte, and, sql } from "drizzle-orm";
-import { db, usersTable, contentGenerationsTable, couponsTable } from "@workspace/db";
+import { db, usersTable, contentGenerationsTable, couponsTable, securityLogsTable } from "@workspace/db";
 import crypto from "crypto";
-import { FREE_TRIALS_PER_TOOL, isPaidOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { FREE_TRIALS_PER_TOOL, isPaidOrTrial, consumeToolTrial, requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
+import { WelcomeSequence } from "../../lib/WelcomeSequence";
+import { AuthenticatedRequest } from "../../types";
+import { Response } from "express";
 import { ensureReferralCode, grantReferralReward } from "../referral";
 import { sendWelcomeEmail, sendPaymentFailedEmail } from "../../services/email";
 import { createSubscription } from "../../services/payment-service";
+import Razorpay from "razorpay";
 
 const router: IRouter = Router();
 
@@ -21,50 +25,32 @@ function getRazorpay() {
     : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET);
 
   if (!finalKeyId || !finalKeySecret) return null;
-  const Razorpay = require("razorpay");
   return new Razorpay({ key_id: finalKeyId, key_secret: finalKeySecret });
 }
 
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  req.userId = userId;
-  next();
-};
-
-async function getOrCreateUser(userId: string, email?: string) {
-  let [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  if (!user) {
-    [user] = await db.insert(usersTable).values({ id: userId, email: email ?? null }).returning();
-  }
-  if (!user.referralCode) {
-    await ensureReferralCode(userId);
-    [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  }
-  return user;
-}
+// requireAuth and getOrCreateUser are now centralized in planMiddleware.ts (Flaw 20 & 21 fix)
 
 function computePlan(user: any, totalGenerations: number, monthlyGenerations: number) {
   const now = new Date();
   const planType = (user.planType || "free") as "free" | "starter" | "creator" | "infinity";
+  const generationsRemaining = user.generationsRemaining ?? 0;
 
   if (user.subscriptionStatus === "active") {
     if (planType === "starter") {
       return {
         plan: "active" as const, planType,
-        canGenerate: monthlyGenerations < 20,
+        canGenerate: generationsRemaining > 0,
         trialDaysLeft: null, generationLimit: 20,
-        monthlyGenerationsUsed: monthlyGenerations,
+        monthlyGenerationsUsed: 20 - generationsRemaining,
         totalGenerationsUsed: totalGenerations,
       };
     }
     if (planType === "creator") {
       return {
         plan: "active" as const, planType,
-        canGenerate: monthlyGenerations < 100,
+        canGenerate: generationsRemaining > 0,
         trialDaysLeft: null, generationLimit: 100,
-        monthlyGenerationsUsed: monthlyGenerations,
+        monthlyGenerationsUsed: 100 - generationsRemaining,
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -88,9 +74,9 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
     return {
       plan: "trial" as const, planType: "creator",
-      canGenerate: monthlyGenerations < 100,
+      canGenerate: generationsRemaining > 0,
       trialDaysLeft: daysLeft, generationLimit: 100,
-      monthlyGenerationsUsed: monthlyGenerations,
+      monthlyGenerationsUsed: 100 - generationsRemaining,
       totalGenerationsUsed: totalGenerations,
     };
   }
@@ -98,9 +84,9 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
   // Fallback to free (or if canceled/blocked)
   return {
     plan: "free" as const, planType: "free" as const,
-    canGenerate: monthlyGenerations < 5,
+    canGenerate: generationsRemaining > 0,
     trialDaysLeft: null, generationLimit: 5,
-    monthlyGenerationsUsed: monthlyGenerations,
+    monthlyGenerationsUsed: 5 - generationsRemaining,
     totalGenerationsUsed: totalGenerations,
   };
 }
@@ -116,7 +102,7 @@ function getMonthlyWindowStart(user: any): Date {
   return new Date(subStart.getTime() + cycleNumber * msIn30Days);
 }
 
-router.get("/subscription/status", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/subscription/status", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req.userId);
 
   const [genCount] = await db
@@ -143,10 +129,12 @@ router.get("/subscription/status", requireAuth, async (req: any, res): Promise<v
   res.json({
     ...result,
     generationsUsed: totalGenerations,
+    generationsRemaining: user.generationsRemaining,
     trialEndsAt: user.trialEndsAt?.toISOString() ?? null,
     planExpiry: user.planExpiry?.toISOString() ?? null,
     subscriptionStatus: user.subscriptionStatus,
     razorpaySubscriptionId: user.razorpaySubscriptionId,
+    isAdmin: user.isAdmin,
   });
 });
 
@@ -168,7 +156,7 @@ const PLAN_CONFIG = {
   },
 };
 
-router.post("/subscription/create", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/subscription/create", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { planType, couponCode } = req.body as {
     planType?: "starter" | "creator" | "infinity";
     couponCode?: string;
@@ -196,6 +184,7 @@ router.post("/subscription/create", requireAuth, async (req: any, res): Promise<
         razorpaySubscriptionId: subscription.id,
         subscriptionStatus: "pending", 
         planType: effectivePlan,
+        trialEndsAt: trialEndsAt,
       })
       .where(eq(usersTable.id, req.userId));
 
@@ -205,7 +194,7 @@ router.post("/subscription/create", requireAuth, async (req: any, res): Promise<
       planName: `GrowFlow AI ${effectivePlan.toUpperCase()}`,
       planType: effectivePlan,
       billingPeriod: "monthly",
-      amount: planType === "infinity" ? 49900 : planType === "creator" ? 29900 : 10900,
+      amount: planType === "infinity" ? 49900 : planType === "creator" ? 24900 : 10900,
       currency: "INR",
       trialEndsAt: trialEndsAt.toISOString(),
       ghostMode: false
@@ -217,7 +206,7 @@ router.post("/subscription/create", requireAuth, async (req: any, res): Promise<
   }
 });
 
-router.post("/subscription/verify", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/subscription/verify", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, planType } = req.body;
 
   if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
@@ -225,7 +214,11 @@ router.post("/subscription/verify", requireAuth, async (req: any, res): Promise<
     return;
   }
 
-  const keySecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
+  const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
+  const keySecret = isProd 
+    ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
+    : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET);
+
   if (!keySecret) {
     res.status(503).json({ error: "Payment gateway not configured" });
     return;
@@ -241,25 +234,49 @@ router.post("/subscription/verify", requireAuth, async (req: any, res): Promise<
     return;
   }
 
+  // Idempotency check (Flaw 27 fix)
+  const [currentUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+  if (currentUser && currentUser.subscriptionStatus === "active" && currentUser.razorpaySubscriptionId === razorpay_subscription_id) {
+    res.json({
+      success: true,
+      planType: currentUser.planType,
+      message: "Subscription already active.",
+      alreadyActive: true
+    });
+    return;
+  }
+
   const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
 
+  const tierCredits: Record<string, number> = {
+    starter: 20,
+    creator: 100,
+    infinity: 9999
+  };
+
+  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await db.update(usersTable)
-    .set({ subscriptionStatus: "trial", planType: effectivePlan, planTier: effectivePlan.toUpperCase() as any })
+    .set({ 
+      subscriptionStatus: "active", 
+      planType: effectivePlan, 
+      planTier: effectivePlan.toUpperCase() as any,
+      trialStartDate: new Date(),
+      trialEndsAt: trialEndsAt,
+      generationsRemaining: tierCredits[effectivePlan] || 20
+    })
     .where(eq(usersTable.id, req.userId));
 
   grantReferralReward(req.userId).catch(err => console.error("grantReferralReward error:", err));
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
   if (user && user.email) {
-    import("../../lib/WelcomeSequence").then(seq => {
-      seq.WelcomeSequence.sendPaymentSuccess(
-        user.email as string, 
-        "", 
-        effectivePlan, 
-        "7 Days Limit-Free Trial", 
-        "₹0"
-      );
-    }).catch(err => console.error("Payment email dynamic import failed:", err));
+    await WelcomeSequence.sendPaymentSuccess(
+      user.email as string, 
+      "", 
+      effectivePlan, 
+      "7 Days Limit-Free Trial", 
+      "₹0"
+    ).catch(err => console.error("sendPaymentSuccess error:", err));
   }
 
   res.json({
@@ -269,13 +286,13 @@ router.post("/subscription/verify", requireAuth, async (req: any, res): Promise<
   });
 });
 
-router.post("/subscription/cancel", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/subscription/cancel", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const razorpay = getRazorpay();
   const user = await getOrCreateUser(req.userId);
 
   if (razorpay && user.razorpaySubscriptionId) {
     try {
-      await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, { cancel_at_cycle_end: 1 });
+      await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, true);
     } catch (e) {
       console.error("Razorpay cancel error:", e);
     }
@@ -288,7 +305,7 @@ router.post("/subscription/cancel", requireAuth, async (req: any, res): Promise<
   res.json({ success: true, message: "Subscription cancelled" });
 });
 
-router.post("/subscription/retry", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/subscription/retry", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const razorpay = getRazorpay();
   const user = await getOrCreateUser(req.userId);
 
@@ -312,7 +329,7 @@ router.post("/subscription/retry", requireAuth, async (req: any, res): Promise<v
   res.json({ success: true, planType: previousPlan });
 });
 
-router.get("/subscription/validate-coupon", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/subscription/validate-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { code } = req.query as { code?: string };
   if (!code) {
     res.status(400).json({ error: "No code provided" });
@@ -334,7 +351,7 @@ router.get("/subscription/validate-coupon", requireAuth, async (req: any, res): 
   res.json({ success: true, discountPercent: coupon.discountPercent });
 });
 
-router.get("/trial/status", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/trial/status", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
     if (!user) {
@@ -353,7 +370,7 @@ router.get("/trial/status", requireAuth, async (req: any, res): Promise<void> =>
   }
 });
 
-router.post("/trial/use", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/trial/use", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { toolKey } = req.body as { toolKey?: string };
   if (!toolKey || !["ideas", "strategy", "hooks"].includes(toolKey)) {
     res.status(400).json({ error: "Invalid tool key." });
@@ -376,7 +393,7 @@ router.post("/trial/use", requireAuth, async (req: any, res): Promise<void> => {
   }
 });
 
-router.post("/user/login", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/user/login", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { deviceId, email } = req.body as { deviceId?: string; email?: string };
     const updates: any = { lastLoginAt: new Date() };
@@ -390,13 +407,13 @@ router.post("/user/login", requireAuth, async (req: any, res): Promise<void> => 
   }
 });
 
-router.post("/subscription/webhook", async (req: any, res): Promise<void> => {
+router.post("/subscription/webhook", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (webhookSecret) {
     const signature = req.headers["x-razorpay-signature"];
     const expectedSig = crypto
       .createHmac("sha256", webhookSecret)
-      .update(req.rawBody || JSON.stringify(req.body))
+      .update((req as any).rawBody || "")
       .digest("hex");
     if (signature !== expectedSig) {
       res.status(400).json({ error: "Invalid webhook signature" });
@@ -451,16 +468,29 @@ router.post("/subscription/webhook", async (req: any, res): Promise<void> => {
       }
     } else if (newStatus === "past_due" && updatedUsers.length > 0) {
       for (const u of updatedUsers) {
-        if (u.email) sendPaymentFailedEmail(u.email);
+        if (u.email) await sendPaymentFailedEmail(u.email);
+        
+        await db.insert(securityLogsTable).values({
+          id: crypto.randomUUID(),
+          userId: u.id,
+          eventType: "AUTH_FAILURE" as any,
+          metadata: { event: event.event, reason: "Subscription halted or failed" }
+        }).catch(() => {});
       }
     }
   } else if (event.event === "payment.failed") {
-    // Attempt to locate user by subscription ID in the payload
     const subId = event?.payload?.payment?.entity?.subscription_id;
     if (subId) {
-      const users = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.razorpaySubscriptionId, subId));
+      const users = await db.select().from(usersTable).where(eq(usersTable.razorpaySubscriptionId, subId));
       for (const u of users) {
-        if (u.email) sendPaymentFailedEmail(u.email);
+        if (u.email) await sendPaymentFailedEmail(u.email);
+        
+        await db.insert(securityLogsTable).values({
+          id: crypto.randomUUID(),
+          userId: u.id,
+          eventType: "AUTH_FAILURE" as any,
+          metadata: { event: event.event, reason: "Payment execution failure" }
+        }).catch(() => {});
       }
     }
   }

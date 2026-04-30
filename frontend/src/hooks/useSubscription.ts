@@ -12,12 +12,14 @@ export interface SubscriptionStatus {
   canGenerate: boolean;
   generationsUsed: number;
   monthlyGenerationsUsed: number;
+  generationsRemaining: number;
   generationLimit: number | null;
   trialEndsAt: string | null;
   trialDaysLeft: number | null;
   planExpiry: string | null;
   subscriptionStatus: string;
   razorpaySubscriptionId: string | null;
+  isAdmin: boolean;
 }
 
 async function fetchWithAuth(url: string, token: string, options?: RequestInit) {
@@ -49,8 +51,8 @@ export function useSubscriptionStatus() {
       if (!token) throw new Error("Not authenticated");
       return fetchWithAuth(`${BASE}/api/subscription/status`, token);
     },
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 

@@ -87,6 +87,8 @@ app.use((req: any, res, next) => {
 });
 app.use(authSyncMiddleware);
 
+let maintenanceModeCache = { value: false, lastChecked: 0 };
+
 app.use(async (req, res, next) => {
   // Only apply maintenance mode to API routes
   if (req.path.startsWith("/api/")) {
@@ -95,16 +97,19 @@ app.use(async (req, res, next) => {
       return next(); 
     }
     
-    try {
-      const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
-      if (settings?.maintenanceMode) {
-  if (process.env.NODE_ENV === "production") {
-    res.status(503).json({ error: "Service Unavailable: Maintenance Mode" });
-    return;
-  }
-}
-    } catch (err) {
-      // ignore
+    const now = Date.now();
+    if (now - maintenanceModeCache.lastChecked > 30000) {
+      try {
+        const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
+        maintenanceModeCache = { value: !!settings?.maintenanceMode, lastChecked: now };
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    if (maintenanceModeCache.value) {
+      res.status(503).json({ error: "Service Unavailable: Maintenance Mode" });
+      return;
     }
   }
   next();

@@ -66,12 +66,13 @@ function HooksGeneratorInner() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-16">
-      <div>
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5 flex items-center gap-3">
-          <Zap className="w-7 h-7 text-teal-400" />
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 flex items-center gap-3 text-white">
+          <Zap className="w-6 h-6 text-cyan-400" />
           Viral Hook Generator
         </h1>
         <p className="text-white/50 text-sm">10 hooks, 10 different psychological triggers. The first line is everything.</p>
+        <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-5" />
       </div>
 
       <div

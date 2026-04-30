@@ -37,12 +37,38 @@ const premiumHtmlWrapper = (title: string, bodyContent: string) => `
     </div>
     <div class="footer">
       © ${new Date().getFullYear()} Grow Flow AI. All rights reserved.<br>
-      You are receiving this because you registered at growflow.ai
+      You are receiving this because you registered at growflowai.space
     </div>
   </div>
 </body>
 </html>
 `;
+
+import { db, securityLogsTable } from '@workspace/db';
+import crypto from "crypto";
+
+async function retry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries <= 0) throw err;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return retry(fn, retries - 1, delay * 2);
+  }
+}
+
+async function logEmailFailure(email: string, error: any, context: string) {
+  try {
+    await db.insert(securityLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: email, // Using email as identifier if userId is not available or just for tracking
+      eventType: "RATE_LIMIT" as any, // Using existing enum, should ideally be EMAIL_FAILURE
+      metadata: { error: String(error), context, email }
+    });
+  } catch (err) {
+    console.error("Failed to log email failure to securityLogs:", err);
+  }
+}
 
 export class WelcomeSequence {
   static async sendWelcomeToBeta(email: string, name: string) {
@@ -54,21 +80,22 @@ export class WelcomeSequence {
         <p>Our platform is built to skyrocket your productivity and content creation speed.</p>
         <p>Your workspace is fully ready, and we’ve unlocked advanced modules for you to try immediately. Experience dynamic content generation, audience tailoring, and deep platform analytics.</p>
         <div style="text-align: center; margin-top: 30px;">
-          <a href="https://growflow.ai" class="btn">Launch Dashboard</a>
+          <a href="https://growflowai.space" class="btn">Launch Dashboard</a>
         </div>
       `;
       
       const html = premiumHtmlWrapper('Welcome to Grow Flow AI! 🚀', content);
       
-      await resend.emails.send({
+      await retry(() => resend.emails.send({
         from: FROM_EMAIL,
-        to: email, // If using sandbox key, email must match registered resend email otherwise delivery fails silently or throws error
+        to: email, 
         subject: 'Welcome to Grow Flow AI! 🚀',
         html,
-      });
+      }));
       console.log(`Premium Welcome email sent to ${email}`);
     } catch (error) {
       console.error('Failed to send welcome email:', error);
+      await logEmailFailure(email, error, 'sendWelcomeToBeta');
     }
   }
 
@@ -106,21 +133,22 @@ export class WelcomeSequence {
 
         <p>If you have any questions or need tactical advice on how to use your new features, just reply to this email.</p>
         <div style="text-align: center; margin-top: 30px;">
-          <a href="https://growflow.ai" class="btn">Start Creating Now</a>
+          <a href="https://growflowai.space" class="btn">Start Creating Now</a>
         </div>
       `;
       
       const html = premiumHtmlWrapper(headingText, content);
       
-      await resend.emails.send({
+      await retry(() => resend.emails.send({
         from: FROM_EMAIL,
         to: email,
         subject: isTrial ? 'Your Pro Trial is Active! 🎉' : 'Payment Successful! Upgrade Complete 🎉',
         html,
-      });
+      }));
       console.log(`Payment Success email sent to ${email}`);
     } catch (error) {
       console.error('Failed to send Payment Success email:', error);
+      await logEmailFailure(email, error, 'sendPaymentSuccess');
     }
   }
 
@@ -137,21 +165,22 @@ export class WelcomeSequence {
         </div>
         
         <div style="text-align: center; margin-top: 30px;">
-          <a href="https://growflow.ai/generate" class="btn">Try It Out Now</a>
+          <a href="https://growflowai.space/generate" class="btn">Try It Out Now</a>
         </div>
       `;
       
       const html = premiumHtmlWrapper('Your Power User Guide is here ⚡', content);
       
-      await resend.emails.send({
+      await retry(() => resend.emails.send({
         from: FROM_EMAIL,
         to: email,
         subject: 'You\'re Upgraded! Here is your Power User Guide ⚡',
         html,
-      });
+      }));
       console.log(`Power User Guide sent to ${email}`);
     } catch (error) {
       console.error('Failed to send power user guide:', error);
+      await logEmailFailure(email, error, 'sendPowerUserGuide');
     }
   }
 }

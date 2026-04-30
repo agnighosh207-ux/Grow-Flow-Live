@@ -8,11 +8,13 @@ export const contentGenerationsTable = pgTable("content_generations", {
   idea: text("idea").notNull(),
   contentType: text("content_type").notNull(),
   tone: text("tone").notNull(),
+  platform: text("platform"),
   content: jsonb("content").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   userIdIdx: index("content_generations_user_id_idx").on(table.userId),
   createdAtIdx: index("content_generations_created_at_idx").on(table.createdAt),
+  userIdCreatedAtIdx: index("content_generations_user_id_created_at_idx").on(table.userId, table.createdAt),
 }));
 
 export const insertContentGenerationSchema = createInsertSchema(contentGenerationsTable).omit({ id: true, createdAt: true });

@@ -46,8 +46,13 @@ if (!clerkPubKey) {
 }
 
 const SuspenseFallback = () => (
-  <div className="flex w-full h-[50vh] items-center justify-center">
-    <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
+  <div className="w-full flex flex-col gap-6 animate-pulse">
+    <div className="h-20 w-full bg-white/[0.05] rounded-xl" />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="h-64 w-full bg-white/[0.05] rounded-xl" />
+      <div className="h-64 w-full bg-white/[0.05] rounded-xl md:col-span-2" />
+    </div>
+    <div className="h-40 w-full bg-white/[0.05] rounded-xl" />
   </div>
 );
 

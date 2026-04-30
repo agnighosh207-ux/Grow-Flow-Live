@@ -219,12 +219,6 @@ export const GetContentStatsResponse = zod.object({
   "thisWeek": zod.number(),
   "topContentType": zod.string(),
   "topTone": zod.string(),
-  "platformBreakdown": zod.object({
-  "instagram": zod.number(),
-  "youtube": zod.number(),
-  "twitter": zod.number(),
-  "linkedin": zod.number()
-})
 })
 
 

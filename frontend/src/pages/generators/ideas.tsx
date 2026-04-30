@@ -95,12 +95,13 @@ function IdeasGeneratorInner() {
 
   return (
     <div className="space-y-8 pb-16">
-      <div>
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">
-          <Lightbulb className="w-7 h-7 lg:w-9 lg:h-9 text-yellow-400" />
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
+          <Lightbulb className="w-6 h-6 text-yellow-400" />
           Idea Generator
         </h1>
-        <p className="text-white/50 text-sm md:text-base">Get 10 battle-tested content ideas with hooks, angles, and the psychology behind each one.</p>
+        <p className="text-white/50 text-sm">Get 10 battle-tested content ideas with hooks, angles, and the psychology behind each one.</p>
+        <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-5" />
       </div>
 
       <div

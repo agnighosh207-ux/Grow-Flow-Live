@@ -5,16 +5,7 @@ import { eq, count } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  req.userId = userId;
-  next();
-};
+import { requireAuth } from "../../middlewares/planMiddleware";
 
 router.get("/settings", requireAuth, async (req: any, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));

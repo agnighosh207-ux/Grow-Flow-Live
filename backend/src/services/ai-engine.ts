@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import pino from "pino";
+import crypto from "crypto";
 
 const logger = pino({
   transport: {
@@ -24,6 +25,19 @@ export interface GenerateContentOptions {
 // In-Memory Burst Tracker: userId -> Array of timestamps
 const burstTracker = new Map<string, number[]>();
 
+// Periodic Cleanup to prevent memory leaks (Flaw 6)
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, history] of burstTracker.entries()) {
+    const validHistory = history.filter(ts => (now - ts) < 10000);
+    if (validHistory.length === 0) {
+      burstTracker.delete(userId);
+    } else {
+      burstTracker.set(userId, validHistory);
+    }
+  }
+}, 60000); // Evict stale users every 60 seconds
+
 /**
  * Executes a fallback chain of LLM generation attempting 7 different providers.
  */
@@ -45,11 +59,18 @@ export const generateContent = async ({
     history.push(now);
     burstTracker.set(userId, history);
     
+    // Cleanup burst tracker if it gets too large (Polish 5)
+    if (burstTracker.size > 10000) {
+      const cleanupNow = Date.now();
+      for (const [key, timestamps] of burstTracker.entries()) {
+        if (timestamps.every(ts => cleanupNow - ts > 60000)) burstTracker.delete(key);
+      }
+    }
+    
     if (history.length >= 3) {
        logger.warn(`[SECURITY WARNING] Potential Script/Bot detected for User: ${userId}`);
        // Log to DB via import dynamically to prevent circular deps if needed
        import("@workspace/db").then(({ db, securityLogsTable }) => {
-          const crypto = require("crypto");
           db.insert(securityLogsTable).values({
              id: crypto.randomUUID(),
              userId,

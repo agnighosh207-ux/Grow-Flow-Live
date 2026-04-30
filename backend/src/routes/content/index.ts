@@ -15,7 +15,14 @@ import {
   DeleteHistoryItemResponse,
   GetContentStatsResponse,
 } from "@workspace/api-zod";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { generateContent } from "../../services/ai-engine";
+import { requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
+import { sendCreditWarningEmail } from "../../services/email";
+import { AuthenticatedRequest } from "../../types";
+import { Response } from "express";
+import OpenAI from "openai";
+
+const openai = new OpenAI();
 
 const router: IRouter = Router();
 
@@ -28,16 +35,7 @@ function sanitizeInput(text: string, maxLength: number = 500): string {
     .trim();
 }
 
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  req.userId = userId;
-  next();
-};
+// requireAuth is now centralized in planMiddleware.ts (Flaw 20 fix)
 
 async function generateContentWithAI(idea: string, contentType: string, tone: string, niche: string = "General", platformPreference: string = "", language: string = "English") {
   const contentTypeInstructions: Record<string, string> = {
@@ -182,17 +180,16 @@ Return ONLY valid JSON (no markdown, no code blocks):
   "hashtags": ["#tag1", "#tag2", "#tag3"]
 }`;
 
-  const response = await openai.chat.completions.create({
-    model: "llama-3.1-8b-instant",
-    response_format: { type: "json_object" },
-    max_tokens: 4000,
+  const rawContentObj = await generateContent({
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
+    userPlan: "CREATOR", // Default to high-quality fallback logic
+    maxTokens: 4000,
   });
 
-  const rawContent = response.choices[0]?.message?.content ?? "{}";
+  const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
 
   let parsed;
   try {
@@ -209,7 +206,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
   return parsed;
 }
 
-router.post("/content/generate", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const parsed = GenerateContentBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -221,77 +218,24 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
     await db.insert(usersTable).values({ id: req.userId }).onConflictDoNothing();
   }
 
-  const [genCount] = await db
-    .select({ count: count() })
-    .from(contentGenerationsTable)
-    .where(eq(contentGenerationsTable.userId, req.userId));
-  const generationsUsed = Number(genCount?.count ?? 0);
-
-  const now = new Date();
-  let monthStart: Date;
-  if ((user?.subscriptionStatus === "active" || user?.subscriptionStatus === "trial") && user?.trialStartDate) {
-    const subStart = new Date(user.trialStartDate);
-    const monthsElapsed = (now.getFullYear() - subStart.getFullYear()) * 12 + (now.getMonth() - subStart.getMonth());
-    monthStart = new Date(subStart.getFullYear(), subStart.getMonth() + monthsElapsed, subStart.getDate());
-    if (monthStart > now) {
-      monthStart = new Date(subStart.getFullYear(), subStart.getMonth() + monthsElapsed - 1, subStart.getDate());
-    }
-  } else {
-    monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  }
-  const [monthlyGenCountRow] = await db
-    .select({ count: count() })
-    .from(contentGenerationsTable)
-    .where(and(eq(contentGenerationsTable.userId, req.userId), gte(contentGenerationsTable.createdAt, monthStart)));
-  const monthlyGenerationsUsed = Number(monthlyGenCountRow?.count ?? 0);
-
+  // Limit enforcement is now handled by the global enforceGenerationLimit middleware (Flaw 5 fix)
   const status = user?.subscriptionStatus ?? "free";
-  const planType = user?.planType ?? "free";
-  
-  let canGenerate = false;
-  if (status === "active") {
-    if (planType === "starter") {
-      canGenerate = monthlyGenerationsUsed < 20;
-    } else if (planType === "creator") {
-      canGenerate = monthlyGenerationsUsed < 60;
-    } else {
-      // Infinity -> soft limit, technically can still run
-      canGenerate = true;
-    }
-  } else if (status === "trial" && user?.trialEndsAt && new Date(user.trialEndsAt) > now) {
-    canGenerate = monthlyGenerationsUsed < 60; // Creator trial
-  } else {
-    canGenerate = generationsUsed < 3;
-  }
-
-  if (!canGenerate) {
-    res.status(402).json({
-      error: "upgrade_required",
-      message: status === "trial"
-        ? "Your trial has expired. Subscribe to continue generating."
-        : status === "active" && planType === "starter" && monthlyGenerationsUsed >= 20
-          ? "You've reached your 20 generations/month limit on Starter. Upgrade to Creator for 60 generations."
-          : status === "active" && planType === "creator" && monthlyGenerationsUsed >= 60
-            ? "You've reached your 60 generations/month limit. Upgrade to Infinity for unlimited access."
-            : "🔥 You've unlocked the power — upgrade to continue your journey.",
-      plan: status,
-      generationsUsed,
-    });
-    return;
-  }
+  const planTier = user?.planTier ?? "FREE";
+  const generationsRemaining = user?.generationsRemaining ?? 0;
 
   const { idea, contentType, tone } = parsed.data;
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
 
-  const freshUser = await db.select().from(usersTable).where(eq(usersTable.id, req.userId)).then(r => r[0]);
-  const savedNiche = freshUser?.niche ?? null;
-  const savedTone = freshUser?.tonePreference ?? null;
-  const savedPlatform = freshUser?.platformPreference ?? null;
+  const savedNiche = user?.niche ?? null;
+  const savedTone = user?.tonePreference ?? null;
+  const savedPlatform = user?.platformPreference ?? null;
   const resolvedNiche = niche !== "General" ? niche : (savedNiche ?? niche);
-  const resolvedTone = savedTone && savedTone !== tone ? savedTone : tone;
-  const resolvedPlatform = savedPlatform ?? "";
+  const resolvedTone = ((tone as string) !== "Default" && (tone as string) !== "default") ? tone : (savedTone ?? tone);
+  const resolvedPlatform = (typeof req.body.platform === "string" ? req.body.platform : (savedPlatform ?? "all")).toLowerCase();
 
   const language = typeof req.body.language === "string" ? req.body.language : "English";
+
+  const planType = user?.planType ?? "free";
 
   if (language !== "English") {
     if (status !== "active" && status !== "trial") {
@@ -299,19 +243,19 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
         error: "upgrade_required",
         message: "🔥 Create content in 10 Premium Languages to reach a global audience. Unlock with premium!",
         plan: status,
-        generationsUsed,
+        generationsRemaining,
       });
       return;
     }
     if (status === "active" && planType === "starter") {
-      if (!freshUser?.regionalLanguageLock) {
+      if (!user?.regionalLanguageLock) {
         await db.update(usersTable).set({ regionalLanguageLock: language }).where(eq(usersTable.id, req.userId));
-      } else if (freshUser.regionalLanguageLock !== language) {
+      } else if (user.regionalLanguageLock !== language) {
         res.status(402).json({
           error: "upgrade_required",
-          message: `Your Starter plan is locked to ${freshUser.regionalLanguageLock}. Upgrade to Creator for full language access!`,
+          message: `Your Starter plan is locked to ${user.regionalLanguageLock}. Upgrade to Creator for full language access!`,
           plan: status,
-          generationsUsed,
+          generationsRemaining,
         });
         return;
       }
@@ -344,7 +288,8 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
         userId: req.userId,
         idea,
         contentType,
-        tone,
+        tone: resolvedTone,
+        platform: resolvedPlatform,
         content,
       })
       .returning();
@@ -355,25 +300,16 @@ router.post("/content/generate", requireAuth, async (req: any, res): Promise<voi
       action: "GENERATE_CONTENT"
     });
 
-    const newGenerationsUsed = monthlyGenerationsUsed + 1;
-    if (freshUser?.email) {
-      const isLowCredits = 
-        (planType === "starter" && newGenerationsUsed === 18) ||
-        (planType === "creator" && newGenerationsUsed === 58) ||
-        (planType === "infinity" && newGenerationsUsed === 248);
-        
-      if (isLowCredits) {
-        // dynamic import or inline requires a top-level import
-        import("../../services/email").then(({ sendCreditWarningEmail }) => {
-          sendCreditWarningEmail(freshUser.email!, planType === "starter" ? 2 : planType === "creator" ? 2 : 250 - newGenerationsUsed, planType === "infinity");
-        }).catch(e => console.error("Could not load email service", e));
+    if (user?.email) {
+      if (generationsRemaining <= 2) {
+        sendCreditWarningEmail(user.email!, generationsRemaining, planTier === "INFINITY");
       }
     }
 
     res.json({
       id: savedGen.id,
       content,
-      generationsUsed: generationsUsed + 1,
+      generationsRemaining: generationsRemaining,
       plan: status,
     });
   } catch (err: any) {
@@ -503,14 +439,14 @@ Return ONLY this JSON:
 
   let variations: any;
   try {
-    const response = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-    response_format: { type: "json_object" },
-      max_tokens: 4000,
+    const response = await generateContent({
       messages: [
         { role: "system", content: variationSystemPrompt },
         { role: "user", content: variationUserPrompt },
       ],
+      userPlan: planType.toUpperCase(),
+      userId: req.userId,
+      maxTokens: 4000,
     });
 
     const rawContent = response.choices[0]?.message?.content ?? "{}";
@@ -596,37 +532,21 @@ router.delete("/content/history/:id", requireAuth, async (req: any, res): Promis
   res.json({ success: true });
 });
 
-router.get("/content/stats", requireAuth, async (req: any, res): Promise<void> => {
-  const [totalRow] = await db
-    .select({ count: count() })
-    .from(contentGenerationsTable)
-    .where(eq(contentGenerationsTable.userId, req.userId));
-
+router.get("/content/stats", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - now.getDay());
   weekStart.setHours(0, 0, 0, 0);
 
-  const [monthRow] = await db
-    .select({ count: count() })
+  const [statsData] = await db
+    .select({
+      total: count(),
+      thisMonth: sql<number>`count(*) filter (where ${contentGenerationsTable.createdAt} >= ${monthStart})`,
+      thisWeek: sql<number>`count(*) filter (where ${contentGenerationsTable.createdAt} >= ${weekStart})`,
+    })
     .from(contentGenerationsTable)
-    .where(
-      and(
-        eq(contentGenerationsTable.userId, req.userId),
-        gte(contentGenerationsTable.createdAt, monthStart),
-      ),
-    );
-
-  const [weekRow] = await db
-    .select({ count: count() })
-    .from(contentGenerationsTable)
-    .where(
-      and(
-        eq(contentGenerationsTable.userId, req.userId),
-        gte(contentGenerationsTable.createdAt, weekStart),
-      ),
-    );
+    .where(eq(contentGenerationsTable.userId, req.userId));
 
   const topContentTypeRows = await db
     .select({ contentType: contentGenerationsTable.contentType, count: count() })
@@ -644,21 +564,26 @@ router.get("/content/stats", requireAuth, async (req: any, res): Promise<void> =
     .orderBy(desc(count()))
     .limit(1);
 
-  const total = Number(totalRow?.count ?? 0);
-  const thisWeek = Number(weekRow?.count ?? 0);
-  const thisMonth = Number(monthRow?.count ?? 0);
+  const platformStats = await db
+    .select({ platform: contentGenerationsTable.platform, count: count() })
+    .from(contentGenerationsTable)
+    .where(eq(contentGenerationsTable.userId, req.userId))
+    .groupBy(contentGenerationsTable.platform);
+
+  const breakdown: Record<string, number> = { instagram: 0, youtube: 0, twitter: 0, linkedin: 0 };
+  platformStats.forEach(s => {
+    if (s.platform && breakdown.hasOwnProperty(s.platform)) {
+      breakdown[s.platform] = Number(s.count);
+    }
+  });
+
   const statsResponse: GetContentStatsResponse & { thisMonth: number } = {
-    totalGenerations: total,
-    thisWeek,
-    thisMonth,
+    totalGenerations: Number(statsData?.total ?? 0),
+    thisWeek: Number(statsData?.thisWeek ?? 0),
+    thisMonth: Number(statsData?.thisMonth ?? 0),
     topContentType: topContentTypeRows[0]?.contentType ?? "Educational",
     topTone: topToneRows[0]?.tone ?? "Professional",
-    platformBreakdown: {
-      instagram: Math.round(total * 0.35),
-      youtube: Math.round(total * 0.25),
-      twitter: Math.round(total * 0.20),
-      linkedin: Math.round(total * 0.20),
-    },
+    platformBreakdown: breakdown as any
   };
   res.json(statsResponse);
 });

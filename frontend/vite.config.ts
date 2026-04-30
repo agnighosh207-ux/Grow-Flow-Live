@@ -24,6 +24,18 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          clerk: ['@clerk/react'],
+          motion: ['framer-motion'],
+          query: ['@tanstack/react-query'],
+          charts: ['recharts'],
+          icons: ['lucide-react'],
+        }
+      }
+    }
   },
   server: {
     port,

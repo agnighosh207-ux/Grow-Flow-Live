@@ -112,7 +112,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
 
   const userLevel = planLevel(sub?.planType);
   const required = PLAN_LEVEL[requiredPlan] ?? 1;
-  const isAdmin = user?.primaryEmailAddress?.emailAddress === "agnighosh207@gmail.com";
+  const isAdmin = !!(sub as any)?.isAdmin;
 
   if (isAdmin || userLevel >= required || trialStatus?.isPaid) {
     return (

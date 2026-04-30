@@ -62,7 +62,7 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
-  { key: "generations", label: "Content Generations", free: "5 / month", starter: "20 / month", creator: "60 / month", infinity: "Unlimited*", section: "core" },
+  { key: "generations", label: "Content Generations", free: "5 / month", starter: "20 / month", creator: "100 / month", infinity: "Unlimited*", section: "core" },
   { key: "regen", label: "Regenerations per Topic", free: false, starter: "1 / topic", creator: "3 / topic", infinity: "Unlimited", section: "core" },
   { key: "platforms", label: "All 4 Platforms", free: true, starter: true, creator: true, infinity: true, section: "core" },
   { key: "language", label: "Multi-Language Output", free: "English Only", starter: "Eng + 1 Premium", creator: "10 Languages", infinity: "10 Languages", section: "core" },
@@ -418,7 +418,7 @@ export default function PricingPage() {
 
                 <div className="space-y-2.5 flex-1 mb-4">
                   {[
-                    "60 content generations / month",
+                    "100 content generations / month",
                     "3 Regenerations per topic",
                     "Multi-Variation (3 outputs per gen)",
                     "Viral Score™ enabled",
@@ -581,12 +581,12 @@ export default function PricingPage() {
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/70 mb-2">The old way</p>
               <p className="text-3xl font-black text-red-300 mb-1">₹5,000–₹15,000</p>
-              <p className="text-white/50 text-sm">A freelance content writer for 60 pieces. Slow turnaround, inconsistent quality, and it's still just one platform.</p>
+              <p className="text-white/50 text-sm">A freelance content writer for 100 pieces. Slow turnaround, inconsistent quality, and it's still just one platform.</p>
             </div>
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400/70 mb-2">With Creator</p>
               <p className="text-3xl font-black text-emerald-300 mb-1">₹249</p>
-              <p className="text-white/50 text-sm">60 pieces of content across Instagram, YouTube, Twitter & LinkedIn. Instant. Optimized. Ready to post.</p>
+              <p className="text-white/50 text-sm">100 pieces of content across Instagram, YouTube, Twitter & LinkedIn. Instant. Optimized. Ready to post.</p>
             </div>
           </div>
           <p className="text-center text-white/35 text-xs mt-5">

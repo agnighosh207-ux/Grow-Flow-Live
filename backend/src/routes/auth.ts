@@ -6,13 +6,7 @@ import crypto from "crypto";
 
 const router: IRouter = Router();
 
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) { return res.status(401).json({ error: "Unauthorized" }); }
-  req.userId = userId;
-  next();
-};
+import { requireAuth } from "../middlewares/planMiddleware";
 
 router.post("/auth/complete-onboarding", requireAuth, async (req: any, res): Promise<void> => {
   const { referralCode } = req.body as { referralCode?: string };
@@ -24,72 +18,35 @@ router.post("/auth/complete-onboarding", requireAuth, async (req: any, res): Pro
     if (normalizedCode) {
       await db.transaction(async (tx) => {
         // 1. Find the referrer
-        const [referrer] = await tx.select({ id: usersTable.id, planExpiry: usersTable.planExpiry })
+        const [referrer] = await tx.select({ id: usersTable.id })
           .from(usersTable)
           .where(eq(usersTable.referralCode, normalizedCode));
 
-        if (!referrer) {
-           // Invalid code, silent failure on reward
-           return;
-        }
-        if (referrer.id === req.userId) {
-           // Self-referral, silent failure
-           return;
-        }
+        if (!referrer || referrer.id === req.userId) return;
 
-        // 2. Check if current user already used a code (to prevent double dipping)
-        const [currentUser] = await tx.select({ referralUsedCode: usersTable.referralUsedCode, planExpiry: usersTable.planExpiry })
+        // 2. Check if current user already used a code
+        const [currentUser] = await tx.select({ referralUsedCode: usersTable.referralUsedCode })
           .from(usersTable)
           .where(eq(usersTable.id, req.userId))
-          .for("update"); // Lock for update to prevent concurrent race conditions
+          .for("update");
 
-        if (currentUser?.referralUsedCode) {
-          // Already used, fail silently
-          return;
-        }
+        if (currentUser?.referralUsedCode) return;
 
-        // 3. Mark the code as used by current user
+        // 3. Mark the code as used
         await tx.update(usersTable)
           .set({ referralUsedCode: normalizedCode })
           .where(eq(usersTable.id, req.userId));
 
-        // 4. Calculate expirations (15 days)
-        const fifteenDays = 15 * 24 * 60 * 60 * 1000;
-        const now = new Date();
-        
-        const currentUserExpiry = currentUser?.planExpiry && currentUser.planExpiry > now 
-            ? new Date(currentUser.planExpiry.getTime() + fifteenDays)
-            : new Date(now.getTime() + fifteenDays);
-            
-        const referrerExpiry = referrer?.planExpiry && referrer.planExpiry > now
-            ? new Date(referrer.planExpiry.getTime() + fifteenDays)
-            : new Date(now.getTime() + fifteenDays);
-
-        // 5. Upgrade both users to infinity for 15 days
-        await tx.update(usersTable)
-          .set({ 
-            planType: 'infinity',
-            subscriptionStatus: 'active',
-            planExpiry: referrerExpiry 
-          })
-          .where(eq(usersTable.id, referrer.id));
-          
-        await tx.update(usersTable)
-          .set({ 
-            planType: 'infinity',
-            subscriptionStatus: 'active',
-            planExpiry: currentUserExpiry 
-          })
-          .where(eq(usersTable.id, req.userId));
-
-        // 6. Log the referral
+        // 4. Log the referral (Pending Reward until they upgrade, or grant immediately if that's the rule)
+        // For onboarding, we usually grant immediately to build trust
+        const referralId = crypto.randomUUID();
         await tx.insert(referralsTable).values({
-          id: crypto.randomUUID(),
+          id: referralId,
           referrerUserId: referrer.id,
           referredUserId: req.userId,
-          rewardGranted: true,
+          rewardGranted: false, // Let the background worker or next step handle the grant
           rewardSeen: false,
-        }).onConflictDoNothing();
+        });
       });
     }
 
