@@ -155,7 +155,7 @@ if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCT
   app.use(express.static(frontendPath));
   
   // Catch-all for SPA routing (must be AFTER all other routes)
-  app.get("*", (req, res, next) => {
+  app.get("*path", (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
     res.sendFile(path.join(frontendPath, "index.html"));
   });
