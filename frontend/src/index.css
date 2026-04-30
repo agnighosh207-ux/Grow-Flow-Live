@@ -245,12 +245,6 @@
   animation: shimmer 2s infinite;
 }
 
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
-
 @keyframes float {
   0% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-20px) rotate(5deg); }
@@ -335,5 +329,4 @@
   mask-composite: exclude;
   -webkit-mask-composite: xor;
   pointer-events: none;
-}
 }
