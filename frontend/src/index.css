@@ -258,8 +258,9 @@
 }
 
 @layer utilities {
-.animate-float {
-  animation: float 8s ease-in-out infinite;
+  .animate-float {
+    animation: float 8s ease-in-out infinite;
+  }
 }
 
 @keyframes scan {
@@ -334,4 +335,5 @@
   mask-composite: exclude;
   -webkit-mask-composite: xor;
   pointer-events: none;
+}
 }
