@@ -45,21 +45,44 @@ setInterval(() => {
 /**
  * Robust JSON extraction from AI string
  */
-function extractJson(text: string): any {
+export function extractJson(text: string): any {
+  if (!text) return null;
+  
+  // Try direct parse first
   try {
     return JSON.parse(text);
-  } catch {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      try {
-        return JSON.parse(match[0]);
-      } catch {
-        // Nested try for partially malformed JSON
-        const cleaned = match[0].replace(/\\n/g, " ").replace(/\s+/g, " ");
-        try { return JSON.parse(cleaned); } catch { return null; }
+  } catch (e) {
+    // Attempt to extract from markdown blocks or braces
+    let jsonStr = text;
+    
+    // 1. Remove markdown code blocks if present
+    const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1];
+    } else {
+      // 2. Fallback to extracting anything between the first { and last }
+      const braceMatch = text.match(/\{[\s\S]*\}/);
+      if (braceMatch) {
+        jsonStr = braceMatch[0];
       }
     }
-    return null;
+
+    try {
+      return JSON.parse(jsonStr);
+    } catch (innerErr) {
+      // 3. Last ditch effort: basic cleaning of common LLM artifacts
+      const cleaned = jsonStr
+        .replace(/\\n/g, " ")
+        .replace(/\s+/g, " ")
+        .replace(/,\s*\}/g, "}") // trailing commas in objects
+        .replace(/,\s*\]/g, "]"); // trailing commas in arrays
+      
+      try {
+        return JSON.parse(cleaned);
+      } catch {
+        return null;
+      }
+    }
   }
 }
 

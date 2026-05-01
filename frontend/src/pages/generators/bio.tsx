@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Sparkles, Copy, Check, ChevronDown, Info, ArrowRight, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

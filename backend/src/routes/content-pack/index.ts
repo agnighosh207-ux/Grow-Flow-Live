@@ -3,7 +3,8 @@ import { getAuth } from "@clerk/express";
 import { eq } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { requireAuth } from "../../middlewares/planMiddleware";
-import { generateContent } from "../../services/ai-engine";
+// Note: zod is NOT a direct dependency of backend — use manual validation instead
+import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
@@ -20,17 +21,15 @@ Raw Idea: "${idea}"`;
       userId: req.userId,
       maxTokens: 150
     });
-    let enhanced = completion.choices[0]?.message?.content?.trim() || idea;
-    const match = enhanced.match(/\{[\s\S]*\}/);
-    if (match) enhanced = JSON.parse(match[0]).enhancedIdea || enhanced;
+    let raw = completion.choices[0]?.message?.content?.trim() || idea;
+    let parsed = extractJson(raw);
+    let enhanced = parsed?.enhancedIdea || raw;
     enhanced = enhanced.replace(/^["']|["']$/g, ''); // strip quotes
     res.json({ enhancedIdea: enhanced });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || "Failed to enhance idea" });
   }
 });
-
-// ai-engine import moved to top
 
 router.post("/content/pack", requireAuth, async (req: any, res): Promise<void> => {
   const { idea, tone = "Professional", contentType = "Educational", language = "English" } = req.body;
@@ -82,8 +81,11 @@ Return ONLY a JSON object:
     });
 
     const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    let parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    let parsed = extractJson(raw);
+
+    if (!parsed) {
+      throw new Error("MALFORMED_AI_RESPONSE");
+    }
 
     res.json({ ...parsed, isPro, isCreator });
   } catch (err: any) {

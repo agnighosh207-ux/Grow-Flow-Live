@@ -17,7 +17,7 @@ import {
   GetContentStatsResponse,
 } from "@workspace/api-zod";
 // Note: zod is NOT a direct dependency of backend — use manual validation instead
-import { generateContent } from "../../services/ai-engine";
+import { generateContent, extractJson } from "../../services/ai-engine";
 import { requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
 import { sendCreditWarningEmail } from "../../services/email";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
@@ -166,24 +166,21 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }`;
 
   try {
-  const rawContentObj = await generateContent({
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    userPlan,
-    userId,
-    language,
-    maxTokens: 4000,
-  });
+    const rawContentObj = await generateContent({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      userPlan,
+      userId,
+      language,
+      maxTokens: 4000,
+    });
 
-  const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
-  const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
+    let parsedContent = extractJson(rawContent);
 
-    let parsedContent;
-    try {
-      parsedContent = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
-    } catch (parseErr) {
+    if (!parsedContent) {
       console.error("JSON Parse Failed. Raw:", rawContent);
       // Fallback: If it's not JSON, try to wrap the raw text in a basic structure
       // to at least give the user something.
@@ -203,10 +200,10 @@ Return ONLY valid JSON (no markdown, no code blocks):
 
     // Ensure all required platform keys exist to prevent frontend crashes
     const finalContent = {
-      instagram: parsedContent.instagram || { caption: "", hashtags: "" },
-      youtube: parsedContent.youtube || { hook: "", script: "" },
+      instagram: parsedContent.instagram || { hook: "", caption: "", cta: "", hashtags: "", visualBriefs: [] },
+      youtube: parsedContent.youtube || { hook: "", title: "", script: "" },
       twitter: parsedContent.twitter || { tweets: [] },
-      linkedin: parsedContent.linkedin || { post: "" },
+      linkedin: parsedContent.linkedin || { headline: "", post: "", cta: "", hashtags: "", visualBriefs: [] },
       ...parsedContent
     };
 

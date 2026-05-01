@@ -4,7 +4,7 @@ import { Wand2, Copy, Check, ChevronDown, TrendingUp, AlertCircle, ChevronRight,
 import { useToast } from "@/hooks/use-toast";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/react";
 
 const PLATFORMS = ["Instagram", "Twitter", "LinkedIn", "YouTube", "Blog/Article", "General"] as const;
 

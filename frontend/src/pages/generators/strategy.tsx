@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { useLocation } from "wouter";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

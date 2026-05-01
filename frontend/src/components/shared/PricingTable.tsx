@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { useRazorpay } from "react-razorpay";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";

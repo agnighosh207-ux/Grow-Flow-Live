@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useLocation } from "wouter";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/react";
 
 const TONES = ["Professional", "Casual", "Aggressive", "Inspirational", "Educational"] as const;
 const CONTENT_TYPES = ["Educational", "Story", "Viral", "Product/Service", "Opinion"] as const;

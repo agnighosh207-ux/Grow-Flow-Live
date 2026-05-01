@@ -1,11 +1,9 @@
 import { Router, type IRouter } from "express";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
+import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
-
-import { generateContent } from "../../services/ai-engine";
 
 router.post("/repurpose", requireAuth, requirePlanOrTrial("content"), async (req: any, res): Promise<void> => {
   const { content, targetFormat, language = "English" } = req.body;
@@ -36,8 +34,14 @@ Return ONLY a JSON object: {"repurposedContent": "string"}`;
     });
 
     const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-    let parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
+    let parsed = extractJson(rawContent);
+
+    if (!parsed || !parsed.repurposedContent) {
+       // Try to use raw content if it's just a string
+       const result = typeof parsed === 'string' ? parsed : (parsed?.repurposedContent || rawContent);
+       res.json({ result: result.replace(/^["']|["']$/g, '') });
+       return;
+    }
 
     res.json({ result: parsed.repurposedContent });
   } catch (err: any) {

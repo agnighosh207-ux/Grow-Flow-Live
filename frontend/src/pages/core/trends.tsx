@@ -150,7 +150,7 @@ function TrendCard({ idea, index, onUseIdea }: { idea: any; index: number; onUse
         <Button
           size="sm"
           onClick={() => onUseIdea(idea.title)}
-          className="h-7 text-xs px-3 bg-cyan-600/70 hover:bg-cyan-600 text-white rounded-lg"
+          className="h-7 text-xs px-3 bg-cyan-600/70 hover:bg-cyan-600 text-white rounded-lg transition-all duration-300 hover:shadow-[0_0_12px_rgba(8,145,178,0.4)]"
         >
           <Zap className="w-3 h-3 mr-1" /> Generate Content
         </Button>
@@ -230,48 +230,56 @@ export default function TrendEngine() {
           </p>
           <div className="flex flex-wrap gap-2">
             {NICHES.map((n) => (
-              <button
+              <motion.button
                 key={n.value}
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setNiche(n.value)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 border ${
                   niche === n.value
-                    ? "bg-red-500/20 text-red-300 border-red-500/30 shadow-sm"
-                    : "bg-white/4 text-white/50 border-white/8 hover:bg-white/7 hover:text-white/70"
+                    ? "bg-red-500/20 text-red-300 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                    : "bg-white/4 text-white/50 border-white/8 hover:bg-white/7 hover:text-white/70 hover:border-white/20"
                 }`}
               >
                 <span>{n.emoji}</span>
                 {n.label}
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
 
-        <Button
-          onClick={fetchTrends}
-          disabled={loading}
-          className="w-full sm:w-auto h-11 px-8 font-semibold rounded-xl text-sm"
-          style={{
-            background: loading ? undefined : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-            boxShadow: loading ? undefined : "0 4px 20px rgba(239,68,68,0.25)",
-          }}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full sm:w-auto inline-block"
         >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Analyzing trends...
-            </>
-          ) : trends.length > 0 ? (
-            <>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh Trends
-            </>
-          ) : (
-            <>
-              <Flame className="w-4 h-4 mr-2" />
-              Discover Trending Ideas
-            </>
-          )}
-        </Button>
+          <Button
+            onClick={fetchTrends}
+            disabled={loading}
+            className={`w-full sm:w-auto h-11 px-8 font-bold rounded-xl text-sm transition-all duration-300 ${
+              loading 
+                ? "bg-white/10 text-white/30 cursor-not-allowed" 
+                : "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_35px_rgba(239,68,68,0.6)]"
+            }`}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Analyzing trends...
+              </>
+            ) : trends.length > 0 ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh Trends
+              </>
+            ) : (
+              <>
+                <Flame className="w-4 h-4 mr-2" />
+                Discover Trending Ideas
+              </>
+            )}
+          </Button>
+        </motion.div>
       </div>
 
       <AnimatePresence>
