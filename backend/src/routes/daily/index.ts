@@ -2,18 +2,12 @@ import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { eq, and } from "drizzle-orm";
 import { db, usersTable, dailyPlansTable } from "@workspace/db";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { DailyResponseSchema } from "@workspace/api-zod";
+import { requireAuth } from "../../middlewares/planMiddleware";
+import { generateContent } from "../../services/ai-engine";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
-
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  req.userId = userId;
-  next();
-};
 
 function getTodayDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -61,26 +55,21 @@ Return ONLY valid JSON with this exact structure:
 
   const userPrompt = `Generate today's growth action for a content creator. Pick a content format and angle that would perform well today. Make it concrete, specific, and immediately actionable. The idea should be post-ready.`;
 
-  const completion = await openai.chat.completions.create({
-    model: "llama-3.1-8b-instant",
+  const completion = await generateContent({
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    response_format: { type: "json_object" },
-    temperature: 0.9,
-    max_tokens: 400,
+    userPlan: "free",
+    userId,
+    language,
+    maxTokens: 500,
+    zodSchema: DailyResponseSchema
   });
 
-  const raw = completion.choices[0]?.message?.content ?? "{}";
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (match) parsed = JSON.parse(match[0]);
-    else throw new Error("Failed to parse JSON from AI response.");
-  }
+  const content = completion.choices[0]?.message?.content || "{}";
+  const match = content.match(/\{[\s\S]*\}/);
+  const parsed = JSON.parse(match ? match[0] : content);
   return {
     idea: parsed.idea || "Share 3 lessons from your biggest failure this year",
     hook: parsed.hook || "I failed publicly and it was the best thing that ever happened to me.",

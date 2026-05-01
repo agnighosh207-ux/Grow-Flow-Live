@@ -2,25 +2,10 @@ import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { eq } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { requireAuth } from "../../middlewares/planMiddleware";
+import { generateContent } from "../../services/ai-engine";
 
 const router: IRouter = Router();
-
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-  req.userId = userId;
-  next();
-};
-
-function isPlanEligible(user: any, requirePro: boolean): boolean {
-  const status = user.subscriptionStatus;
-  const plan = user.planType;
-  if (!["active", "trial"].includes(status)) return false;
-  if (requirePro) return plan === "infinity";
-  return ["starter", "creator", "infinity"].includes(plan);
-}
 
 router.post("/content/pack/enhance", requireAuth, async (req: any, res): Promise<void> => {
   const { idea } = req.body;
@@ -29,13 +14,15 @@ router.post("/content/pack/enhance", requireAuth, async (req: any, res): Promise
   try {
     const prompt = `You are an elite creative director. Take the following raw content idea and rewrite it into an irresistible, viral-worthy, high-converting concept. Make it punchy. Return ONLY the enhanced idea, nothing else. Maximum 2 sentences.
 Raw Idea: "${idea}"`;
-    const completion = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+    const completion = await generateContent({
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-      max_tokens: 150
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      maxTokens: 150
     });
     let enhanced = completion.choices[0]?.message?.content?.trim() || idea;
+    const match = enhanced.match(/\{[\s\S]*\}/);
+    if (match) enhanced = JSON.parse(match[0]).enhancedIdea || enhanced;
     enhanced = enhanced.replace(/^["']|["']$/g, ''); // strip quotes
     res.json({ enhancedIdea: enhanced });
   } catch (err: any) {
@@ -43,7 +30,7 @@ Raw Idea: "${idea}"`;
   }
 });
 
-import { generateContent } from "../../services/ai-engine";
+// ai-engine import moved to top
 
 router.post("/content/pack", requireAuth, async (req: any, res): Promise<void> => {
   const { idea, tone = "Professional", contentType = "Educational", language = "English" } = req.body;

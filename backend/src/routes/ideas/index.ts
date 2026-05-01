@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { openai } from "@workspace/integrations-openai-ai-server";
-import { requireAuth, requirePlanOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { IdeasResponseSchema } from "@workspace/api-zod";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
@@ -36,7 +36,6 @@ router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), async (
   const cacheKey = `ideas:${niche}:${goal}:${language}`;
   const cached = IDEAS_CACHE.get(cacheKey);
   if (cached && (Date.now() - cached.timestamp < IDEAS_TTL)) {
-    if (req.trialMode) await consumeToolTrial(req.userId, "ideas");
     res.json(cached.data);
     return;
   }
@@ -66,7 +65,7 @@ CREATOR GOAL: ${goal}.`;
 }`;
 
   try {
-    const rawContentObj = await generateContent({
+    const completion = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -74,24 +73,17 @@ CREATOR GOAL: ${goal}.`;
       userPlan: req.user?.planType || "free",
       userId: req.userId,
       language,
-      maxTokens: 1500,
+      maxTokens: 2000,
+      zodSchema: IdeasResponseSchema
     });
-
-    const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-
-    let parsed: any;
-    try {
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
-    } catch {
-      res.status(503).json({ error: "Failed to parse ideas" });
-      return;
-    }
-
+    
+    const content = completion.choices[0]?.message?.content || "{}";
+    const match = content.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : content);
+    
     const responseData = { ideas: parsed.ideas ?? [] };
     IDEAS_CACHE.set(cacheKey, { data: responseData, timestamp: Date.now() });
 
-    if (req.trialMode) await consumeToolTrial(req.userId, "ideas");
     res.json(responseData);
   } catch (err: any) {
     console.error("IDEAS GEN ERROR:", err);

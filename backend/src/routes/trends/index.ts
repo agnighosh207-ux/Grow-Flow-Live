@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { requireAuth, requirePlanOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { generateContent } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
@@ -41,7 +42,6 @@ router.post("/trends/generate", requireAuth, requirePlanOrTrial("trends"), async
   // Check cache
   const cached = TRENDS_CACHE.get(niche);
   if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-    if (req.trialMode) await consumeToolTrial(req.userId, "trends");
     res.json(cached.data);
     return;
   }
@@ -74,14 +74,14 @@ JSON schema:
 }`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-      response_format: { type: "json_object" },
-      max_tokens: 1200, // Reduced from 3500 for lightning speed
+    const completion = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      maxTokens: 1200,
     });
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
@@ -100,7 +100,6 @@ JSON schema:
     // Save to cache
     TRENDS_CACHE.set(niche, { data: responseData, timestamp: Date.now() });
 
-    if (req.trialMode) await consumeToolTrial(req.userId, "trends");
     res.json(responseData);
   } catch (err: any) {
     res.status(500).json({ error: "Generation failed" });
@@ -154,14 +153,14 @@ Return ONLY valid JSON (no markdown):
 }`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-    response_format: { type: "json_object" },
-      max_tokens: 800,
+    const completion = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      maxTokens: 800,
     });
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? "{}";
@@ -175,7 +174,6 @@ Return ONLY valid JSON (no markdown):
       return;
     }
 
-    if (req.trialMode) await consumeToolTrial(req.userId, "content_analyze");
     res.json(analysis);
   } catch (err) {
     res.status(500).json({ error: "Failed to analyze content" });

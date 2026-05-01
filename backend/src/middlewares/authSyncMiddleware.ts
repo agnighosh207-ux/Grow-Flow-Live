@@ -47,7 +47,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       return next();
     }
     
-    const email = (auth.sessionClaims?.email || auth.claims?.email) as string | null;
+    const email = (auth.sessionClaims?.email) as string | null;
 
     req.userId = uid;
 
@@ -126,21 +126,27 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       user = updatedUser;
     }
 
-    // IMPERSONATION LOGIC
+    // --- SECURE IMPERSONATION LOGIC ---
     const impUser = req.headers["x-impersonate-user"];
-    if (impUser && user.isAdmin) {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const actualUserEmail = email || auth.sessionClaims?.email;
+    const isActualAdmin = actualUserEmail && adminEmail && actualUserEmail === adminEmail;
+
+    if (impUser && (user.isAdmin || isActualAdmin)) {
       req.userId = impUser;
       const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, impUser));
       if (targetUser) {
         req.user = targetUser;
+        // Don't cache impersonated sessions to avoid leaks
       } else {
-        req.user = user; // Fallback to admin if target not found
+        req.user = user;
+        syncCache.set(uid, Date.now());
       }
     } else {
       req.user = user;
+      syncCache.set(uid, Date.now());
     }
 
-    syncCache.set(uid, Date.now());
     next();
   } catch (err) {
     console.error("Auth Sync Error:", err);

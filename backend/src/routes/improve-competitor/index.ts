@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { ImproveCompetitorContentBody } from "@workspace/api-zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { requireAuth, requirePlanOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
@@ -52,7 +52,6 @@ Return ONLY a JSON object:
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     let result = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
 
-    if (req.trialMode) await consumeToolTrial(req.userId, "improve_competitor");
     res.json(result);
   } catch (err: any) {
     console.error("Improve competitor error:", err);

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { requireAuth, requirePlanOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
@@ -39,7 +39,6 @@ Return ONLY a JSON object: {"repurposedContent": "string"}`;
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
     let parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
 
-    if (req.trialMode) await consumeToolTrial(req.userId, "content");
     res.json({ result: parsed.repurposedContent });
   } catch (err: any) {
     console.error("REPURPOSE ERROR:", err);

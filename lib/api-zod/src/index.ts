@@ -34,3 +34,49 @@ export type {
   PlatformContentYoutube
 } from './generated/types';
 
+export const IdeasResponseSchema = z.object({
+  ideas: z.array(z.string())
+});
+
+export const StrategyResponseSchema = z.object({
+  plan: z.array(z.object({
+    day: z.number(),
+    topic: z.string(),
+    hook: z.string(),
+    description: z.string(),
+    format: z.string()
+  }))
+});
+
+export const RepurposeResponseSchema = z.object({
+  repurposedContent: z.string()
+});
+
+export const CaptionResponseSchema = z.object({
+  diagnosis: z.object({
+    mainIssue: z.string(),
+    strengths: z.array(z.string()),
+    weaknesses: z.array(z.string())
+  }),
+  fullRewrite: z.object({
+    caption: z.string(),
+    changesMade: z.array(z.string()),
+    whyItWorks: z.string()
+  }),
+  microEdit: z.object({
+    caption: z.string(),
+    changesMade: z.array(z.string())
+  }),
+  hookScore: z.object({
+    original: z.number(),
+    rewrite: z.number(),
+    explanation: z.string()
+  })
+});
+
+export const DailyResponseSchema = z.object({
+  idea: z.string(),
+  reasoning: z.string(),
+  suggestedFormat: z.string(),
+  hook: z.string()
+});

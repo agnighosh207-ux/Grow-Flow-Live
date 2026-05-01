@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { requireAuth, requirePlanOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { db, contentCalendarTable } from "@workspace/db";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
@@ -81,7 +81,6 @@ Return ONLY a JSON object:
       return;
     }
 
-    if (req.trialMode) await consumeToolTrial(req.userId, "strategy");
 
     if (parsed.plan && Array.isArray(parsed.plan) && duration === 30) {
       const today = new Date();

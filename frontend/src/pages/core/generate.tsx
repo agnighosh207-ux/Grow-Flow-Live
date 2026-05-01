@@ -743,7 +743,7 @@ export default function Generate() {
   const { data: sub, refetch: refetchSub } = useSubscriptionStatus();
   const [, navigate] = useLocation();
 
-  const isFreeUser = sub && sub.planType === "free" && sub.plan === "free";
+  const isFreeUser = !!(sub && sub.planType === "free" && sub.plan === "free");
   const isStarterUser = sub && sub.planType === "starter" && (sub.plan === "active" || sub.plan === "trial");
   const isCreatorUser = sub && sub.planType === "creator" && (sub.plan === "active" || sub.plan === "trial");
   const isInfinityUser = sub && sub.planType === "infinity" && (sub.plan === "active" || sub.plan === "trial");
@@ -990,6 +990,7 @@ export default function Generate() {
     setFavoriteLoading(true);
     try {
       const token = await getToken();
+      const method = isFavorited ? "DELETE" : "POST";
       await fetch(`/api/favorites/${generatedContent.id}`, { 
         method,
         headers: token ? { "Authorization": `Bearer ${token}` } : {},

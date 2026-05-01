@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { GenerateHooksBody, GenerateHooksResponse } from "@workspace/api-zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { requireAuth, requirePlanOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
@@ -107,7 +107,6 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
       hooks = rawContent.split("\n").filter(l => l.trim().length > 10).slice(0, 10);
     }
 
-    if (req.trialMode) await consumeToolTrial(req.userId, "hooks");
     res.json({ hooks });
   } catch (err: any) {
     console.error("HOOK GEN ERROR:", err);

@@ -89,22 +89,6 @@ app.use((req: any, res: any, next: any) => {
     next();
   });
 });
-app.use((req: any, res, next) => {
-  if (req.path.startsWith("/api/admin")) {
-    const impUser = req.headers["x-impersonate-user"];
-    if (impUser && req.auth) {
-      const adminEmail = process.env.ADMIN_EMAIL;
-      const userEmail = req.auth.sessionClaims?.email || req.auth.claims?.email;
-      if (adminEmail && userEmail === adminEmail) {
-        req.auth.userId = impUser;
-        if (req.auth.sessionClaims) {
-          req.auth.sessionClaims.userId = impUser;
-        }
-      }
-    }
-  }
-  next();
-});
 app.use(authSyncMiddleware);
 
 // ─── 7. Maintenance mode (cached) ──────────────────────────────────────────
@@ -153,12 +137,12 @@ app.use("/api/strategy/generate", enforceGenerationLimit);
 app.use("/api/hooks/generate", enforceGenerationLimit);
 app.use("/api/trends/generate", enforceGenerationLimit);
 app.use("/api/content/analyze", enforceGenerationLimit);
-app.use("/api/caption/generate", enforceGenerationLimit);
+app.use("/api/caption/enhance", enforceGenerationLimit);
 app.use("/api/bio/generate", enforceGenerationLimit);
-app.use("/api/daily/generate", enforceGenerationLimit);
-app.use("/api/repurpose/generate", enforceGenerationLimit);
-app.use("/api/improve-competitor/generate", enforceGenerationLimit);
-app.use("/api/content-pack/generate", enforceGenerationLimit);
+app.use("/api/daily/today", enforceGenerationLimit);
+app.use("/api/repurpose", enforceGenerationLimit);
+app.use("/api/improve-competitor", enforceGenerationLimit);
+app.use("/api/content/pack", enforceGenerationLimit);
 
 // ─── 9. API router ─────────────────────────────────────────────────────────
 app.use("/api", router);

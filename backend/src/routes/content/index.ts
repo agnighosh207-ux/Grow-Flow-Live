@@ -1,4 +1,5 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Response } from "express";
+import { type AuthenticatedRequest } from "../../types";
 import { getAuth } from "@clerk/express";
 import { eq, desc, count, sql, and, gte } from "drizzle-orm";
 import { db, contentGenerationsTable, usersTable, usageLogsTable } from "@workspace/db";
