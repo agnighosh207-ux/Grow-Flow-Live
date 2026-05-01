@@ -158,6 +158,12 @@ export const generateContent = async ({
       model: "gemini-1.5-flash",
     },
     {
+      name: "SambaNova",
+      apiKey: process.env.SAMBANOVA_API_KEY,
+      baseURL: "https://api.sambanova.ai/v1",
+      model: isInfinity ? "Meta-Llama-3.1-70B-Instruct" : "Meta-Llama-3.1-8B-Instruct",
+    },
+    {
        name: "Groq Llama 3.1 70B",
        apiKey: process.env.GROQ_API_KEY,
        baseURL: "https://api.groq.com/openai/v1",
