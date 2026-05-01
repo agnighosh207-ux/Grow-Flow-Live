@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
+import { generateContent } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
@@ -28,9 +28,10 @@ const PLATFORM_RULES: Record<string, { charLimit: number; style: string; goal: s
   },
 };
 
-import { generateContent } from "../../services/ai-engine";
-
 router.post("/bio/generate", requireAuth, requirePlanOrTrial("bio"), async (req: any, res): Promise<void> => {
+  let isAborted = false;
+  req.on('close', () => { isAborted = true; });
+
   const {
     platform = "Instagram",
     niche = "Content Creator",
@@ -41,6 +42,13 @@ router.post("/bio/generate", requireAuth, requirePlanOrTrial("bio"), async (req:
     achievements = "",
     language = "English"
   } = req.body;
+
+  const sanitize = (val: any) => String(val || "").substring(0, 300);
+  const sRole = sanitize(role);
+  const sNiche = sanitize(niche);
+  const sExpertise = sanitize(expertise);
+  const sCta = sanitize(cta);
+  const sAchievements = sanitize(achievements);
 
   const platformInfo = PLATFORM_RULES[platform as string] || PLATFORM_RULES["Instagram"];
 
@@ -54,16 +62,17 @@ CRITICAL RULES:
 
   const userPrompt = `Generate 3 distinct bio variations for ${platform}.
 User Details:
-Role: ${role || niche}
-Niche: ${niche}
-Expertise: ${expertise || "Top-tier strategies"}
+Role: ${sRole || sNiche}
+Niche: ${sNiche}
+Expertise: ${sExpertise || "Top-tier strategies"}
 Tone: ${tone}
-CTA: ${cta || "Click below 👇"}
-Achievements: ${achievements}
+CTA: ${sCta || "Click below 👇"}
+Achievements: ${sAchievements}
 
 Return ONLY a JSON object: {"platform": "${platform}", "variations": [{"label": "string", "bio": "string", "strategy": "string"}], "proTip": "string"}`;
 
   try {
+    if (isAborted) return;
     const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
@@ -75,6 +84,7 @@ Return ONLY a JSON object: {"platform": "${platform}", "variations": [{"label": 
       maxTokens: 2000,
     });
 
+    if (isAborted) return;
     const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
     let parsed;
     try {
@@ -93,6 +103,7 @@ Return ONLY a JSON object: {"platform": "${platform}", "variations": [{"label": 
 
     res.json(parsed);
   } catch (err: any) {
+    if (isAborted) return;
     console.error("Bio generate error:", err);
     res.status(503).json({ error: "AI temporarily unavailable." });
   }

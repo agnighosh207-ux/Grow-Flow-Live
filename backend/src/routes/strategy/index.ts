@@ -1,12 +1,10 @@
 import { Router, type IRouter } from "express";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { db, contentCalendarTable } from "@workspace/db";
-import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
+import { generateContent } from "../../services/ai-engine";
+import { fetchLiveContext } from "../../services/perplexity-search";
 
 const router: IRouter = Router();
-
-const DAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const nichePlatformWeights: Record<string, Record<string, string>> = {
   Fitness: { primary: "Instagram", secondary: "YouTube Shorts", strong: "TikTok" },
@@ -28,19 +26,31 @@ const nicheGoalContext: Record<string, string> = {
   General: "value-first content, personal brand clarity, niche authority building, audience relationship deepening",
 };
 
-import { generateContent } from "../../services/ai-engine";
-
 router.post("/strategy/generate", requireAuth, requirePlanOrTrial("strategy"), async (req: any, res): Promise<void> => {
+  let isAborted = false;
+  req.on('close', () => { isAborted = true; });
+
   const { niche = "General", goal = "grow my audience and establish authority", duration = 7, language = "English" } = req.body;
+  const sanitizedNiche = String(niche).substring(0, 50);
+  const sanitizedGoal = String(goal).substring(0, 500);
 
-  const platforms = nichePlatformWeights[niche as string] || nichePlatformWeights["General"];
-  const goalContext = nicheGoalContext[niche as string] || nicheGoalContext["General"];
+  const platforms = nichePlatformWeights[sanitizedNiche as string] || nichePlatformWeights["General"];
+  const goalContext = nicheGoalContext[sanitizedNiche as string] || nicheGoalContext["General"];
 
-  const systemPrompt = `You are a senior content strategist. Create a ${duration}-day growth arc strategy for ${niche}.
+  try {
+    // 1. Fetch live web data for RAG (Retrieval Augmented Generation)
+    const liveContext = await fetchLiveContext(sanitizedNiche as string, sanitizedGoal as string);
+    if (isAborted) return;
+
+    let systemPrompt = `You are a senior content strategist. Create a ${duration}-day growth arc strategy for ${sanitizedNiche}.
 CONTEXT: ${goalContext}
-PLATFORMS: Primary = ${platforms.primary}, Secondary = ${platforms.secondary}.`;
+PLATFORMS: Primary = ${platforms.primary}, Secondary = ${platforms.secondary}.
 
-  const userPrompt = `Create a ${duration}-day content strategy for: ${goal}
+=== LIVE INTERNET RESEARCH ===
+Below is real-time web data regarding this topic. You MUST use these facts, trends, and statistics to ground your content. Do not invent fake data.
+[CONTEXT]: ${liveContext}`;
+
+    const userPrompt = `Create a ${duration}-day content strategy for: ${sanitizedGoal}
 Return ONLY a JSON object:
 {
   "plan": [
@@ -58,7 +68,6 @@ Return ONLY a JSON object:
   ]
 }`;
 
-  try {
     const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
@@ -69,6 +78,8 @@ Return ONLY a JSON object:
       language,
       maxTokens: duration === 30 ? 8000 : 5000,
     });
+
+    if (isAborted) return;
 
     const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
@@ -102,6 +113,7 @@ Return ONLY a JSON object:
 
     res.json({ plan: parsed.plan ?? [] });
   } catch (err: any) {
+    if (isAborted) return;
     console.error("STRATEGY GEN ERROR:", err);
     res.status(503).json({ error: "Failed to generate strategy." });
   }

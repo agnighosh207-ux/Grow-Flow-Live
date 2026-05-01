@@ -215,6 +215,8 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }
 
 router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  let isAborted = false;
+  req.on('close', () => { isAborted = true; });
   // Manual validation (zod is not a direct backend dependency)
   const { idea, contentType, tone, language: bodyLanguage } = req.body || {};
   const validContentTypes = ['Educational', 'Story', 'Viral'];
@@ -305,6 +307,7 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
 
   let content: any;
   try {
+    if (isAborted) return;
     content = await generateContentWithAI(idea, contentType, resolvedTone, resolvedNiche, resolvedPlatform, language, req.userId, user?.planType || "free");
     
     // Add watermark for Free users
@@ -324,6 +327,7 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
   }
 
   try {
+    if (isAborted) return;
     const [savedGen] = await db.insert(contentGenerationsTable)
       .values({
         userId: req.userId,

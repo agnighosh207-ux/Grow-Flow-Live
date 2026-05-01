@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { GenerateHooksBody, GenerateHooksResponse } from "@workspace/api-zod";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
+import { generateContent } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
@@ -49,15 +49,18 @@ const HOOK_PATTERNS = [
   },
 ];
 
-import { generateContent } from "../../services/ai-engine";
-
 router.post("/hooks/generate", requireAuth, requirePlanOrTrial("hooks"), async (req: any, res): Promise<void> => {
+  let isAborted = false;
+  req.on('close', () => { isAborted = true; });
+
   const { topic, tone, language = "English" } = req.body;
   
   if (!topic) {
     res.status(400).json({ error: "Topic is required" });
     return;
   }
+
+  const sanitizedTopic = String(topic).substring(0, 500);
 
   const toneGuidance = {
     Casual: "Conversational and warm, like a trusted friend sharing something important.",
@@ -75,7 +78,7 @@ Every hook must be specific to the topic.`;
 
   const languagePrompt = LANGUAGE_INSTRUCTIONS[language as string] || LANGUAGE_INSTRUCTIONS["English"];
 
-  const userPrompt = `Generate 10 elite-level hooks for this topic: "${topic}"
+  const userPrompt = `Generate 10 elite-level hooks for this topic: "${sanitizedTopic}"
   
 ${patternsInstructions}
 
@@ -84,6 +87,7 @@ ${languagePrompt}
 Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
 
   try {
+    if (isAborted) return;
     const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
@@ -95,6 +99,7 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
       maxTokens: 3000,
     });
 
+    if (isAborted) return;
     const rawContent = rawContentObj.choices[0]?.message?.content ?? '{"hooks": []}';
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
     
@@ -109,6 +114,7 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
 
     res.json({ hooks });
   } catch (err: any) {
+    if (isAborted) return;
     console.error("HOOK GEN ERROR:", err);
     res.status(503).json({ error: "AI temporarily unavailable. Please try again." });
   }

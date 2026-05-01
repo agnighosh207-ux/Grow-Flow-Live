@@ -1,14 +1,14 @@
 import { Router, type IRouter } from "express";
-import { ImproveCompetitorContentBody } from "@workspace/api-zod";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
+import { generateContent } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
-import { generateContent } from "../../services/ai-engine";
-
 router.post("/improve-competitor", requireAuth, requirePlanOrTrial("improve_competitor"), async (req: any, res): Promise<void> => {
+  let isAborted = false;
+  req.on('close', () => { isAborted = true; });
+
   const { competitorContent, language = "English" } = req.body;
   
   if (!competitorContent?.trim()) {
@@ -16,12 +16,14 @@ router.post("/improve-competitor", requireAuth, requirePlanOrTrial("improve_comp
     return;
   }
 
+  const sanitizedContent = String(competitorContent).substring(0, 4000);
+
   const systemPrompt = `You are an elite content strategist. Outmaneuver this competitor content.
 Rewrite it to be more specific, psychologically sharper, and more platform-native.`;
 
   const userPrompt = `Analyze and improve this content:
 ---
-${competitorContent}
+${sanitizedContent}
 ---
 
 Return ONLY a JSON object:
@@ -37,6 +39,7 @@ Return ONLY a JSON object:
 }`;
 
   try {
+    if (isAborted) return;
     const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
@@ -48,12 +51,14 @@ Return ONLY a JSON object:
       maxTokens: 5000,
     });
 
+    if (isAborted) return;
     const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     let result = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
 
     res.json(result);
   } catch (err: any) {
+    if (isAborted) return;
     console.error("Improve competitor error:", err);
     res.status(503).json({ error: "AI temporarily unavailable." });
   }

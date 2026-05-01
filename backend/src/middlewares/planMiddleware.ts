@@ -136,8 +136,8 @@ export function requirePlanOrTrial(toolKey: string) {
       });
 
     } catch (e: any) {
-      console.error("Plan check error (graceful fallback):", e.message);
-      next();
+      console.error("Plan check error (STRICT REJECT):", e.message);
+      res.status(503).json({ error: "Billing system temporarily unavailable. Please try again." });
     }
   };
 }

@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
-import { IdeasResponseSchema } from "@workspace/api-zod";
+import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
@@ -28,29 +27,41 @@ const nichePainPoints: Record<string, string> = {
 const IDEAS_CACHE = new Map<string, { data: any, timestamp: number }>();
 const IDEAS_TTL = 15 * 60 * 1000; // 15 minutes
 
-import { generateContent } from "../../services/ai-engine";
-
 router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), async (req: any, res): Promise<void> => {
-  const { niche = "General", goal = "grow my audience", language = "English" } = req.body;
+  let isAborted = false;
+  req.on('close', () => { isAborted = true; });
 
-  const cacheKey = `ideas:${niche}:${goal}:${language}`;
+  const { niche = "General", goal = "grow my audience", language = "English" } = req.body;
+  const sanitizedNiche = String(niche).substring(0, 50);
+  const sanitizedGoal = String(goal).substring(0, 500);
+
+  const cacheKey = `ideas:${sanitizedNiche}:${sanitizedGoal}:${language}`;
   const cached = IDEAS_CACHE.get(cacheKey);
   if (cached && (Date.now() - cached.timestamp < IDEAS_TTL)) {
     res.json(cached.data);
     return;
   }
 
-  const nicheContext = nicheContextMap[niche as string] || nicheContextMap["General"];
-  const painPoint = nichePainPoints[niche as string] || nichePainPoints["General"];
+  const nicheContext = nicheContextMap[sanitizedNiche as string] || nicheContextMap["General"];
+  const painPoint = nichePainPoints[sanitizedNiche as string] || nichePainPoints["General"];
   const currentYear = new Date().getFullYear();
 
-  const systemPrompt = `You are a content strategist. Generate 10 high-performing content ideas for ${niche} in ${currentYear}.
-NICHE: ${niche}
+  // Instantiate localized OpenRouter client for Perplexity
+  const openRouterClient = new OpenAI({ 
+    baseURL: "https://openrouter.ai/api/v1", 
+    apiKey: process.env.OPENROUTER_API_KEY 
+  });
+
+  const systemPrompt = `You are a content strategist. Search the live web for trending topics and viral patterns in the ${sanitizedNiche} space. 
+Generate 10 high-performing content ideas for ${sanitizedNiche} in ${currentYear}.
+NICHE: ${sanitizedNiche}
 NICHE CONTEXT: ${nicheContext}
 AUDIENCE PSYCHOLOGY: ${painPoint}
-CREATOR GOAL: ${goal}.`;
+CREATOR GOAL: ${sanitizedGoal}.
 
-  const userPrompt = `Generate 10 ideas. Return ONLY a JSON object:
+Return ONLY a JSON object.`;
+
+  const userPrompt = `Generate 10 ideas based on live trending data for "${sanitizedGoal}". Return ONLY a JSON object:
 {
   "ideas": [
     {
@@ -65,27 +76,27 @@ CREATOR GOAL: ${goal}.`;
 }`;
 
   try {
-    const completion = await generateContent({
+    if (isAborted) return;
+    const completion = await openRouterClient.chat.completions.create({
+      model: "perplexity/sonar",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      userPlan: req.user?.planType || "free",
-      userId: req.userId,
-      language,
-      maxTokens: 2000,
-      zodSchema: IdeasResponseSchema
+      response_format: { type: "json_object" },
+      max_tokens: 2000,
     });
     
+    if (isAborted) return;
     const content = completion.choices[0]?.message?.content || "{}";
-    const match = content.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(match ? match[0] : content);
+    const parsed = JSON.parse(content);
     
     const responseData = { ideas: parsed.ideas ?? [] };
     IDEAS_CACHE.set(cacheKey, { data: responseData, timestamp: Date.now() });
 
     res.json(responseData);
   } catch (err: any) {
+    if (isAborted) return;
     console.error("IDEAS GEN ERROR:", err);
     res.status(503).json({ error: "Failed to generate ideas" });
   }

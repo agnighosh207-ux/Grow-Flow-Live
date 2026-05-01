@@ -6,6 +6,9 @@ import { generateContent, extractJson } from "../../services/ai-engine";
 const router: IRouter = Router();
 
 router.post("/repurpose", requireAuth, requirePlanOrTrial("content"), async (req: any, res): Promise<void> => {
+  let isAborted = false;
+  req.on('close', () => { isAborted = true; });
+
   const { content, targetFormat, language = "English" } = req.body;
 
   if (!content || !targetFormat) {
@@ -13,15 +16,18 @@ router.post("/repurpose", requireAuth, requirePlanOrTrial("content"), async (req
     return;
   }
 
+  const sanitizedContent = String(content).substring(0, 4000); // Larger limit for repurposing
+
   const systemPrompt = `You are a master content repurposer. Adapt the content into a ${targetFormat}.
 Maintain core message and value. Format specifically for the platform.`;
 
   const userPrompt = `Repurpose this content into a ${targetFormat}:
-"${content}"
+"${sanitizedContent}"
 
 Return ONLY a JSON object: {"repurposedContent": "string"}`;
 
   try {
+    if (isAborted) return;
     const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
@@ -33,6 +39,7 @@ Return ONLY a JSON object: {"repurposedContent": "string"}`;
       maxTokens: 3000,
     });
 
+    if (isAborted) return;
     const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
     let parsed = extractJson(rawContent);
 
@@ -45,6 +52,7 @@ Return ONLY a JSON object: {"repurposedContent": "string"}`;
 
     res.json({ result: parsed.repurposedContent });
   } catch (err: any) {
+    if (isAborted) return;
     console.error("REPURPOSE ERROR:", err);
     res.status(503).json({ error: "Failed to repurpose content." });
   }

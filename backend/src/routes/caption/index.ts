@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
+import { generateContent } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
@@ -14,9 +14,10 @@ const PLATFORM_CONTEXT: Record<string, string> = {
   General: "Universal social media caption. Engaging, clear, conversation-starting. Focus on the emotional payoff for the reader.",
 };
 
-import { generateContent } from "../../services/ai-engine";
-
 router.post("/caption/enhance", requireAuth, requirePlanOrTrial("caption"), async (req: any, res): Promise<void> => {
+  let isAborted = false;
+  req.on('close', () => { isAborted = true; });
+
   const {
     originalCaption,
     platform = "Instagram",
@@ -31,14 +32,18 @@ router.post("/caption/enhance", requireAuth, requirePlanOrTrial("caption"), asyn
     return;
   }
 
-  const platformContext = PLATFORM_CONTEXT[platform] || PLATFORM_CONTEXT["General"];
+  const sanitizedCaption = String(originalCaption).substring(0, 3000);
+  const sanitizedGoal = String(goal).substring(0, 300);
+  const sanitizedNiche = String(niche).substring(0, 100);
+
+  const platformContext = PLATFORM_CONTEXT[platform as string] || PLATFORM_CONTEXT["General"];
 
   const systemPrompt = `You are a viral content strategist. Optimize this ${platform} caption.
 RULES: No "I", no generic openers, no exclamation spam.
 CONTEXT: ${platformContext}.`;
 
-  const userPrompt = `Analyze and enhance this caption. Goal: ${goal}. Niche: ${niche}.
-ORIGINAL: "${originalCaption}"
+  const userPrompt = `Analyze and enhance this caption. Goal: ${sanitizedGoal}. Niche: ${sanitizedNiche}.
+ORIGINAL: "${sanitizedCaption}"
 FOCUS: ${improvementFocus}
 
 Return ONLY this JSON: {
@@ -49,6 +54,7 @@ Return ONLY this JSON: {
 }`;
 
   try {
+    if (isAborted) return;
     const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
@@ -60,6 +66,7 @@ Return ONLY this JSON: {
       maxTokens: 2500,
     });
 
+    if (isAborted) return;
     const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
     let parsed;
     try {
@@ -70,6 +77,7 @@ Return ONLY this JSON: {
     }
     res.json(parsed);
   } catch (err: any) {
+    if (isAborted) return;
     console.error("Caption enhance error:", err);
     res.status(503).json({ error: "AI temporarily unavailable." });
   }
