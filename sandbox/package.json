@@ -10,6 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@types/pg": "^8.18.0",
+    "@types/dotenv": "^8.2.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -71,6 +73,8 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
-    "drizzle-zod": "^0.8.3"
+    "drizzle-zod": "^0.8.3",
+    "pg": "^8.20.0",
+    "dotenv": "^16.4.3"
   }
 }
