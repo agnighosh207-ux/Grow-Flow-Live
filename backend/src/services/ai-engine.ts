@@ -181,6 +181,12 @@ export const generateContent = async ({
         }
       }
 
+      // Create OpenAI client for this specific provider
+      const client = new OpenAI({
+        apiKey: provider.apiKey,
+        baseURL: provider.baseURL,
+      });
+
       // Pass request
       const response = await client.chat.completions.create(
         {

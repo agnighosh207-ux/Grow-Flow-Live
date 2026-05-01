@@ -15,7 +15,7 @@ import {
   DeleteHistoryItemResponse,
   GetContentStatsResponse,
 } from "@workspace/api-zod";
-import * as zod from "zod";
+// Note: zod is NOT a direct dependency of backend — use manual validation instead
 import { generateContent } from "../../services/ai-engine";
 import { requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
 import { sendCreditWarningEmail } from "../../services/email";
@@ -164,6 +164,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
   "hashtags": ["#tag1", "#tag2", "#tag3"]
 }`;
 
+  try {
   const rawContentObj = await generateContent({
     messages: [
       { role: "system", content: systemPrompt },
@@ -216,17 +217,20 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }
 
 router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  // Use a robust local schema that supports all 18 regional languages
-  const localSchema = zod.object({
-    idea: zod.string().min(3),
-    contentType: zod.enum(['Educational', 'Story', 'Viral']),
-    tone: zod.enum(['Casual', 'Professional', 'Aggressive', 'Default', 'default']),
-    language: zod.string().optional()
-  });
-
-  const parsed = localSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request parameters", details: parsed.error.errors });
+  // Manual validation (zod is not a direct backend dependency)
+  const { idea, contentType, tone, language: bodyLanguage } = req.body || {};
+  const validContentTypes = ['Educational', 'Story', 'Viral'];
+  const validTones = ['Casual', 'Professional', 'Aggressive', 'Default', 'default'];
+  if (!idea || typeof idea !== 'string' || idea.length < 3) {
+    res.status(400).json({ error: "Invalid request parameters", details: [{ message: "Idea must be at least 3 characters" }] });
+    return;
+  }
+  if (!validContentTypes.includes(contentType)) {
+    res.status(400).json({ error: "Invalid request parameters", details: [{ message: "Invalid contentType" }] });
+    return;
+  }
+  if (!validTones.includes(tone)) {
+    res.status(400).json({ error: "Invalid request parameters", details: [{ message: "Invalid tone" }] });
     return;
   }
 
@@ -253,7 +257,7 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
   const planTier = user?.planTier ?? "FREE";
   const generationsRemaining = user?.generationsRemaining ?? 0;
 
-  const { idea, contentType, tone } = parsed.data;
+
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
 
   const savedNiche = user?.niche ?? null;
@@ -356,18 +360,20 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
 });
 
 router.post("/content/variations", requireAuth, async (req: any, res): Promise<void> => {
-  // Use a robust local schema that supports all 18 regional languages
-  const localSchema = zod.object({
-    idea: zod.string().min(3),
-    contentType: zod.enum(['Educational', 'Story', 'Viral']),
-    tone: zod.enum(['Casual', 'Professional', 'Aggressive', 'Default', 'default']),
-    platform: zod.string(),
-    language: zod.string().optional()
-  });
-
-  const parsed = localSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request parameters", details: parsed.error.errors });
+  // Manual validation (zod is not a direct backend dependency)
+  const { idea, contentType, tone, platform, language: bodyLanguage2 } = req.body || {};
+  const validContentTypes2 = ['Educational', 'Story', 'Viral'];
+  const validTones2 = ['Casual', 'Professional', 'Aggressive', 'Default', 'default'];
+  if (!idea || typeof idea !== 'string' || idea.length < 3) {
+    res.status(400).json({ error: "Invalid request parameters", details: [{ message: "Idea must be at least 3 characters" }] });
+    return;
+  }
+  if (!validContentTypes2.includes(contentType)) {
+    res.status(400).json({ error: "Invalid request parameters", details: [{ message: "Invalid contentType" }] });
+    return;
+  }
+  if (!validTones2.includes(tone)) {
+    res.status(400).json({ error: "Invalid request parameters", details: [{ message: "Invalid tone" }] });
     return;
   }
 
@@ -387,7 +393,6 @@ router.post("/content/variations", requireAuth, async (req: any, res): Promise<v
     return;
   }
 
-  const { idea, contentType, tone, platform } = parsed.data;
 
   // Track regenerations per topic
   const [existingGeneration] = await db.select()
@@ -432,7 +437,7 @@ router.post("/content/variations", requireAuth, async (req: any, res): Promise<v
 
 
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
-  const language = (parsed.data as any).language ?? "English";
+  const language = bodyLanguage2 ?? "English";
 
   const languageInstructionsPrompt = LANGUAGE_INSTRUCTIONS[language] || "";
 

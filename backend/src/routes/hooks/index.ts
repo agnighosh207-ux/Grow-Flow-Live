@@ -49,6 +49,9 @@ const HOOK_PATTERNS = [
   },
 ];
 
+import { generateContent } from "../../services/ai-engine";
+
+router.post("/hooks/generate", requireAuth, requirePlanOrTrial("hooks"), async (req: any, res): Promise<void> => {
   const { topic, tone, language = "English" } = req.body;
   
   if (!topic) {
