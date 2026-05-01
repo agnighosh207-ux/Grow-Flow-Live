@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { eq, count, gte, and, sql } from "drizzle-orm";
-import { db, usersTable, contentGenerationsTable, couponsTable, securityLogsTable } from "@workspace/db";
+import { db, usersTable, contentGenerationsTable, couponsTable, securityLogsTable, paymentsTable } from "@workspace/db";
 import crypto from "crypto";
 import { FREE_TRIALS_PER_TOOL, isPaidOrTrial, consumeToolTrial, requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
 import { WelcomeSequence } from "../../lib/WelcomeSequence";
@@ -10,6 +10,7 @@ import { Response } from "express";
 import { ensureReferralCode, grantReferralReward } from "../referral";
 import { sendWelcomeEmail, sendPaymentFailedEmail } from "../../services/email";
 import { createSubscription } from "../../services/payment-service";
+import { getRazorpayPlanId } from "../../utils/planRouter";
 import Razorpay from "razorpay";
 
 const router: IRouter = Router();
@@ -189,7 +190,7 @@ router.post("/subscription/create", requireAuth, async (req: AuthenticatedReques
     const { planType, couponCode, billingPeriod } = req.body as {
       planType?: "starter" | "creator" | "infinity";
       couponCode?: string;
-      billingPeriod?: "monthly" | "yearly";
+      billingPeriod?: "monthly" | "quarterly" | "half-yearly" | "yearly";
     };
     
     if (!planType) {
@@ -198,15 +199,25 @@ router.post("/subscription/create", requireAuth, async (req: AuthenticatedReques
     }
 
     const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
-    const billing = billingPeriod === "yearly" ? "yearly" : "monthly";
-    const config = (PLAN_CONFIG as any)[effectivePlan][billing];
+    const billing = (billingPeriod === "yearly" ? "yearly" : billingPeriod === "half-yearly" ? "half-yearly" : billingPeriod === "quarterly" ? "quarterly" : "monthly");
+    
+    let razorpayPlanId: string;
+    try {
+      razorpayPlanId = getRazorpayPlanId(effectivePlan, billing);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+
+    const config = (PLAN_CONFIG as any)[effectivePlan][billing === 'monthly' ? 'monthly' : 'yearly'] || (PLAN_CONFIG as any)[effectivePlan]['monthly'];
 
     // Ensure we trigger the secure .env mapped Razorpay Subscription Engine
     const subscription = await createSubscription(
       req.userId, 
+      razorpayPlanId,
       effectivePlan.toUpperCase(), 
       user.email || undefined,
-      config.totalCount
+      120 // Set to high number for continuous autopay as per Task 3
     );
 
     const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -280,13 +291,28 @@ router.post("/subscription/verify", requireAuth, async (req: AuthenticatedReques
     return;
   }
 
-  const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
-
   const tierCredits: Record<string, number> = {
     starter: 20,
     creator: 100,
     infinity: 9999
   };
+
+  const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
+
+  // Record initial payment (Idempotency)
+  if (razorpay_payment_id) {
+    const [existing] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, razorpay_payment_id));
+    if (!existing) {
+       await db.insert(paymentsTable).values({
+         id: razorpay_payment_id,
+         userId: req.userId,
+         subscriptionId: razorpay_subscription_id,
+         amount: 0, // Verification only, actual amount synced via webhook
+         status: "captured",
+         processedAt: new Date()
+       }).catch(() => {});
+    }
+  }
 
   const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await db.update(usersTable)
@@ -490,14 +516,24 @@ router.post("/subscription/webhook", async (req: AuthenticatedRequest, res: Resp
     
     // Sync planTier and planType
     if (newStatus === "canceled" || newStatus === "expired") {
+      // Grace Period Logic: Only downgrade if the event is actually 'expired' or 'cancelled' (end of cycle)
+      // Note: subscription.cancelled in Razorpay is sent at the end of the period if cancel_at_cycle_end=1
       updates.planType = "free";
       updates.planTier = "FREE";
     } else if (newStatus === "active" || event.event === "subscription.activated" || event.event === "subscription.updated") {
       const planId = event?.payload?.subscription?.entity?.plan_id;
       if (planId) {
         let pType = "starter";
-        if (planId === process.env.RAZORPAY_PLAN_INFINITY) pType = "infinity";
-        else if (planId === process.env.RAZORPAY_PLAN_CREATOR) pType = "creator";
+        const env = process.env;
+        
+        // Dynamic Tier Detection
+        if (Object.keys(env).some(k => k.startsWith('RAZORPAY_PLAN_INFINITY') && env[k] === planId)) {
+          pType = "infinity";
+        } else if (Object.keys(env).some(k => k.startsWith('RAZORPAY_PLAN_CREATOR') && env[k] === planId)) {
+          pType = "creator";
+        } else if (Object.keys(env).some(k => k.startsWith('RAZORPAY_PLAN_STARTER') && env[k] === planId)) {
+          pType = "starter";
+        }
         
         updates.planType = pType;
         updates.planTier = pType.toUpperCase() as any;
@@ -509,14 +545,39 @@ router.post("/subscription/webhook", async (req: AuthenticatedRequest, res: Resp
       .returning({ id: usersTable.id, email: usersTable.email, planType: usersTable.planType });
 
     if (event.event === "subscription.charged" && updatedUsers.length > 0) {
-      const tierCredits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
-      
+      const paymentId = event?.payload?.payment?.entity?.id;
+      const amount = event?.payload?.payment?.entity?.amount;
+      const currentEnd = event?.payload?.subscription?.entity?.current_end;
+      const planExpiry = currentEnd ? new Date(currentEnd * 1000) : null;
+
       for (const u of updatedUsers) {
+        // IDEMPOTENCY CHECK
+        if (paymentId) {
+          const [existingPayment] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, paymentId));
+          if (existingPayment) {
+            console.log(`[Webhook] Skipping already processed payment: ${paymentId}`);
+            continue; 
+          }
+          
+          await db.insert(paymentsTable).values({
+            id: paymentId,
+            userId: u.id,
+            subscriptionId: subscriptionId,
+            amount: amount || 0,
+            status: "captured",
+            processedAt: new Date(),
+            metadata: event.payload
+          });
+        }
+
+        const tierCredits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
         const credits = tierCredits[u.planType ?? "starter"] ?? 20;
+        
         await db.update(usersTable)
           .set({ 
             generationsRemaining: credits, 
-            lastCreditReset: new Date() 
+            lastCreditReset: new Date(),
+            planExpiry: planExpiry
           })
           .where(eq(usersTable.id, u.id));
         

@@ -29,17 +29,12 @@ const RAZORPAY_PLAN_MAP: Record<string, string> = {
   INFINITY: process.env.RAZORPAY_PLAN_INFINITY || "plan_xyz_infinity",
 };
 
-export const createSubscription = async (userId: string, planTier: string, customerEmail?: string, totalCount?: number) => {
+export const createSubscription = async (userId: string, planId: string, planTier: string, customerEmail?: string, totalCount?: number) => {
   try {
-    const planId = RAZORPAY_PLAN_MAP[planTier];
-    if (!planId) {
-      throw new Error(`Plan ID mapping not found for tier: ${planTier}`);
-    }
-
     const options = {
       plan_id: planId,
-      customer_notify: 0,
-      total_count: totalCount ?? 12, // Accept from config or fallback to 1 year
+      customer_notify: 1, // Enabled as per Task 3
+      total_count: totalCount ?? 120, // Set to high number for continuous autopay as per Task 3
       notes: {
         clerk_user_id: userId,
         tier: planTier,
@@ -48,7 +43,7 @@ export const createSubscription = async (userId: string, planTier: string, custo
 
     const client = getRazorpayClient();
     const subscription = await client.subscriptions.create(options as any);
-    logger.info(`[Razorpay Service] Subscription ${(subscription as any).id} created for user ${userId}`);
+    logger.info(`[Razorpay Service] Subscription ${(subscription as any).id} created for user ${userId} with plan ${planId}`);
     
     return subscription as any;
   } catch (error: any) {
