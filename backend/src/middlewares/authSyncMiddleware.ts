@@ -47,7 +47,8 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       return next();
     }
     
-    const email = (auth.sessionClaims?.email) as string | null;
+    const rawEmail = auth.sessionClaims?.email;
+    const email: string | null = typeof rawEmail === 'string' ? rawEmail : null;
 
     req.userId = uid;
 

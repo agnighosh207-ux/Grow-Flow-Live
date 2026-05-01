@@ -56,9 +56,7 @@ export const enforceGenerationLimit = async (req: any, res: any, next: any) => {
 
     next();
   } catch (error: any) {
-    console.error("Enforce limit DB error (bypassing for robustness):", error?.message);
-    // Graceful degradation: if the DB is down or connection string is invalid,
-    // allow the generation to proceed so the app doesn't completely break for users.
-    next();
+    console.error("Enforce limit DB error:", error?.message);
+    return res.status(500).json({ error: "Internal server error while verifying generations" });
   }
 };

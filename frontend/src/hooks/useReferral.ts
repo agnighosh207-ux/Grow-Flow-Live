@@ -27,7 +27,8 @@ export function useReferralInfo() {
       data.shareableLink = `${origin}${basePath}${data.shareableLink}`;
       return data;
     },
-    staleTime: 30_000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -61,7 +62,7 @@ export function useApplyReferralCode() {
   return useMutation({
     mutationFn: async (code: string) => {
       const token = await getToken();
-      const res = await fetch("/api/referral/apply", {
+      const res = await fetch("/api/referral/claim", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

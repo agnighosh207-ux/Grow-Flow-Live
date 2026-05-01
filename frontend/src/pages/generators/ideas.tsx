@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@clerk/react";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
@@ -68,11 +68,7 @@ function IdeasGeneratorInner() {
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
 
-  useEffect(() => {
-    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
-      if (data.languagePreference) setLanguage(data.languagePreference);
-    }).catch(() => {});
-  }, []);
+
 
   const nicheColor = NICHE_COLORS[niche] || NICHE_COLORS.General;
   const nicheBg = NICHE_BG[niche] || NICHE_BG.General;

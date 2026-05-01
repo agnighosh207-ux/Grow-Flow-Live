@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -48,11 +48,7 @@ function HooksGeneratorInner() {
 
   const language = form.watch("language");
 
-  useEffect(() => {
-    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
-      if (data.languagePreference) form.setValue("language", data.languagePreference);
-    }).catch(() => {});
-  }, []);
+
 
   const generateMutation = useGenerateHooks({
     mutation: {

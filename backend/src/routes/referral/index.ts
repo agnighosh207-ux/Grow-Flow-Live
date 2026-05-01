@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { eq, and, count, sql } from "drizzle-orm";
+import { eq, and, count, sql, inArray } from "drizzle-orm";
 import { db, usersTable, referralsTable } from "@workspace/db";
 import crypto from "crypto";
 import { requireAuth } from "../../middlewares/planMiddleware";
@@ -194,12 +194,11 @@ router.get("/referral/info", requireAuth, async (req: any, res): Promise<void> =
 
     const hasNewReward = unseenReferrals.length > 0;
 
-    if (hasNewReward) {
-      for (const r of unseenReferrals) {
-        await db.update(referralsTable)
-          .set({ rewardSeen: true })
-          .where(eq(referralsTable.id, r.id));
-      }
+    if (hasNewReward && unseenReferrals.length > 0) {
+      const unseenIds = unseenReferrals.map(r => r.id);
+      await db.update(referralsTable)
+        .set({ rewardSeen: true })
+        .where(inArray(referralsTable.id, unseenIds));
     }
 
     res.json({
@@ -214,50 +213,6 @@ router.get("/referral/info", requireAuth, async (req: any, res): Promise<void> =
     console.error("Referral info error:", err);
     res.status(500).json({ error: "Failed to get referral info" });
   }
-});
-
-router.post("/referral/apply", requireAuth, async (req: any, res): Promise<void> => {
-  const { code } = req.body as { code?: string };
-
-  if (!code || typeof code !== "string") {
-    res.status(400).json({ error: "Missing referral code" });
-    return;
-  }
-
-  const normalizedCode = code.trim().toUpperCase();
-
-  const [ownerUser] = await db.select({ id: usersTable.id })
-    .from(usersTable)
-    .where(eq(usersTable.referralCode, normalizedCode));
-
-  if (!ownerUser) {
-    res.status(404).json({ error: "Invalid referral code" });
-    return;
-  }
-
-  if (ownerUser.id === req.userId) {
-    res.json({ success: true, message: "Self-referral not allowed" });
-    return;
-  }
-
-  await db.insert(usersTable)
-    .values({ id: req.userId })
-    .onConflictDoNothing({ target: usersTable.id });
-
-  const [currentUser] = await db.select({ referralUsedCode: usersTable.referralUsedCode })
-    .from(usersTable)
-    .where(eq(usersTable.id, req.userId));
-
-  if (currentUser?.referralUsedCode) {
-    res.json({ success: true, message: "Referral code already applied" });
-    return;
-  }
-
-  await db.update(usersTable)
-    .set({ referralUsedCode: normalizedCode })
-    .where(eq(usersTable.id, req.userId));
-
-  res.json({ success: true, message: "Referral code applied successfully" });
 });
 
 export default router;

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 import { Link } from "wouter";
 import { Crown, Lock, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,6 @@ const PLAN_LEVEL: Record<string, number> = { free: 0, starter: 1, creator: 2, in
 
 function planLevel(planType?: string): number {
   return PLAN_LEVEL[planType ?? "free"] ?? 0;
-}
-
-interface TrialStatus {
-  used: number;
-  limit: number;
-  isPaid: boolean;
 }
 
 interface TrialCtx {
@@ -43,40 +37,11 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
   const { data: sub, isLoading: subLoading } = useSubscriptionStatus();
   const { user } = useUser();
 
-  const [trialStatus, setTrialStatus] = useState<TrialStatus | null>(null);
-  const [trialLoading, setTrialLoading] = useState(true);
-  const [initialTrialLoaded, setInitialTrialLoaded] = useState(false);
-  const [trialError, setTrialError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const fetchTrialStatus = useCallback(async () => {
-    if (!toolKey || !user) {
-      setTrialLoading(false);
-      setInitialTrialLoaded(true);
-      return;
-    }
-    setTrialLoading(true);
-    setTrialError(null);
-    try {
-      const res = await fetch("/api/trial/status", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        const used = data[toolKey] ?? 0;
-        setTrialStatus({ used, limit: data.limit ?? 3, isPaid: data.isPaid ?? false });
-      } else {
-        setTrialError("Could not load feature status. Please try again.");
-      }
-    } catch {
-      setTrialError("Network error — check your connection and try again.");
-    } finally {
-      setTrialLoading(false);
-      setInitialTrialLoaded(true);
-    }
-  }, [toolKey, user]);
-
-  useEffect(() => {
-    fetchTrialStatus();
-  }, [fetchTrialStatus]);
+  // Derive trial info directly from subscription status — no extra /api/trial/status call
+  const trialsLeft = sub?.generationsRemaining ?? 0;
+  const isPaid = sub?.plan === "active" || sub?.plan === "trial" || sub?.plan === "pending" || sub?.plan === "past_due";
 
   const useOneTrial = useCallback(async () => {
     if (!toolKey) return;
@@ -87,34 +52,24 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
         credentials: "include",
         body: JSON.stringify({ toolKey }),
       });
-      if (res.ok) {
-        await fetchTrialStatus();
-      } else {
+      if (!res.ok) {
         console.error("[PlanGate] Failed to consume trial:", res.status);
       }
     } catch (err) {
       console.error("[PlanGate] Network error consuming trial:", err);
     }
-  }, [toolKey, fetchTrialStatus]);
+  }, [toolKey]);
 
-  if (subLoading || !initialTrialLoaded) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin" />
-      </div>
-    );
-  }
-
-  if (trialError) {
-    console.warn("Plangate Error (graceful bypass):", trialError);
-    return children;
+  // Don't block render — show content optimistically, overlay trial info when ready
+  if (subLoading) {
+    return <>{children}</>;
   }
 
   const userLevel = planLevel(sub?.planType);
   const required = PLAN_LEVEL[requiredPlan] ?? 1;
   const isAdmin = !!(sub as any)?.isAdmin;
 
-  if (isAdmin || userLevel >= required || trialStatus?.isPaid) {
+  if (isAdmin || userLevel >= required || isPaid) {
     return (
       <TrialContext.Provider value={{ useOneTrial, trialsLeft: freeTrials }}>
         {children}
@@ -122,7 +77,6 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
     );
   }
 
-  const trialsLeft = trialStatus?.limit ?? 0;
   const hasFreeAccess = freeTrials > 0 && trialsLeft > 0;
 
   if (hasFreeAccess) {

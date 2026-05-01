@@ -42,7 +42,7 @@ import { useReferralInfo } from "@/hooks/useReferral";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/layout/Logo";
 import { MoreHorizontal } from "lucide-react";
-import { LiveActivityTicker } from "@/components/shared/LiveActivityTicker";
+
 
 function ImpersonationBanner() {
   const [impersonatedUser, setImpersonatedUser] = useState<string | null>(null);
@@ -124,7 +124,7 @@ const BOTTOM_NAV = [
 ];
 
 function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
-  if (!plan || plan === "free")
+  if (!plan || (plan === "free" && (!planType || planType === "free")))
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/6 text-white/40 border border-white/8">
         Explorer
@@ -136,22 +136,24 @@ function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
         <Zap className="w-2.5 h-2.5" /> Trial
       </span>
     );
-  if (plan === "active") {
+  // Show correct pill for active, pending, and past_due statuses with a paid planType
+  const isPaidStatus = plan === "active" || plan === "pending" || plan === "past_due";
+  if (isPaidStatus && planType && planType !== "free") {
     if (planType === "infinity")
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-[#00F2FF]/20 to-sky-500/20 text-[#00F2FF] border border-[#00F2FF]/25 shadow-[0_0_10px_rgba(0,242,255,0.2)]">
-          <Crown className="w-2.5 h-2.5" /> Infinity
+          <Crown className="w-2.5 h-2.5" /> Infinity{plan !== "active" ? " ⏳" : ""}
         </span>
       );
     if (planType === "starter")
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#00F2FF]/5 text-[#00F2FF]/70 border border-[#00F2FF]/20">
-          <Zap className="w-2.5 h-2.5" /> Starter
+          <Zap className="w-2.5 h-2.5" /> Starter{plan !== "active" ? " ⏳" : ""}
         </span>
       );
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#00F2FF]/10 text-[#00F2FF]/90 border border-[#00F2FF]/40">
-        <Zap className="w-2.5 h-2.5" /> Creator
+        <Zap className="w-2.5 h-2.5" /> Creator{plan !== "active" ? " ⏳" : ""}
       </span>
     );
   }
@@ -328,58 +330,40 @@ function SidebarContent({
       <div className="flex-1 overflow-y-auto px-3 py-1 space-y-6">
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
-              <p className="text-[11px] font-semibold text-white/20 uppercase tracking-widest mb-1.5 border-l-2 border-white/10 pl-2 ml-3">
-                {group.label}
-              </p>
-              <motion.div 
-                className="space-y-0.5"
-                variants={{
-                  show: {
-                    transition: {
-                      staggerChildren: 0.05
-                    }
+            <p className="text-[11px] font-semibold text-white/20 uppercase tracking-widest mb-1.5 border-l-2 border-white/10 pl-2 ml-3">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(({ path, label, icon, pro }) => (
+                <NavItem
+                  key={path}
+                  path={path}
+                  label={label}
+                  icon={icon}
+                  pro={pro}
+                  isPro={isPro}
+                  isActive={location === path}
+                  onClick={onClick}
+                  isAccountGroup={group.label === "Account"}
+                  showDot={
+                    path === "/pricing" &&
+                    sub?.plan === "free" &&
+                    (sub?.generationsUsed ?? 0) >= 1 &&
+                    !(pro && !isPro)
                   }
-                }}
-                initial="hidden"
-                animate="show"
-              >
-                {group.items.map(({ path, label, icon, pro }) => (
-                  <motion.div
-                    key={path}
-                    variants={{
-                      hidden: { opacity: 0, x: -10 },
-                      show: { opacity: 1, x: 0 }
-                    }}
-                  >
-                    <NavItem
-                      path={path}
-                      label={label}
-                      icon={icon}
-                      pro={pro}
-                      isPro={isPro}
-                      isActive={location === path}
-                      onClick={onClick}
-                      isAccountGroup={group.label === "Account"}
-                      showDot={
-                        path === "/pricing" &&
-                        sub?.plan === "free" &&
-                        (sub?.generationsUsed ?? 0) >= 1 &&
-                        !(pro && !isPro)
-                      }
-                      badge={path === "/daily" && streak > 0 ? (
-                        <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0 flex items-center gap-0.5">
-                          🔥{streak}
-                        </span>
-                      ) : undefined}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
+                  badge={path === "/daily" && streak > 0 ? (
+                    <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0 flex items-center gap-0.5">
+                      🔥{streak}
+                    </span>
+                  ) : undefined}
+                />
+              ))}
+            </div>
           </div>
         ))}
       </div>
 
-      {sub && (sub.plan === "free" || sub.plan === "blocked") && (
+      {sub && (sub.plan === "free" || sub.plan === "blocked") && (!sub.planType || sub.planType === "free") && (
         <Link href="/pricing">
           <div id="tour-upgrade" className="mx-3 mb-3 p-3 rounded-xl cursor-pointer group pulse-glow transition-all duration-300 hover:scale-[1.02]"
             style={{
@@ -417,7 +401,7 @@ function SidebarContent({
         </div>
       )}
 
-      {sub && sub.plan === "active" && (
+      {sub && (sub.plan === "active" || sub.plan === "pending" || sub.plan === "past_due") && sub.planType !== "free" && (
         <div className="mx-3 mb-3 px-3 py-2.5 rounded-lg flex items-center justify-between"
           style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <div>
@@ -497,7 +481,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
 
 
-  const isPro = sub?.planType === "infinity" && sub?.plan === "active";
+  const isPro = !!(sub && sub.planType === "infinity" && ["active", "trial", "pending", "past_due"].includes(sub.plan));
 
   return (
     <div className="min-h-screen text-foreground relative overflow-hidden">
@@ -632,7 +616,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </nav>
       <NotificationPermissionModal />
       <ReferralPopup />
-      <LiveActivityTicker />
+
 
       {user && (
         <>

@@ -135,11 +135,7 @@ export default function CaptionEnhancer() {
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
 
-  useEffect(() => {
-    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
-      if (data.languagePreference) setLanguage(data.languagePreference);
-    }).catch(() => {});
-  }, []);
+
 
   const enhance = async () => {
     if (!caption.trim()) {

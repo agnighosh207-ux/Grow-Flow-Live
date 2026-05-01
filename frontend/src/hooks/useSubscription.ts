@@ -3,7 +3,7 @@ import { useAuth, useSession } from "@clerk/react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-export type SubscriptionPlan = "free" | "trial" | "active" | "blocked";
+export type SubscriptionPlan = "free" | "trial" | "active" | "blocked" | "pending" | "past_due";
 export type PlanType = "free" | "starter" | "creator" | "infinity";
 
 export interface SubscriptionStatus {
@@ -32,12 +32,33 @@ async function fetchWithAuth(url: string, token: string, options?: RequestInit) 
     },
   });
 
+  const contentType = res.headers.get("content-type");
+  const isJson = contentType && contentType.includes("application/json");
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: "Request failed" }));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    let errorMessage = `HTTP ${res.status}`;
+    if (isJson) {
+      try {
+        const errData = await res.json();
+        errorMessage = errData.error || errData.message || errorMessage;
+      } catch (e) {
+        // Fallback
+      }
+    } else {
+      const text = await res.text();
+      if (text && text.length < 150 && !text.startsWith("<")) {
+        errorMessage = text;
+      } else {
+        errorMessage = `Server Error (${res.status})`;
+      }
+    }
+    throw new Error(errorMessage);
   }
 
-  return res.json();
+  if (isJson) {
+    return res.json().catch(() => ({}));
+  }
+  return res.text();
 }
 
 export function useSubscriptionStatus() {
@@ -62,7 +83,7 @@ export function useSubscriptionStatus() {
 export function useCreateSubscription() {
   const { getToken } = useAuth();
   return useMutation({
-    mutationFn: async (params: { planType: "starter" | "creator" | "infinity", couponCode?: string }) => {
+    mutationFn: async (params: { planType: "starter" | "creator" | "infinity", couponCode?: string, billingPeriod?: "monthly" | "yearly" }) => {
       const token = await getToken();
       return fetchWithAuth(`${BASE}/api/subscription/create`, token!, {
         method: "POST",
@@ -91,6 +112,7 @@ export function useVerifySubscription() {
       razorpay_subscription_id: string;
       razorpay_signature: string;
       planType: "starter" | "creator" | "infinity";
+      couponCode?: string;
     }) => {
       const token = await getToken();
       return fetchWithAuth(`${BASE}/api/subscription/verify`, token!, {

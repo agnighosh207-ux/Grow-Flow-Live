@@ -81,12 +81,39 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     };
   }
 
-  // Fallback to free (or if canceled/blocked)
+  // Handle pending status — user initiated payment but hasn't completed it yet
+  // Preserve their planType so they don't appear downgraded
+  if (user.subscriptionStatus === "pending" && planType !== "free") {
+    const tierLimits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
+    const limit = tierLimits[planType] || 5;
+    return {
+      plan: "pending" as const, planType,
+      canGenerate: generationsRemaining > 0,
+      trialDaysLeft: null, generationLimit: limit,
+      monthlyGenerationsUsed: limit - generationsRemaining,
+      totalGenerationsUsed: totalGenerations,
+    };
+  }
+
+  // Handle past_due — subscription payment failed but user is still a paying user
+  if (user.subscriptionStatus === "past_due" && planType !== "free") {
+    const tierLimits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
+    const limit = tierLimits[planType] || 5;
+    return {
+      plan: "past_due" as const, planType,
+      canGenerate: generationsRemaining > 0,
+      trialDaysLeft: null, generationLimit: limit,
+      monthlyGenerationsUsed: limit - generationsRemaining,
+      totalGenerationsUsed: totalGenerations,
+    };
+  }
+
+  // Fallback to free (genuinely free users, or fully canceled/blocked users whose planType IS "free")
   return {
-    plan: "free" as const, planType: "free" as const,
+    plan: "free" as const, planType: planType !== "free" ? planType : "free" as const,
     canGenerate: generationsRemaining > 0,
-    trialDaysLeft: null, generationLimit: 5,
-    monthlyGenerationsUsed: 5 - generationsRemaining,
+    trialDaysLeft: null, generationLimit: planType !== "free" ? 5 : 5,
+    monthlyGenerationsUsed: 5 - Math.min(generationsRemaining, 5),
     totalGenerationsUsed: totalGenerations,
   };
 }
@@ -157,25 +184,30 @@ const PLAN_CONFIG = {
 };
 
 router.post("/subscription/create", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const { planType, couponCode } = req.body as {
-    planType?: "starter" | "creator" | "infinity";
-    couponCode?: string;
-  };
-  
-  if (!planType) {
-    res.status(400).json({ error: "planType is required" });
-    return;
-  }
-
-  const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
-
-  
   try {
     const user = await getOrCreateUser(req.userId);
-    const auth = getAuth(req);
+    const { planType, couponCode, billingPeriod } = req.body as {
+      planType?: "starter" | "creator" | "infinity";
+      couponCode?: string;
+      billingPeriod?: "monthly" | "yearly";
+    };
+    
+    if (!planType) {
+      res.status(400).json({ error: "planType is required" });
+      return;
+    }
+
+    const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
+    const billing = billingPeriod === "yearly" ? "yearly" : "monthly";
+    const config = (PLAN_CONFIG as any)[effectivePlan][billing];
 
     // Ensure we trigger the secure .env mapped Razorpay Subscription Engine
-    const subscription = await createSubscription(req.userId, effectivePlan.toUpperCase(), user.email || undefined);
+    const subscription = await createSubscription(
+      req.userId, 
+      effectivePlan.toUpperCase(), 
+      user.email || undefined,
+      config.totalCount
+    );
 
     const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -185,16 +217,18 @@ router.post("/subscription/create", requireAuth, async (req: AuthenticatedReques
         subscriptionStatus: "pending", 
         planType: effectivePlan,
         trialEndsAt: trialEndsAt,
-      })
+        couponCode: couponCode || null,
+        billingPeriod: billing,
+        subscriptionAmount: config.amount,
+      } as any)
       .where(eq(usersTable.id, req.userId));
 
     res.json({
       subscriptionId: subscription.id,
-      // keyId: process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID, // DEPRECATED: Leak
       planName: `GrowFlow AI ${effectivePlan.toUpperCase()}`,
       planType: effectivePlan,
-      billingPeriod: "monthly",
-      amount: planType === "infinity" ? 49900 : planType === "creator" ? 24900 : 10900,
+      billingPeriod: billing,
+      amount: config.amount,
       currency: "INR",
       trialEndsAt: trialEndsAt.toISOString(),
       ghostMode: false
@@ -207,7 +241,7 @@ router.post("/subscription/create", requireAuth, async (req: AuthenticatedReques
 });
 
 router.post("/subscription/verify", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, planType } = req.body;
+  const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, planType, couponCode } = req.body;
 
   if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
     res.status(400).json({ error: "Missing payment verification data" });
@@ -262,9 +296,16 @@ router.post("/subscription/verify", requireAuth, async (req: AuthenticatedReques
       planTier: effectivePlan.toUpperCase() as any,
       trialStartDate: new Date(),
       trialEndsAt: trialEndsAt,
-      generationsRemaining: tierCredits[effectivePlan] || 20
-    })
+      generationsRemaining: tierCredits[effectivePlan] || 20,
+      couponCode: couponCode || (currentUser as any).couponCode || null
+    } as any)
     .where(eq(usersTable.id, req.userId));
+
+  if (couponCode) {
+    await db.update(couponsTable)
+      .set({ usesCount: sql`${couponsTable.usesCount} + 1` })
+      .where(eq(couponsTable.code, couponCode.toUpperCase().trim()));
+  }
 
   grantReferralReward(req.userId).catch(err => console.error("grantReferralReward error:", err));
 
@@ -293,8 +334,13 @@ router.post("/subscription/cancel", requireAuth, async (req: AuthenticatedReques
   if (razorpay && user.razorpaySubscriptionId) {
     try {
       await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, true);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Razorpay cancel error:", e);
+      res.status(502).json({ 
+        error: "cancellation_failed", 
+        message: "Could not cancel with payment provider. Please try again or contact support." 
+      });
+      return;
     }
   }
 
@@ -302,7 +348,7 @@ router.post("/subscription/cancel", requireAuth, async (req: AuthenticatedReques
   // Razorpay will keep the subscription active until the end of the period (cancel_at_cycle_end: 1).
   // The /subscription/webhook handler will process 'subscription.cancelled' and downgrade the user then.
 
-  res.json({ success: true, message: "Subscription cancelled" });
+  res.json({ success: true, message: "Subscription will end at period close." });
 });
 
 router.post("/subscription/retry", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -319,10 +365,13 @@ router.post("/subscription/retry", requireAuth, async (req: AuthenticatedRequest
 
   const previousPlan = ["infinity", "creator", "starter"].includes(user.planType) ? user.planType : "starter";
 
+  // Only clear the razorpay subscription ID and set status to pending-retry.
+  // Do NOT reset planType/planTier — that should only happen via webhook on actual cancellation.
   await db.update(usersTable)
     .set({
       subscriptionStatus: "free",
       razorpaySubscriptionId: null,
+      // Preserve planType and planTier so the user can re-subscribe
     })
     .where(eq(usersTable.id, req.userId));
 
@@ -460,10 +509,23 @@ router.post("/subscription/webhook", async (req: AuthenticatedRequest, res: Resp
       .returning({ id: usersTable.id, email: usersTable.email, planType: usersTable.planType });
 
     if (event.event === "subscription.charged" && updatedUsers.length > 0) {
+      const tierCredits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
+      
       for (const u of updatedUsers) {
+        const credits = tierCredits[u.planType ?? "starter"] ?? 20;
+        await db.update(usersTable)
+          .set({ 
+            generationsRemaining: credits, 
+            lastCreditReset: new Date() 
+          })
+          .where(eq(usersTable.id, u.id));
+        
         grantReferralReward(u.id).catch(err => console.error("grantReferralReward webhook error:", err));
+        
         if (u.email) {
-          sendWelcomeEmail(u.email, u.planType === 'infinity' ? 'Infinity' : u.planType === 'creator' ? 'Creator' : 'Starter');
+          import("../../services/email").then(({ sendRenewalEmail }) => {
+             sendRenewalEmail(u.email!, u.planType === 'infinity' ? 'Infinity' : u.planType === 'creator' ? 'Creator' : 'Starter');
+          }).catch(err => console.error("sendRenewalEmail error:", err));
         }
       }
     } else if (newStatus === "past_due" && updatedUsers.length > 0) {

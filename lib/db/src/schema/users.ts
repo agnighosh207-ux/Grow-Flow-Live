@@ -24,6 +24,8 @@ export const usersTable = pgTable("users", {
   lastCreditReset: timestamp("last_credit_reset", { withTimezone: true }).notNull().defaultNow(),
   isBetaUser: boolean("is_beta_user").notNull().default(false),
   billingCycleStart: timestamp("billing_cycle_start", { withTimezone: true }),
+  billingPeriod: text("billing_period").default("monthly"),
+  subscriptionAmount: integer("subscription_amount").default(0),
   toolTrials: jsonb("tool_trials").$type<Record<string, number>>().default({}),
   deviceId: text("device_id"),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
@@ -42,6 +44,7 @@ export const usersTable = pgTable("users", {
   languagePreference: text("language_preference").default("English"),
   platformPreference: text("platform_preference"),
   isFirstLogin: boolean("is_first_login").notNull().default(true),
+  couponCode: text("coupon_code"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -59,7 +59,7 @@ export default function AdminDashboard() {
 
   const COLORS = ['#00F2FF', '#00D9E5', '#00BEC9', '#00A3AD', '#00848D'];
 
-  const { data: subData, isPending: isSubPending } = useSubscriptionStatus();
+  const { data: subData, isPending: isSubPending, isError: isSubError, error: subError } = useSubscriptionStatus();
 
   useEffect(() => {
     // Don't redirect while still loading auth or subscription data
@@ -78,17 +78,21 @@ export default function AdminDashboard() {
     }
   }, [isLoaded, user, subData, isSubPending, setLocation]);
 
-  const { data: stats, isLoading } = useQuery<AdminStats>({
+  const { data: stats, isLoading, isError, error } = useQuery<AdminStats>({
     queryKey: ["admin_stats"],
     queryFn: async () => {
       const token = await getToken();
       const res = await fetch("/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error("Not authorized or failed to fetch");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to fetch admin stats");
+      }
       return res.json();
     },
     enabled: isLoaded && !!subData?.isAdmin,
+    retry: 1, // Don't retry too much on admin pages
   });
 
   const modifyUserMutation = useMutation({
@@ -145,9 +149,9 @@ export default function AdminDashboard() {
     setLocation("/");
   };
 
-  if (!isLoaded || isSubPending || isLoading || !subData) {
+  if (!isLoaded || (isSubPending && !isSubError) || (isLoading && !isError)) {
     return (
-      <div className="flex items-center justify-center p-20">
+      <div className="flex items-center justify-center p-20 min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-white/40 text-sm animate-pulse">Loading secure dashboard...</p>
@@ -156,7 +160,28 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!subData.isAdmin) {
+  if (isError || isSubError) {
+    const errorMessage = (error as any)?.message || (subError as any)?.message || "You don't have permission to access this area or a server error occurred.";
+    return (
+      <div className="flex flex-col items-center justify-center p-20 min-h-[60vh] text-center space-y-6">
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+          <Shield className="w-12 h-12 text-red-400 mx-auto mb-2" />
+          <h2 className="text-xl font-bold text-white">Access Error</h2>
+          <p className="text-white/60 max-w-md mt-2">
+            {errorMessage}
+          </p>
+        </div>
+        <button 
+          onClick={() => setLocation("/")}
+          className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-white font-medium"
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    );
+  }
+
+  if (!subData?.isAdmin) {
     return null; // Let the useEffect handle the redirect
   }
 

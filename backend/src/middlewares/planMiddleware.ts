@@ -1,5 +1,5 @@
 import { db, usersTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, gt } from "drizzle-orm";
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../types";
 import { getAuth } from "@clerk/express";
@@ -27,7 +27,11 @@ export async function getOrCreateUser(userId: string, email?: string) {
         lastLoginAt: new Date(),
         generationsRemaining: 5,
         creditsRemaining: 5,
-        lastCreditReset: new Date()
+        lastCreditReset: new Date(),
+        planTier: "FREE",
+        planType: "free",
+        isBetaUser: false,
+        isAdmin: email ? email === process.env.ADMIN_EMAIL : false,
       })
       .returning();
   }
@@ -140,17 +144,23 @@ export function requirePlanOrTrial(toolKey: string) {
 
 export async function consumeToolTrial(userId: string, toolKey: string): Promise<number> {
   try {
-    // Atomic update to prevent race conditions
-    await db.update(usersTable)
+    const result = await db.update(usersTable)
       .set({ 
         generationsRemaining: sql`GREATEST(0, ${usersTable.generationsRemaining} - 1)`,
         totalGenerations: sql`${usersTable.totalGenerations} + 1`
       })
-      .where(eq(usersTable.id, userId));
+      .where(and(
+        eq(usersTable.id, userId),
+        gt(usersTable.generationsRemaining, 0)
+      ))
+      .returning({ id: usersTable.id });
 
+    if (result.length === 0) {
+      throw new Error("NO_CREDITS_REMAINING");
+    }
     return 1;
   } catch (e: any) {
     console.error("Trial consume DB error:", e.message);
-    return 1;
+    throw e;
   }
 }

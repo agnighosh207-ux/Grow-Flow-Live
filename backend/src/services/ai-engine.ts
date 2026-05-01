@@ -126,7 +126,6 @@ export const generateContent = async ({
       name: "OpenRouter",
       apiKey: process.env.OPENROUTER_API_KEY,
       baseURL: "https://openrouter.ai/api/v1",
-      // FIXED: No :free models for paid users
       model: isInfinity ? "meta-llama/llama-3.3-70b-instruct" : "meta-llama/llama-3.1-8b-instruct",
     },
     {
@@ -135,6 +134,12 @@ export const generateContent = async ({
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
       model: "gemini-1.5-flash",
     },
+    {
+       name: "Groq Llama 3.1 70B",
+       apiKey: process.env.GROQ_API_KEY,
+       baseURL: "https://api.groq.com/openai/v1",
+       model: "llama-3.1-70b-versatile",
+    }
   ];
 
   let lastError: any = null;
@@ -167,7 +172,7 @@ export const generateContent = async ({
             max_tokens: maxTokens,
             response_format: zodSchema ? { type: "json_object" } : undefined,
           },
-          { timeout: 20000 }
+          { timeout: 60000 }
         );
 
         const content = response.choices[0]?.message?.content || "";

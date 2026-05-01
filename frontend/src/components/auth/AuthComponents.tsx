@@ -75,7 +75,7 @@ export function ReferralCodeCapture() {
     if (!code) return;
     appliedRef.current = true;
     localStorage.removeItem("pendingReferralCode");
-    fetch("/api/referral/apply", {
+    fetch("/api/referral/claim", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),

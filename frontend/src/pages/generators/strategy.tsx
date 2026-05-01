@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
@@ -74,11 +74,7 @@ function StrategyPlannerInner() {
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
 
-  useEffect(() => {
-    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
-      if (data.languagePreference) setLanguage(data.languagePreference);
-    }).catch(() => {});
-  }, []);
+
 
   async function generateStrategy() {
     if (!goal.trim()) {

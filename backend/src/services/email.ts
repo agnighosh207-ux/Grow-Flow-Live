@@ -108,3 +108,24 @@ export async function sendPaymentFailedEmail(email: string) {
     console.error("Error sending payment failed email:", error);
   }
 }
+export async function sendRenewalEmail(email: string, planName: string) {
+  if (!resend) return;
+  try {
+    const html = emailLayout(
+      `Your ${planName} Subscription Renewed!`,
+      `
+        <p>Your subscription has successfully renewed. Your monthly credits have been refilled and are ready to use!</p>
+        <div style="text-align: center;"><a href="https://growflowai.space/generate" class="btn">Generate Content</a></div>
+        <p>GrowFlow AI Team</p>
+      `
+    );
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Success: Your GrowFlow AI ${planName} subscription renewed`,
+      html,
+    });
+  } catch (error) {
+    console.error("Error sending renewal email:", error);
+  }
+}

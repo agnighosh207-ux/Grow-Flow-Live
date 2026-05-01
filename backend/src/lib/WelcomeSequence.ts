@@ -1,8 +1,12 @@
 import { Resend } from 'resend';
+import { logger } from '../lib/logger';
 
 const key = process.env.RESEND_API_KEY;
-const resend = new Resend(key && key.trim() !== '' ? key : 're_mock_key');
-const FROM_EMAIL = 'Grow Flow Team <onboarding@resend.dev>'; // Using resend sandbox verified domain for guaranteed delivery until fully verified
+if (!key || key.trim() === '') {
+  console.warn('[WelcomeSequence] RESEND_API_KEY is not set — emails are disabled.');
+}
+const resend = key && key.trim() !== '' ? new Resend(key) : null;
+const FROM_EMAIL = 'GrowFlow AI <noreply@growflowai.space>';
 
 const premiumHtmlWrapper = (title: string, bodyContent: string) => `
 <!DOCTYPE html>
@@ -58,21 +62,12 @@ async function retry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promis
 }
 
 async function logEmailFailure(email: string, error: any, context: string) {
-  try {
-    await db.insert(securityLogsTable).values({
-      id: crypto.randomUUID(),
-      userId: email, // Using email as identifier if userId is not available or just for tracking
-      eventType: "RATE_LIMIT" as any, // Using existing enum, should ideally be EMAIL_FAILURE
-      metadata: { error: String(error), context, email }
-    });
-  } catch (err) {
-    console.error("Failed to log email failure to securityLogs:", err);
-  }
+  logger.error({ email, context, error: String(error) }, '[Email] Send failure');
 }
 
 export class WelcomeSequence {
   static async sendWelcomeToBeta(email: string, name: string) {
-    if (!email) return;
+    if (!resend || !email) return;
     try {
       const content = `
         <p>Hey <b>${name || 'Creator'}</b>,</p>
@@ -100,7 +95,7 @@ export class WelcomeSequence {
   }
 
   static async sendPaymentSuccess(email: string, name: string, planType: string, validityRange: string, amountPaid: string = '₹0') {
-    if (!email) return;
+    if (!resend || !email) return;
     try {
       const isTrial = amountPaid === '₹0';
       const headingText = isTrial ? 'Trial Successfully Activated! ⚡' : 'Payment Confirmed! ⚡';
@@ -153,7 +148,7 @@ export class WelcomeSequence {
   }
 
   static async sendPowerUserGuide(email: string, planType: string) {
-    if (!email) return;
+    if (!resend || !email) return;
     try {
       const content = `
         <p>You just successfully unlocked the <b>${planType.toUpperCase()} Beta Mode</b>!</p>

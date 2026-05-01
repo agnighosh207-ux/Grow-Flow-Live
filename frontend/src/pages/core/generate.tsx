@@ -743,10 +743,11 @@ export default function Generate() {
   const { data: sub, refetch: refetchSub } = useSubscriptionStatus();
   const [, navigate] = useLocation();
 
-  const isFreeUser = !!(sub && sub.planType === "free" && sub.plan === "free");
-  const isStarterUser = sub && sub.planType === "starter" && (sub.plan === "active" || sub.plan === "trial");
-  const isCreatorUser = sub && sub.planType === "creator" && (sub.plan === "active" || sub.plan === "trial");
-  const isInfinityUser = sub && sub.planType === "infinity" && (sub.plan === "active" || sub.plan === "trial");
+  const isFreeUser = !sub || (sub.planType === "free" && sub.plan === "free") || sub.plan === "blocked";
+  const paidStatuses = ["active", "trial", "pending", "past_due"];
+  const isStarterUser = sub && sub.planType === "starter" && paidStatuses.includes(sub.plan);
+  const isCreatorUser = sub && sub.planType === "creator" && paidStatuses.includes(sub.plan);
+  const isInfinityUser = sub && sub.planType === "infinity" && paidStatuses.includes(sub.plan);
   
   const generationsUsed = isFreeUser ? (sub?.generationsUsed ?? 0) : (sub?.monthlyGenerationsUsed ?? 0);
   const generationLimit = sub?.generationLimit ?? 3;

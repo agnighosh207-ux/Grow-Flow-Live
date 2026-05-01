@@ -85,10 +85,11 @@ JSON schema:
     });
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
 
     let trends: any[] = [];
     try {
-      const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
       trends = Array.isArray(parsed.trends) ? parsed.trends : [];
     } catch {
       res.status(500).json({ error: "Failed to parse trends" });
@@ -167,8 +168,8 @@ Return ONLY valid JSON (no markdown):
 
     let analysis: any = {};
     try {
-      const cleaned = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
-      analysis = JSON.parse(cleaned);
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
     } catch {
       res.status(500).json({ error: "Failed to parse content analysis" });
       return;

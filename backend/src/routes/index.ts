@@ -23,6 +23,7 @@ import authRouter from "./auth";
 import calendarRouter from "./calendar";
 import repurposeRouter from "./repurpose";
 import announcementRouter from "./announcement";
+import paymentRouter from "./payment";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(authRouter);
 router.use(calendarRouter);
 router.use(repurposeRouter);
 router.use(announcementRouter);
+router.use(paymentRouter);
 
 export default router;

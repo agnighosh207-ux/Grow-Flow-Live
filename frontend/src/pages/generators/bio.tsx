@@ -135,11 +135,7 @@ export default function BioGenerator() {
   const [language, setLanguage] = useState("English");
   const isFreeUser = !sub?.data?.planType || sub.data.planType === "free";
 
-  useEffect(() => {
-    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
-      if (data.languagePreference) setLanguage(data.languagePreference);
-    }).catch(() => {});
-  }, []);
+
 
   const LOADING_MESSAGES = [
     "Analyzing your profile...",

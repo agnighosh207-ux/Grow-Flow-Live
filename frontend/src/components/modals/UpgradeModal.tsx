@@ -27,6 +27,7 @@ interface UpgradeModalProps {
   featureName?: string;
   message?: string;
   targetPlan?: "starter" | "creator" | "infinity";
+  billingPeriod?: "monthly" | "yearly";
 }
 
 type PlanType = "starter" | "creator" | "infinity";
@@ -62,7 +63,7 @@ const STARTER_HIGHLIGHTS = [
 ];
 
 const CREATOR_HIGHLIGHTS = [
-  "60 content generations per month",
+  "100 content generations per month",
   "3 Regenerations per topic",
   "🌍 Multi-language (Hindi, Hinglish, Bengali)",
   "Multi-Variation (3 outputs per gen)",
@@ -79,7 +80,7 @@ const INFINITY_HIGHLIGHTS = [
   "Priority AI (2× faster) + Priority Support",
 ];
 
-export function UpgradeModal({ open, onClose, reason = "limit", featureName, message, targetPlan = "starter" }: UpgradeModalProps) {
+export function UpgradeModal({ open, onClose, reason = "limit", featureName, message, targetPlan = "starter", billingPeriod = "monthly" }: UpgradeModalProps) {
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(
     reason === "pro_feature" ? "infinity" : targetPlan
@@ -113,7 +114,13 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
       : subtitle;
 
   const highlights = selectedPlan === "infinity" ? INFINITY_HIGHLIGHTS : selectedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS;
-  const price = selectedPlan === "infinity" ? "₹499" : selectedPlan === "creator" ? "₹249" : "₹109";
+  
+  const price = selectedPlan === "infinity" 
+    ? (billingPeriod === "yearly" ? "₹4990" : "₹499") 
+    : selectedPlan === "creator" 
+      ? (billingPeriod === "yearly" ? "₹2490" : "₹249") 
+      : (billingPeriod === "yearly" ? "₹1090" : "₹109");
+
   const planLabel = selectedPlan === "infinity" ? "Infinity" : selectedPlan === "creator" ? "Creator" : "Starter";
   const purchasedPlanLabel = purchasedPlan === "infinity" ? "Infinity" : purchasedPlan === "creator" ? "Creator" : "Starter";
 
@@ -130,7 +137,12 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
     setPaymentState("pending");
 
     try {
-      const priceForCheckout = plan === "infinity" ? "₹499" : plan === "creator" ? "₹249" : "₹109";
+      const priceForCheckout = plan === "infinity" 
+        ? (billingPeriod === "yearly" ? "₹4990" : "₹499") 
+        : plan === "creator" 
+          ? (billingPeriod === "yearly" ? "₹2490" : "₹249") 
+          : (billingPeriod === "yearly" ? "₹1090" : "₹109");
+
       const loaded = await loadRazorpay();
       if (!loaded) {
         toast({ variant: "destructive", title: "Could not load payment gateway. Check your connection." });
@@ -138,7 +150,11 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
         return;
       }
 
-      const data = await createSub.mutateAsync({ planType: plan, couponCode: discountPercent > 0 ? couponCode : undefined });
+      const data = await createSub.mutateAsync({ 
+        planType: plan, 
+        couponCode: discountPercent > 0 ? couponCode : undefined,
+        billingPeriod: billingPeriod
+      });
 
       const options = {
         key: data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,

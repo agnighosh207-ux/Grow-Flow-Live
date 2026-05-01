@@ -1,10 +1,11 @@
 import { pgTable, text, serial, timestamp, integer, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { usersTable } from "./users";
 import { z } from "zod/v4";
 
 export const contentGenerationsTable = pgTable("content_generations", {
   id: serial("id").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   idea: text("idea").notNull(),
   contentType: text("content_type").notNull(),
   tone: text("tone").notNull(),

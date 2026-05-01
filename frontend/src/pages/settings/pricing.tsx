@@ -44,11 +44,9 @@ const BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
   infinity: { monthly: 499, quarterly: 1347, biannual: 2394, yearly: 3984 },
 };
 
-const BILLING_SAVINGS: Record<string, Record<string, number>> = {
-  starter: { quarterly: 33, biannual: 132, yearly: 444 },
-  creator: { quarterly: 75, biannual: 300, yearly: 996 },
-  infinity: { quarterly: 150, biannual: 600, yearly: 2004 },
-};
+function getBillingMonths(period: BillingPeriod): number {
+  return { monthly: 1, quarterly: 3, biannual: 6, yearly: 12 }[period];
+}
 
 interface Feature {
   key: string;
@@ -112,7 +110,7 @@ const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, inf
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
-  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity" }>({ open: false, plan: "starter" });
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity"; billing: BillingPeriod }>({ open: false, plan: "starter", billing: "monthly" });
   
   const { data: sub, isLoading: subLoading } = useSubscriptionStatus();
   const { isSignedIn, isLoaded } = useAuth();
@@ -153,7 +151,7 @@ export default function PricingPage() {
       return;
     }
     // Only open the modal for upgrade or new users
-    setUpgradeModal({ open: true, plan });
+    setUpgradeModal({ open: true, plan, billing });
   };
 
   const billingLabel = (period: BillingPeriod) => {
@@ -323,7 +321,7 @@ export default function PricingPage() {
                     <p className="text-white/40 text-xs mt-1">
                       ₹{BILLING_TOTALS.starter[billing]} billed {billingLabel(billing)}
                       {" "}·{" "}
-                      <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.starter[billing]}</span>
+                      <span className="text-emerald-400">Save ₹{(BASE_PRICES.starter.monthly * getBillingMonths(billing)) - BILLING_TOTALS.starter[billing]}</span>
                     </p>
                   )}
                   <p className="text-white/40 text-[11px] mt-0.5">Introductory pricing for early users</p>
@@ -410,7 +408,7 @@ export default function PricingPage() {
                     <p className="text-white/40 text-xs mt-1">
                       ₹{BILLING_TOTALS.creator[billing]} billed {billingLabel(billing)}
                       {" "}·{" "}
-                      <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.creator[billing]}</span>
+                      <span className="text-emerald-400">Save ₹{(BASE_PRICES.creator.monthly * getBillingMonths(billing)) - BILLING_TOTALS.creator[billing]}</span>
                     </p>
                   )}
                   <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">Best for Indian creators 🇮🇳</p>
@@ -513,7 +511,7 @@ export default function PricingPage() {
                     <p className="text-white/40 text-xs mt-1">
                       ₹{BILLING_TOTALS.infinity[billing]} billed {billingLabel(billing)}
                       {" "}·{" "}
-                      <span className="text-emerald-400">Save ₹{BILLING_SAVINGS.infinity[billing]}</span>
+                      <span className="text-emerald-400">Save ₹{(BASE_PRICES.infinity.monthly * getBillingMonths(billing)) - BILLING_TOTALS.infinity[billing]}</span>
                     </p>
                   )}
                   <p className="text-white/60 text-sm mt-1">For agencies & super users</p>
@@ -806,6 +804,7 @@ export default function PricingPage() {
         onClose={() => setUpgradeModal((p) => ({ ...p, open: false }))}
         reason="upgrade"
         targetPlan={upgradeModal.plan}
+        billingPeriod={upgradeModal.billing === "yearly" ? "yearly" : "monthly"}
       />
     </div>
   );

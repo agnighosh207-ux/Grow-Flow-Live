@@ -35,7 +35,7 @@ function sanitizeInput(text: string, maxLength: number = 500): string {
 
 // requireAuth is now centralized in planMiddleware.ts (Flaw 20 fix)
 
-async function generateContentWithAI(idea: string, contentType: string, tone: string, niche: string = "General", platformPreference: string = "", language: string = "English") {
+async function generateContentWithAI(idea: string, contentType: string, tone: string, niche: string = "General", platformPreference: string = "", language: string = "English", userId: string = "anonymous", userPlan: string = "free") {
   const contentTypeInstructions: Record<string, string> = {
     Educational: `FORMAT — Educational/Framework: Teach one transformative concept that changes HOW the audience thinks, not just what they do. Use the "hidden truth" structure: expose what's wrong with common advice → reveal the better mental model → show the exact application. Ground everything in firsthand experience, not recycled theory. Each step must be actionable TODAY.`,
     Story: `FORMAT — Story/Experience: Use the "cinematic drop" structure — open IN the middle of the most dramatic moment (don't set up the scene, DROP into it). Then: what the situation was → the exact mistake made → the turning point → the specific result with real numbers or observable outcomes. The reader should feel like they're watching it happen, not being told about it.`,
@@ -171,8 +171,8 @@ Return ONLY valid JSON (no markdown, no code blocks):
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    userPlan: "CREATOR", // Default to high-quality fallback logic
-    userId: "SYSTEM_GEN",
+    userPlan,
+    userId,
     language,
     maxTokens: 4000,
   });
@@ -273,10 +273,19 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
   const planType = user?.planType ?? "free";
 
   if (language !== "English") {
-    if (status !== "active" && status !== "trial") {
+    const canUsePremiumLanguage = 
+      status === "active" || 
+      status === "trial" || 
+      (status === "pending" && user?.planType && user.planType !== "free");
+    
+    if (!canUsePremiumLanguage) {
+      const upgradeMessage = (user?.planType && user.planType !== "free")
+        ? "Your subscription is not currently active. Please check your billing settings to restore access."
+        : "🔥 Create content in 10 Premium Languages. Upgrade to unlock!";
+
       res.status(402).json({
         error: "upgrade_required",
-        message: "🔥 Create content in 10 Premium Languages to reach a global audience. Unlock with premium!",
+        message: upgradeMessage,
         plan: status,
         generationsRemaining,
       });
@@ -299,7 +308,7 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
 
   let content: any;
   try {
-    content = await generateContentWithAI(idea, contentType, resolvedTone, resolvedNiche, resolvedPlatform, language);
+    content = await generateContentWithAI(idea, contentType, resolvedTone, resolvedNiche, resolvedPlatform, language, req.userId, user?.planType || "free");
     
     // Add watermark for Free users
     if (status !== "active" && status !== "trial") {
@@ -344,7 +353,7 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
     res.json({
       id: savedGen.id,
       content,
-      generationsRemaining: generationsRemaining,
+      generationsRemaining: Math.max(0, generationsRemaining - 1),
       plan: status,
     });
   } catch (err: any) {
@@ -520,7 +529,8 @@ Return ONLY this JSON:
 
 router.get("/content/history", requireAuth, async (req: any, res): Promise<void> => {
   const parsed = GetContentHistoryQueryParams.safeParse(req.query);
-  const limit = parsed.success ? (parsed.data.limit ?? 20) : 20;
+  const rawLimit = parsed.success ? (parsed.data.limit ?? 20) : 20;
+  const limit = Math.min(rawLimit, 100); // Hard cap at 100 rows
 
   const history = await db
     .select()
