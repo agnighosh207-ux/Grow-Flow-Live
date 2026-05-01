@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { GenerateHooksBody, GenerateHooksResponse } from "@workspace/api-zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
@@ -48,90 +49,66 @@ const HOOK_PATTERNS = [
   },
 ];
 
-router.post("/hooks/generate", requireAuth, requirePlanOrTrial("hooks"), async (req: any, res): Promise<void> => {
-  const parsed = GenerateHooksBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request data." });
+  const { topic, tone, language = "English" } = req.body;
+  
+  if (!topic) {
+    res.status(400).json({ error: "Topic is required" });
     return;
   }
 
-  const { topic, tone } = parsed.data;
-
   const toneGuidance = {
-    Casual: "Conversational and warm, like a trusted friend sharing something important. Use contractions. Keep rhythm natural and human. Never preachy or lecture-y. The kind of text someone sends to a friend they respect.",
-    Professional: "Confident authority, earned through specificity. Every word is precise. Sounds like the most credible person in the room speaking to someone they respect as an equal. Data-grounded. No unnecessary enthusiasm.",
-    Aggressive: "Zero tolerance for softness. Every word hits. Challenges assumptions directly and unapologetically. Forces a reaction. Uses contrast and repetition for rhetorical impact. Polarizing by design — those who disagree engage, those who agree share immediately.",
-  }[tone] || "Natural, direct, specific. Write for a real person in a real situation.";
+    Casual: "Conversational and warm, like a trusted friend sharing something important.",
+    Professional: "Confident authority, earned through specificity. Precise and data-grounded.",
+    Aggressive: "Direct, punchy, and unapologetic. Forces a reaction.",
+  }[tone as string] || "Natural, direct, specific.";
 
-  const systemPrompt = `You are a master hook writer who has written opening lines that generated hundreds of millions of combined views. You know that the hook is responsible for 80% of whether content succeeds or fails — everything else is secondary.
-
-Your understanding of hooks:
-- A great hook doesn't just get attention — it EARNS the right to the next sentence
-- The best hooks work because they create a SPECIFIC emotional state in a SPECIFIC type of person
-- Hooks fail when they're vague, when they start with "I", when they ask permission, or when they promise something generic
-- Great hooks use one of three mechanisms: create tension that demands resolution / challenge a belief the reader holds / make them feel precisely understood
-
-TONE REQUIREMENT: ${toneGuidance}
-
-ABSOLUTE RULES — THESE WILL NOT BE BROKEN:
-✗ NEVER start with "Are you", "Have you ever", "Do you want to", "If you're looking for"
-✗ NEVER use "game-changer", "life-changing", "mind-blowing", "eye-opening", "amazing"  
-✗ NEVER start with "I" (weak — makes it about you, not them)
-✗ NEVER be vague — every hook must have a specific detail, number, scenario, or named audience
-✗ NEVER repeat the same structural pattern across different hooks
-✓ EVERY hook must be specific to THIS topic, not generic advice
-✓ EVERY hook should make ONE specific type of person immediately think "this is for me"
-✓ Each hook must use a demonstrably different psychological mechanism`;
+  const systemPrompt = `You are a master hook writer. TONE: ${toneGuidance}. 
+Rules: No "Are you", no generic words, no starting with "I". 
+Every hook must be specific to the topic.`;
 
   const patternsInstructions = HOOK_PATTERNS.map((p, i) =>
     `Hook ${i + 1} — ${p.type}:\n${p.instruction}`
   ).join("\n\n");
 
+  const languagePrompt = LANGUAGE_INSTRUCTIONS[language as string] || LANGUAGE_INSTRUCTIONS["English"];
+
   const userPrompt = `Generate 10 elite-level hooks for this topic: "${topic}"
-
-Each hook MUST follow its specific pattern instruction precisely:
-
+  
 ${patternsInstructions}
 
-Quality standard: After writing each hook, ask yourself — "Would someone who knows this topic immediately stop scrolling when they read this?" If not, rewrite it until they would.
+${languagePrompt}
 
-Return ONLY a JSON object containing a "hooks" key with an array of exactly 10 strings. Each string is one complete hook, ready to be copy-pasted as a post opener. No markdown, no code blocks, no explanations, no labels:
-{"hooks": ["hook1", "hook2", "hook3", "hook4", "hook5", "hook6", "hook7", "hook8", "hook9", "hook10"]}`;
+Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-    response_format: { type: "json_object" },
-      max_tokens: 3500,
+    const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: userPrompt }
       ],
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      language,
+      maxTokens: 3000,
     });
 
-    const rawContent = response.choices[0]?.message?.content ?? '{"hooks": []}';
-
-    let hooks: string[];
+    const rawContent = rawContentObj.choices[0]?.message?.content ?? '{"hooks": []}';
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    
+    let hooks: string[] = [];
     try {
-      const parsedContent = JSON.parse(rawContent);
-      hooks = Array.isArray(parsedContent.hooks) ? parsedContent.hooks : (Array.isArray(parsedContent) ? parsedContent : []);
+      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
+      hooks = Array.isArray(parsed.hooks) ? parsed.hooks : (Array.isArray(parsed) ? parsed : []);
     } catch {
-      const arrayMatch = rawContent.match(/\[[\s\S]*\]/);
-      hooks = arrayMatch ? JSON.parse(arrayMatch[0]) : [];
+      // Emergency fallback: try to extract lines
+      hooks = rawContent.split("\n").filter(l => l.trim().length > 10).slice(0, 10);
     }
 
-    const hooksWithTypes = hooks.map((hook, i) => ({
-      hook,
-      type: HOOK_PATTERNS[i]?.type ?? "Hook",
-    }));
-
-    if (req.trialMode) {
-      await consumeToolTrial(req.userId, "hooks");
-    }
-
-    res.json({ hooks, hooksWithTypes });
+    if (req.trialMode) await consumeToolTrial(req.userId, "hooks");
+    res.json({ hooks });
   } catch (err: any) {
-    res.status(503).json({ error: "AI is temporarily unavailable. Please try again in a moment." });
+    console.error("HOOK GEN ERROR:", err);
+    res.status(503).json({ error: "AI temporarily unavailable. Please try again." });
   }
 });
 

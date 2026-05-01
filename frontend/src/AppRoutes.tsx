@@ -15,6 +15,18 @@ import {
   SignedIn,
   SignedOut
 } from "@/components/auth/AuthComponents";
+import { useAuth } from "@clerk/react";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
+
+function ApiAuthBridge() {
+  const { getToken } = useAuth();
+  
+  useEffect(() => {
+    setAuthTokenGetter(() => getToken());
+  }, [getToken]);
+
+  return null;
+}
 
 import { Layout } from "@/components/layout/layout";
 const Home = React.lazy(() => import("@/pages/core/home"));
@@ -151,6 +163,7 @@ export function ClerkProviderWithRoutes() {
       }}
     >
       <QueryClientProvider client={queryClient}>
+        <ApiAuthBridge />
         <ClerkQueryClientCacheInvalidator />
         <LoginTracker />
         <ReferralCodeCapture />

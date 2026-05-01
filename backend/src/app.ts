@@ -77,11 +77,11 @@ const clerkMw = clerkMiddleware();
 app.use((req: any, res: any, next: any) => {
   if (!req.path.startsWith("/api/")) return next();
   
-  // Wrap clerkMiddleware in a 5-second timeout to prevent hangs
+  // Wrap clerkMiddleware in a 15-second timeout to prevent hangs
   const timer = setTimeout(() => {
-    console.warn("[WARN] clerkMiddleware timed out after 5s, continuing without auth");
+    console.warn("[WARN] clerkMiddleware timed out after 15s, continuing without auth");
     next();
-  }, 5000);
+  }, 15000);
   
   clerkMw(req, res, (err?: any) => {
     clearTimeout(timer);

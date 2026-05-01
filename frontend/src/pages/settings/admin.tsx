@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/layout";
@@ -51,6 +51,7 @@ function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onCha
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -58,22 +59,32 @@ export default function AdminDashboard() {
 
   const COLORS = ['#00F2FF', '#00D9E5', '#00BEC9', '#00A3AD', '#00848D'];
 
-  const { data: subData } = useSubscriptionStatus();
+  const { data: subData, isPending: isSubPending } = useSubscriptionStatus();
 
   useEffect(() => {
-    if (isLoaded && subData) {
-      if (!subData.isAdmin) {
-        setLocation("/");
-      }
-    } else if (isLoaded && !user) {
+    // Don't redirect while still loading auth or subscription data
+    if (!isLoaded || isSubPending) return;
+    
+    // If not signed in at all, redirect
+    if (!user) {
+      setLocation("/");
+      return;
+    }
+    
+    // Only redirect if we got a successful response that says NOT admin
+    // Don't redirect on errors (could be a transient 401 race condition)
+    if (subData && !subData.isAdmin) {
       setLocation("/");
     }
-  }, [isLoaded, user, subData, setLocation]);
+  }, [isLoaded, user, subData, isSubPending, setLocation]);
 
   const { data: stats, isLoading } = useQuery<AdminStats>({
     queryKey: ["admin_stats"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/stats");
+      const token = await getToken();
+      const res = await fetch("/api/admin/stats", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Not authorized or failed to fetch");
       return res.json();
     },
@@ -82,9 +93,13 @@ export default function AdminDashboard() {
 
   const modifyUserMutation = useMutation({
     mutationFn: async ({ targetUserId, newPlan }: { targetUserId: string; newPlan: string }) => {
+      const token = await getToken();
       const res = await fetch("/api/admin/modify-user", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ targetUserId, newPlan }),
       });
       if (!res.ok) throw new Error("Failed to modify user");
@@ -103,9 +118,13 @@ export default function AdminDashboard() {
 
   const toggleMaintenanceMutation = useMutation({
     mutationFn: async (mode: boolean) => {
+      const token = await getToken();
       const res = await fetch("/api/admin/settings/maintenance", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({ maintenanceMode: mode }),
       });
       if (!res.ok) throw new Error("Failed to toggle maintenance mode");
@@ -126,12 +145,19 @@ export default function AdminDashboard() {
     setLocation("/");
   };
 
-  if (!isLoaded || isLoading || !subData?.isAdmin) {
+  if (!isLoaded || isSubPending || isLoading || !subData) {
     return (
-      <div className="min-h-screen bg-[#0b0416] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center p-20">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-white/40 text-sm animate-pulse">Loading secure dashboard...</p>
+        </div>
       </div>
     );
+  }
+
+  if (!subData.isAdmin) {
+    return null; // Let the useEffect handle the redirect
   }
 
   return (
@@ -460,9 +486,13 @@ export default function AdminDashboard() {
                   const isActive = (form.elements.namedItem("isActive") as HTMLInputElement).checked;
 
                   try {
+                    const token = await getToken();
                     const res = await fetch("/api/admin/announcement", {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
+                      headers: { 
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                      },
                       body: JSON.stringify({ message, theme, isActive }),
                     });
                     if (!res.ok) throw new Error("Failed");
@@ -525,7 +555,11 @@ export default function AdminDashboard() {
                       <button 
                         onClick={async () => {
                           try {
-                            const res = await fetch(`/api/admin/announcement/${ann.id}`, { method: "DELETE" });
+                            const token = await getToken();
+                            const res = await fetch(`/api/admin/announcement/${ann.id}`, { 
+                              method: "DELETE",
+                              headers: { Authorization: `Bearer ${token}` }
+                            });
                             if (!res.ok) throw new Error("Failed to delete");
                             toast({ title: "Announcement deleted" });
                             window.location.reload();

@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { useAuth } from "@clerk/clerk-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Sparkles, Copy, Check, ChevronDown, Info, ArrowRight, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
 
 const PLATFORMS = ["Instagram", "Twitter", "LinkedIn", "YouTube"] as const;
 const TONES = ["Professional", "Casual", "Witty", "Inspirational", "Bold"] as const;
@@ -118,6 +120,7 @@ function VariationCard({ v, platform, idx }: { v: BioVariation; platform: string
 export default function BioGenerator() {
   const { toast } = useToast();
   const sub = useSubscriptionStatus();
+  const { getToken } = useAuth();
 
   const [platform, setPlatform] = useState<string>("Instagram");
   const [niche, setNiche] = useState<string>("Personal Brand");
@@ -129,6 +132,14 @@ export default function BioGenerator() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BioResult | null>(null);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+  const [language, setLanguage] = useState("English");
+  const isFreeUser = !sub?.data?.planType || sub.data.planType === "free";
+
+  useEffect(() => {
+    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
+      if (data.languagePreference) setLanguage(data.languagePreference);
+    }).catch(() => {});
+  }, []);
 
   const LOADING_MESSAGES = [
     "Analyzing your profile...",
@@ -153,11 +164,15 @@ export default function BioGenerator() {
     setResult(null);
     setLoading(true);
     try {
+      const token = await getToken();
       const res = await fetch("/api/bio/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ platform, niche, role, expertise, tone, cta, achievements }),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "omit",
+        body: JSON.stringify({ platform, niche, role, expertise, tone, cta, achievements, language }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -286,6 +301,13 @@ export default function BioGenerator() {
               style={{ color: "#ffffff" }}
             />
           </div>
+
+          <LanguageSelector
+            value={language}
+            onChange={setLanguage}
+            isFreeUser={isFreeUser}
+            onUpgradeRequired={() => toast({ title: "\ud83d\udd12 Premium Languages", description: "Upgrade to generate bios in regional languages!", variant: "destructive" })}
+          />
 
           <button
             onClick={generate}

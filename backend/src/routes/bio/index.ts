@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
@@ -27,6 +28,8 @@ const PLATFORM_RULES: Record<string, { charLimit: number; style: string; goal: s
   },
 };
 
+import { generateContent } from "../../services/ai-engine";
+
 router.post("/bio/generate", requireAuth, requirePlanOrTrial("bio"), async (req: any, res): Promise<void> => {
   const {
     platform = "Instagram",
@@ -36,86 +39,49 @@ router.post("/bio/generate", requireAuth, requirePlanOrTrial("bio"), async (req:
     tone = "Professional",
     cta = "",
     achievements = "",
+    language = "English"
   } = req.body;
 
-  const platformInfo = PLATFORM_RULES[platform] || PLATFORM_RULES["Instagram"];
+  const platformInfo = PLATFORM_RULES[platform as string] || PLATFORM_RULES["Instagram"];
 
-  const systemPrompt = `Act as an elite Social Media Strategist and high-end Copywriter. Your goal is to generate 3 DISTINCT, HIGH-CONVERTING, and EXTREMELY IMPRESSIVE bio variations for ${platform}.
-
+  const systemPrompt = `Act as an elite Social Media Strategist and Copywriter. Generate 3 DISTINCT, HIGH-CONVERTING bio variations for ${platform}.
 CRITICAL RULES:
-1. EXTREMELY HIGH QUALITY: The bios must sound premium, authoritative, and extremely persuasive.
-2. MODERN DESIRABLE EMOJIS: You MUST use relevant, modern aesthetic emojis from the latest Google Keyboard (e.g., 🤌, 🪩, 🫶, 💅, 📈, 🧠, ⚡️, 🎯, 🌱, 💸). Place exactly ONE emoji at the BEGINNING of each line.
-3. STRICT MULTI-LINE STRUCTURE: You MUST use physical line breaks (\\n) to separate ideas. 
-   - NEVER return a single sentence.
-   - NEVER return a bio separated by pipes (|). That format is banned.
-   - Line 1: [Emoji] Hook & Authority
-   - Line 2: [Emoji] Value Proposition & Impact
-   - Line 3: [Emoji] Direct Call-To-Action (CTA) followed by 2-3 niche hashtags.
-4. ABSOLUTE HARD LIMIT: You MUST keep the TOTAL character count (including emojis and spaces) STRICTLY UNDER ${platformInfo.charLimit} characters. This is a hard technical limit. Do NOT exceed it under any circumstances, but try to use around 80% to 90% of it.
-5. PLATFORM VIBE: ${platformInfo.style}. Goal: ${platformInfo.goal}.
+1. EXTREMELY HIGH QUALITY.
+2. Use modern aesthetic emojis at the BEGINNING of each line.
+3. Use physical line breaks (\\n). 
+4. TOTAL character count MUST be UNDER ${platformInfo.charLimit} characters.
+5. VIBE: ${platformInfo.style}.`;
 
-Return ONLY a valid JSON object matching this exact structure:
-{
-  "platform": "${platform}",
-  "niche": "${niche}",
-  "variations": [
-    {
-      "label": "SEO & Authority",
-      "bio": "First line here\\nSecond line here\\nThird line here",
-      "charCount": 0,
-      "strategy": "One sentence explaining why this works"
-    },
-    {
-      "label": "Story & Connection",
-      "bio": "...",
-      "charCount": 0,
-      "strategy": "One sentence explaining why this works"
-    },
-    {
-      "label": "Bold & Aggressive",
-      "bio": "...",
-      "charCount": 0,
-      "strategy": "One sentence explaining why this works"
-    }
-  ],
-  "proTip": "One valuable platform-specific tip"
-}`;
-
-  const userPrompt = `Generate 3 completely distinct bio variations for ${platform} using the exact multi-line structure, heavy emoji usage, and premium copywriting.
-
+  const userPrompt = `Generate 3 distinct bio variations for ${platform}.
 User Details:
-Role/Title: ${role || niche}
+Role: ${role || niche}
 Niche: ${niche}
-Expertise: ${expertise || "Top-tier strategies, premium results, and actionable insights"}
+Expertise: ${expertise || "Top-tier strategies"}
 Tone: ${tone}
-CTA: ${cta || "Click below to transform your journey 👇"}
+CTA: ${cta || "Click below 👇"}
 Achievements: ${achievements}
 
-REMEMBER: 
-- Start every line with a modern aesthetic emoji (🫶, ⚡️, 🧠, etc.). 
-- STRICTLY ensure the total length is UNDER ${platformInfo.charLimit} characters!
-- Use physical line breaks (\\n), never pipes (|).`;
+Return ONLY a JSON object: {"platform": "${platform}", "variations": [{"label": "string", "bio": "string", "strategy": "string"}], "proTip": "string"}`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+    const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: userPrompt }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.85,
-      max_tokens: 2000,
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      language,
+      maxTokens: 2000,
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
     let parsed;
     try {
-      parsed = JSON.parse(raw);
-    } catch {
       const match = raw.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-      else throw new Error("Failed to parse JSON from AI response.");
+      parsed = JSON.parse(match ? match[0] : raw);
+    } catch {
+      throw new Error("Failed to parse bio response.");
     }
 
     if (parsed.variations) {
@@ -128,7 +94,7 @@ REMEMBER:
     res.json(parsed);
   } catch (err: any) {
     console.error("Bio generate error:", err);
-    res.status(500).json({ error: err?.message || "Failed to generate bio" });
+    res.status(503).json({ error: "AI temporarily unavailable." });
   }
 });
 

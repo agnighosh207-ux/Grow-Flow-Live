@@ -39,6 +39,7 @@ export const usersTable = pgTable("users", {
   niche: text("niche"),
   tonePreference: text("tone_preference"),
   regionalLanguageLock: text("regional_language_lock"),
+  languagePreference: text("language_preference").default("English"),
   platformPreference: text("platform_preference"),
   isFirstLogin: boolean("is_first_login").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

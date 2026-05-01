@@ -7,7 +7,7 @@ import { FoundersBanner } from "@/components/banners/FoundersBanner";
 import { TopBanner } from "@/components/banners/TopBanner";
 import { FeedbackModal, checkShouldShowFeedback } from "@/components/modals/FeedbackModal";
 import { Link, useLocation } from "wouter";
-import { useClerk, useUser } from "@clerk/react";
+import { useClerk, useUser, useAuth } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Wand2,
@@ -301,9 +301,16 @@ function SidebarContent({
   location: string;
   onClick?: () => void;
 }) {
+  const { getToken } = useAuth();
   const { data: streakData } = useQuery({ 
     queryKey: ['daily-streak'], 
-    queryFn: () => fetch('/api/daily/streak').then(r => r.json()), 
+    queryFn: async () => {
+      const token = await getToken();
+      const r = await fetch('/api/daily/streak', {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      return r.json();
+    }, 
     staleTime: 5 * 60 * 1000, 
     enabled: !!user 
   });

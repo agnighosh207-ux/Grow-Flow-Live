@@ -256,7 +256,7 @@ components:
           enum: [Casual, Professional, Aggressive]
         language:
           type: string
-          enum: [English, Hindi, Hinglish, Bengali]
+          enum: [English, Hindi, Hinglish, Bengali, Gujarati, Kannada, Malayalam, Marathi, Punjabi, Odia, Assamese, Tamil, Telugu, Urdu, Bhojpuri, Spanish, French, German]
           description: Optional - language of the generated content
       required:
         - idea
@@ -279,7 +279,7 @@ components:
           enum: [Casual, Professional, Aggressive]
         language:
           type: string
-          enum: [English, Hindi, Hinglish, Bengali]
+          enum: [English, Hindi, Hinglish, Bengali, Gujarati, Kannada, Malayalam, Marathi, Punjabi, Odia, Assamese, Tamil, Telugu, Urdu, Bhojpuri, Spanish, French, German]
           description: Optional - language of the generated content
         platform:
           type: string
@@ -405,6 +405,10 @@ components:
         tone:
           type: string
           enum: [Casual, Professional, Aggressive]
+        language:
+          type: string
+          enum: [English, Hindi, Hinglish, Bengali, Gujarati, Kannada, Malayalam, Marathi, Punjabi, Odia, Assamese, Tamil, Telugu, Urdu, Bhojpuri, Spanish, French, German]
+          description: Optional - language of the generated hooks
       required:
         - topic
         - tone
@@ -458,6 +462,10 @@ components:
       properties:
         competitorContent:
           type: string
+        language:
+          type: string
+          enum: [English, Hindi, Hinglish, Bengali, Gujarati, Kannada, Malayalam, Marathi, Punjabi, Odia, Assamese, Tamil, Telugu, Urdu, Bhojpuri, Spanish, French, German]
+          description: Optional - language of the improved content
       required:
         - competitorContent
 

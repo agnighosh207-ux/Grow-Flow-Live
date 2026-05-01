@@ -8,6 +8,7 @@ import { useSubscriptionStatus, useRetrySubscription } from "@/hooks/useSubscrip
 import { useReferralInfo } from "@/hooks/useReferral";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
 import { AvatarPicker } from "@/components/shared/AvatarPicker";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import {
   Settings, User, CreditCard, Bell, AlertTriangle,
   Loader2, Crown, Zap, Shield, Mail,
@@ -26,6 +27,7 @@ interface ContentPrefs {
   niche: string;
   tonePreference: string;
   platformPreference: string;
+  languagePreference: string;
 }
 
 const TONE_OPTIONS = ["", "Casual", "Professional", "Humorous", "Inspirational", "Educational"];
@@ -166,6 +168,7 @@ export default function SettingsPage() {
     niche: "",
     tonePreference: "",
     platformPreference: "",
+    languagePreference: "English",
   });
   const [contentPrefsSaving, setContentPrefsSaving] = useState(false);
   const [contentPrefsLoaded, setContentPrefsLoaded] = useState(false);
@@ -196,6 +199,7 @@ export default function SettingsPage() {
           niche: data.niche ?? "",
           tonePreference: data.tonePreference ?? "",
           platformPreference: data.platformPreference ?? "",
+          languagePreference: data.languagePreference ?? "English",
         });
         setContentPrefsLoaded(true);
       })
@@ -216,6 +220,7 @@ export default function SettingsPage() {
           niche: contentPrefs.niche || null,
           tonePreference: contentPrefs.tonePreference || null,
           platformPreference: contentPrefs.platformPreference || null,
+          languagePreference: contentPrefs.languagePreference || "English",
         }),
       });
       if (!res.ok) throw new Error();
@@ -532,6 +537,16 @@ export default function SettingsPage() {
                     <option key={p} value={p} className="bg-[#0f0a1e]">{p}</option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-1.5">
+                <LanguageSelector
+                  value={contentPrefs.languagePreference}
+                  onChange={(v) => setContentPrefs(p => ({ ...p, languagePreference: v }))}
+                  isFreeUser={sub?.plan === "free"}
+                  label="Language Preference"
+                  onUpgradeRequired={() => toast({ title: "\ud83d\udd12 Premium Languages", description: "Upgrade your plan to use regional languages.", variant: "destructive" })}
+                />
+                <p className="text-white/30 text-[11px] leading-relaxed">Your preferred content language. All generators will default to this language.</p>
               </div>
               <Button
                 onClick={saveContentPrefs}

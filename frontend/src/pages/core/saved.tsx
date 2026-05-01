@@ -10,6 +10,7 @@ import {
   Loader2, Instagram, Linkedin, Twitter, Calendar,
 } from "lucide-react";
 import { SiYoutube } from "react-icons/si";
+import { useAuth } from "@clerk/react";
 
 interface SavedItem {
   id: number;
@@ -47,17 +48,28 @@ export default function Saved() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
+  const { getToken } = useAuth();
+
   useEffect(() => {
-    fetch("/api/favorites/content")
+    (async () => {
+      const token = await getToken();
+      fetch("/api/favorites/content", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      })
       .then(r => r.json())
       .then(data => { setItems(data.items ?? []); setLoading(false); })
       .catch(() => setLoading(false));
+    })();
   }, []);
 
   async function handleRemove(id: number) {
     setRemoving(prev => new Set([...prev, id]));
     try {
-      await fetch(`/api/favorites/${id}`, { method: "DELETE" });
+      const token = await getToken();
+      await fetch(`/api/favorites/${id}`, { 
+        method: "DELETE",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       setItems(prev => prev.filter(i => i.id !== id));
       toast({ title: "Removed from saved" });
     } catch {

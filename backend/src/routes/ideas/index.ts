@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial, consumeToolTrial } from "../../middlewares/planMiddleware";
+import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
@@ -27,10 +28,12 @@ const nichePainPoints: Record<string, string> = {
 const IDEAS_CACHE = new Map<string, { data: any, timestamp: number }>();
 const IDEAS_TTL = 15 * 60 * 1000; // 15 minutes
 
-router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), async (req: any, res): Promise<void> => {
-  const { niche = "General", goal = "grow my audience" } = req.body;
+import { generateContent } from "../../services/ai-engine";
 
-  const cacheKey = `${niche}:${goal}`;
+router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), async (req: any, res): Promise<void> => {
+  const { niche = "General", goal = "grow my audience", language = "English" } = req.body;
+
+  const cacheKey = `ideas:${niche}:${goal}:${language}`;
   const cached = IDEAS_CACHE.get(cacheKey);
   if (cached && (Date.now() - cached.timestamp < IDEAS_TTL)) {
     if (req.trialMode) await consumeToolTrial(req.userId, "ideas");
@@ -38,20 +41,17 @@ router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), async (
     return;
   }
 
-  const nicheContext = nicheContextMap[niche] || nicheContextMap["General"];
-  const painPoint = nichePainPoints[niche] || nichePainPoints["General"];
-
+  const nicheContext = nicheContextMap[niche as string] || nicheContextMap["General"];
+  const painPoint = nichePainPoints[niche as string] || nichePainPoints["General"];
   const currentYear = new Date().getFullYear();
 
   const systemPrompt = `You are a content strategist. Generate 10 high-performing content ideas for ${niche} in ${currentYear}.
 NICHE: ${niche}
 NICHE CONTEXT: ${nicheContext}
 AUDIENCE PSYCHOLOGY: ${painPoint}
-CREATOR GOAL: ${goal}
+CREATOR GOAL: ${goal}.`;
 
-Return ONLY valid JSON (no markdown).`;
-
-  const userPrompt = `Generate 10 ideas. JSON schema:
+  const userPrompt = `Generate 10 ideas. Return ONLY a JSON object:
 {
   "ideas": [
     {
@@ -66,35 +66,36 @@ Return ONLY valid JSON (no markdown).`;
 }`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-      response_format: { type: "json_object" },
-      max_tokens: 1500, // Reduced from 5000 for lightning speed
+    const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: userPrompt }
       ],
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      language,
+      maxTokens: 1500,
     });
 
-    const rawContent = response.choices[0]?.message?.content ?? "{}";
+    const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
 
     let parsed: any;
     try {
-      parsed = JSON.parse(rawContent);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
     } catch {
-      res.status(500).json({ error: "Failed to parse ideas" });
+      res.status(503).json({ error: "Failed to parse ideas" });
       return;
     }
 
     const responseData = { ideas: parsed.ideas ?? [] };
-    
-    // Save to cache
     IDEAS_CACHE.set(cacheKey, { data: responseData, timestamp: Date.now() });
 
     if (req.trialMode) await consumeToolTrial(req.userId, "ideas");
     res.json(responseData);
   } catch (err: any) {
-    res.status(500).json({ error: "Failed to generate ideas" });
+    console.error("IDEAS GEN ERROR:", err);
+    res.status(503).json({ error: "Failed to generate ideas" });
   }
 });
 

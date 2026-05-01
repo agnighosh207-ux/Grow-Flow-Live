@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { eq, and } from "drizzle-orm";
 import { db, usersTable, dailyPlansTable } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
@@ -40,12 +41,16 @@ function computeCurrentStreak(user: any): number {
   return 0;
 }
 
-async function generateDailyPlanContent(userId: string): Promise<{ idea: string; hook: string; cta: string }> {
+async function generateDailyPlanContent(userId: string, language: string): Promise<{ idea: string; hook: string; cta: string }> {
+  const langInstruction = LANGUAGE_INSTRUCTIONS[language] || "";
+
   const systemPrompt = `You are a daily content strategist who gives creators ONE focused, achievable action each day. Your daily plans are:
 - Specific enough to execute in under 2 hours
 - Calibrated for an engaged creator audience
 - Different every day (rotate topics, formats, angles)
 - Written so the creator can immediately start working
+
+${langInstruction}
 
 Return ONLY valid JSON with this exact structure:
 {
@@ -91,13 +96,14 @@ router.get("/daily/today", requireAuth, async (req: any, res): Promise<void> => 
   if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
   const currentStreak = computeCurrentStreak(user);
+  const language = (user as any).languagePreference || "English";
 
   let [existing] = await db.select().from(dailyPlansTable)
     .where(and(eq(dailyPlansTable.userId, userId), eq(dailyPlansTable.date, today)));
 
   if (!existing) {
     try {
-      const content = await generateDailyPlanContent(userId);
+      const content = await generateDailyPlanContent(userId, language);
       [existing] = await db.insert(dailyPlansTable).values({
         userId,
         date: today,

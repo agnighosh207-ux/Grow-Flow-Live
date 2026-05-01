@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
@@ -13,6 +14,8 @@ const PLATFORM_CONTEXT: Record<string, string> = {
   General: "Universal social media caption. Engaging, clear, conversation-starting. Focus on the emotional payoff for the reader.",
 };
 
+import { generateContent } from "../../services/ai-engine";
+
 router.post("/caption/enhance", requireAuth, requirePlanOrTrial("caption"), async (req: any, res): Promise<void> => {
   const {
     originalCaption,
@@ -20,6 +23,7 @@ router.post("/caption/enhance", requireAuth, requirePlanOrTrial("caption"), asyn
     goal = "increase engagement",
     niche = "General",
     improvementFocus = "all",
+    language = "English"
   } = req.body;
 
   if (!originalCaption?.trim()) {
@@ -29,89 +33,45 @@ router.post("/caption/enhance", requireAuth, requirePlanOrTrial("caption"), asyn
 
   const platformContext = PLATFORM_CONTEXT[platform] || PLATFORM_CONTEXT["General"];
 
-  const systemPrompt = `You are a viral content strategist who has rewritten 50,000+ captions for creators across every niche. You know exactly why certain captions stop thumbs and others get scrolled past.
+  const systemPrompt = `You are a viral content strategist. Optimize this ${platform} caption.
+RULES: No "I", no generic openers, no exclamation spam.
+CONTEXT: ${platformContext}.`;
 
-Your rewrites consistently produce:
-- 3-5x higher comment rates
-- 40%+ improvement in saves/shares  
-- Stronger brand recall after reading
+  const userPrompt = `Analyze and enhance this caption. Goal: ${goal}. Niche: ${niche}.
+ORIGINAL: "${originalCaption}"
+FOCUS: ${improvementFocus}
 
-The secret is that most creators write AT their audience. You write FOR them — every word serves the reader's emotional experience, not the creator's ego.
-
-PLATFORM BEING OPTIMIZED: ${platform}
-PLATFORM RULES: ${platformContext}
-
-WHAT YOU NEVER DO:
-- Start with "I" (too self-centered)
-- Use vague openers like "So excited to share...", "Grateful for...", "Blessed to..."
-- Write hashtag walls (unless it's specifically for Instagram Reels discovery)
-- End with weak CTAs like "Let me know what you think!" 
-- Use exclamation points more than once
-- Copy the original structure if it's not working`;
-
-  const userPrompt = `Analyze and enhance this ${platform} caption. The creator's goal is to ${goal} in the ${niche} niche.
-
-ORIGINAL CAPTION:
-"""
-${originalCaption}
-"""
-
-IMPROVEMENT FOCUS: ${improvementFocus === "all" ? "All aspects (hook, body, CTA, formatting)" : improvementFocus}
-
-Deliver:
-1. A FULL REWRITE that dramatically outperforms the original
-2. A MICRO-EDIT version (keeps 80% of original but surgically fixes the weakest parts)
-
-Then give a brief diagnosis of what was holding the original back.
-
-Return ONLY this JSON (no markdown, no explanation):
-{
-  "diagnosis": {
-    "mainIssue": "The single biggest problem with the original caption (1 sentence)",
-    "strengths": ["What the original did well (1-2 items)"],
-    "weaknesses": ["What hurt performance (2-3 items)"]
-  },
-  "fullRewrite": {
-    "caption": "The completely reimagined version",
-    "changesMade": ["Key strategic changes made (3-4 bullets)"],
-    "whyItWorks": "The psychology behind why this version will outperform (1-2 sentences)"
-  },
-  "microEdit": {
-    "caption": "The surgically improved version (80% original)",
-    "changesMade": ["Specific edits made (2-3 bullets)"]
-  },
-  "hookScore": {
-    "original": 0,
-    "rewrite": 0,
-    "explanation": "Why the scores differ"
-  }
+Return ONLY this JSON: {
+  "diagnosis": {"mainIssue": "string", "strengths": [], "weaknesses": []},
+  "fullRewrite": {"caption": "string", "changesMade": [], "whyItWorks": "string"},
+  "microEdit": {"caption": "string", "changesMade": []},
+  "hookScore": {"original": 0, "rewrite": 0, "explanation": "string"}
 }`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+    const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: userPrompt }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.8,
-      max_tokens: 2500,
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      language,
+      maxTokens: 2500,
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
     let parsed;
     try {
-      parsed = JSON.parse(raw);
-    } catch {
       const match = raw.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-      else throw new Error("Failed to parse JSON from AI response.");
+      parsed = JSON.parse(match ? match[0] : raw);
+    } catch {
+      throw new Error("Failed to parse caption response.");
     }
     res.json(parsed);
   } catch (err: any) {
     console.error("Caption enhance error:", err);
-    res.status(500).json({ error: err?.message || "Failed to enhance caption" });
+    res.status(503).json({ error: "AI temporarily unavailable." });
   }
 });
 

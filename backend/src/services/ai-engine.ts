@@ -24,6 +24,7 @@ export interface GenerateContentOptions {
   monthlyGenerationsUsed?: number; // Used for Economic Soft Cap
   temperature?: number;
   maxTokens?: number;
+  language?: string;
 }
 
 // In-Memory Burst Tracker: userId -> Array of timestamps
@@ -45,6 +46,8 @@ setInterval(() => {
 /**
  * Executes a fallback chain of LLM generation attempting 7 different providers.
  */
+import { LANGUAGE_INSTRUCTIONS } from "../lib/languages";
+
 export const generateContent = async ({
   messages,
   userPlan,
@@ -52,6 +55,7 @@ export const generateContent = async ({
   temperature = 0.7,
   maxTokens = 1000,
   monthlyGenerationsUsed = 0,
+  language = "English",
 }: GenerateContentOptions) => {
   // Phase 4 BOT-DETECTION BURST CHECK (3 reqs / 10s)
   if (userId !== "anonymous") {
@@ -155,19 +159,36 @@ export const generateContent = async ({
     }
 
     try {
-      // Connect to the provider utilizing OpenAI Standard Compatibility
-      const client = new OpenAI({
-        apiKey: provider.apiKey,
-        baseURL: provider.baseURL,
-      });
+      console.log(`[AI-ENGINE] Attempting generation. Language: ${language}, Provider: ${provider.name}`);
+      // Inject language instructions aggressively into system AND final user message
+      const langInstruction = LANGUAGE_INSTRUCTIONS[language as keyof typeof LANGUAGE_INSTRUCTIONS] || "";
+      let finalMessages = messages.map(m => ({ ...m })); // Deep copy messages to avoid mutation
+      
+      if (langInstruction) {
+        const systemMsgIdx = finalMessages.findIndex(m => m.role === 'system');
+        if (systemMsgIdx !== -1) {
+          // Prepend to system message for maximum priority
+          finalMessages[systemMsgIdx].content = `${langInstruction}\n\n${finalMessages[systemMsgIdx].content}`;
+        } else {
+          finalMessages.unshift({ role: 'system', content: langInstruction });
+        }
+        
+        // Also append a "MANDATORY" reminder to the last user message
+        const lastUserIdx = [...finalMessages].reverse().findIndex(m => m.role === 'user');
+        if (lastUserIdx !== -1) {
+          const idx = finalMessages.length - 1 - lastUserIdx;
+          finalMessages[idx].content += `\n\nIMPORTANT: Use the language and script specified in the system prompt. DO NOT use English letters to write native words. Everything must be native.`;
+        }
+      }
 
       // Pass request
       const response = await client.chat.completions.create(
         {
           model: provider.model,
-          messages,
+          messages: finalMessages,
           temperature,
           max_tokens: maxTokens,
+          response_format: { type: "json_object" },
         },
         { timeout: 15000 } // Limit time spent per network attempt
       );

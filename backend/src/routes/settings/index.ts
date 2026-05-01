@@ -44,16 +44,18 @@ router.get("/settings/preferences", requireAuth, async (req: any, res): Promise<
     niche: user?.niche ?? null,
     tonePreference: user?.tonePreference ?? null,
     platformPreference: user?.platformPreference ?? null,
+    languagePreference: (user as any)?.languagePreference ?? "English",
   });
 });
 
 router.patch("/settings/preferences", requireAuth, async (req: any, res): Promise<void> => {
-  const { niche, tonePreference, platformPreference } = req.body;
+  const { niche, tonePreference, platformPreference, languagePreference } = req.body;
 
   const updates: Record<string, string | null> = {};
   if (typeof niche === "string" || niche === null) updates.niche = niche || null;
   if (typeof tonePreference === "string" || tonePreference === null) updates.tonePreference = tonePreference || null;
   if (typeof platformPreference === "string" || platformPreference === null) updates.platformPreference = platformPreference || null;
+  if (typeof languagePreference === "string" || languagePreference === null) updates.languagePreference = languagePreference || "English";
 
   if (Object.keys(updates).length > 0) {
     await db

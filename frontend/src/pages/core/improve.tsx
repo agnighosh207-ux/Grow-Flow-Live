@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { useImproveCompetitorContent } from "@workspace/api-client-react";
@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Copy, Check, Swords, TrendingUp, Megaphone, DollarSign, Link2, Lightbulb } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ImproveCompetitorContentResult } from "@workspace/api-client-react";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -109,6 +111,15 @@ function ImproveCompetitorInner() {
   const { toast } = useToast();
   const { useOneTrial } = useTrialAction();
   const [, navigate] = useLocation();
+  const [language, setLanguage] = useState("English");
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
+  useEffect(() => {
+    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
+      if (data.languagePreference) setLanguage(data.languagePreference);
+    }).catch(() => {});
+  }, []);
 
   const improveMutation = useImproveCompetitorContent({
     mutation: {
@@ -132,7 +143,7 @@ function ImproveCompetitorInner() {
       toast({ variant: "destructive", title: "Paste at least 50 characters of competitor content." });
       return;
     }
-    improveMutation.mutate({ data: { competitorContent: content.trim() } });
+    improveMutation.mutate({ data: { competitorContent: content.trim(), language } as any });
   };
 
   const isLoading = improveMutation.isPending;
@@ -166,6 +177,14 @@ function ImproveCompetitorInner() {
           />
           <p className="text-white/25 text-xs">{content.length} characters</p>
         </div>
+
+        <LanguageSelector
+          value={language}
+          onChange={setLanguage}
+          isFreeUser={isFreeUser}
+          label="Output Language"
+          onUpgradeRequired={() => toast({ title: "🔒 Premium Languages", description: "Upgrade for regional language output!", variant: "destructive" })}
+        />
 
         <Button
           onClick={handleSubmit}

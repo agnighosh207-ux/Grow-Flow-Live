@@ -53,6 +53,8 @@ export function useSubscriptionStatus() {
     },
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: 1000,
   });
 }
 

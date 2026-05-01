@@ -22,6 +22,8 @@ interface DailyResponse {
   completedToday: boolean;
 }
 
+import { useAuth } from "@clerk/react";
+
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -106,10 +108,15 @@ export default function DailyActionMode() {
   const [completing, setCompleting] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
 
+  const { getToken } = useAuth();
+
   const fetchToday = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/daily/today", { credentials: "include" });
+      const token = await getToken();
+      const res = await fetch("/api/daily/today", { 
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error("Failed to load");
       const json = await res.json();
       setData(json);
@@ -127,10 +134,13 @@ export default function DailyActionMode() {
     if (!data?.plan || data.completedToday) return;
     setCompleting(true);
     try {
+      const token = await getToken();
       const res = await fetch("/api/daily/complete", {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();

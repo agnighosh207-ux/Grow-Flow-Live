@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Copy, Check, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 const HOOK_PATTERN_LABELS = [
   { type: "Curiosity Gap", color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20" },
@@ -27,7 +29,8 @@ const HOOK_PATTERN_LABELS = [
 
 const formSchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
-  tone: z.enum(["Casual", "Professional", "Aggressive"])
+  tone: z.enum(["Casual", "Professional", "Aggressive"]),
+  language: z.string().default("English")
 });
 
 function HooksGeneratorInner() {
@@ -35,6 +38,21 @@ function HooksGeneratorInner() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const { useOneTrial } = useTrialAction();
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema as any),
+    defaultValues: { topic: "", tone: "Aggressive", language: "English" }
+  });
+
+  const language = form.watch("language");
+
+  useEffect(() => {
+    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
+      if (data.languagePreference) form.setValue("language", data.languagePreference);
+    }).catch(() => {});
+  }, []);
 
   const generateMutation = useGenerateHooks({
     mutation: {
@@ -46,13 +64,8 @@ function HooksGeneratorInner() {
     }
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema as any),
-    defaultValues: { topic: "", tone: "Aggressive" }
-  });
-
   function onSubmit(values: z.infer<typeof formSchema>) {
-    generateMutation.mutate({ data: values });
+    generateMutation.mutate({ data: { ...values } as any });
   }
 
   const handleCopy = (hook: string, index: number) => {
@@ -125,6 +138,15 @@ function HooksGeneratorInner() {
                 </FormItem>
               )}
             />
+
+            <div className="w-full sm:w-52">
+              <LanguageSelector
+                value={language}
+                onChange={(v) => form.setValue("language", v)}
+                isFreeUser={isFreeUser}
+                onUpgradeRequired={() => toast({ title: "🔒 Premium Languages", description: "Upgrade to use regional languages!", variant: "destructive" })}
+              />
+            </div>
 
             <Button
               type="submit"

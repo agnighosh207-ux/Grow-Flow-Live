@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wand2, Copy, Check, ChevronDown, TrendingUp, AlertCircle, ChevronRight, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { useAuth } from "@clerk/clerk-react";
 
 const PLATFORMS = ["Instagram", "Twitter", "LinkedIn", "YouTube", "Blog/Article", "General"] as const;
 
@@ -119,6 +122,7 @@ function CaptionCard({ title, subtitle, caption, changes, accent, delay }: {
 
 export default function CaptionEnhancer() {
   const { toast } = useToast();
+  const { getToken } = useAuth();
   const [caption, setCaption] = useState("");
   const [platform, setPlatform] = useState<string>("Instagram");
   const [goal, setGoal] = useState("increase engagement");
@@ -127,6 +131,15 @@ export default function CaptionEnhancer() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EnhanceResult | null>(null);
   const [activeTab, setActiveTab] = useState<"full" | "micro">("full");
+  const [language, setLanguage] = useState("English");
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
+  useEffect(() => {
+    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
+      if (data.languagePreference) setLanguage(data.languagePreference);
+    }).catch(() => {});
+  }, []);
 
   const enhance = async () => {
     if (!caption.trim()) {
@@ -140,11 +153,15 @@ export default function CaptionEnhancer() {
     setLoading(true);
     setResult(null);
     try {
+      const token = await getToken();
       const res = await fetch("/api/caption/enhance", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ originalCaption: caption, platform, goal, niche, improvementFocus: focus }),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "omit",
+        body: JSON.stringify({ originalCaption: caption, platform, goal, niche, improvementFocus: focus, language }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -241,6 +258,14 @@ export default function CaptionEnhancer() {
               ))}
             </div>
           </div>
+
+          <LanguageSelector
+            value={language}
+            onChange={setLanguage}
+            isFreeUser={isFreeUser}
+            label="Output Language"
+            onUpgradeRequired={() => toast({ title: "\ud83d\udd12 Premium Languages", description: "Upgrade to enhance captions in regional languages!", variant: "destructive" })}
+          />
 
           <button
             onClick={enhance}

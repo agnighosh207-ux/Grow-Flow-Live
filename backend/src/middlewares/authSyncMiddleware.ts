@@ -47,6 +47,8 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       return next();
     }
     
+    const email = (auth.sessionClaims?.email || auth.claims?.email) as string | null;
+
     req.userId = uid;
 
     // Fast sync: check if user exists
@@ -59,10 +61,6 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         message: "Account suspended for Fair Use violations." 
       });
     }
-    
-    const email = typeof auth.sessionClaims?.email === "string" 
-                    ? auth.sessionClaims.email 
-                    : null;
 
     if (!user) {
       [user] = await db.insert(usersTable)

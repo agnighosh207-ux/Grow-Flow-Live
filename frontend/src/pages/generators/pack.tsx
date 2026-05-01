@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package2, Sparkles, Copy, Check, ChevronDown, Crown, Lock, Wand2, Activity,
@@ -7,6 +7,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useLocation } from "wouter";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useAuth } from "@clerk/clerk-react";
 
 const TONES = ["Professional", "Casual", "Aggressive", "Inspirational", "Educational"] as const;
 const CONTENT_TYPES = ["Educational", "Story", "Viral", "Product/Service", "Opinion"] as const;
@@ -95,6 +97,7 @@ function SectionCard({
 
 export default function ContentPack() {
   const { toast } = useToast();
+  const { getToken } = useAuth();
   const [, setLocation] = useLocation();
   const { data: sub } = useSubscriptionStatus();
   const prefill = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("idea") ?? "" : "";
@@ -105,10 +108,18 @@ export default function ContentPack() {
   const [enhancing, setEnhancing] = useState(false);
   const [result, setResult] = useState<PackResult | null>(null);
   const [activeTab, setActiveTab] = useState<"scripts" | "visuals" | "strategy">("scripts");
+  const [language, setLanguage] = useState("English");
+
+  useEffect(() => {
+    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
+      if (data.languagePreference) setLanguage(data.languagePreference);
+    }).catch(() => {});
+  }, []);
 
   const isPro = sub?.planType === "infinity" && (sub?.plan === "active" || sub?.plan === "trial");
   const isCreator = ["starter", "creator", "infinity"].includes(sub?.planType ?? "") && (sub?.plan === "active" || sub?.plan === "trial");
   const isFree = !isCreator;
+  const isFreeUser = isFree;
 
   const [saving, setSaving] = useState(false);
 
@@ -116,9 +127,14 @@ export default function ContentPack() {
     if (!result) return;
     setSaving(true);
     try {
+      const token = await getToken();
       const res = await fetch("/api/content/pack/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "omit",
         body: JSON.stringify({ idea, tone, contentType, result })
       });
       if (!res.ok) throw new Error("Failed to save");
@@ -134,9 +150,14 @@ export default function ContentPack() {
     if (!idea.trim()) return;
     setEnhancing(true);
     try {
+      const token = await getToken();
       const res = await fetch("/api/content/pack/enhance", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "omit",
         body: JSON.stringify({ idea })
       });
       if (res.ok) {
@@ -163,11 +184,15 @@ export default function ContentPack() {
     setLoading(true);
     setResult(null);
     try {
+      const token = await getToken();
       const res = await fetch("/api/content/pack", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ idea, tone, contentType }),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "omit",
+        body: JSON.stringify({ idea, tone, contentType, language }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -278,6 +303,14 @@ export default function ContentPack() {
               </div>
             </div>
           </div>
+
+          <LanguageSelector
+            value={language}
+            onChange={setLanguage}
+            isFreeUser={isFreeUser}
+            onUpgradeRequired={() => toast({ title: "\ud83d\udd12 Premium Languages", description: "Upgrade for regional language content kits!", variant: "destructive" })}
+          />
+
           <button
             onClick={generate}
             disabled={loading || !idea.trim() || isFree}

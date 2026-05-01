@@ -25,7 +25,7 @@ export const GenerateContentBody = zod.object({
   "idea": zod.string().describe('The content idea to generate from'),
   "contentType": zod.enum(['Educational', 'Story', 'Viral']),
   "tone": zod.enum(['Casual', 'Professional', 'Aggressive']),
-  "language": zod.enum(['English', 'Hindi', 'Hinglish', 'Bengali']).optional().describe('Optional - language of the generated content')
+  "language": zod.enum(['English', 'Hindi', 'Hinglish', 'Bengali', 'Gujarati', 'Kannada', 'Malayalam', 'Marathi', 'Punjabi', 'Odia', 'Assamese', 'Tamil', 'Telugu', 'Urdu', 'Bhojpuri', 'Spanish', 'French', 'German']).optional().describe('Optional - language of the generated content')
 })
 
 export const GenerateContentResponse = zod.object({
@@ -62,7 +62,7 @@ export const GenerateVariationsBody = zod.object({
   "idea": zod.string(),
   "contentType": zod.enum(['Educational', 'Story', 'Viral']),
   "tone": zod.enum(['Casual', 'Professional', 'Aggressive']),
-  "language": zod.enum(['English', 'Hindi', 'Hinglish', 'Bengali']).optional().describe('Optional - language of the generated content'),
+  "language": zod.enum(['English', 'Hindi', 'Hinglish', 'Bengali', 'Gujarati', 'Kannada', 'Malayalam', 'Marathi', 'Punjabi', 'Odia', 'Assamese', 'Tamil', 'Telugu', 'Urdu', 'Bhojpuri', 'Spanish', 'French', 'German']).optional().describe('Optional - language of the generated content'),
   "platform": zod.enum(['instagram', 'youtube', 'twitter', 'linkedin']).optional().describe('Optional - specific platform to vary')
 })
 
@@ -181,7 +181,8 @@ export const DeleteHistoryItemResponse = zod.object({
  */
 export const GenerateHooksBody = zod.object({
   "topic": zod.string().describe('The topic to generate hooks for'),
-  "tone": zod.enum(['Casual', 'Professional', 'Aggressive'])
+  "tone": zod.enum(['Casual', 'Professional', 'Aggressive']),
+  "language": zod.enum(['English', 'Hindi', 'Hinglish', 'Bengali', 'Gujarati', 'Kannada', 'Malayalam', 'Marathi', 'Punjabi', 'Odia', 'Assamese', 'Tamil', 'Telugu', 'Urdu', 'Bhojpuri', 'Spanish', 'French', 'German']).optional().describe('Optional - language of the generated hooks')
 })
 
 export const GenerateHooksResponse = zod.object({
@@ -194,7 +195,8 @@ export const GenerateHooksResponse = zod.object({
  * @summary Improve competitor content
  */
 export const ImproveCompetitorContentBody = zod.object({
-  "competitorContent": zod.string()
+  "competitorContent": zod.string(),
+  "language": zod.enum(['English', 'Hindi', 'Hinglish', 'Bengali', 'Gujarati', 'Kannada', 'Malayalam', 'Marathi', 'Punjabi', 'Odia', 'Assamese', 'Tamil', 'Telugu', 'Urdu', 'Bhojpuri', 'Spanish', 'French', 'German']).optional().describe('Optional - language of the improved content')
 })
 
 export const ImproveCompetitorContentResponse = zod.object({

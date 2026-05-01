@@ -7,6 +7,7 @@ import {
   Loader2, Flame, Target, Brain, RefreshCw, Copy, Check, ArrowRight,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@clerk/react";
 
 const NICHES = [
   { value: "General", emoji: "🌐", label: "General" },
@@ -165,13 +166,18 @@ export default function TrendEngine() {
   const [lastNiche, setLastNiche] = useState<string | null>(null);
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { getToken } = useAuth();
 
   async function fetchTrends() {
     setLoading(true);
     try {
+      const token = await getToken();
       const res = await fetch("/api/trends/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ niche }),
       });
       if (res.status === 402) {

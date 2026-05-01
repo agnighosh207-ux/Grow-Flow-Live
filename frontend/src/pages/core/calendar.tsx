@@ -5,6 +5,7 @@ import { format, startOfWeek, addDays, getMonth, endOfMonth, startOfMonth, isSam
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@clerk/react";
 
 interface CalendarItem {
   id: number;
@@ -17,11 +18,14 @@ interface CalendarItem {
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-
+  const { getToken } = useAuth();
   const { data, isLoading, error } = useQuery<{ calendar: CalendarItem[] }>({
     queryKey: ["/api/calendar"],
     queryFn: async () => {
-      const res = await fetch("/api/calendar");
+      const token = await getToken();
+      const res = await fetch("/api/calendar", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error("Failed to load calendar");
       return res.json();
     },

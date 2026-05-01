@@ -24,6 +24,8 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { FeedbackModal, checkShouldShowRating, checkShouldShowFeedback, incrementGenCount } from "@/components/modals/FeedbackModal";
 import { useAuth } from "@clerk/react";
 import { WeeklyReportCard } from "@/components/shared/WeeklyReportCard";
+import { SUPPORTED_LANGUAGES } from "@/lib/languages";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
 
 // ─── Constants ───
 const PLATFORMS = [
@@ -229,14 +231,14 @@ const LOADING_MESSAGES = [
   "Almost there...",
 ];
 
-const LANGUAGES = ["English", "Hindi", "Hinglish", "Bengali", "Spanish", "French", "German", "Marathi", "Tamil", "Telugu"] as const;
+const ALL_LANGUAGE_VALUES = SUPPORTED_LANGUAGES.map(l => l.value) as [string, ...string[]];
 
 const formSchema = z.object({
   idea: z.string().min(5, "Idea must be at least 5 characters"),
   contentType: z.enum(["Educational", "Story", "Viral"]),
   tone: z.enum(["Casual", "Professional", "Aggressive"]),
   niche: z.enum(NICHES).default("General"),
-  language: z.enum(LANGUAGES).default("English"),
+  language: z.enum(ALL_LANGUAGE_VALUES).default("English"),
 });
 
 type Platform = "instagram" | "youtube" | "twitter" | "linkedin";
@@ -713,9 +715,13 @@ export default function Generate() {
   const { data: trendsData, isLoading: trendsLoading } = useQuery({
     queryKey: ["trend-sidebar", "General"],
     queryFn: async () => {
+      const token = await getToken();
       const res = await fetch("/api/trends/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ niche: "General" }),
       });
       if (!res.ok) throw new Error("Failed to fetch trends");
@@ -766,7 +772,11 @@ export default function Generate() {
   useEffect(() => {
     if (prefsLoadedRef.current) return;
     prefsLoadedRef.current = true;
-    fetch("/api/settings/preferences")
+    (async () => {
+      const token = await getToken();
+      fetch("/api/settings/preferences", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (data && (data.niche || data.tonePreference || data.platformPreference)) {
@@ -774,6 +784,7 @@ export default function Generate() {
         }
       })
       .catch(() => null);
+    })();
   }, []);
 
   const generateMutation = useGenerateContent({
@@ -907,9 +918,21 @@ export default function Generate() {
       contentType: prefillType,
       tone: prefillTone,
       niche: "General",
-      language: (typeof window !== "undefined" ? localStorage.getItem("languagePreference") : "English") as any || "English",
+      language: "English",
     }
   });
+
+  // Load language from preferences API instead of localStorage
+  useEffect(() => {
+    (async () => {
+      const token = await getToken();
+      fetch("/api/settings/preferences", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      }).then(r => r.json()).then(data => {
+        if (data.languagePreference) form.setValue("language", data.languagePreference);
+      }).catch(() => {});
+    })();
+  }, []);
 
   useEffect(() => {
     if (autoGenerate && prefillIdea) {
@@ -919,7 +942,18 @@ export default function Generate() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (generateMutation.isPending) return;
-    typeof window !== "undefined" && localStorage.setItem("languagePreference", values.language);
+    // Save language preference via API instead of localStorage
+    (async () => {
+      const token = await getToken();
+      fetch("/api/settings/preferences", {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ languagePreference: values.language }),
+      }).catch(() => {});
+    })();
     
     if (values.language !== "English" && isFreeUser) {
       setProFeatureName("Premium Languages");
@@ -955,8 +989,11 @@ export default function Generate() {
     if (!generatedContent?.id || favoriteLoading) return;
     setFavoriteLoading(true);
     try {
-      const method = isFavorited ? "DELETE" : "POST";
-      await fetch(`/api/favorites/${generatedContent.id}`, { method });
+      const token = await getToken();
+      await fetch(`/api/favorites/${generatedContent.id}`, { 
+        method,
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       setIsFavorited(!isFavorited);
       toast({ title: isFavorited ? "Removed from saved" : "Saved to favorites!" });
     } catch {
@@ -1375,36 +1412,17 @@ export default function Generate() {
                 name="language"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white/70 text-sm font-medium flex items-center gap-1.5">
-                      Content Language
-                      {field.value !== "English" && <span className="text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded-full">PRO</span>}
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger id="tour-language" className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10">
-                          <SelectValue placeholder="Select language" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-[#0f0a1e]/90 backdrop-blur-xl border-white/10">
-                        {LANGUAGES.map(lang => (
-                          <SelectItem key={lang} value={lang} className="text-white/80 focus:text-white focus:bg-cyan-600/20">
-                            <span className="flex items-center gap-2">
-                              {lang === "Hindi" && <motion.svg animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 2 }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-orange-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h18M5 19L5 5M19 19L19 5M9 14l2-2 2 2m-2-2v6" /></motion.svg>}
-                              {lang === "Hinglish" && <motion.svg animate={{ y: [0, -2, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-pink-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></motion.svg>}
-                              {lang === "Bengali" && <motion.svg animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-emerald-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 8a3 3 0 100-6 3 3 0 000 6zM8 8v12M16 11V8M16 11v9M16 11h-4" /></motion.svg>}
-                              {lang === "English" && <motion.svg animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 10, ease: "linear" }} viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-blue-400 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></motion.svg>}
-                              {lang === "Spanish" && <span className="text-xs">🇪🇸</span>}
-                              {lang === "French" && <span className="text-xs">🇫🇷</span>}
-                              {lang === "German" && <span className="text-xs">🇩🇪</span>}
-                              {lang === "Marathi" && <span className="text-xs">🇮🇳</span>}
-                              {lang === "Tamil" && <span className="text-xs">🇮🇳</span>}
-                              {lang === "Telugu" && <span className="text-xs">🇮🇳</span>}
-                              {lang === "Hindi" ? "Hindi (Devanagari)" : lang === "Hinglish" ? "Hinglish (GenZ)" : lang === "Marathi" ? "Marathi (मराठी)" : lang === "Tamil" ? "Tamil (தமிழ்)" : lang === "Telugu" ? "Telugu (తెలుగు)" : lang}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <LanguageSelector
+                      value={field.value}
+                      onChange={field.onChange}
+                      isFreeUser={isFreeUser}
+                      onUpgradeRequired={() => {
+                        setProFeatureName("Premium Languages");
+                        setGenerationBlockedMsg("🔥 Create content in 10 Premium Languages to reach a global audience!");
+                        setUpgradeReason("pro_feature");
+                        setShowUpgradeModal(true);
+                      }}
+                    />
                     <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )}

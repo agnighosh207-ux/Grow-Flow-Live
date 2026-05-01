@@ -28,30 +28,66 @@ const requireAdmin = async (req: any, res: any, next: any) => {
 
 router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
-    const totalUsersResult = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
-    const totalEmailsResult = await db.select({ count: sql<number>`count(*)` })
-      .from(usersTable)
-      .where(isNotNull(usersTable.email));
-      
-    const totalGenerationsResult = await db.select({ count: sql<number>`count(*)` }).from(usageLogsTable);
-    
-    const recentUsers = await db.select({
-      id: usersTable.id,
-      email: usersTable.email,
-      planType: usersTable.planType,
-      subscriptionStatus: usersTable.subscriptionStatus,
-      createdAt: usersTable.createdAt
-    }).from(usersTable).orderBy(desc(usersTable.createdAt)).limit(100);
-
-    const revenueResult = await db.select({
-      plan: usersTable.planType,
-      count: sql<number>`count(*)`
-    }).from(usersTable).where(eq(usersTable.subscriptionStatus, 'active')).groupBy(usersTable.planType);
-    
-    const languageStats = await db.select({
-      name: usageLogsTable.promptLanguage,
-      value: sql<number>`count(*)`
-    }).from(usageLogsTable).groupBy(usageLogsTable.promptLanguage);
+    const [
+      totalUsersResult,
+      totalEmailsResult,
+      totalGenerationsResult,
+      recentUsers,
+      revenueResult,
+      languageStats,
+      dauDataList,
+      topReferrers,
+      generationsDataList,
+      settingsResult,
+      activeAnnouncements
+    ] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(usersTable),
+      db.select({ count: sql<number>`count(*)` }).from(usersTable).where(isNotNull(usersTable.email)),
+      db.select({ count: sql<number>`count(*)` }).from(usageLogsTable),
+      db.select({
+        id: usersTable.id,
+        email: usersTable.email,
+        planType: usersTable.planType,
+        subscriptionStatus: usersTable.subscriptionStatus,
+        createdAt: usersTable.createdAt
+      }).from(usersTable).orderBy(desc(usersTable.createdAt)).limit(100),
+      db.select({
+        plan: usersTable.planType,
+        count: sql<number>`count(*)`
+      }).from(usersTable).where(eq(usersTable.subscriptionStatus, 'active')).groupBy(usersTable.planType),
+      db.select({
+        name: usageLogsTable.promptLanguage,
+        value: sql<number>`count(*)`
+      }).from(usageLogsTable).groupBy(usageLogsTable.promptLanguage),
+      db.execute(sql`
+        SELECT DATE(last_login_at) as date, COUNT(*) as activeUsers 
+        FROM users 
+        WHERE last_login_at >= NOW() - INTERVAL '30 days' 
+        GROUP BY DATE(last_login_at) 
+        ORDER BY date ASC
+      `),
+      db.execute(sql`
+        SELECT u.id, u.email, COUNT(r.id) as referralscount
+        FROM users u
+        JOIN referrals r ON u.id = r.referrer_user_id
+        WHERE r.reward_granted = true
+        GROUP BY u.id, u.email
+        ORDER BY referralscount DESC
+        LIMIT 20
+      `),
+      db.execute(sql`
+        SELECT DATE(created_at) as date, COUNT(*) as generations 
+        FROM usage_logs 
+        WHERE created_at >= NOW() - INTERVAL '30 days' 
+        GROUP BY DATE(created_at) 
+        ORDER BY date ASC
+      `),
+      db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global")),
+      db.select()
+        .from(globalAnnouncementsTable)
+        .where(eq(globalAnnouncementsTable.isActive, true))
+        .orderBy(desc(globalAnnouncementsTable.createdAt))
+    ]);
 
     const languageData = languageStats.length > 0 
       ? languageStats.map(s => ({ name: s.name, value: Number(s.value) }))
@@ -62,39 +98,8 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
       amount: (r.plan === "starter" ? 109 : r.plan === "creator" ? 249 : r.plan === "infinity" ? 499 : 0) * Number(r.count)
     })).filter(r => r.amount > 0);
 
-    const dauDataList = await db.execute(sql`
-      SELECT DATE(last_login_at) as date, COUNT(*) as activeUsers 
-      FROM users 
-      WHERE last_login_at >= NOW() - INTERVAL '30 days' 
-      GROUP BY DATE(last_login_at) 
-      ORDER BY date ASC
-    `);
-
-    const topReferrers = await db.execute(sql`
-      SELECT u.id, u.email, COUNT(r.id) as referralscount
-      FROM users u
-      JOIN referrals r ON u.id = r.referrer_user_id
-      WHERE r.reward_granted = true
-      GROUP BY u.id, u.email
-      ORDER BY referralscount DESC
-      LIMIT 20
-    `);
-
-    const generationsDataList = await db.execute(sql`
-      SELECT DATE(created_at) as date, COUNT(*) as generations 
-      FROM usage_logs 
-      WHERE created_at >= NOW() - INTERVAL '30 days' 
-      GROUP BY DATE(created_at) 
-      ORDER BY date ASC
-    `);
-
-    const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
+    const [settings] = settingsResult;
     const maintenanceMode = settings?.maintenanceMode || false;
-
-    const activeAnnouncements = await db.select()
-      .from(globalAnnouncementsTable)
-      .where(eq(globalAnnouncementsTable.isActive, true))
-      .orderBy(desc(globalAnnouncementsTable.createdAt));
 
     res.json({
       maintenanceMode,

@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/react";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -54,12 +57,22 @@ interface ContentIdea {
 function IdeasGeneratorInner() {
   const [niche, setNiche] = useState<typeof NICHES[number]>("General");
   const [goal, setGoal] = useState("");
+  const [language, setLanguage] = useState("English");
   const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const { toast } = useToast();
+  const { getToken } = useAuth();
   const [, navigate] = useLocation();
   const { useOneTrial } = useTrialAction();
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
+  useEffect(() => {
+    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
+      if (data.languagePreference) setLanguage(data.languagePreference);
+    }).catch(() => {});
+  }, []);
 
   const nicheColor = NICHE_COLORS[niche] || NICHE_COLORS.General;
   const nicheBg = NICHE_BG[niche] || NICHE_BG.General;
@@ -73,10 +86,15 @@ function IdeasGeneratorInner() {
     setIdeas([]);
     setExpandedIndex(null);
     try {
+      const token = await getToken();
       const res = await fetch("/api/ideas/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ niche, goal }),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "omit",
+        body: JSON.stringify({ niche, goal, language }),
       });
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
@@ -135,6 +153,15 @@ function IdeasGeneratorInner() {
               placeholder="e.g. grow my audience, establish authority..."
               className="bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-yellow-500/40 rounded-xl h-10"
               onKeyDown={e => e.key === "Enter" && generateIdeas()}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <LanguageSelector
+              value={language}
+              onChange={setLanguage}
+              isFreeUser={isFreeUser}
+              onUpgradeRequired={() => toast({ title: "🔒 Premium Languages", description: "Upgrade to generate content in regional languages!", variant: "destructive" })}
             />
           </div>
         </div>

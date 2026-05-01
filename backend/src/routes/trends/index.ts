@@ -115,8 +115,8 @@ router.post("/content/analyze", requireAuth, requirePlanOrTrial("content_analyze
     platforms?: Record<string, string>;
   };
 
-  if (!idea) {
-    res.status(400).json({ error: "Missing idea" });
+  if (!idea || idea.trim().length < 2) {
+    res.status(400).json({ error: "Please provide a valid idea to analyze." });
     return;
   }
 

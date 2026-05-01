@@ -38,6 +38,20 @@ export const GenerateContentBodyLanguage = {
   Hindi: 'Hindi',
   Hinglish: 'Hinglish',
   Bengali: 'Bengali',
+  Gujarati: 'Gujarati',
+  Kannada: 'Kannada',
+  Malayalam: 'Malayalam',
+  Marathi: 'Marathi',
+  Punjabi: 'Punjabi',
+  Odia: 'Odia',
+  Assamese: 'Assamese',
+  Tamil: 'Tamil',
+  Telugu: 'Telugu',
+  Urdu: 'Urdu',
+  Bhojpuri: 'Bhojpuri',
+  Spanish: 'Spanish',
+  French: 'French',
+  German: 'German',
 } as const;
 
 export interface GenerateContentBody {
@@ -78,6 +92,20 @@ export const GenerateVariationsBodyLanguage = {
   Hindi: 'Hindi',
   Hinglish: 'Hinglish',
   Bengali: 'Bengali',
+  Gujarati: 'Gujarati',
+  Kannada: 'Kannada',
+  Malayalam: 'Malayalam',
+  Marathi: 'Marathi',
+  Punjabi: 'Punjabi',
+  Odia: 'Odia',
+  Assamese: 'Assamese',
+  Tamil: 'Tamil',
+  Telugu: 'Telugu',
+  Urdu: 'Urdu',
+  Bhojpuri: 'Bhojpuri',
+  Spanish: 'Spanish',
+  French: 'French',
+  German: 'German',
 } as const;
 
 /**

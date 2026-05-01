@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { useLocation } from "wouter";
+import { useAuth } from "@clerk/clerk-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,8 @@ import {
 } from "lucide-react";
 import { SiYoutube } from "react-icons/si";
 import { ContentCalendar } from "@/components/shared/ContentCalendar";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 const NICHES = ["General", "Fitness", "Finance", "Tech", "Motivation", "Business", "Lifestyle"] as const;
 
@@ -63,9 +66,19 @@ function StrategyPlannerInner() {
   const [plan, setPlan] = useState<DayPlan[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
+  const [language, setLanguage] = useState("English");
   const { toast } = useToast();
+  const { getToken } = useAuth();
   const [, navigate] = useLocation();
   const { useOneTrial } = useTrialAction();
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
+  useEffect(() => {
+    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
+      if (data.languagePreference) setLanguage(data.languagePreference);
+    }).catch(() => {});
+  }, []);
 
   async function generateStrategy() {
     if (!goal.trim()) {
@@ -76,10 +89,15 @@ function StrategyPlannerInner() {
     setPlan([]);
     setExpandedDay(null);
     try {
+      const token = await getToken();
       const res = await fetch("/api/strategy/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ niche, goal, duration: parseInt(duration) }),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "omit",
+        body: JSON.stringify({ niche, goal, duration: parseInt(duration), language }),
       });
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
@@ -153,6 +171,15 @@ function StrategyPlannerInner() {
                 <SelectItem value="30" className="text-white/80 focus:text-white focus:bg-cyan-600/20">30 Days Calendar (PRO)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="sm:col-span-3">
+            <LanguageSelector
+              value={language}
+              onChange={setLanguage}
+              isFreeUser={isFreeUser}
+              onUpgradeRequired={() => toast({ title: "🔒 Premium Languages", description: "Upgrade to generate strategies in regional languages!", variant: "destructive" })}
+            />
           </div>
         </div>
 

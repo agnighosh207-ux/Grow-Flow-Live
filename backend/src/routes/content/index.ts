@@ -15,12 +15,11 @@ import {
   DeleteHistoryItemResponse,
   GetContentStatsResponse,
 } from "@workspace/api-zod";
+import * as zod from "zod";
 import { generateContent } from "../../services/ai-engine";
 import { requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
 import { sendCreditWarningEmail } from "../../services/email";
-import { AuthenticatedRequest } from "../../types";
-import { Response } from "express";
-// OpenAI is handled via the centralized fallback engine in ai-engine.ts
+import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
@@ -56,19 +55,6 @@ async function generateContentWithAI(idea: string, contentType: string, tone: st
     Business: `NICHE — Business: Talk like a founder who has shipped real products, fired people, and made payroll. Use systems thinking ("if X then Y then Z output"). Reference real metrics: CAC, LTV, churn, MRR. Avoid "hustle culture" BS. Speak to the operator who wants leverage, delegation, and asymmetric returns on their time.`,
     Lifestyle: `NICHE — Lifestyle: Frame everything around intentional design vs default living. Specific experiences over abstract concepts ("woke up at 5am for 90 days — here's what actually changed"). Contrast the person who drifts through life vs the person who architected it deliberately. Make aspiration feel achievable, not fantasy.`,
     General: ``,
-  };
-
-  const languageInstructions: Record<string, string> = {
-    English: ``,
-    Hindi: `LANGUAGE — You MUST write the complete content deeply and fluently in raw Hindi using the Devanagari script (हिन्दी). Do NOT use English letters to write Hindi. The tone should be highly emotional and storytelling-driven.`,
-    Hinglish: `LANGUAGE — You MUST write the complete content in Hinglish (Hindi written entirely in the Roman/English alphabet, mixed with casual English words). This needs to read incredibly casual, GenZ style, and highly relatable to young desis. Keep the energy viral and raw. Avoid formal Hindi words.`,
-    Bengali: `LANGUAGE — You MUST write the complete content natively and fluently in Bengali using the Bengali script (বাংলা). Do NOT use English letters to write Bengali. Keep the tone very engaging, culturally grounded, and natural sounding.`,
-    Spanish: `LANGUAGE — You MUST write the complete content fluently in Spanish (Español). Keep the tone culturally appropriate and natural sounding.`,
-    French: `LANGUAGE — You MUST write the complete content fluently in French (Français). Keep the tone culturally appropriate and natural sounding.`,
-    German: `LANGUAGE — You MUST write the complete content fluently in German (Deutsch). Keep the tone culturally appropriate and natural sounding.`,
-    Marathi: `LANGUAGE — You MUST write the complete content fluently in Marathi using the Devanagari script (मराठी). Do NOT use English letters to write Marathi.`,
-    Tamil: `LANGUAGE — You MUST write the complete content fluently in Tamil using the Tamil script (தமிழ்). Do NOT use English letters to write Tamil.`,
-    Telugu: `LANGUAGE — You MUST write the complete content fluently in Telugu using the Telugu script (తెలుగు). Do NOT use English letters to write Telugu.`
   };
 
   const systemPrompt = `You are a world-class content strategist and viral copywriter. You have built multiple audiences past 500K followers across platforms. Your content gets studied, screenshot, and reposted because it says something true in a way nobody has said it before.
@@ -140,7 +126,7 @@ LINKEDIN POST:
 ${toneInstructions[tone] || ""}
 ${nicheAdaptation[niche] || ""}
 ${platformHint}
-${languageInstructions[language] || ""}
+${LANGUAGE_INSTRUCTIONS[language] || ""}
 
 TOPIC: "${sanitizeInput(idea)}"
 
@@ -184,36 +170,82 @@ Return ONLY valid JSON (no markdown, no code blocks):
       { role: "user", content: userPrompt },
     ],
     userPlan: "CREATOR", // Default to high-quality fallback logic
+    userId: "SYSTEM_GEN",
+    language,
     maxTokens: 4000,
   });
 
   const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
+  const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
 
-  let parsed;
-  try {
-    parsed = JSON.parse(rawContent);
-  } catch {
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
-    } else {
-      throw new Error("Failed to parse AI response as JSON");
+    let parsedContent;
+    try {
+      parsedContent = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
+    } catch (parseErr) {
+      console.error("JSON Parse Failed. Raw:", rawContent);
+      // Fallback: If it's not JSON, try to wrap the raw text in a basic structure
+      // to at least give the user something.
+      return {
+        instagram: { caption: rawContent.slice(0, 500), hashtags: "" },
+        youtube: { hook: "Content generated but structure was malformed", script: rawContent.slice(0, 1000) },
+        twitter: { tweets: [rawContent.slice(0, 240)] },
+        linkedin: { post: rawContent.slice(0, 1000) },
+        _error: "MALFORMED_JSON_FALLBACK"
+      };
     }
-  }
 
-  return parsed;
+    // Unbox if the AI used a "content" wrapper
+    if (parsedContent.content && typeof parsedContent.content === 'object' && !parsedContent.instagram) {
+      parsedContent = parsedContent.content;
+    }
+
+    // Ensure all required platform keys exist to prevent frontend crashes
+    const finalContent = {
+      instagram: parsedContent.instagram || { caption: "", hashtags: "" },
+      youtube: parsedContent.youtube || { hook: "", script: "" },
+      twitter: parsedContent.twitter || { tweets: [] },
+      linkedin: parsedContent.linkedin || { post: "" },
+      ...parsedContent
+    };
+
+    return finalContent;
+  } catch (err: any) {
+    console.error("AI ENGINE CRITICAL FAILURE:", err);
+    throw new Error(`AI Engine Failure: ${err?.message || "Unknown error"}`);
+  }
 }
 
 router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const parsed = GenerateContentBody.safeParse(req.body);
+  // Use a robust local schema that supports all 18 regional languages
+  const localSchema = zod.object({
+    idea: zod.string().min(3),
+    contentType: zod.enum(['Educational', 'Story', 'Viral']),
+    tone: zod.enum(['Casual', 'Professional', 'Aggressive', 'Default', 'default']),
+    language: zod.string().optional()
+  });
+
+  const parsed = localSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: "Invalid request parameters", details: parsed.error.errors });
     return;
   }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+  // Use the pre-fetched user from authSyncMiddleware if available
+  let user = (req as any).user;
   if (!user) {
-    await db.insert(usersTable).values({ id: req.userId }).onConflictDoNothing();
+    [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+    if (!user) {
+      // Create user if they don't exist yet (Identity Bridge)
+      await db.insert(usersTable).values({ 
+        id: req.userId,
+        planType: "free",
+        planTier: "FREE",
+        generationsRemaining: 5,
+        creditsRemaining: 5
+      }).onConflictDoNothing();
+      // MUST re-fetch to get the full user object
+      [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+    }
   }
 
   // Limit enforcement is now handled by the global enforceGenerationLimit middleware (Flaw 5 fix)
@@ -311,19 +343,39 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
       plan: status,
     });
   } catch (err: any) {
-    res.status(500).json({ error: "Failed to save generation. Please try again." });
+    console.error("ROUTE ERROR (/content/generate):", err);
+    const status = err?.status || 500;
+    const message = err?.message || "An unexpected error occurred during generation.";
+    res.status(status).json({ 
+      error: "generation_failed", 
+      message,
+      details: process.env.NODE_ENV === "development" ? err?.stack : undefined
+    });
     return;
   }
 });
 
 router.post("/content/variations", requireAuth, async (req: any, res): Promise<void> => {
-  const parsed = GenerateVariationsBody.safeParse(req.body);
+  // Use a robust local schema that supports all 18 regional languages
+  const localSchema = zod.object({
+    idea: zod.string().min(3),
+    contentType: zod.enum(['Educational', 'Story', 'Viral']),
+    tone: zod.enum(['Casual', 'Professional', 'Aggressive', 'Default', 'default']),
+    platform: zod.string(),
+    language: zod.string().optional()
+  });
+
+  const parsed = localSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: "Invalid request parameters", details: parsed.error.errors });
     return;
   }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+  let user = (req as any).user;
+  if (!user) {
+    const [fetchedUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+    user = fetchedUser;
+  }
   const status = user?.subscriptionStatus ?? "free";
   const planType = user?.planType ?? "free";
 
@@ -382,18 +434,7 @@ router.post("/content/variations", requireAuth, async (req: any, res): Promise<v
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
   const language = (parsed.data as any).language ?? "English";
 
-  const languageInstructions: Record<string, string> = {
-    English: ``,
-    Hindi: `LANGUAGE — Write deeply and fluently in raw Hindi using the Devanagari script (हिन्दी). Do NOT use English letters.`,
-    Hinglish: `LANGUAGE — Write in Hinglish (Hindi written entirely in the Roman/English alphabet, mixed with casual English words). Casual, GenZ style.`,
-    Bengali: `LANGUAGE — Write natively and fluently in Bengali using the Bengali script (বাংলা). Do NOT use English letters.`,
-    Spanish: `LANGUAGE — Write fluently in Spanish (Español).`,
-    French: `LANGUAGE — Write fluently in French (Français).`,
-    German: `LANGUAGE — Write fluently in German (Deutsch).`,
-    Marathi: `LANGUAGE — Write fluently in Marathi using the Devanagari script (मराठी). Do NOT use English letters.`,
-    Tamil: `LANGUAGE — Write fluently in Tamil using the Tamil script (தமிழ்). Do NOT use English letters.`,
-    Telugu: `LANGUAGE — Write fluently in Telugu using the Telugu script (తెలుగు). Do NOT use English letters.`
-  };
+  const languageInstructionsPrompt = LANGUAGE_INSTRUCTIONS[language] || "";
 
   const variationSystemPrompt = `You are an elite viral content creator generating 3 completely distinct variations of the same content piece. Each variation must:
 - Use a COMPLETELY different angle, hook style, and narrative approach
@@ -402,7 +443,7 @@ router.post("/content/variations", requireAuth, async (req: any, res): Promise<v
 - Have a different structure and rhythm
 - NOT recycle phrases or sentences from the other variations
 - ZERO TYPOS: Ensure spelling, grammar, and typography are absolutely perfect and professional.
-${languageInstructions[language] || ""}
+${languageInstructionsPrompt}
 
 If variation 1 uses a story arc, variation 2 should use a bold claim, variation 3 should use a framework/listicle structure. Force genuine creative diversity.`;
 

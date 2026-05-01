@@ -43,8 +43,10 @@ Raw Idea: "${idea}"`;
   }
 });
 
+import { generateContent } from "../../services/ai-engine";
+
 router.post("/content/pack", requireAuth, async (req: any, res): Promise<void> => {
-  const { idea, tone = "Professional", contentType = "Educational" } = req.body;
+  const { idea, tone = "Professional", contentType = "Educational", language = "English" } = req.body;
 
   if (!idea?.trim()) {
     res.status(400).json({ error: "Idea is required" });
@@ -61,72 +63,45 @@ router.post("/content/pack", requireAuth, async (req: any, res): Promise<void> =
     res.status(402).json({
       error: "upgrade_required",
       message: "Multi-Content Pack is available on Creator plan and above.",
-      requiredPlan: "starter",
     });
     return;
   }
 
-  const currentYear = new Date().getFullYear();
-
-  const systemPrompt = `You are an elite multi-platform content strategist. You strictly apply expert copywriting frameworks (like AIDA, PAS, or hook-story-offer). For the SINGLE IDEA below, create a complete Pro-Tier Content Kit.
-
-IMPORTANT CONTEXT: The current year is ${currentYear}. ALL references, strategies, examples, and dates MUST reflect the reality of ${currentYear} or later. NEVER generate ideas referencing 2024 or earlier.
-
-IDEA: "${idea}"
+  const systemPrompt = `You are an elite multi-platform content strategist. Create a complete Pro-Tier Content Kit for: "${idea}".
 TONE: ${tone}
-CONTENT TYPE: ${contentType}
+TYPE: ${contentType}.`;
 
-PLATFORM MASTERY RULES & EXPERT DIRECTIVES:
-- Instagram: 150-200 chars hook + 5-8 hashtags. Provide an AI image generation prompt for the thumbnail. Generate 5 short, punchy Carousel text slides.
-- Twitter: 5-7 tweets thread using the PAS framework.
-- LinkedIn: Professional post using AIDA framework, plus a strict recommendation for 'Best Time to Post'.
-- Reel: 30-60s script with visual cues, plus a 'Trending Audio Suggestion' (e.g. "Fast-paced phonk", "Lofi chill beat").
+  const userPrompt = `Generate a Content Kit for: "${idea}"
+${!isPro ? "Generate ONLY Instagram and Twitter content." : "Generate ALL formats (Instagram, Twitter, LinkedIn, Reels)."}
 
-${!isPro ? "Generate ONLY Instagram and Twitter content for Creator plan. Leave reel and linkedin fields completely empty." : "Generate ALL formats for Infinity plan."}
-
-Return ONLY valid JSON with this exact structure:
+Return ONLY a JSON object:
 {
-  "instagram": { 
-    "caption": "...", 
-    "imagePrompt": "A highly detailed, cinematic AI image generation prompt...",
-    "carouselSlides": ["slide 1 text...", "slide 2 text...", "slide 3", "slide 4", "slide 5"]
-  },
-  "twitter": { "thread": ["tweet 1", "tweet 2", "tweet 3", "tweet 4", "tweet 5"] },
-  ${isPro ? `
-  "linkedin": { "post": "...", "bestTimeToPost": "e.g. Tuesday 9:00 AM EST" },
-  "reel": { "script": "...", "audioSuggestion": "..." },
-  ` : ""}
-  "strategy": {
-    "viralityScore": 92,
-    "targetAudience": "Short description of who this is for",
-    "coreMessage": "The one-sentence main takeaway"
-  },
-  "idea": "${idea}",
-  "isPro": ${isPro}
+  "instagram": { "caption": "string", "imagePrompt": "string", "carouselSlides": ["slide1", "slide2", "slide3", "slide4", "slide5"] },
+  "twitter": { "thread": ["tweet1", "tweet2", "tweet3", "tweet4", "tweet5"] },
+  ${isPro ? `"linkedin": { "post": "string", "bestTimeToPost": "string" }, "reel": { "script": "string", "audioSuggestion": "string" },` : ""}
+  "strategy": { "viralityScore": 92, "targetAudience": "string", "coreMessage": "string" }
 }`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "llama-3.1-8b-instant",
-      messages: [{ role: "system", content: systemPrompt }],
-      response_format: { type: "json_object" },
-      temperature: 0.8,
-      max_tokens: isPro ? 4000 : 1800,
+    const rawContentObj = await generateContent({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      userPlan: user.planType || "free",
+      userId: req.userId,
+      language,
+      maxTokens: isPro ? 4000 : 2000,
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-      else throw new Error("Failed to parse JSON from AI response.");
-    }
+    const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    let parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+
     res.json({ ...parsed, isPro, isCreator });
   } catch (err: any) {
     console.error("Content pack error:", err);
-    res.status(500).json({ error: err?.message || "Failed to generate content pack" });
+    res.status(503).json({ error: "AI temporarily unavailable." });
   }
 });
 

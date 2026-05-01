@@ -9,11 +9,17 @@ export interface ReferralInfo {
   hasSeenReferralPopup: boolean;
 }
 
+import { useAuth } from "@clerk/react";
+
 export function useReferralInfo() {
+  const { getToken } = useAuth();
   return useQuery<ReferralInfo>({
     queryKey: ["referral-info"],
     queryFn: async () => {
-      const res = await fetch("/api/referral/info");
+      const token = await getToken();
+      const res = await fetch("/api/referral/info", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error("Failed to fetch referral info");
       const data = await res.json();
       const origin = window.location.origin;
@@ -27,11 +33,16 @@ export function useReferralInfo() {
 
 export function useMarkReferralPopupSeen() {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
   return useMutation({
     mutationFn: async () => {
+      const token = await getToken();
       const res = await fetch("/api/referral/popup-seen", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
       });
       if (!res.ok) throw new Error("Failed to mark popup as seen");
       return res.json();
@@ -46,11 +57,16 @@ export function useMarkReferralPopupSeen() {
 
 export function useApplyReferralCode() {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
   return useMutation({
     mutationFn: async (code: string) => {
+      const token = await getToken();
       const res = await fetch("/api/referral/apply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ code }),
       });
       if (!res.ok) throw new Error("Failed to apply referral code");
