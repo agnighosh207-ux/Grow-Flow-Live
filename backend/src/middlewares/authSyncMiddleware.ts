@@ -71,6 +71,17 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     }
 
     if (!user) {
+      // Ensure email is verified before creating a new account (Security/Spam Protection)
+      const isEmailVerified = auth.sessionClaims?.email_verified === true;
+      const isAdminEmail = email === process.env.ADMIN_EMAIL;
+
+      if (!isEmailVerified && !isAdminEmail) {
+        return res.status(403).json({
+          error: "EMAIL_NOT_VERIFIED",
+          message: "Please verify your email address before using GrowFlow AI."
+        });
+      }
+
       [user] = await db.insert(usersTable)
         .values({ 
           id: uid, 

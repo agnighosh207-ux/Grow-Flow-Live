@@ -12,8 +12,12 @@ import { enforceGenerationLimit } from "./middlewares/generationLimiter";
 import { guardianMiddleware } from "./middlewares/guardian";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { db, systemSettingsTable } from "@workspace/db";
+import { db, systemSettingsTable, securityLogsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
+
+export let isShuttingDown = false;
+export function setShuttingDown(val: boolean) { isShuttingDown = val; }
 
 const app: Express = express();
 
@@ -41,6 +45,36 @@ app.use(
     },
   }),
 );
+
+// ─── 2.1 Security logging ──────────────────────────────────────────────────
+app.use((req: any, res, next) => {
+  if (req.path.startsWith("/api/") && req.path !== "/api/health") {
+    res.on("finish", async () => {
+      try {
+        await db.insert(securityLogsTable).values({
+          id: crypto.randomUUID(),
+          userId: (req as any).userId || null,
+          eventType: "API_REQUEST",
+          ipAddress: req.ip || "unknown",
+          userAgent: req.get("User-Agent") || "unknown",
+          metadata: { method: req.method, path: req.path, statusCode: res.statusCode }
+        });
+      } catch (err) {
+        // Silent
+      }
+    });
+  }
+  next();
+});
+
+// ─── 2.2 Graceful shutdown check ───────────────────────────────────────────
+app.use((req, res, next) => {
+  if (isShuttingDown && req.path.startsWith("/api/")) {
+    res.status(503).json({ error: "Server is restarting, please retry in a moment" });
+    return;
+  }
+  next();
+});
 
 // ─── 3. Clerk proxy (must be before express.json) ────────────────────────────
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());

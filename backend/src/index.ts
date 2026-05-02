@@ -58,3 +58,36 @@ server.on("error", (err: any) => {
   console.error("[CRITICAL] Server failed to start:", err);
   process.exit(1);
 });
+
+// ─── 6. Graceful Shutdown Handler ──────────────────────────────────────────
+const shutdown = async (signal: string) => {
+  const { logger } = await import("./lib/logger.js");
+  const { setShuttingDown } = await import("./app.js");
+
+  logger.info(`[SHUTDOWN] Received ${signal}. Starting graceful shutdown...`);
+  setShuttingDown(true);
+
+  const timeout = setTimeout(() => {
+    logger.error("[SHUTDOWN] Forced shutdown after 10s timeout.");
+    process.exit(1);
+  }, 10000);
+
+  server.close(async () => {
+    logger.info("[SHUTDOWN] HTTP server closed.");
+    try {
+      const { db } = await import("@workspace/db");
+      if ((db as any).$client?.end) {
+        await (db as any).$client.end();
+        logger.info("[SHUTDOWN] Database connection pool closed.");
+      }
+    } catch (err) {
+      logger.error({ err }, "[SHUTDOWN] Error closing database connection");
+    }
+    clearTimeout(timeout);
+    logger.info("[SHUTDOWN] Cleanup complete. Exiting.");
+    process.exit(0);
+  });
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

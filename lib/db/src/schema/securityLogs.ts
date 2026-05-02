@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, jsonb, pgEnum } from "drizzle-orm/pg-core";
 
-export const eventTypeEnum = pgEnum("security_event_type", ["RATE_LIMIT", "SUSPICIOUS_SPEED", "AUTH_FAILURE", "SYSTEM_BAN"]);
+export const eventTypeEnum = pgEnum("security_event_type", ["RATE_LIMIT", "SUSPICIOUS_SPEED", "AUTH_FAILURE", "SYSTEM_BAN", "API_REQUEST"]);
 
 export const securityLogsTable = pgTable("security_logs", {
   id: text("id").primaryKey(),

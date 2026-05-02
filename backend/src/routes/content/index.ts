@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Response } from "express";
 import { type AuthenticatedRequest } from "../../types";
 import { getAuth } from "@clerk/express";
-import { eq, desc, count, sql, and, gte, inArray } from "drizzle-orm";
+import { eq, desc, count, sql, and, gte, inArray, lt, isNull } from "drizzle-orm";
 import { db, contentGenerationsTable, usersTable, usageLogsTable } from "@workspace/db";
 import { logger } from "../../lib/logger";
 import {
@@ -560,7 +560,13 @@ router.get("/content/history", requireAuth, async (req: any, res): Promise<void>
     const conditions = [
       eq(contentGenerationsTable.userId, req.userId),
       gte(contentGenerationsTable.createdAt, fifteenDaysAgo),
+      isNull(contentGenerationsTable.deletedAt),
     ];
+
+    const cursor = typeof req.query.cursor === "string" ? parseInt(req.query.cursor) : undefined;
+    if (cursor) {
+      conditions.push(lt(contentGenerationsTable.id, cursor));
+    }
 
     if (category && category !== "all") {
       const categories = category.split(",").map((c: string) => c.trim());
@@ -575,10 +581,12 @@ router.get("/content/history", requireAuth, async (req: any, res): Promise<void>
       .select()
       .from(contentGenerationsTable)
       .where(and(...conditions))
-      .orderBy(desc(contentGenerationsTable.createdAt))
+      .orderBy(desc(contentGenerationsTable.id)) // Consistent ordering for cursor
       .limit(limit);
 
-    res.json({ items: history });
+    const nextCursor = history.length > 0 ? history[history.length - 1].id : null;
+
+    res.json({ items: history, nextCursor });
   } catch (err) {
     console.error("History fetch error:", err);
     res.status(500).json({ error: "Failed to fetch history" });
@@ -600,6 +608,7 @@ router.get("/content/history/:id", requireAuth, async (req: any, res): Promise<v
         and(
           eq(contentGenerationsTable.id, parsed.data.id),
           eq(contentGenerationsTable.userId, req.userId),
+          isNull(contentGenerationsTable.deletedAt),
         ),
       )
       .limit(1);
@@ -624,7 +633,28 @@ router.delete("/content/history/:id", requireAuth, async (req: any, res): Promis
   }
 
   await db
-    .delete(contentGenerationsTable)
+    .update(contentGenerationsTable)
+    .set({ deletedAt: new Date() })
+    .where(
+      and(
+        eq(contentGenerationsTable.id, parsed.data.id),
+        eq(contentGenerationsTable.userId, req.userId),
+      ),
+    );
+
+  res.json({ success: true });
+});
+
+router.post("/content/history/:id/restore", requireAuth, async (req: any, res): Promise<void> => {
+  const parsed = GetHistoryItemParams.safeParse(req.params);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  await db
+    .update(contentGenerationsTable)
+    .set({ deletedAt: null })
     .where(
       and(
         eq(contentGenerationsTable.id, parsed.data.id),

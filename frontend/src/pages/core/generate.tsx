@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Loader2, Copy, RefreshCw, Check, Sparkles, Linkedin, Twitter, X,
   Download, Hash, Zap, MessageCircle, Film, ChevronDown, ChevronUp, Crown, Heart,
@@ -62,6 +64,34 @@ function ContentScoreBadge({ score, label, color }: { score: number; label: stri
         />
       </div>
       <span className={`text-xs font-bold ${color.replace('bg-', 'text-')}`}>{score}</span>
+    </div>
+  );
+}
+
+function ContentSkeleton() {
+  const platforms = ["Instagram", "YouTube Shorts", "X / Twitter Thread", "LinkedIn"];
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {platforms.map((p) => (
+        <div
+          key={p}
+          className="hyper-hover-card rounded-2xl border border-white/6 overflow-hidden bg-white/[0.02]"
+        >
+          <div className="h-0.5 bg-white/10" />
+          <div className="flex items-center gap-2.5 px-5 py-3.5 bg-white/[0.03] border-b border-white/5">
+            <Skeleton className="w-4 h-4 rounded bg-white/10" />
+            <Skeleton className="h-4 w-24 bg-white/10" />
+          </div>
+          <div className="px-5 py-5 space-y-4">
+            <Skeleton className="h-3 w-full bg-white/5" />
+            <Skeleton className="h-3 w-[90%] bg-white/5" />
+            <Skeleton className="h-3 w-[80%] bg-white/5" />
+            <div className="pt-2">
+              <Skeleton className="h-8 w-20 bg-white/10 rounded-lg" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -722,6 +752,8 @@ export default function Generate() {
   const [viralMode, setViralMode] = useState(false);
   const [multiVariation, setMultiVariation] = useState(false);
   const [styleMode, setStyleMode] = useState(false);
+  const lastSubmittedValues = useRef<any>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
   
   const { data: trendsData, isLoading: trendsLoading } = useQuery({
@@ -840,7 +872,40 @@ export default function Generate() {
         }
         setGenerationBlockedMsg(null);
         const isOffline = typeof window !== "undefined" && !window.navigator.onLine;
-        const is5xx = (error?.status ?? 0) >= 500;
+        const errorMsg = (error?.message || error?.data?.message || "").toLowerCase();
+        const is5xx = (error?.status ?? 0) >= 500 || errorMsg.includes("503") || errorMsg.includes("ai temporarily unavailable") || errorMsg.includes("network");
+
+        if (is5xx && retryCount < 3) {
+          toast({
+            variant: "destructive",
+            title: "AI Overloaded",
+            description: "The AI is currently experiencing high load. Would you like to retry?",
+            action: (
+              <ToastAction altText="Retry" onClick={() => {
+                setRetryCount(prev => prev + 1);
+                if (lastSubmittedValues.current) {
+                  generateMutation.mutate(lastSubmittedValues.current);
+                }
+              }}>
+                <div className="flex items-center gap-1.5">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Retry</span>
+                </div>
+              </ToastAction>
+            )
+          });
+          return;
+        }
+
+        if (is5xx && retryCount >= 3) {
+          toast({
+            variant: "destructive",
+            title: "High System Load",
+            description: "AI is experiencing high load. Please try again in a few minutes.",
+          });
+          return;
+        }
+
         toast({
           variant: "destructive",
           title: isOffline ? "No internet connection" : is5xx ? "AI temporarily unavailable" : "Generation failed",
@@ -987,8 +1052,11 @@ export default function Generate() {
     setGeneratedContent(null);
     setContentAnalysis(null);
     setAnalysisLoading(false);
+    setRetryCount(0);
     
-    generateMutation.mutate({ data: { ...rest, idea: ideaWithNiche } } as any);
+    const mutationData = { data: { ...rest, idea: ideaWithNiche } } as any;
+    lastSubmittedValues.current = mutationData;
+    generateMutation.mutate(mutationData);
   }
 
   function handleTemplate(template: typeof TEMPLATES[number]) {
@@ -1572,29 +1640,7 @@ export default function Generate() {
                 </motion.span>
               </AnimatePresence>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {platforms.map((p, i) => {
-              const config = PLATFORM_CONFIG[p];
-              return (
-                <div
-                  key={p}
-                  className="hyper-hover-card rounded-2xl border border-white/6 overflow-hidden"
-                  style={{ background: "rgba(255,255,255,0.02)" }}
-                >
-                  <div className={`h-0.5 bg-gradient-to-r ${config.accentColor} opacity-40`} />
-                  <div className={`flex items-center gap-2.5 px-5 py-3.5 ${config.bgColor} border-b border-white/5`}>
-                    <div className="w-4 h-4 rounded bg-white/10 animate-pulse" />
-                    <div className="h-3.5 w-24 rounded bg-white/8 animate-pulse" />
-                  </div>
-                  <div className="px-5 py-5 space-y-4">
-                    {[100, 80, 60, 90].map((w, j) => (
-                      <div key={j} className={`h-3 w-[${w}%] rounded bg-white/5 animate-pulse`} style={{ width: `${w}%`, animationDelay: `${j * 0.15}s` }} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-            </div>
+            <ContentSkeleton />
           </motion.div>
         )}
 

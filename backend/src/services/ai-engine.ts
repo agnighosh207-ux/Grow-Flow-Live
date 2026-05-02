@@ -3,6 +3,7 @@ import pino from "pino";
 import crypto from "crypto";
 import { z } from "zod";
 import { LANGUAGE_INSTRUCTIONS } from "../lib/languages";
+import { redis } from "../lib/redis";
 
 const isProduction = process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION";
 
@@ -30,10 +31,10 @@ export interface GenerateContentOptions {
   zodSchema?: z.ZodSchema<any>;
 }
 
-// In-Memory Burst Tracker
+// In-Memory Burst Tracker (Fallback)
 const burstTracker = new Map<string, number[]>();
 
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [userId, history] of burstTracker.entries()) {
     const validHistory = history.filter(ts => (now - ts) < 10000);
@@ -41,6 +42,8 @@ setInterval(() => {
     else burstTracker.set(userId, validHistory);
   }
 }, 60000);
+
+cleanupInterval.unref();
 
 /**
  * Robust JSON extraction from AI string
@@ -99,12 +102,24 @@ export const generateContent = async ({
   
   if (userId !== "anonymous") {
     const now = Date.now();
-    let history = burstTracker.get(userId) || [];
-    history = history.filter(ts => (now - ts) < 10000);
-    history.push(now);
-    burstTracker.set(userId, history);
+    const useRedis = !!process.env.REDIS_URL && redis;
+    let burstCount = 0;
+
+    if (useRedis) {
+      const key = `burst:${userId}`;
+      await redis!.zadd(key, now, now.toString());
+      await redis!.zremrangebyscore(key, 0, now - 10000);
+      burstCount = await redis!.zcard(key);
+      await redis!.expire(key, 15); // Cleanup insurance
+    } else {
+      let history = burstTracker.get(userId) || [];
+      history = history.filter(ts => (now - ts) < 10000);
+      history.push(now);
+      burstTracker.set(userId, history);
+      burstCount = history.length;
+    }
     
-    if (history.length > 5) { 
+    if (burstCount > 5) { 
        logger.error(`[SECURITY] AI Request Burst Blocked for User: ${userId}`);
        throw new Error("BURST_LIMIT_EXCEEDED");
     }

@@ -12,6 +12,7 @@ export const contentGenerationsTable = pgTable("content_generations", {
   platform: text("platform"),
   content: jsonb("content").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (table) => ({
   userIdIdx: index("content_generations_user_id_idx").on(table.userId),
   createdAtIdx: index("content_generations_created_at_idx").on(table.createdAt),

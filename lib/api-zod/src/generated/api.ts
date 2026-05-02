@@ -100,7 +100,8 @@ export const getContentHistoryQueryOffsetDefault = 0;
 
 export const GetContentHistoryQueryParams = zod.object({
   "limit": zod.coerce.number().default(getContentHistoryQueryLimitDefault),
-  "offset": zod.coerce.number().default(getContentHistoryQueryOffsetDefault)
+  "offset": zod.coerce.number().default(getContentHistoryQueryOffsetDefault),
+  "cursor": zod.string().optional()
 })
 
 export const GetContentHistoryResponse = zod.object({
