@@ -3,13 +3,15 @@ import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 // Dynamic import used below to prevent circular dependency with referral routes
 import { WelcomeSequence } from "../lib/WelcomeSequence";
+import { ensureReferralCode } from "../utils/referral";
+import { logger } from "../lib/logger";
 
-const syncCache = new Map<string, number>();
+const syncCache = new Map<string, { timestamp: number, user: any }>();
 
 setInterval(() => {
   const now = Date.now();
-  for (const [uid, timestamp] of syncCache.entries()) {
-    if (now - timestamp > 60000) {
+  for (const [uid, cache] of syncCache.entries()) {
+    if (now - cache.timestamp > 60000) {
       syncCache.delete(uid);
     }
   }
@@ -21,7 +23,7 @@ setInterval(() => {
  */
 export const authSyncMiddleware = async (req: any, res: any, next: any) => {
   try {
-    if (req.path.startsWith("/api/health") || req.path.startsWith("/api/webhooks")) {
+    if (req.path.startsWith("/api/health") || req.path.startsWith("/api/subscription/webhook")) {
       return next();
     }
 
@@ -34,14 +36,19 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
 
     const uid = userId as string;
     
-    if (syncCache.has(uid) && Date.now() - syncCache.get(uid)! < 60000) {
+    const cached = syncCache.get(uid);
+    if (cached && Date.now() - cached.timestamp < 60000) {
       req.userId = uid;
+      req.user = cached.user;
       // Re-attach impersonated user if it exists in cache
       if (req.headers["x-impersonate-user"]) {
         const adminEmail = process.env.ADMIN_EMAIL;
         const userEmail = auth.sessionClaims?.email;
         if (adminEmail && userEmail === adminEmail) {
           req.userId = req.headers["x-impersonate-user"];
+          // Note: We don't cache impersonated req.user for security
+          const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+          if (targetUser) req.user = targetUser;
         }
       }
       return next();
@@ -79,7 +86,6 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         .returning();
 
       if (!user.referralCode) {
-        const { ensureReferralCode } = await import("../routes/referral/index.js");
         await ensureReferralCode(uid);
       }
       
@@ -141,16 +147,16 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         // Don't cache impersonated sessions to avoid leaks
       } else {
         req.user = user;
-        syncCache.set(uid, Date.now());
+        syncCache.set(uid, { timestamp: Date.now(), user });
       }
     } else {
       req.user = user;
-      syncCache.set(uid, Date.now());
+      syncCache.set(uid, { timestamp: Date.now(), user });
     }
 
     next();
   } catch (err) {
-    console.error("Auth Sync Error:", err);
-    next();
+    logger.error({ err: String(err) }, "Auth Sync Error");
+    next(err);
   }
 };

@@ -1,11 +1,12 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
-router.post("/improve-competitor", requireAuth, requirePlanOrTrial("improve_competitor"), async (req: any, res): Promise<void> => {
+router.post("/improve-competitor", requireAuth, requirePlanOrTrial("improve_competitor"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 

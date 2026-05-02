@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { logger } from "../lib/logger";
 
 /**
  * GrowFlow AI - Perplexity RAG Service
@@ -7,7 +8,7 @@ import OpenAI from "openai";
 
 const client = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: process.env.PERPLEXITY_AI_API,
   defaultHeaders: {
     "HTTP-Referer": "https://growflow.ai", // Required by OpenRouter for ranking
     "X-Title": "GrowFlow AI",
@@ -64,7 +65,7 @@ export async function fetchLiveContext(niche: string, topic?: string): Promise<s
     return result;
   } catch (error: any) {
     // 4. Graceful Fallback (Protect downstream generators)
-    console.error("[PERPLEXITY-SERVICE] Failure:", error?.message || "Unknown error");
+    logger.error({ error: error?.message || "Unknown error", niche, topic }, "[PERPLEXITY-SERVICE] Failure");
     return "";
   }
 }

@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { db, usersTable, dailyPlansTable } from "@workspace/db";
 import { DailyResponseSchema } from "@workspace/api-zod";
 import { requireAuth } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { generateContent } from "../../services/ai-engine";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 

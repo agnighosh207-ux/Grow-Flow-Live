@@ -68,7 +68,7 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
       }).from(usersTable).orderBy(desc(usersTable.createdAt)).limit(100), [], "recentUsers"),
       safeQuery(db.select({
         plan: usersTable.planType,
-        totalAmount: sql<number>`SUM(${sql.raw('subscription_amount')})`
+        totalAmount: sql<number>`SUM(${usersTable.subscriptionAmount})`
       }).from(usersTable).where(eq(usersTable.subscriptionStatus, 'active')).groupBy(usersTable.planType), [], "revenue"),
       safeQuery(db.select({
         name: contentGenerationsTable.contentType,

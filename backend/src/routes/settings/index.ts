@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, contentGenerationsTable, supportMessagesTable } from "@workspace/db";
-import { eq, count } from "drizzle-orm";
+import { db, usersTable, contentGenerationsTable, supportMessagesTable, referralsTable, paymentsTable, contentCalendarTable, favoritesTable, usageLogsTable, dailyPlansTable } from "@workspace/db";
+import { eq, count, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -71,9 +71,16 @@ router.patch("/settings/preferences", requireAuth, async (req: any, res): Promis
 
 router.delete("/settings/account", requireAuth, async (req: any, res): Promise<void> => {
   try {
-    await db.delete(contentGenerationsTable).where(eq(contentGenerationsTable.userId, req.userId));
-    await db.delete(supportMessagesTable).where(eq(supportMessagesTable.userId, req.userId));
-    await db.delete(usersTable).where(eq(usersTable.id, req.userId));
+    const userId = req.userId;
+    await db.delete(contentGenerationsTable).where(eq(contentGenerationsTable.userId, userId));
+    await db.delete(supportMessagesTable).where(eq(supportMessagesTable.userId, userId));
+    await db.delete(referralsTable).where(eq(referralsTable.referrerUserId, userId));
+    await db.delete(paymentsTable).where(eq(paymentsTable.userId, userId));
+    await db.delete(contentCalendarTable).where(eq(contentCalendarTable.userId, userId));
+    await db.delete(favoritesTable).where(eq(favoritesTable.userId, userId));
+    await db.delete(usageLogsTable).where(eq(usageLogsTable.userId, userId));
+    await db.delete(dailyPlansTable).where(eq(dailyPlansTable.userId, userId));
+    await db.delete(usersTable).where(eq(usersTable.id, userId));
 
     const secretKey = process.env.CLERK_SECRET_KEY;
     if (secretKey) {

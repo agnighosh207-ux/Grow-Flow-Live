@@ -3,6 +3,7 @@ import { eq, sql, and, gt } from "drizzle-orm";
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../types";
 import { getAuth } from "@clerk/express";
+import { ensureReferralCode } from "../utils/referral";
 
 export const FREE_TRIALS_PER_TOOL = 3;
 
@@ -37,10 +38,8 @@ export async function getOrCreateUser(userId: string, email?: string) {
   }
   if (!user.referralCode) {
     try {
-      const { ensureReferralCode } = await import("../routes/referral");
-      await ensureReferralCode(userId);
-      const [updatedUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-      user = updatedUser;
+      const code = await ensureReferralCode(userId);
+      user.referralCode = code;
     } catch (err) {
       console.error("Failed to ensure referral code in getOrCreateUser:", err);
     }
@@ -55,6 +54,7 @@ export function isPaidOrTrial(user: any): boolean {
   return false;
 }
 
+// Source of truth for plan hierarchy
 export const PLAN_RANKS: Record<string, number> = {
   FREE: 0,
   STARTER: 1,
@@ -62,44 +62,16 @@ export const PLAN_RANKS: Record<string, number> = {
   INFINITY: 3
 };
 
-export function requireTierLevel(requiredTier: "FREE" | "STARTER" | "CREATOR" | "INFINITY") {
-  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const user = await getOrCreateUser(req.userId);
-      req.user = user;
-      
-      const currentTier = (user.planTier as string || "FREE").toUpperCase();
-      const required = requiredTier.toUpperCase();
-      
-      const currentRank = PLAN_RANKS[currentTier] ?? 0;
-      const requiredRank = PLAN_RANKS[required] ?? 0;
-      
-      if (user.isAdmin || currentRank >= requiredRank || currentTier === "INFINITY") {
-        return next();
-      }
-      
-      res.status(403).json({ 
-        error: "tier_locked",
-        message: `This feature requires the ${requiredTier} plan or higher. Please upgrade.`,
-      });
-    } catch {
-      res.status(500).json({ error: "Permission validation failed." });
-    }
-  };
-}
 
-export const PLAN_LEVELS = {
-  FREE: 0,
-  STARTER: 1,
-  CREATOR: 2,
-  INFINITY: 3
-};
-
-export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string; freeTrials?: number }> = {
-  ideas: { name: "Idea Generator", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
-  strategy: { name: "7-Day Strategy", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
-  hooks: { name: "Viral Hooks", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
-  trends: { name: "Trend Engine", requiredPlan: "STARTER", freeTrials: FREE_TRIALS_PER_TOOL },
+export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string }> = {
+  ideas: { name: "Idea Generator", requiredPlan: "STARTER" },
+  strategy: { name: "7-Day Strategy", requiredPlan: "STARTER" },
+  hooks: { name: "Viral Hooks", requiredPlan: "STARTER" },
+  trends: { name: "Trend Engine", requiredPlan: "STARTER" },
+  content_analyze: { name: "Content Analysis", requiredPlan: "STARTER" },
+  bio: { name: "Bio Generator", requiredPlan: "STARTER" },
+  content: { name: "Content Generator", requiredPlan: "STARTER" },
+  caption: { name: "Caption Enhancer", requiredPlan: "STARTER" },
 };
 
 export function requirePlanOrTrial(toolKey: string) {
@@ -110,6 +82,8 @@ export function requirePlanOrTrial(toolKey: string) {
         return res.status(401).json({ error: "User not found" });
       }
 
+      req.user = user; // Attach user to request for downstream handlers
+
       const planTier = (user.planTier as string) || "FREE";
       
       const config = FEATURE_CONFIG[toolKey];
@@ -117,8 +91,8 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
-      const requiredLevel = PLAN_LEVELS[config.requiredPlan as keyof typeof PLAN_LEVELS] || 0;
-      const userLevel = PLAN_LEVELS[planTier as keyof typeof PLAN_LEVELS] || 0;
+      const requiredLevel = PLAN_RANKS[config.requiredPlan as keyof typeof PLAN_RANKS] || 0;
+      const userLevel = PLAN_RANKS[planTier as keyof typeof PLAN_RANKS] || 0;
       const isAdmin = user.isAdmin === true;
 
       if (isAdmin || userLevel >= requiredLevel) {
@@ -126,7 +100,6 @@ export function requirePlanOrTrial(toolKey: string) {
       }
 
       if (user.generationsRemaining > 0) {
-        req.trialMode = true;
         return next();
       }
 

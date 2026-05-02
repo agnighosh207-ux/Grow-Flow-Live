@@ -1,5 +1,6 @@
 import { db, usersTable } from "@workspace/db";
 import { eq, and, gte, sql, gt } from "drizzle-orm";
+import { logger } from "../lib/logger";
 
 /**
  * DB-Backed Rate limiter for generations
@@ -56,7 +57,7 @@ export const enforceGenerationLimit = async (req: any, res: any, next: any) => {
 
     next();
   } catch (error: any) {
-    console.error("Enforce limit DB error:", error?.message);
+    logger.error({ error: error?.message }, "Enforce limit DB error");
     return res.status(500).json({ error: "Internal server error while verifying generations" });
   }
 };

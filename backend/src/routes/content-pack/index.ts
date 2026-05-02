@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, usersTable, contentGenerationsTable } from "@workspace/db";
 import { requireAuth } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { fetchLiveContext } from "../../services/perplexity-search";
 
@@ -31,7 +32,7 @@ Raw Idea: "${sanitizedIdea}"`;
   }
 });
 
-router.post("/content/pack", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/content/pack", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 

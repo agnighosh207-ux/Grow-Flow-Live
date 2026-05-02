@@ -1,11 +1,12 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
-router.post("/repurpose", requireAuth, requirePlanOrTrial("content"), async (req: any, res): Promise<void> => {
+router.post("/repurpose", requireAuth, requirePlanOrTrial("content"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 

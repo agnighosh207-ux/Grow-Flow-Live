@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent } from "../../services/ai-engine";
+import { db, contentGenerationsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -28,7 +30,7 @@ const PLATFORM_RULES: Record<string, { charLimit: number; style: string; goal: s
   },
 };
 
-router.post("/bio/generate", requireAuth, requirePlanOrTrial("bio"), async (req: any, res): Promise<void> => {
+router.post("/bio/generate", requireAuth, requirePlanOrTrial("bio"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
@@ -100,6 +102,17 @@ Return ONLY a JSON object: {"platform": "${platform}", "variations": [{"label": 
         charCount: v.bio?.length ?? 0,
       }));
     }
+
+    // Auto-save to history
+    try {
+      await db.insert(contentGenerationsTable).values({
+        userId: req.userId,
+        idea: `Bio: ${platform} - ${sNiche}`,
+        contentType: "Bio",
+        tone: tone,
+        content: parsed,
+      });
+    } catch (e) { /* non-critical */ }
 
     res.json(parsed);
   } catch (err: any) {

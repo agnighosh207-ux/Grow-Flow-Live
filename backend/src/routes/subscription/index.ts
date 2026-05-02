@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
+import { logger } from "../../lib/logger";
 import { eq, count, gte, and, sql } from "drizzle-orm";
 import { db, usersTable, contentGenerationsTable, couponsTable, securityLogsTable, paymentsTable } from "@workspace/db";
 import crypto from "crypto";
@@ -7,7 +8,7 @@ import { FREE_TRIALS_PER_TOOL, isPaidOrTrial, consumeToolTrial, requireAuth, get
 import { WelcomeSequence } from "../../lib/WelcomeSequence";
 import { AuthenticatedRequest } from "../../types";
 import { Response } from "express";
-import { ensureReferralCode, grantReferralReward } from "../referral";
+import { ensureReferralCode, grantReferralReward } from "../../utils/referral";
 import { sendWelcomeEmail, sendPaymentFailedEmail } from "../../services/email";
 import { createSubscription } from "../../services/payment-service";
 import { getRazorpayPlanId } from "../../utils/planRouter";
@@ -109,12 +110,15 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     };
   }
 
-  // Fallback to free (genuinely free users, or fully canceled/blocked users whose planType IS "free")
+  // Fallback to free (genuinely free users, or fully canceled/blocked users)
+  // BUG 6 Fix: Ensure cancelled Infinity users don't show "canGenerate: true" based on stale credit counts
+  const effectiveGenerationsRemaining = planType === "infinity" ? 0 : generationsRemaining;
+  
   return {
     plan: "free" as const, planType: planType !== "free" ? planType : "free" as const,
-    canGenerate: generationsRemaining > 0,
-    trialDaysLeft: null, generationLimit: planType !== "free" ? 5 : 5,
-    monthlyGenerationsUsed: 5 - Math.min(generationsRemaining, 5),
+    canGenerate: effectiveGenerationsRemaining > 0,
+    trialDaysLeft: null, generationLimit: 5,
+    monthlyGenerationsUsed: 5 - Math.min(effectiveGenerationsRemaining, 5),
     totalGenerationsUsed: totalGenerations,
   };
 }
@@ -170,16 +174,22 @@ const PLAN_CONFIG = {
   starter: {
     displayName: "Starter",
     monthly: { amount: 10900, period: "monthly" as const, interval: 1, totalCount: 12 },
+    quarterly: { amount: 32700, period: "monthly" as const, interval: 3, totalCount: 4 },
+    "half-yearly": { amount: 65400, period: "monthly" as const, interval: 6, totalCount: 2 },
     yearly: { amount: 109000, period: "yearly" as const, interval: 1, totalCount: 1 },
   },
   creator: {
     displayName: "Creator",
     monthly: { amount: 29900, period: "monthly" as const, interval: 1, totalCount: 12 },
+    quarterly: { amount: 89700, period: "monthly" as const, interval: 3, totalCount: 4 },
+    "half-yearly": { amount: 179400, period: "monthly" as const, interval: 6, totalCount: 2 },
     yearly: { amount: 299000, period: "yearly" as const, interval: 1, totalCount: 1 },
   },
   infinity: {
     displayName: "Infinity",
     monthly: { amount: 49900, period: "monthly" as const, interval: 1, totalCount: 12 },
+    quarterly: { amount: 149700, period: "monthly" as const, interval: 3, totalCount: 4 },
+    "half-yearly": { amount: 299400, period: "monthly" as const, interval: 6, totalCount: 2 },
     yearly: { amount: 499000, period: "yearly" as const, interval: 1, totalCount: 1 },
   },
 };
@@ -209,7 +219,7 @@ router.post("/subscription/create", requireAuth, async (req: AuthenticatedReques
       return;
     }
 
-    const config = (PLAN_CONFIG as any)[effectivePlan][billing === 'monthly' ? 'monthly' : 'yearly'] || (PLAN_CONFIG as any)[effectivePlan]['monthly'];
+    const config = (PLAN_CONFIG as any)[effectivePlan][billing] || (PLAN_CONFIG as any)[effectivePlan]['monthly'];
 
     // Ensure we trigger the secure .env mapped Razorpay Subscription Engine
     const subscription = await createSubscription(
@@ -227,7 +237,7 @@ router.post("/subscription/create", requireAuth, async (req: AuthenticatedReques
         razorpaySubscriptionId: subscription.id,
         subscriptionStatus: "pending", 
         planType: effectivePlan,
-        trialEndsAt: trialEndsAt,
+        // trialEndsAt should only be set after successful payment/verification (Bug 2 fix)
         couponCode: couponCode || null,
         billingPeriod: billing,
         subscriptionAmount: config.amount,
@@ -241,7 +251,8 @@ router.post("/subscription/create", requireAuth, async (req: AuthenticatedReques
       billingPeriod: billing,
       amount: config.amount,
       currency: "INR",
-      trialEndsAt: trialEndsAt.toISOString(),
+      // Returning null here as trial hasn't started yet
+      trialEndsAt: null,
       ghostMode: false
     });
   } catch (err: any) {
@@ -333,7 +344,7 @@ router.post("/subscription/verify", requireAuth, async (req: AuthenticatedReques
       .where(eq(couponsTable.code, couponCode.toUpperCase().trim()));
   }
 
-  grantReferralReward(req.userId).catch(err => console.error("grantReferralReward error:", err));
+  grantReferralReward(req.userId).catch((err: any) => logger.error({ err: String(err) }, "grantReferralReward error"));
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
   if (user && user.email) {
@@ -342,8 +353,8 @@ router.post("/subscription/verify", requireAuth, async (req: AuthenticatedReques
       "", 
       effectivePlan, 
       "7 Days Limit-Free Trial", 
-      "₹0"
-    ).catch(err => console.error("sendPaymentSuccess error:", err));
+      `₹${(user.subscriptionAmount || 0) / 100}`
+    ).catch((err: any) => logger.error({ err: String(err) }, "sendPaymentSuccess error"));
   }
 
   res.json({
@@ -397,7 +408,8 @@ router.post("/subscription/retry", requireAuth, async (req: AuthenticatedRequest
     .set({
       subscriptionStatus: "free",
       razorpaySubscriptionId: null,
-      // Preserve planType and planTier so the user can re-subscribe
+      planType: "free",
+      planTier: "FREE",
     })
     .where(eq(usersTable.id, req.userId));
 
@@ -484,16 +496,21 @@ router.post("/user/login", requireAuth, async (req: AuthenticatedRequest, res: R
 
 router.post("/subscription/webhook", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const signature = req.headers["x-razorpay-signature"];
-    const expectedSig = crypto
-      .createHmac("sha256", webhookSecret)
-      .update((req as any).rawBody || "")
-      .digest("hex");
-    if (signature !== expectedSig) {
-      res.status(400).json({ error: "Invalid webhook signature" });
-      return;
-    }
+  if (!webhookSecret) {
+    console.error("[CRITICAL] RAZORPAY_WEBHOOK_SECRET is missing. Rejecting all webhooks for security.");
+    res.status(500).json({ error: "Webhook verification misconfigured" });
+    return;
+  }
+
+  const signature = req.headers["x-razorpay-signature"];
+  const expectedSig = crypto
+    .createHmac("sha256", webhookSecret)
+    .update((req as any).rawBody || "")
+    .digest("hex");
+
+  if (signature !== expectedSig) {
+    res.status(400).json({ error: "Invalid webhook signature" });
+    return;
   }
 
   const event = req.body;
@@ -515,7 +532,8 @@ router.post("/subscription/webhook", async (req: AuthenticatedRequest, res: Resp
     const updates: any = { subscriptionStatus: newStatus };
     
     // Sync planTier and planType
-    if (newStatus === "canceled" || newStatus === "expired") {
+    // Sync planTier and planType
+    if (newStatus === "canceled") {
       // Grace Period Logic: Only downgrade if the event is actually 'expired' or 'cancelled' (end of cycle)
       // Note: subscription.cancelled in Razorpay is sent at the end of the period if cancel_at_cycle_end=1
       updates.planType = "free";
@@ -581,12 +599,12 @@ router.post("/subscription/webhook", async (req: AuthenticatedRequest, res: Resp
           })
           .where(eq(usersTable.id, u.id));
         
-        grantReferralReward(u.id).catch(err => console.error("grantReferralReward webhook error:", err));
+        grantReferralReward(u.id).catch((err: any) => logger.error({ err: String(err), userId: u.id }, "grantReferralReward webhook error"));
         
         if (u.email) {
           import("../../services/email").then(({ sendRenewalEmail }) => {
              sendRenewalEmail(u.email!, u.planType === 'infinity' ? 'Infinity' : u.planType === 'creator' ? 'Creator' : 'Starter');
-          }).catch(err => console.error("sendRenewalEmail error:", err));
+          }).catch((err: any) => logger.error({ err: String(err), email: u.email }, "sendRenewalEmail error"));
         }
       }
     } else if (newStatus === "past_due" && updatedUsers.length > 0) {

@@ -104,8 +104,9 @@ export const generateContent = async ({
     history.push(now);
     burstTracker.set(userId, history);
     
-    if (history.length >= 5) { // Relaxed slightly from 3
-       logger.warn(`[SECURITY] High burst for User: ${userId}`);
+    if (history.length > 5) { 
+       logger.error(`[SECURITY] AI Request Burst Blocked for User: ${userId}`);
+       throw new Error("BURST_LIMIT_EXCEEDED");
     }
   }
 
@@ -135,7 +136,7 @@ export const generateContent = async ({
     },
     {
       name: "Together AI",
-      apiKey: process.env.TOGETHER_API_KEY || process.env.TOGETHER_AI_API_KEY,
+      apiKey: process.env.TOGETHER_AI_API_KEY,
       baseURL: "https://api.together.xyz/v1",
       model: isInfinity ? "meta-llama/Llama-3.3-70B-Instruct-Turbo" : "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
     },
@@ -146,8 +147,8 @@ export const generateContent = async ({
       model: isInfinity ? "llama-3.3-70b" : "llama3.1-8b",
     },
     {
-      name: "OpenRouter",
-      apiKey: process.env.OPENROUTER_API_KEY,
+      name: "OpenRouter (Llama)",
+      apiKey: process.env.PERPLEXITY_AI_API,
       baseURL: "https://openrouter.ai/api/v1",
       model: isInfinity ? "meta-llama/llama-3.3-70b-instruct" : "meta-llama/llama-3.1-8b-instruct",
     },
@@ -164,10 +165,10 @@ export const generateContent = async ({
       model: isInfinity ? "Meta-Llama-3.1-70B-Instruct" : "Meta-Llama-3.1-8B-Instruct",
     },
     {
-       name: "Groq Llama 3.1 70B",
+       name: "Groq Llama 3.3 70B",
        apiKey: process.env.GROQ_API_KEY,
        baseURL: "https://api.groq.com/openai/v1",
-       model: "llama-3.1-70b-versatile",
+       model: "llama-3.3-70b-versatile",
     }
   ];
 

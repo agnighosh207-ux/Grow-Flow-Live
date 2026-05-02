@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { db, contentCalendarTable } from "@workspace/db";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { db, contentCalendarTable, contentGenerationsTable } from "@workspace/db";
 import { generateContent } from "../../services/ai-engine";
 import { fetchLiveContext } from "../../services/perplexity-search";
 
@@ -26,11 +27,11 @@ const nicheGoalContext: Record<string, string> = {
   General: "value-first content, personal brand clarity, niche authority building, audience relationship deepening",
 };
 
-router.post("/strategy/generate", requireAuth, requirePlanOrTrial("strategy"), async (req: any, res): Promise<void> => {
+router.post("/strategy/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
-  const { niche = "General", goal = "grow my audience and establish authority", duration = 7, language = "English" } = req.body;
+  const { niche = "General", goal = "grow my audience and establish authority", duration = 7, language = "English", improvementFocus = "all" } = req.body;
   const sanitizedNiche = String(niche).substring(0, 50);
   const sanitizedGoal = String(goal).substring(0, 500);
 
@@ -44,6 +45,7 @@ router.post("/strategy/generate", requireAuth, requirePlanOrTrial("strategy"), a
 
     let systemPrompt = `You are a senior content strategist. Create a ${duration}-day growth arc strategy for ${sanitizedNiche}.
 CONTEXT: ${goalContext}
+STRATEGIC FOCUS: ${improvementFocus}
 PLATFORMS: Primary = ${platforms.primary}, Secondary = ${platforms.secondary}.
 
 === LIVE INTERNET RESEARCH ===
@@ -98,7 +100,7 @@ Return ONLY a JSON object:
       today.setHours(0, 0, 0, 0);
       const inserts = parsed.plan.map((item: any, index: number) => {
         const contentDate = new Date(today);
-        contentDate.setDate(contentDate.getDate() + 1 + index);
+        contentDate.setDate(contentDate.getDate() + index);
         return {
           userId: req.userId,
           date: contentDate,
@@ -110,6 +112,17 @@ Return ONLY a JSON object:
       });
       if (inserts.length > 0) await db.insert(contentCalendarTable).values(inserts);
     }
+
+    // Auto-save to history
+    try {
+      await db.insert(contentGenerationsTable).values({
+        userId: req.userId,
+        idea: `Strategy: ${sanitizedGoal}`,
+        contentType: "Strategy",
+        tone: `${duration}-day plan`,
+        content: { plan: parsed.plan ?? [] },
+      });
+    } catch (e) { /* non-critical */ }
 
     res.json({ plan: parsed.plan ?? [] });
   } catch (err: any) {

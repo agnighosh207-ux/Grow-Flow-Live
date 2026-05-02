@@ -1,8 +1,24 @@
 import { Router, type IRouter } from "express";
 import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { generateContent, extractJson } from "../../services/ai-engine";
+import { db, contentGenerationsTable } from "@workspace/db";
+import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
+
+// ─── Perplexity AI Direct Client (for 100% search routes) ─────────────────
+// Trends and Ideas use Perplexity DIRECTLY — it searches the live web AND
+// structures the output in a single call. NO Groq involved.
+const perplexityClient = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.PERPLEXITY_AI_API,
+  defaultHeaders: {
+    "HTTP-Referer": "https://growflow.ai",
+    "X-Title": "GrowFlow AI",
+  },
+});
 
 const nicheContextMap: Record<string, string> = {
   Fitness: "body transformation, workout science, nutrition optimization, gym psychology, training methodologies (calisthenics, powerlifting, hypertrophy, functional), recovery protocols, biohacking",
@@ -35,35 +51,42 @@ const nicheTrendDrivers: Record<string, string> = {
 const TRENDS_CACHE = new Map<string, { data: any, timestamp: number }>();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
-router.post("/trends/generate", requireAuth, requirePlanOrTrial("trends"), async (req: any, res): Promise<void> => {
+// ─── /trends/generate — 100% PERPLEXITY SEARCH ROUTE ──────────────────────
+// Perplexity sonar searches the live web AND structures JSON in ONE call.
+// Groq is NOT involved here. JSON output enforced via prompt instructions.
+router.post("/trends/generate", requireAuth, requirePlanOrTrial("trends"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
-  const { niche = "General" } = req.body as { niche?: string };
+  const { niche = "General", language = "English" } = req.body as { niche?: string; language?: string };
   const sanitizedNiche = String(niche).substring(0, 50);
 
-  // Check cache
-  const cached = TRENDS_CACHE.get(sanitizedNiche);
-  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-    res.json(cached.data);
-    return;
+  const cacheKey = `trends:${sanitizedNiche}:${language}`;
+  
+  if (redis) {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      res.json(JSON.parse(cached));
+      return;
+    }
+  } else {
+    const cached = TRENDS_CACHE.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      res.json(cached.data);
+      return;
+    }
   }
 
   const nicheContext = nicheContextMap[sanitizedNiche] || nicheContextMap["General"];
   const trendDrivers = nicheTrendDrivers[sanitizedNiche] || nicheTrendDrivers["General"];
-
   const currentYear = new Date().getFullYear();
-
-  // Instantiate localized OpenRouter client for Perplexity
-  const openRouterClient = new OpenAI({ 
-    baseURL: "https://openrouter.ai/api/v1", 
-    apiKey: process.env.OPENROUTER_API_KEY 
-  });
 
   const systemPrompt = `You are a social media trend intelligence analyst. Search the live web for breaking news and viral trends happening RIGHT NOW in the ${sanitizedNiche} space. Identify 8 content ideas that are EXPLODING in ${currentYear}. 
 NICHE: ${sanitizedNiche}
 CONTENT TERRITORY: ${nicheContext}
 CURRENT CULTURAL DRIVERS: ${trendDrivers}
+LANGUAGE: ${language}.
+Output must be in ${language}.
 
 Return ONLY a valid JSON object with a "trends" key containing an array of 8 objects. No markdown.`;
 
@@ -76,49 +99,70 @@ JSON schema:
       "hook": "string",
       "angle": "string",
       "whyItWorks": "string",
-      "trendScore": number,
-      "platform": "string"
+      "trendScore": number (70-99),
+      "platform": "Instagram" | "YouTube" | "Twitter" | "LinkedIn"
     }
   ]
 }`;
 
   try {
     if (isAborted) return;
-    const completion = await openRouterClient.chat.completions.create({
+
+    // DIRECT Perplexity call — search + structure in ONE step
+    // NOTE: Perplexity/Sonar does NOT support response_format parameter.
+    // JSON output is enforced via system/user prompt instructions.
+    const completion = await perplexityClient.chat.completions.create({
       model: "perplexity/sonar",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      response_format: { type: "json_object" },
       max_tokens: 2000,
     });
 
     if (isAborted) return;
+
     const raw = completion.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
-    let trends: any[] = [];
-    try {
-      const parsed = JSON.parse(raw);
-      trends = Array.isArray(parsed.trends) ? parsed.trends : [];
-    } catch {
-      res.status(500).json({ error: "Failed to parse trends" });
+    const parsed = extractJson(raw);
+    const trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
+
+    if (trends.length === 0) {
+      console.error("TRENDS PARSE FAIL. Raw:", raw);
+      res.status(500).json({ error: "Failed to parse trends from AI response" });
       return;
     }
 
     const responseData = { trends, niche: sanitizedNiche };
-    
-    // Save to cache
-    TRENDS_CACHE.set(sanitizedNiche, { data: responseData, timestamp: Date.now() });
+    if (trends && trends.length > 0) {
+      if (redis) {
+        await redis.set(cacheKey, JSON.stringify(responseData), "EX", 1800);
+      } else {
+        TRENDS_CACHE.set(cacheKey, { data: responseData, timestamp: Date.now() });
+      }
+    }
+
+    // Auto-save to history
+    try {
+      await db.insert(contentGenerationsTable).values({
+        userId: req.userId,
+        idea: `Trends: ${sanitizedNiche}`,
+        contentType: "Trends",
+        tone: "AI Search",
+        content: responseData,
+      });
+    } catch (e) { /* non-critical — don't block response */ }
 
     res.json(responseData);
   } catch (err: any) {
     if (isAborted) return;
     console.error("TRENDS GEN ERROR:", err);
-    res.status(500).json({ error: "Generation failed" });
+    res.status(500).json({ error: "Generation failed. Please try again." });
   }
 });
 
-router.post("/content/analyze", requireAuth, requirePlanOrTrial("content_analyze"), async (req: any, res): Promise<void> => {
+// ─── /content/analyze — HYBRID ROUTE (Groq via fallback engine) ───────────
+// This does NOT need live web search. Uses Groq for analysis.
+router.post("/content/analyze", requireAuth, requirePlanOrTrial("content_analyze"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { idea, contentType = "Educational", niche = "General", platforms } = req.body as {
     idea: string;
     contentType?: string;
@@ -138,34 +182,21 @@ router.post("/content/analyze", requireAuth, requirePlanOrTrial("content_analyze
     ? Object.values(platforms).filter(Boolean).slice(0, 2).join("\n\n---\n\n").slice(0, 800)
     : "";
 
-  // Instantiate localized OpenRouter client for Perplexity
-  const openRouterClient = new OpenAI({ 
-    baseURL: "https://openrouter.ai/api/v1", 
-    apiKey: process.env.OPENROUTER_API_KEY 
-  });
+  const systemPrompt = `You are a viral content analyst. Provide surgical analysis explaining why a piece of content will perform.
+Grounded in: Live Trending Psychological Triggers, Platform Algorithm Signals, Hook Science, and Niche Audience Psychology.`;
 
-  const systemPrompt = `You are a viral content analyst. Search the live web for current high-performing content patterns. 
-You provide surgical, specific analysis that explains EXACTLY why a piece of content will or won't perform.
-
-Your analysis is grounded in:
-- Live Trending Psychological Triggers
-- Current Platform Algorithm Signals
-- Hook Science
-- Real-time Niche Audience Psychology`;
-
-  const userPrompt = `Analyze this content for performance potential with ruthless specificity based on CURRENT trends:
-
+  const userPrompt = `Analyze this content for performance potential:
 IDEA: "${sanitizedIdea}"
 CONTENT TYPE: ${contentType}
 NICHE: ${sanitizedNiche}
 ${contentSample ? `\nSAMPLE CONTENT:\n${contentSample}` : ""}
 
-Return ONLY valid JSON (no markdown):
+Return ONLY valid JSON:
 {
-  "viralityScore": 72,
-  "hookStrength": 68,
-  "engagementPotential": 75,
-  "shareability": 60,
+  "viralityScore": number,
+  "hookStrength": number,
+  "engagementPotential": number,
+  "shareability": number,
   "emotionalTrigger": "string",
   "curiosityGap": "string",
   "targetAudienceReaction": "string",
@@ -173,22 +204,20 @@ Return ONLY valid JSON (no markdown):
 }`;
 
   try {
-    const completion = await openRouterClient.chat.completions.create({
-      model: "perplexity/sonar",
+    const completion = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      response_format: { type: "json_object" },
-      max_tokens: 1200,
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      maxTokens: 1200,
     });
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? "{}";
+    const analysis = extractJson(raw);
 
-    let analysis: any = {};
-    try {
-      analysis = JSON.parse(raw);
-    } catch {
+    if (!analysis) {
       res.status(500).json({ error: "Failed to parse content analysis" });
       return;
     }
@@ -201,3 +230,5 @@ Return ONLY valid JSON (no markdown):
 });
 
 export default router;
+
+

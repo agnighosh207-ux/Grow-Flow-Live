@@ -1,8 +1,10 @@
 import { Router, type IRouter } from "express";
 import { GenerateHooksBody, GenerateHooksResponse } from "@workspace/api-zod";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent } from "../../services/ai-engine";
+import { db, contentGenerationsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -49,7 +51,7 @@ const HOOK_PATTERNS = [
   },
 ];
 
-router.post("/hooks/generate", requireAuth, requirePlanOrTrial("hooks"), async (req: any, res): Promise<void> => {
+router.post("/hooks/generate", requireAuth, requirePlanOrTrial("hooks"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
@@ -76,13 +78,9 @@ Every hook must be specific to the topic.`;
     `Hook ${i + 1} — ${p.type}:\n${p.instruction}`
   ).join("\n\n");
 
-  const languagePrompt = LANGUAGE_INSTRUCTIONS[language as string] || LANGUAGE_INSTRUCTIONS["English"];
-
   const userPrompt = `Generate 10 elite-level hooks for this topic: "${sanitizedTopic}"
   
 ${patternsInstructions}
-
-${languagePrompt}
 
 Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
 
@@ -111,6 +109,17 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
       // Emergency fallback: try to extract lines
       hooks = rawContent.split("\n").filter(l => l.trim().length > 10).slice(0, 10);
     }
+
+    // Auto-save to history
+    try {
+      await db.insert(contentGenerationsTable).values({
+        userId: req.userId,
+        idea: `Hooks: ${sanitizedTopic}`,
+        contentType: "Hooks",
+        tone: tone || "Professional",
+        content: { hooks },
+      });
+    } catch (e) { /* non-critical */ }
 
     res.json({ hooks });
   } catch (err: any) {

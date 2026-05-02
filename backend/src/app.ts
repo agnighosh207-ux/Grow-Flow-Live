@@ -2,13 +2,14 @@ import express, { type Express } from "express";
 import path from "path";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import { clerkMiddleware, getAuth } from "@clerk/express";
+import { clerkMiddleware } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import compression from "compression";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 import { authSyncMiddleware } from "./middlewares/authSyncMiddleware";
 import { enforceGenerationLimit } from "./middlewares/generationLimiter";
+import { guardianMiddleware } from "./middlewares/guardian";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { db, systemSettingsTable } from "@workspace/db";
@@ -77,10 +78,9 @@ const clerkMw = clerkMiddleware();
 app.use((req: any, res: any, next: any) => {
   if (!req.path.startsWith("/api/")) return next();
   
-  // Wrap clerkMiddleware in a 15-second timeout to prevent hangs
   const timer = setTimeout(() => {
-    console.warn("[WARN] clerkMiddleware timed out after 15s, continuing without auth");
-    next();
+    logger.error("[CRITICAL] Clerk middleware timed out after 15s. Rejecting request for security.");
+    next(new Error("Authentication timeout"));
   }, 15000);
   
   clerkMw(req, res, (err?: any) => {
@@ -90,6 +90,7 @@ app.use((req: any, res: any, next: any) => {
   });
 });
 app.use(authSyncMiddleware);
+app.use(guardianMiddleware);
 
 // ─── 7. Maintenance mode (cached) ──────────────────────────────────────────
 let maintenanceModeCache = { value: false, lastChecked: 0 };
@@ -130,19 +131,7 @@ const generalLimiter = rateLimit({
 });
 
 app.use("/api", generalLimiter);
-app.use("/api/content/generate", enforceGenerationLimit);
-app.use("/api/content/variations", enforceGenerationLimit);
-app.use("/api/ideas/generate", enforceGenerationLimit);
-app.use("/api/strategy/generate", enforceGenerationLimit);
-app.use("/api/hooks/generate", enforceGenerationLimit);
-app.use("/api/trends/generate", enforceGenerationLimit);
-app.use("/api/content/analyze", enforceGenerationLimit);
-app.use("/api/caption/enhance", enforceGenerationLimit);
-app.use("/api/bio/generate", enforceGenerationLimit);
-app.use("/api/daily/today", enforceGenerationLimit);
-app.use("/api/repurpose", enforceGenerationLimit);
-app.use("/api/improve-competitor", enforceGenerationLimit);
-app.use("/api/content/pack", enforceGenerationLimit);
+app.use("/api", generalLimiter);
 
 // ─── 9. API router ─────────────────────────────────────────────────────────
 app.use("/api", router);

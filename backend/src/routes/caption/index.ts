@@ -1,7 +1,9 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent } from "../../services/ai-engine";
+import { db, contentGenerationsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -14,7 +16,7 @@ const PLATFORM_CONTEXT: Record<string, string> = {
   General: "Universal social media caption. Engaging, clear, conversation-starting. Focus on the emotional payoff for the reader.",
 };
 
-router.post("/caption/enhance", requireAuth, requirePlanOrTrial("caption"), async (req: any, res): Promise<void> => {
+router.post("/caption/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
@@ -75,6 +77,17 @@ Return ONLY this JSON: {
     } catch {
       throw new Error("Failed to parse caption response.");
     }
+    // Auto-save to history
+    try {
+      await db.insert(contentGenerationsTable).values({
+        userId: req.userId,
+        idea: `Caption: ${sanitizedCaption.substring(0, 80)}...`,
+        contentType: "Caption",
+        tone: "Enhancement",
+        content: parsed,
+      });
+    } catch (e) { /* non-critical */ }
+
     res.json(parsed);
   } catch (err: any) {
     if (isAborted) return;

@@ -24,6 +24,7 @@ process.on("unhandledRejection", (reason) => {
 
 // ─── 3. Boot diagnostics ─────────────────────────────────────────────────────
 const PORT = Number(process.env.PORT) || 3000;
+// We use direct console for early boot diagnostics before logger is imported
 console.log("[BOOT] Starting GrowFlow AI Server...");
 console.log("[BOOT] Node:", process.version, "| CWD:", process.cwd());
 console.log("[BOOT] PORT:", PORT, "| NODE_ENV:", process.env.NODE_ENV);

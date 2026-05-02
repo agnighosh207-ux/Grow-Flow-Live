@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
@@ -84,21 +84,33 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
   const directFeedback = data?.content?.viral_feedback;
   const directSuggestion = data?.content?.viral_suggestion;
 
-  const scores = analysis
-    ? [
+  const scores = useMemo(() => {
+    if (analysis) {
+      return [
         { label: "Virality", score: analysis.viralityScore, color: "bg-red-400" },
         { label: "Hook Strength", score: analysis.hookStrength, color: "bg-pink-400" },
         { label: "Engagement", score: analysis.engagementPotential, color: "bg-cyan-400" },
         { label: "Shareability", score: analysis.shareability, color: "bg-emerald-400" },
-      ]
-    : [
-        { label: "Virality", score: directViralScore ?? (78 + Math.floor(Math.random() * 18)), color: "bg-red-400" },
-        { label: "Hook Strength", score: 80 + Math.floor(Math.random() * 16), color: "bg-pink-400" },
-        { label: "Engagement", score: 75 + Math.floor(Math.random() * 20), color: "bg-cyan-400" },
-        { label: "Shareability", score: 72 + Math.floor(Math.random() * 18), color: "bg-emerald-400" },
       ];
+    }
+    
+    // Use direct scores from AI content response if available (Bug 10 fix)
+    const hookStrength = data?.content?.hook_strength ?? 80;
+    const engagementPotential = data?.content?.engagement_potential ?? 75;
+    const shareability = data?.content?.shareability ?? 72;
+    const virality = directViralScore ?? 78;
 
-  const avg = analysis?.viralityScore ?? directViralScore ?? Math.round(scores.reduce((a, s) => a + s.score, 0) / scores.length);
+    return [
+      { label: "Virality", score: virality, color: "bg-red-400" },
+      { label: "Hook Strength", score: hookStrength, color: "bg-pink-400" },
+      { label: "Engagement", score: engagementPotential, color: "bg-cyan-400" },
+      { label: "Shareability", score: shareability, color: "bg-emerald-400" },
+    ];
+  }, [analysis, data, directViralScore]);
+
+  const avg = useMemo(() => {
+    return analysis?.viralityScore ?? directViralScore ?? Math.round(scores.reduce((a: number, s: any) => a + s.score, 0) / scores.length);
+  }, [analysis, directViralScore, scores]);
 
   return (
       <motion.div
@@ -136,7 +148,7 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
         )}
 
         <div className="space-y-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
-          {scores.map(s => (
+          {scores.map((s: any) => (
             <ContentScoreBadge key={s.label} score={s.score} label={s.label} color={s.color} />
           ))}
         </div>

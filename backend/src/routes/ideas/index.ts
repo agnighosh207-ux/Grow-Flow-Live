@@ -1,8 +1,24 @@
 import { Router, type IRouter } from "express";
 import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { extractJson } from "../../services/ai-engine";
+import { db, contentGenerationsTable } from "@workspace/db";
+import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
+
+// ─── Perplexity AI Direct Client (for 100% search routes) ─────────────────
+// Ideas use Perplexity DIRECTLY — it searches the live web AND
+// structures the output in a single call. NO Groq involved.
+const perplexityClient = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.PERPLEXITY_AI_API,
+  defaultHeaders: {
+    "HTTP-Referer": "https://growflow.ai",
+    "X-Title": "GrowFlow AI",
+  },
+});
 
 const nicheContextMap: Record<string, string> = {
   Fitness: "body transformation, training optimization, nutrition science, gym culture, injury prevention, performance metrics, workout psychology, recovery",
@@ -27,7 +43,10 @@ const nichePainPoints: Record<string, string> = {
 const IDEAS_CACHE = new Map<string, { data: any, timestamp: number }>();
 const IDEAS_TTL = 15 * 60 * 1000; // 15 minutes
 
-router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), async (req: any, res): Promise<void> => {
+// ─── /ideas/generate — 100% PERPLEXITY SEARCH ROUTE ──────────────────────
+// Perplexity sonar searches the live web AND structures JSON in ONE call.
+// Groq is NOT involved here. JSON output enforced via prompt instructions.
+router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
@@ -36,21 +55,24 @@ router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), async (
   const sanitizedGoal = String(goal).substring(0, 500);
 
   const cacheKey = `ideas:${sanitizedNiche}:${sanitizedGoal}:${language}`;
-  const cached = IDEAS_CACHE.get(cacheKey);
-  if (cached && (Date.now() - cached.timestamp < IDEAS_TTL)) {
-    res.json(cached.data);
-    return;
+  
+  if (redis) {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      res.json(JSON.parse(cached));
+      return;
+    }
+  } else {
+    const cached = IDEAS_CACHE.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < IDEAS_TTL)) {
+      res.json(cached.data);
+      return;
+    }
   }
 
   const nicheContext = nicheContextMap[sanitizedNiche as string] || nicheContextMap["General"];
   const painPoint = nichePainPoints[sanitizedNiche as string] || nichePainPoints["General"];
   const currentYear = new Date().getFullYear();
-
-  // Instantiate localized OpenRouter client for Perplexity
-  const openRouterClient = new OpenAI({ 
-    baseURL: "https://openrouter.ai/api/v1", 
-    apiKey: process.env.OPENROUTER_API_KEY 
-  });
 
   const systemPrompt = `You are a content strategist. Search the live web for trending topics and viral patterns in the ${sanitizedNiche} space. 
 Generate 10 high-performing content ideas for ${sanitizedNiche} in ${currentYear}.
@@ -58,6 +80,8 @@ NICHE: ${sanitizedNiche}
 NICHE CONTEXT: ${nicheContext}
 AUDIENCE PSYCHOLOGY: ${painPoint}
 CREATOR GOAL: ${sanitizedGoal}.
+LANGUAGE: ${language}.
+Output must be in ${language}.
 
 Return ONLY a JSON object.`;
 
@@ -69,7 +93,7 @@ Return ONLY a JSON object.`;
       "hook": "string",
       "angle": "string",
       "whyItWorks": "string",
-      "platform": "string",
+      "platform": "Instagram" | "YouTube" | "Twitter" | "LinkedIn",
       "pattern": "string"
     }
   ]
@@ -77,29 +101,57 @@ Return ONLY a JSON object.`;
 
   try {
     if (isAborted) return;
-    const completion = await openRouterClient.chat.completions.create({
+
+    // DIRECT Perplexity call — search + structure in ONE step
+    // NOTE: Perplexity/Sonar does NOT support response_format parameter.
+    // JSON output is enforced via system/user prompt instructions.
+    const completion = await perplexityClient.chat.completions.create({
       model: "perplexity/sonar",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      response_format: { type: "json_object" },
-      max_tokens: 2000,
+      max_tokens: 2500,
     });
     
     if (isAborted) return;
     const content = completion.choices[0]?.message?.content || "{}";
-    const parsed = JSON.parse(content);
+    const parsed = extractJson(content);
     
-    const responseData = { ideas: parsed.ideas ?? [] };
-    IDEAS_CACHE.set(cacheKey, { data: responseData, timestamp: Date.now() });
+    if (!parsed || !Array.isArray(parsed.ideas) || parsed.ideas.length === 0) {
+      console.error("IDEAS PARSE FAIL. Raw:", content);
+      res.status(500).json({ error: "Failed to parse ideas from AI response" });
+      return;
+    }
+
+    const responseData = { ideas: parsed.ideas };
+    if (parsed.ideas && parsed.ideas.length > 0) {
+      if (redis) {
+        await redis.set(cacheKey, JSON.stringify(responseData), "EX", 900);
+      } else {
+        IDEAS_CACHE.set(cacheKey, { data: responseData, timestamp: Date.now() });
+      }
+    }
+
+    // Auto-save to history
+    try {
+      await db.insert(contentGenerationsTable).values({
+        userId: req.userId,
+        idea: `Ideas: ${sanitizedGoal}`,
+        contentType: "Ideas",
+        tone: "AI Search",
+        content: responseData,
+      });
+    } catch (e) { /* non-critical */ }
 
     res.json(responseData);
   } catch (err: any) {
     if (isAborted) return;
     console.error("IDEAS GEN ERROR:", err);
-    res.status(503).json({ error: "Failed to generate ideas" });
+    res.status(503).json({ error: "AI temporarily unavailable. Please try again." });
   }
 });
 
 export default router;
+
+

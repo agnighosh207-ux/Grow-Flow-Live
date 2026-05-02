@@ -1,8 +1,9 @@
 import { Router, type IRouter, type Response } from "express";
 import { type AuthenticatedRequest } from "../../types";
 import { getAuth } from "@clerk/express";
-import { eq, desc, count, sql, and, gte } from "drizzle-orm";
+import { eq, desc, count, sql, and, gte, inArray } from "drizzle-orm";
 import { db, contentGenerationsTable, usersTable, usageLogsTable } from "@workspace/db";
+import { logger } from "../../lib/logger";
 import {
   GenerateContentBody,
   GenerateVariationsBody,
@@ -19,6 +20,7 @@ import {
 // Note: zod is NOT a direct dependency of backend — use manual validation instead
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { sendCreditWarningEmail } from "../../services/email";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
@@ -127,12 +129,10 @@ LINKEDIN POST:
 ${toneInstructions[tone] || ""}
 ${nicheAdaptation[niche] || ""}
 ${platformHint}
-${LANGUAGE_INSTRUCTIONS[language] || ""}
 
 TOPIC: "${sanitizeInput(idea)}"
 
 Generate elite-level content for all 4 platforms following the system instructions exactly.
-Ensure keywords and hashtags match the selected language (e.g., if Bengali is selected, provide Bengali/English mix hashtags).
 
 Return ONLY valid JSON (no markdown, no code blocks):
 {
@@ -159,6 +159,9 @@ Return ONLY valid JSON (no markdown, no code blocks):
     "hashtags": "3-5 professional hashtags"
   },
   "viral_score": 85,
+  "hook_strength": 82,
+  "engagement_potential": 88,
+  "shareability": 84,
   "viral_feedback": "Brief feedback on why this content works.",
   "viral_suggestion": "💡 Pro Tip: One specific framing or delivery suggestion to make this go even more viral.",
   "seo_keywords": ["keyword1", "keyword2", "keyword3"],
@@ -214,7 +217,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
   }
 }
 
-router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post("/content/generate", requireAuth, enforceGenerationLimit, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
   // Manual validation (zod is not a direct backend dependency)
@@ -327,7 +330,6 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
   }
 
   try {
-    if (isAborted) return;
     const [savedGen] = await db.insert(contentGenerationsTable)
       .values({
         userId: req.userId,
@@ -345,23 +347,27 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
       action: "GENERATE_CONTENT"
     });
 
+    // BUG 4 Fix: Move email warning after successful insert and use post-deduction value
     if (user?.email) {
-      if (generationsRemaining <= 2) {
-        sendCreditWarningEmail(user.email!, generationsRemaining, planTier === "INFINITY");
+      // Use the updated count from the user object (which was fetched after middleware decrement)
+      const currentRemaining = user?.generationsRemaining ?? 0;
+      if (currentRemaining <= 2) {
+        sendCreditWarningEmail(user.email!, currentRemaining, planTier === "INFINITY").catch(e => console.error("Email warning error:", e));
       }
     }
 
     res.json({
       id: savedGen.id,
       content,
-      generationsRemaining: Math.max(0, generationsRemaining - 1),
+      // BUG 3 Fix: Return the actual remaining count (already decremented by middleware)
+      generationsRemaining: user?.generationsRemaining ?? 0,
       plan: status,
     });
   } catch (err: any) {
     console.error("ROUTE ERROR (/content/generate):", err);
-    const status = err?.status || 500;
+    const httpStatus = err?.status || 500;
     const message = err?.message || "An unexpected error occurred during generation.";
-    res.status(status).json({ 
+    res.status(httpStatus).json({ 
       error: "generation_failed", 
       message,
       details: process.env.NODE_ENV === "development" ? err?.stack : undefined
@@ -370,7 +376,7 @@ router.post("/content/generate", requireAuth, async (req: AuthenticatedRequest, 
   }
 });
 
-router.post("/content/variations", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/content/variations", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
   // Manual validation (zod is not a direct backend dependency)
   const { idea, contentType, tone, platform, language: bodyLanguage2 } = req.body || {};
   const validContentTypes2 = ['Educational', 'Story', 'Viral'];
@@ -446,6 +452,13 @@ router.post("/content/variations", requireAuth, async (req: any, res): Promise<v
     return;
   }
 
+  // Fallback for unexpected plan/status combinations
+  res.status(403).json({
+    error: "forbidden",
+    message: "Your current plan does not support content regeneration. Please upgrade to Creator or Infinity.",
+  });
+  return;
+
 
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
   const language = bodyLanguage2 ?? "English";
@@ -459,7 +472,6 @@ router.post("/content/variations", requireAuth, async (req: any, res): Promise<v
 - Have a different structure and rhythm
 - NOT recycle phrases or sentences from the other variations
 - ZERO TYPOS: Ensure spelling, grammar, and typography are absolutely perfect and professional.
-${languageInstructionsPrompt}
 
 If variation 1 uses a story arc, variation 2 should use a bold claim, variation 3 should use a framework/listicle structure. Force genuine creative diversity.`;
 
@@ -509,9 +521,15 @@ Return ONLY this JSON:
       variations = JSON.parse(rawContent);
     } catch {
       const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-      variations = jsonMatch ? JSON.parse(jsonMatch[0]) : { variations: [] };
+      const jsonString = jsonMatch?.[0];
+      if (jsonString) {
+        variations = JSON.parse(jsonString as string);
+      } else {
+        variations = { variations: [] };
+      }
     }
   } catch (err: any) {
+    logger.error({ err: String(err) }, "Variations generation error");
     res.status(503).json({ error: "AI is temporarily unavailable. Please try again in a moment." });
     return;
   }
@@ -529,44 +547,73 @@ Return ONLY this JSON:
 });
 
 router.get("/content/history", requireAuth, async (req: any, res): Promise<void> => {
-  const parsed = GetContentHistoryQueryParams.safeParse(req.query);
-  const rawLimit = parsed.success ? (parsed.data.limit ?? 20) : 20;
-  const limit = Math.min(rawLimit, 100); // Hard cap at 100 rows
+  try {
+    const parsed = GetContentHistoryQueryParams.safeParse(req.query);
+    const rawLimit = parsed.success ? (parsed.data.limit ?? 50) : 50;
+    const limit = Math.min(rawLimit, 200);
+    const category = typeof req.query.category === "string" ? req.query.category : undefined;
 
-  const history = await db
-    .select()
-    .from(contentGenerationsTable)
-    .where(eq(contentGenerationsTable.userId, req.userId))
-    .orderBy(desc(contentGenerationsTable.createdAt))
-    .limit(limit);
+    // 15-day retention window — filter only, never delete.
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
-  res.json({ items: history });
+    const conditions = [
+      eq(contentGenerationsTable.userId, req.userId),
+      gte(contentGenerationsTable.createdAt, fifteenDaysAgo),
+    ];
+
+    if (category && category !== "all") {
+      const categories = category.split(",").map((c: string) => c.trim());
+      if (categories.length > 1) {
+        conditions.push(inArray(contentGenerationsTable.contentType, categories));
+      } else {
+        conditions.push(eq(contentGenerationsTable.contentType, categories[0]));
+      }
+    }
+
+    const history = await db
+      .select()
+      .from(contentGenerationsTable)
+      .where(and(...conditions))
+      .orderBy(desc(contentGenerationsTable.createdAt))
+      .limit(limit);
+
+    res.json({ items: history });
+  } catch (err) {
+    console.error("History fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch history" });
+  }
 });
 
 router.get("/content/history/:id", requireAuth, async (req: any, res): Promise<void> => {
-  const parsed = GetHistoryItemParams.safeParse(req.params);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid ID" });
-    return;
+  try {
+    const parsed = GetHistoryItemParams.safeParse(req.params);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid ID" });
+      return;
+    }
+
+    const [item] = await db
+      .select()
+      .from(contentGenerationsTable)
+      .where(
+        and(
+          eq(contentGenerationsTable.id, parsed.data.id),
+          eq(contentGenerationsTable.userId, req.userId),
+        ),
+      )
+      .limit(1);
+
+    if (!item) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    res.json({ item });
+  } catch (err) {
+    console.error("History item fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch history item" });
   }
-
-  const [item] = await db
-    .select()
-    .from(contentGenerationsTable)
-    .where(
-      and(
-        eq(contentGenerationsTable.id, parsed.data.id),
-        eq(contentGenerationsTable.userId, req.userId),
-      ),
-    )
-    .limit(1);
-
-  if (!item) {
-    res.status(404).json({ error: "Not found" });
-    return;
-  }
-
-  res.json({ item });
 });
 
 router.delete("/content/history/:id", requireAuth, async (req: any, res): Promise<void> => {
@@ -626,10 +673,10 @@ router.get("/content/stats", requireAuth, async (req: AuthenticatedRequest, res:
     .where(eq(contentGenerationsTable.userId, req.userId))
     .groupBy(contentGenerationsTable.platform);
 
-  const breakdown: Record<string, number> = { instagram: 0, youtube: 0, twitter: 0, linkedin: 0 };
+  const breakdown: Record<string, number> = {};
   platformStats.forEach(s => {
-    if (s.platform && breakdown.hasOwnProperty(s.platform)) {
-      breakdown[s.platform] = Number(s.count);
+    if (s.platform) {
+      breakdown[s.platform.toLowerCase()] = Number(s.count);
     }
   });
 

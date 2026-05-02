@@ -1,16 +1,15 @@
 import rateLimit from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
-import Redis from "ioredis";
-import { getAuth } from "@clerk/express";
-import { db, usersTable, securityLogsTable } from "@workspace/db";
+import { extractJson } from "../services/ai-engine";
+import { db, contentGenerationsTable, usersTable, securityLogsTable } from "@workspace/db";
+import { redis } from "../lib/redis";
 import { eq } from "drizzle-orm";
-import pino from "pino";
+import { logger } from "../lib/logger";
+import { getAuth } from "@clerk/express";
 import crypto from "crypto";
 
-const logger = pino();
-
-// Optional Redis Client. If not provided, it falls back to in-memory gracefully.
-const redisClient = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL) : null;
+// Use shared Redis client
+const redisClient = redis;
 
 // Dynamic Quotas Based on Tier
 const getQuotaForTier = (tier: string) => {
@@ -19,7 +18,7 @@ const getQuotaForTier = (tier: string) => {
     case "CREATOR": return 30; // 30 / hour
     case "STARTER": return 10; // 10 / hour
     case "FREE":
-    default: return 5; // 5 / 24 hours (Free total is enforced via creditsRemaining basically)
+    default: return 5; // 5 / 24 hours
   }
 };
 
@@ -33,7 +32,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
     return res.status(429).json({ error: "api_rate_limit", message: "Rate limit exceeded." });
   }
 
-  logger.warn(`[SECURITY] Rate limit reached by user: ${userId}`);
+  logger.warn({ userId }, "Rate limit reached by user");
   
   // Log Violation
   await db.insert(securityLogsTable).values({
@@ -54,7 +53,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
 
   // Strike 5 = BAN
   if (newViolations >= 5) {
-    logger.error(`[SECURITY] USER FLAG BANNED: ${userId}`);
+    logger.error({ userId }, "USER FLAG BANNED");
     isBanned = true;
     updateData.isBanned = true;
     
@@ -94,16 +93,17 @@ const handleRateLimitReached = async (req: any, res: any) => {
 const createLimiter = (windowMs: number, prefix: string) => {
   return rateLimit({
     windowMs,
-    max: (req: any, res: any) => getQuotaForTier(req.rateLimitUser?.planType || "FREE"),
+    max: (req: any) => getQuotaForTier(req.rateLimitUser?.planType || "FREE"),
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req: any) => `${req.rateLimitUser?.id || req.ip}`,
+    keyGenerator: (req: any) => req.rateLimitUser?.id || req.ip || "unknown",
+    validate: false, // Suppress all validation warnings for production stability
     handler: handleRateLimitReached,
     store: redisClient ? new RedisStore({
       // @ts-ignore
       sendCommand: (...args: string[]) => redisClient.call(...args),
       prefix: `rl_${prefix}:`,
-    }) : undefined, // Uses memory store if redis is not configured
+    }) : undefined,
   });
 };
 
@@ -111,10 +111,6 @@ const createLimiter = (windowMs: number, prefix: string) => {
 const freeLimiter = createLimiter(24 * 60 * 60 * 1000, "free");
 const paidLimiter = createLimiter(60 * 60 * 1000, "paid");
 
-/**
- * Custom rate limiter middleware that uses Redis (if configured)
- * and properly routes to the free or paid limiter instances.
- */
 export const guardianMiddleware = async (req: any, res: any, next: any) => {
   try {
     const auth = getAuth(req);
@@ -144,8 +140,8 @@ export const guardianMiddleware = async (req: any, res: any, next: any) => {
       return paidLimiter(req, res, next);
     }
 
-  } catch (error: any) {
-    logger.error({ err: error }, "[Guardian] Middleware crash");
-    next();
+  } catch (err) {
+    logger.error({ err: String(err) }, "Auth Sync Error");
+    next(err);
   }
 };

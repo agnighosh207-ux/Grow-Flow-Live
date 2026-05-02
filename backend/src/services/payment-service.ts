@@ -1,7 +1,5 @@
 import Razorpay from "razorpay";
-import pino from "pino";
-
-const logger = pino();
+import { logger } from "../lib/logger";
 
 function getRazorpayClient() {
   const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";

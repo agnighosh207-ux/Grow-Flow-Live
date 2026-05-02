@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { logger } from "../lib/logger";
 
 let resend: Resend | null = null;
 if (process.env.RESEND_API_KEY) {
@@ -54,7 +55,7 @@ export async function sendWelcomeEmail(email: string, planName: string) {
       html,
     });
   } catch (error) {
-    console.error("Error sending welcome email:", error);
+    logger.error({ email, error: String(error) }, "Email send failure");
   }
 }
 
@@ -126,6 +127,6 @@ export async function sendRenewalEmail(email: string, planName: string) {
       html,
     });
   } catch (error) {
-    console.error("Error sending renewal email:", error);
+    logger.error({ email, error: String(error) }, "Email send failure");
   }
 }

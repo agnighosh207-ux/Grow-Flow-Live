@@ -87,9 +87,9 @@ export class WelcomeSequence {
         subject: 'Welcome to Grow Flow AI! 🚀',
         html,
       }));
-      console.log(`Premium Welcome email sent to ${email}`);
+      logger.info(`Premium Welcome email sent to ${email}`);
     } catch (error) {
-      console.error('Failed to send welcome email:', error);
+      logger.error({ email, error: String(error) }, 'Failed to send welcome email');
       await logEmailFailure(email, error, 'sendWelcomeToBeta');
     }
   }
@@ -140,9 +140,9 @@ export class WelcomeSequence {
         subject: isTrial ? 'Your Pro Trial is Active! 🎉' : 'Payment Successful! Upgrade Complete 🎉',
         html,
       }));
-      console.log(`Payment Success email sent to ${email}`);
+      logger.info(`Payment Success email sent to ${email}`);
     } catch (error) {
-      console.error('Failed to send Payment Success email:', error);
+      logger.error({ email, error: String(error) }, 'Failed to send Payment Success email');
       await logEmailFailure(email, error, 'sendPaymentSuccess');
     }
   }
@@ -172,9 +172,9 @@ export class WelcomeSequence {
         subject: 'You\'re Upgraded! Here is your Power User Guide ⚡',
         html,
       }));
-      console.log(`Power User Guide sent to ${email}`);
+      logger.info(`Power User Guide sent to ${email}`);
     } catch (error) {
-      console.error('Failed to send power user guide:', error);
+      logger.error({ email, error: String(error) }, 'Failed to send power user guide');
       await logEmailFailure(email, error, 'sendPowerUserGuide');
     }
   }
