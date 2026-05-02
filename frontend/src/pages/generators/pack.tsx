@@ -589,6 +589,7 @@ export default function ContentPack() {
                         <CopyBtn text={result.instagram.visualDirection} label="Copy Prompt" />
                       </div>
                     </SectionCard>
+                   )}
                 </motion.div>
               )}
 
