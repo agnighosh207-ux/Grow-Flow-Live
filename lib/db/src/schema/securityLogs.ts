@@ -4,7 +4,7 @@ export const eventTypeEnum = pgEnum("security_event_type", ["RATE_LIMIT", "SUSPI
 
 export const securityLogsTable = pgTable("security_logs", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id"), // Nullable for anonymous/unauth logs
   eventType: eventTypeEnum("event_type").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
