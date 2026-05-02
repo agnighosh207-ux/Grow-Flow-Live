@@ -112,12 +112,16 @@ const freeLimiter = createLimiter(24 * 60 * 60 * 1000, "free");
 const paidLimiter = createLimiter(60 * 60 * 1000, "paid");
 
 export const guardianMiddleware = async (req: any, res: any, next: any) => {
+  if (!req.path.startsWith("/api/") || req.path.startsWith("/api/health") || req.path.startsWith("/api/subscription/webhook")) {
+    return next();
+  }
+
   try {
     const auth = getAuth(req);
     const userId = auth?.sessionClaims?.userId || auth?.userId;
 
     if (!userId) {
-      return next(); // Pass to requireAuth to handle 401
+      return next(); 
     }
 
     // --- FIX: Use pre-synchronized user from req.user to avoid redundant DB hits ---
