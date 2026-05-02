@@ -5,6 +5,7 @@ import { eq, and, gt, isNull } from "drizzle-orm";
 import { WelcomeSequence } from "../lib/WelcomeSequence";
 import { ensureReferralCode } from "../utils/referral";
 import { logger } from "../lib/logger";
+import { TIER_CREDITS } from "./planMiddleware";
 
 const syncCache = new Map<string, { timestamp: number, user: any }>();
 
