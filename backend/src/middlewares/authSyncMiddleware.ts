@@ -196,8 +196,13 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     }
 
     next();
-  } catch (err) {
-    logger.error({ err: String(err) }, "Auth Sync Error");
+  } catch (err: any) {
+    logger.error({ 
+      err: err?.message || String(err),
+      stack: err?.stack,
+      path: req.path,
+      userId: req.userId
+    }, "Auth Sync Error Detail");
     next(err);
   }
 };
