@@ -31,7 +31,7 @@ setInterval(() => {
  */
 export const authSyncMiddleware = async (req: any, res: any, next: any) => {
   try {
-    if (req.path.startsWith("/api/health") || req.path.startsWith("/api/subscription/webhook")) {
+    if (!req.path.startsWith("/api/") || req.path.startsWith("/api/health") || req.path.startsWith("/api/subscription/webhook")) {
       return next();
     }
 
