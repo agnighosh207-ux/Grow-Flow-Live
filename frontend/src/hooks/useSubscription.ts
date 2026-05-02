@@ -83,7 +83,7 @@ export function useSubscriptionStatus() {
 export function useCreateSubscription() {
   const { getToken } = useAuth();
   return useMutation({
-    mutationFn: async (params: { planType: "starter" | "creator" | "infinity", couponCode?: string, billingPeriod?: "monthly" | "yearly" }) => {
+    mutationFn: async (params: { planType: "starter" | "creator" | "infinity", couponCode?: string, billingPeriod?: "monthly" | "yearly", currency?: "INR" | "USD" }) => {
       const token = await getToken();
       return fetchWithAuth(`${BASE}/api/subscription/create`, token!, {
         method: "POST",

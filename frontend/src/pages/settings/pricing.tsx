@@ -853,7 +853,7 @@ export default function PricingPage() {
       <UpgradeModal
         open={upgradeModal.open}
         onClose={() => setUpgradeModal({ ...upgradeModal, open: false })}
-        plan={upgradeModal.plan}
+        targetPlan={upgradeModal.plan}
         billingPeriod={upgradeModal.billing === "yearly" ? "yearly" : "monthly"}
         currency={upgradeModal.currency}
       />

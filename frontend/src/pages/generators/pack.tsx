@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package2, Sparkles, Copy, Check, ChevronDown, Crown, Lock, Wand2, Activity,
-  Clock, Music, Target, Image as ImageIcon, MessageSquare, Hash
+  Clock, Music, Target, Image as ImageIcon, MessageSquare, Hash, Brain
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
@@ -125,7 +125,7 @@ export default function ContentPack() {
   const [loading, setLoading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [result, setResult] = useState<PackResult | null>(null);
-  const [activeTab, setActiveTab] = useState<"blueprint" | "scripts" | "visuals" | "strategy">("blueprint");
+  const [activeTab, setActiveTab] = useState<"blueprint" | "scripts" | "visuals" | "strategy" | "kit">("blueprint");
   const [language, setLanguage] = useState("English");
 
   useEffect(() => {

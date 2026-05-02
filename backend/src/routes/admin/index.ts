@@ -28,7 +28,7 @@ const requireAdmin = async (req: any, res: any, next: any) => {
       return res.status(403).json({ error: "Forbidden" });
     }
     next();
-  } catch (error) {
+  } catch (error: any) {
     logger.error({ error: error?.message }, "[AUTH] Admin check error");
     res.status(500).json({ error: "Internal server error" });
   }
