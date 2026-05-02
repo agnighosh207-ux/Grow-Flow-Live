@@ -89,6 +89,28 @@ export function extractJson(text: string): any {
   }
 }
 
+export const validateAIConfig = () => {
+  const providers = [
+    { name: "Groq", key: process.env.GROQ_API_KEY },
+    { name: "Together AI", key: process.env.TOGETHER_AI_API_KEY },
+    { name: "Cerebras", key: process.env.CEREBRAS_API_KEY },
+    { name: "Perplexity", key: process.env.PERPLEXITY_AI_API },
+    { name: "Gemini", key: process.env.GEMINI_API_KEY },
+    { name: "SambaNova", key: process.env.SAMBANOVA_API_KEY },
+  ];
+
+  const active = providers.filter(p => p.key && p.key.trim() !== "");
+  
+  if (active.length === 0) {
+    logger.error("[CRITICAL] No AI providers configured. At least one API key must be set.");
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("No AI providers configured");
+    }
+  } else {
+    logger.info(`[AI] Initialized with providers: ${active.map(p => p.name).join(", ")}`);
+  }
+};
+
 export const generateContent = async ({
   messages,
   userPlan,
@@ -180,6 +202,12 @@ export const generateContent = async ({
       model: isInfinity ? "Meta-Llama-3.1-70B-Instruct" : "Meta-Llama-3.1-8B-Instruct",
     },
     {
+       name: "OpenRouter Search",
+       apiKey: process.env.PERPLEXITY_AI_API,
+       baseURL: "https://openrouter.ai/api/v1",
+       model: "perplexity/sonar",
+    },
+    {
        name: "Groq Llama 3.3 70B",
        apiKey: process.env.GROQ_API_KEY,
        baseURL: "https://api.groq.com/openai/v1",
@@ -188,9 +216,13 @@ export const generateContent = async ({
   ];
 
   let lastError: any = null;
+  let attemptCount = 0;
+  const MAX_PROVIDER_ATTEMPTS = 3; // --- FIX: Limit total fallbacks to prevent latency cascade (High 4 fix) ---
 
   for (const provider of providers) {
     if (!provider.apiKey) continue;
+    if (attemptCount >= MAX_PROVIDER_ATTEMPTS) break;
+    attemptCount++;
 
     const client = new OpenAI({ apiKey: provider.apiKey, baseURL: provider.baseURL });
 
@@ -209,6 +241,14 @@ export const generateContent = async ({
           }
         }
 
+        // --- FIX: Feed back validation errors on retry ---
+        if (attempt > 0 && lastError) {
+          finalMessages.push({ 
+            role: 'user', 
+            content: `Your previous response had a validation error: ${lastError.message}. Please fix the JSON structure and return the corrected valid JSON object only.` 
+          });
+        }
+
         const response = await client.chat.completions.create(
           {
             model: provider.model,
@@ -217,7 +257,7 @@ export const generateContent = async ({
             max_tokens: maxTokens,
             response_format: zodSchema ? { type: "json_object" } : undefined,
           },
-          { timeout: 60000 }
+          { timeout: 15000 } // --- FIX: Reduced timeout from 60s to 15s (High 4 fix) ---
         );
 
         const content = response.choices[0]?.message?.content || "";
@@ -245,7 +285,7 @@ export const generateContent = async ({
         break; // Network/API error, move to next provider
       }
     }
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
 
   throw lastError || new Error("AI engine exhausted all providers.");

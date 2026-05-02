@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { eq, and } from "drizzle-orm";
-import { db, usersTable, dailyPlansTable } from "@workspace/db";
+import { eq, and, sql } from "drizzle-orm";
+import { db, usersTable, dailyPlansTable, featureUsageLogsTable } from "@workspace/db";
+import crypto from "crypto";
 import { DailyResponseSchema } from "@workspace/api-zod";
 import { requireAuth } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
@@ -125,7 +126,7 @@ router.get("/daily/today", requireAuth, async (req: any, res): Promise<void> => 
   });
 });
 
-router.post("/daily/complete", requireAuth, async (req: any, res): Promise<void> => {
+router.patch("/daily/today/complete", requireAuth, async (req: any, res): Promise<void> => {
   const today = getTodayDate();
   const userId = req.userId;
 
@@ -133,7 +134,11 @@ router.post("/daily/complete", requireAuth, async (req: any, res): Promise<void>
     .where(and(eq(dailyPlansTable.userId, userId), eq(dailyPlansTable.date, today)));
 
   if (!plan) { res.status(404).json({ error: "No plan for today" }); return; }
-  if (plan.completedAt) { res.json({ streak: computeCurrentStreak(await db.select().from(usersTable).where(eq(usersTable.id, userId)).then(r => r[0])), alreadyCompleted: true }); return; }
+  if (plan.completedAt) { 
+    const [u] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    res.json({ streak: computeCurrentStreak(u), alreadyCompleted: true }); 
+    return; 
+  }
 
   await db.update(dailyPlansTable).set({ completedAt: new Date() })
     .where(and(eq(dailyPlansTable.userId, userId), eq(dailyPlansTable.date, today)));
@@ -152,8 +157,41 @@ router.post("/daily/complete", requireAuth, async (req: any, res): Promise<void>
     newStreak = 1;
   }
 
+  // Streak Milestone Rewards
+  const oldStreak = user.currentStreak || 0;
+  if (newStreak > oldStreak) {
+    const rewards: Record<number, number> = { 3: 1, 7: 3, 30: 10 };
+    const rewardCredits = rewards[newStreak];
+    
+    const canGrantReward = !user.streakRewardLastGrantedAt || 
+      new Date(user.streakRewardLastGrantedAt).toISOString().slice(0, 10) !== today;
+
+    if (rewardCredits && canGrantReward) {
+      await db.update(usersTable)
+        .set({ 
+          generationsRemaining: sql`${usersTable.generationsRemaining} + ${rewardCredits}`,
+          streakRewardLastGrantedAt: new Date()
+        })
+        .where(eq(usersTable.id, userId));
+      
+      if (newStreak === 7 || newStreak === 30) {
+        if (user.email) {
+          import("../../services/email").then(({ sendStreakRewardEmail }) => {
+            sendStreakRewardEmail(user.email!, newStreak, rewardCredits);
+          });
+        }
+      }
+    }
+  }
+
   await db.update(usersTable).set({ currentStreak: newStreak, lastStreakDate: today })
     .where(eq(usersTable.id, userId));
+
+  db.insert(featureUsageLogsTable).values({
+    id: crypto.randomUUID(),
+    userId: userId,
+    feature: "daily"
+  }).catch(() => {});
 
   res.json({ streak: newStreak, completedToday: true });
 });

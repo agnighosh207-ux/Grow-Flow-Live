@@ -3,6 +3,8 @@ import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddlewar
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent, extractJson } from "../../services/ai-engine";
+import { db, featureUsageLogsTable } from "@workspace/db";
+import crypto from "crypto";
 
 const router: IRouter = Router();
 
@@ -52,6 +54,12 @@ Return ONLY a JSON object: {"repurposedContent": "string"}`;
     }
 
     res.json({ result: parsed.repurposedContent });
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "repurpose"
+    }).catch(() => {});
   } catch (err: any) {
     if (isAborted) return;
     console.error("REPURPOSE ERROR:", err);

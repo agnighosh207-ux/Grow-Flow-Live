@@ -2,7 +2,6 @@
 packages:
   - frontend
   - backend
-  - sandbox
   - lib/*
   - lib/integrations/*
   - scripts

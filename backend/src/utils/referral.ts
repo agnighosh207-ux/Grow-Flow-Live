@@ -32,11 +32,16 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
   const [referredUser] = await db.select({
     referralUsedCode: usersTable.referralUsedCode,
     trialEndsAt: usersTable.trialEndsAt,
+    subscriptionStatus: usersTable.subscriptionStatus,
   }).from(usersTable).where(eq(usersTable.id, referredUserId));
 
   if (!referredUser?.referralUsedCode) return;
 
-  const [referrerUser] = await db.select({ id: usersTable.id, trialEndsAt: usersTable.trialEndsAt })
+  const [referrerUser] = await db.select({ 
+    id: usersTable.id, 
+    trialEndsAt: usersTable.trialEndsAt,
+    subscriptionStatus: usersTable.subscriptionStatus
+  })
     .from(usersTable)
     .where(eq(usersTable.referralCode, referredUser.referralUsedCode));
 
@@ -73,19 +78,27 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
         ? referrerUser.trialEndsAt
         : now;
 
-      await tx.update(usersTable)
-        .set({ 
-          trialEndsAt: new Date(referredTrialBase.getTime() + fifteenDays),
-          generationsRemaining: sql`${usersTable.generationsRemaining} + 5`
-        })
-        .where(eq(usersTable.id, referredUserId));
+      // Referred user reward
+      if (referredUser.subscriptionStatus === "active") {
+        await tx.update(usersTable)
+          .set({ generationsRemaining: sql`${usersTable.generationsRemaining} + 10` })
+          .where(eq(usersTable.id, referredUserId));
+      } else {
+        await tx.update(usersTable)
+          .set({ trialEndsAt: new Date(referredTrialBase.getTime() + fifteenDays) })
+          .where(eq(usersTable.id, referredUserId));
+      }
 
-      await tx.update(usersTable)
-        .set({ 
-          trialEndsAt: new Date(referrerTrialBase.getTime() + fifteenDays),
-          generationsRemaining: sql`${usersTable.generationsRemaining} + 10`
-        })
-        .where(eq(usersTable.id, referrerUser.id));
+      // Referrer user reward
+      if (referrerUser.subscriptionStatus === "active") {
+        await tx.update(usersTable)
+          .set({ generationsRemaining: sql`${usersTable.generationsRemaining} + 20` })
+          .where(eq(usersTable.id, referrerUser.id));
+      } else {
+        await tx.update(usersTable)
+          .set({ trialEndsAt: new Date(referrerTrialBase.getTime() + fifteenDays) })
+          .where(eq(usersTable.id, referrerUser.id));
+      }
     } catch (err) {
       console.error("Transactional grantReferralReward error:", err);
       // Drizzle handles rollback on error in transaction callback

@@ -7,7 +7,6 @@ const port = Number(process.env.PORT) || 5173;
 const basePath = process.env.BASE_PATH || "/";
 
 export default defineConfig({
-  envDir: path.resolve(import.meta.dirname, ".."),
   base: basePath,
   plugins: [
     react(),

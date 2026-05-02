@@ -112,7 +112,7 @@ export function WeeklyReportCard() {
             className="relative rounded-2xl border border-cyan-500/25 overflow-hidden"
             style={{
               background:
-                "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(91,33,182,0.08) 50%, rgba(20,10,50,0.95) 100%)",
+                "linear-gradient(135deg, rgba(0,242,255,0.08) 0%, rgba(20,184,166,0.04) 50%, rgba(11,18,21,0.95) 100%)",
             }}
           >
             <div className="h-0.5 w-full bg-gradient-to-r from-cyan-500 via-teal-500 to-pink-500" />
@@ -130,10 +130,10 @@ export function WeeklyReportCard() {
                 </div>
                 <button
                   onClick={handleDismiss}
-                  className="text-white/30 hover:text-white/60 transition-colors p-1 shrink-0 mt-0.5"
+                  className="text-white/40 hover:text-white transition-colors p-1 shrink-0"
                   aria-label="Dismiss"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 

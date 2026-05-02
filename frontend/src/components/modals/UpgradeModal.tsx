@@ -28,6 +28,7 @@ interface UpgradeModalProps {
   message?: string;
   targetPlan?: "starter" | "creator" | "infinity";
   billingPeriod?: "monthly" | "yearly";
+  currency?: "INR" | "USD";
 }
 
 type PlanType = "starter" | "creator" | "infinity";
@@ -80,7 +81,7 @@ const INFINITY_HIGHLIGHTS = [
   "Priority AI (2× faster) + Priority Support",
 ];
 
-export function UpgradeModal({ open, onClose, reason = "limit", featureName, message, targetPlan = "starter", billingPeriod = "monthly" }: UpgradeModalProps) {
+export function UpgradeModal({ open, onClose, reason = "limit", featureName, message, targetPlan = "starter", billingPeriod = "monthly", currency = "INR" }: UpgradeModalProps) {
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(
     reason === "pro_feature" ? "infinity" : targetPlan
@@ -115,11 +116,17 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
 
   const highlights = selectedPlan === "infinity" ? INFINITY_HIGHLIGHTS : selectedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS;
   
-  const price = selectedPlan === "infinity" 
-    ? (billingPeriod === "yearly" ? "₹4990" : "₹499") 
-    : selectedPlan === "creator" 
-      ? (billingPeriod === "yearly" ? "₹2490" : "₹249") 
-      : (billingPeriod === "yearly" ? "₹1090" : "₹109");
+  const price = currency === "USD"
+    ? (selectedPlan === "infinity" 
+        ? (billingPeriod === "yearly" ? "$200" : "$20") 
+        : selectedPlan === "creator" 
+          ? (billingPeriod === "yearly" ? "$120" : "$12") 
+          : (billingPeriod === "yearly" ? "$40" : "$4"))
+    : (selectedPlan === "infinity" 
+        ? (billingPeriod === "yearly" ? "₹4990" : "₹499") 
+        : selectedPlan === "creator" 
+          ? (billingPeriod === "yearly" ? "₹2490" : "₹249") 
+          : (billingPeriod === "yearly" ? "₹1090" : "₹109"));
 
   const planLabel = selectedPlan === "infinity" ? "Infinity" : selectedPlan === "creator" ? "Creator" : "Starter";
   const purchasedPlanLabel = purchasedPlan === "infinity" ? "Infinity" : purchasedPlan === "creator" ? "Creator" : "Starter";
@@ -137,11 +144,17 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
     setPaymentState("pending");
 
     try {
-      const priceForCheckout = plan === "infinity" 
-        ? (billingPeriod === "yearly" ? "₹4990" : "₹499") 
-        : plan === "creator" 
-          ? (billingPeriod === "yearly" ? "₹2490" : "₹249") 
-          : (billingPeriod === "yearly" ? "₹1090" : "₹109");
+      const priceForCheckout = currency === "USD"
+        ? (plan === "infinity" 
+            ? (billingPeriod === "yearly" ? "$200" : "$20") 
+            : plan === "creator" 
+              ? (billingPeriod === "yearly" ? "$120" : "$12") 
+              : (billingPeriod === "yearly" ? "$40" : "$4"))
+        : (plan === "infinity" 
+            ? (billingPeriod === "yearly" ? "₹4990" : "₹499") 
+            : plan === "creator" 
+              ? (billingPeriod === "yearly" ? "₹2490" : "₹249") 
+              : (billingPeriod === "yearly" ? "₹1090" : "₹109"));
 
       const loaded = await loadRazorpay();
       if (!loaded) {
@@ -153,14 +166,15 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
       const data = await createSub.mutateAsync({ 
         planType: plan, 
         couponCode: discountPercent > 0 ? couponCode : undefined,
-        billingPeriod: billingPeriod
+        billingPeriod: billingPeriod,
+        currency: currency
       });
 
       const options = {
         key: data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: data.subscriptionId,
         name: "GrowFlow AI",
-        description: `${planLabelForCheckout} plan · ${priceForCheckout}/month`,
+        description: `${planLabelForCheckout} plan · ${priceForCheckout}${billingPeriod === "yearly" ? '/year' : '/month'}`,
         theme: { color: "#7c3aed" },
         prefill: {},
         handler: async (response: any) => {
@@ -341,7 +355,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
 
                     <div className="flex items-center justify-between mb-4 px-1">
                       <div>
-                        <span className="text-2xl font-bold text-white">₹499</span>
+                        <span className="text-2xl font-bold text-white">{currency === "USD" ? "$20" : "₹499"}</span>
                         <span className="text-white/40 text-xs ml-1">/month</span>
                       </div>
                       <span className="text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2.5 py-1 font-semibold">
@@ -453,7 +467,10 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                           <div className="flex flex-col gap-0.5">
                             <span>{p === "infinity" ? "Infinity" : p === "creator" ? "Creator" : "Starter"}</span>
                             <span className="text-[10px] font-normal opacity-80">
-                              {p === "infinity" ? "₹499/mo" : p === "creator" ? "₹249/mo" : "₹109/mo"}
+                              {currency === "USD" 
+                                ? (p === "infinity" ? "$20/mo" : p === "creator" ? "$12/mo" : "$4/mo")
+                                : (p === "infinity" ? "₹499/mo" : p === "creator" ? "₹249/mo" : "₹109/mo")
+                              }
                             </span>
                           </div>
                         </button>
@@ -466,7 +483,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                           {discountPercent > 0 ? (
                             <>
                               <span className="line-through text-white/40 text-xl mr-2">{price}</span>
-                              ₹{Math.round(parseInt(price.replace('₹', '')) * (1 - discountPercent / 100))}
+                              {currency === "USD" ? "$" : "₹"}{Math.round(parseInt(price.replace('₹', '').replace('$', '')) * (1 - discountPercent / 100))}
                             </>
                           ) : (
                             price

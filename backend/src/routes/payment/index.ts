@@ -4,6 +4,8 @@ import Razorpay from "razorpay";
 import { requireAuth } from "../../middlewares/planMiddleware";
 import { AuthenticatedRequest } from "../../types";
 import { Response } from "express";
+import { logger } from "../../lib/logger";
+import { db, paymentsTable } from "@workspace/db";
 
 const router = Router();
 
@@ -39,7 +41,7 @@ router.post("/payment/tip/create", requireAuth, async (req: AuthenticatedRequest
 
     res.json(order);
   } catch (err: any) {
-    console.error("Tip creation error:", err);
+    logger.error({ err }, "Tip creation error");
     res.status(500).json({ error: "Failed to create tip order" });
   }
 });
@@ -58,14 +60,29 @@ router.post("/payment/tip/verify", requireAuth, async (req: AuthenticatedRequest
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    if (expectedSig !== razorpay_signature) {
+    if (!razorpay_signature || !expectedSig || razorpay_signature.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(razorpay_signature), Buffer.from(expectedSig))) {
       res.status(400).json({ error: "Invalid payment signature" });
       return;
     }
 
+    // --- FIX: Record the payment in the database ---
+    await db.insert(paymentsTable).values({
+      id: razorpay_payment_id,
+      userId: req.userId,
+      orderId: razorpay_order_id,
+      amount: req.body.amount || 0,
+      status: "captured",
+      method: "razorpay_tip",
+      processedAt: new Date(),
+      metadata: { type: "TIP", ...req.body }
+    }).onConflictDoUpdate({
+      target: [paymentsTable.id],
+      set: { status: "captured", processedAt: new Date() }
+    });
+
     res.json({ success: true });
   } catch (err: any) {
-    console.error("Tip verification error:", err);
+    logger.error({ err }, "Tip verification error");
     res.status(500).json({ error: "Failed to verify tip" });
   }
 });

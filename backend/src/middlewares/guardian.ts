@@ -120,9 +120,13 @@ export const guardianMiddleware = async (req: any, res: any, next: any) => {
       return next(); // Pass to requireAuth to handle 401
     }
 
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId as string));
+    // --- FIX: Use pre-synchronized user from req.user to avoid redundant DB hits ---
+    let user = (req as any).user;
+    if (!user) {
+      const [fetchedUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId as string));
+      user = fetchedUser;
+    }
     
-    // Kill Switch integration check (Belt & Suspenders)
     if (user?.isBanned) {
       return res.status(403).json({
         error: "ACCESS_DENIED",
@@ -134,6 +138,12 @@ export const guardianMiddleware = async (req: any, res: any, next: any) => {
     req.rateLimitUser = user;
 
     const tier = (user?.planType as string) || "FREE";
+    const isAdmin = user?.email === process.env.ADMIN_EMAIL || user?.isAdmin;
+
+    if (isAdmin) {
+      return next();
+    }
+
     if (tier.toUpperCase() === "FREE") {
       return freeLimiter(req, res, next);
     } else {

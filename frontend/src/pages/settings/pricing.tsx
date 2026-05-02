@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
   Sparkles, TrendingUp, BarChart3, CalendarDays, Flame, Wand2,
   Shield, Clock, ChevronRight, Crown, Lock, AlertTriangle,
-  IndianRupee, RefreshCw, Brain
+  IndianRupee, RefreshCw, Brain, Globe, DollarSign
 } from "lucide-react";
 import { MagneticButton } from "@/components/shared/MagneticButton";
 import { Hover3DCard } from "@/components/shared/Hover3DCard";
@@ -42,6 +42,24 @@ const BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
   starter: { monthly: 109, quarterly: 294, biannual: 522, yearly: 864 },
   creator: { monthly: 249, quarterly: 672, biannual: 1194, yearly: 1992 },
   infinity: { monthly: 499, quarterly: 1347, biannual: 2394, yearly: 3984 },
+};
+
+const USD_BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
+  starter: { monthly: 4, quarterly: 3.6, biannual: 3.2, yearly: 3.33 },
+  creator: { monthly: 12, quarterly: 10.8, biannual: 9.6, yearly: 10 },
+  infinity: { monthly: 20, quarterly: 18, biannual: 16, yearly: 16.66 },
+};
+
+const USD_STRIKETHROUGH_PRICES: Record<string, number> = {
+  starter: 10,
+  creator: 25,
+  infinity: 45,
+};
+
+const USD_BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
+  starter: { monthly: 4, quarterly: 10.8, biannual: 19.2, yearly: 40 },
+  creator: { monthly: 12, quarterly: 32.4, biannual: 57.6, yearly: 120 },
+  infinity: { monthly: 20, quarterly: 54, biannual: 96, yearly: 200 },
 };
 
 function getBillingMonths(period: BillingPeriod): number {
@@ -110,7 +128,16 @@ const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, inf
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
-  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity"; billing: BillingPeriod }>({ open: false, plan: "starter", billing: "monthly" });
+  const [currency, setCurrency] = useState<"INR" | "USD">(() => {
+    return (localStorage.getItem("pricing_currency") as "INR" | "USD") || "INR";
+  });
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity"; billing: BillingPeriod; currency: "INR" | "USD" }>({ 
+    open: false, plan: "starter", billing: "monthly", currency: "INR" 
+  });
+  
+  useEffect(() => {
+    localStorage.setItem("pricing_currency", currency);
+  }, [currency]);
   
   const { data: sub, isLoading: subLoading } = useSubscriptionStatus();
   const { isSignedIn, isLoaded } = useAuth();
@@ -120,9 +147,19 @@ export default function PricingPage() {
   const currentPlan = sub?.planType ?? "free";
   const currentRank = PLAN_RANK[currentPlan] ?? 0;
   const isActivePaidUser = sub?.plan === "active" || sub?.plan === "trial";
-  const starterPrice = BASE_PRICES.starter[billing];
-  const creatorPrice = BASE_PRICES.creator[billing];
-  const infinityPrice = BASE_PRICES.infinity[billing];
+  
+  const prices = currency === "USD" ? USD_BASE_PRICES : BASE_PRICES;
+  const totals = currency === "USD" ? USD_BILLING_TOTALS : BILLING_TOTALS;
+  const strikePrices = currency === "USD" ? USD_STRIKETHROUGH_PRICES : STRIKETHROUGH_PRICES;
+  
+  const starterPrice = prices.starter[billing];
+  const creatorPrice = prices.creator[billing];
+  const infinityPrice = prices.infinity[billing];
+
+  const formatPrice = (p: number) => {
+    if (currency === "USD") return `$${p}`;
+    return `₹${p}`;
+  };
 
   // Returns button state for each plan
   const getPlanState = (plan: "starter" | "creator" | "infinity"): "current" | "upgrade" | "downgrade" | "cta" => {
@@ -151,7 +188,7 @@ export default function PricingPage() {
       return;
     }
     // Only open the modal for upgrade or new users
-    setUpgradeModal({ open: true, plan, billing });
+    setUpgradeModal({ open: true, plan, billing, currency });
   };
 
   const billingLabel = (period: BillingPeriod) => {
@@ -212,8 +249,22 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Billing Toggle */}
-        <div className="flex justify-center mb-10">
+        {/* Currency + Billing Toggle */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+          <div className="bg-white/5 border border-white/10 rounded-xl p-1 flex gap-1">
+            <button
+              onClick={() => setCurrency("INR")}
+              className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${currency === "INR" ? "bg-cyan-600 text-white" : "text-white/50 hover:text-white"}`}
+            >
+              🇮🇳 INR
+            </button>
+            <button
+              onClick={() => setCurrency("USD")}
+              className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${currency === "USD" ? "bg-cyan-600 text-white" : "text-white/50 hover:text-white"}`}
+            >
+              🌍 USD
+            </button>
+          </div>
           <div className="relative bg-white/5 border border-white/10 rounded-xl p-1 flex gap-1 flex-wrap justify-center">
             {BILLING_OPTIONS.map((opt) => (
               <button
@@ -256,7 +307,7 @@ export default function PricingPage() {
                 <div className="mb-6">
                   <p className="text-xs font-semibold tracking-widest uppercase text-white/40 mb-2">Explorer</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black">₹0</span>
+                    <span className="text-4xl font-black">{formatPrice(0)}</span>
                     <span className="text-white/40 text-sm">/ forever</span>
                   </div>
                   <p className="text-white/50 text-sm mt-1">Try it all before you commit</p>
@@ -307,10 +358,10 @@ export default function PricingPage() {
                   </div>
                   <div className="flex flex-col gap-1">
                     {billing === "monthly" && (
-                        <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.starter}</span>
+                        <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.starter)}</span>
                     )}
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-emerald-100">₹{starterPrice}</span>
+                      <span className="text-4xl font-black text-emerald-100">{formatPrice(starterPrice)}</span>
                       <span className="text-white/40 text-sm">/ mo</span>
                       {billing === "monthly" && (
                         <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
@@ -319,9 +370,9 @@ export default function PricingPage() {
                   </div>
                   {billing !== "monthly" && (
                     <p className="text-white/40 text-xs mt-1">
-                      ₹{BILLING_TOTALS.starter[billing]} billed {billingLabel(billing)}
+                      {formatPrice(totals.starter[billing])} billed {billingLabel(billing)}
                       {" "}·{" "}
-                      <span className="text-emerald-400">Save ₹{(BASE_PRICES.starter.monthly * getBillingMonths(billing)) - BILLING_TOTALS.starter[billing]}</span>
+                      <span className="text-emerald-400">Save {formatPrice((prices.starter.monthly * getBillingMonths(billing)) - totals.starter[billing])}</span>
                     </p>
                   )}
                   <p className="text-white/40 text-[11px] mt-0.5">Introductory pricing for early users</p>
@@ -394,10 +445,10 @@ export default function PricingPage() {
                   <p className="text-xs font-semibold tracking-widest uppercase text-cyan-400 mb-2">Creator</p>
                   <div className="flex flex-col gap-1">
                     {billing === "monthly" && (
-                        <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.creator}</span>
+                        <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.creator)}</span>
                     )}
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-white">₹{creatorPrice}</span>
+                      <span className="text-4xl font-black text-white">{formatPrice(creatorPrice)}</span>
                       <span className="text-white/40 text-sm">/ mo</span>
                       {billing === "monthly" && (
                         <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
@@ -406,12 +457,12 @@ export default function PricingPage() {
                   </div>
                   {billing !== "monthly" && (
                     <p className="text-white/40 text-xs mt-1">
-                      ₹{BILLING_TOTALS.creator[billing]} billed {billingLabel(billing)}
+                      {formatPrice(totals.creator[billing])} billed {billingLabel(billing)}
                       {" "}·{" "}
-                      <span className="text-emerald-400">Save ₹{(BASE_PRICES.creator.monthly * getBillingMonths(billing)) - BILLING_TOTALS.creator[billing]}</span>
+                      <span className="text-emerald-400">Save {formatPrice((prices.creator.monthly * getBillingMonths(billing)) - totals.creator[billing])}</span>
                     </p>
                   )}
-                  <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">Best for Indian creators 🇮🇳</p>
+                  <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">{currency === "INR" ? "Best for Indian creators 🇮🇳" : "Best for global growth 🌍"}</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1 mb-4">
@@ -495,11 +546,11 @@ export default function PricingPage() {
                   </div>
                   <div className="flex flex-col gap-1">
                     {billing === "monthly" && (
-                        <span className="text-sm text-white/50 line-through">₹{STRIKETHROUGH_PRICES.infinity}</span>
+                        <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.infinity)}</span>
                     )}
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-black bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">
-                        ₹{infinityPrice}
+                        {formatPrice(infinityPrice)}
                       </span>
                       <span className="text-white/40 text-sm">/ mo</span>
                       {billing === "monthly" && (
@@ -509,9 +560,9 @@ export default function PricingPage() {
                   </div>
                   {billing !== "monthly" && (
                     <p className="text-white/40 text-xs mt-1">
-                      ₹{BILLING_TOTALS.infinity[billing]} billed {billingLabel(billing)}
+                      {formatPrice(totals.infinity[billing])} billed {billingLabel(billing)}
                       {" "}·{" "}
-                      <span className="text-emerald-400">Save ₹{(BASE_PRICES.infinity.monthly * getBillingMonths(billing)) - BILLING_TOTALS.infinity[billing]}</span>
+                      <span className="text-emerald-400">Save {formatPrice((prices.infinity.monthly * getBillingMonths(billing)) - totals.infinity[billing])}</span>
                     </p>
                   )}
                   <p className="text-white/60 text-sm mt-1">For agencies & super users</p>
@@ -569,8 +620,8 @@ export default function PricingPage() {
           className="mb-16 rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-teal-950/20 p-6 md:p-8"
         >
           <div className="flex items-center gap-2 mb-2">
-            <IndianRupee className="w-4 h-4 text-cyan-400" />
-            <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">What ₹249 actually gets you</p>
+            {currency === "INR" ? <IndianRupee className="w-4 h-4 text-cyan-400" /> : <DollarSign className="w-4 h-4 text-cyan-400" />}
+            <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">What {formatPrice(creatorPrice)} actually gets you</p>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
             Creator pays for itself in one post.
@@ -578,12 +629,12 @@ export default function PricingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/70 mb-2">The old way</p>
-              <p className="text-3xl font-black text-red-300 mb-1">₹5,000–₹15,000</p>
+              <p className="text-3xl font-black text-red-300 mb-1">{currency === "INR" ? "₹5,000–₹15,000" : "$50–$150"}</p>
               <p className="text-white/50 text-sm">A freelance content writer for 100 pieces. Slow turnaround, inconsistent quality, and it's still just one platform.</p>
             </div>
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400/70 mb-2">With Creator</p>
-              <p className="text-3xl font-black text-emerald-300 mb-1">₹249</p>
+              <p className="text-3xl font-black text-emerald-300 mb-1">{formatPrice(creatorPrice)}</p>
               <p className="text-white/50 text-sm">100 pieces of content across Instagram, YouTube, Twitter & LinkedIn. Instant. Optimized. Ready to post.</p>
             </div>
           </div>
@@ -649,7 +700,7 @@ export default function PricingPage() {
               </div>
               <div className="p-3 text-center bg-emerald-950/20">
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400">Starter</p>
-                <p className="text-emerald-100 font-bold mt-0.5 text-xs">₹{starterPrice}<span className="text-white/40 text-[10px] font-normal">/mo</span></p>
+                <p className="text-emerald-100 font-bold mt-0.5 text-xs">{formatPrice(starterPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span></p>
               </div>
               <div className="p-3 text-center bg-cyan-950/30 relative">
                 <div className="flex justify-center mb-0.5">
@@ -659,13 +710,13 @@ export default function PricingPage() {
                 </div>
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-cyan-400 text-shadow-sm">Creator</p>
                 <p className="text-white font-bold mt-0.5 text-xs">
-                  ₹{creatorPrice}<span className="text-white/40 text-[10px] font-normal">/mo</span>
+                  {formatPrice(creatorPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span>
                 </p>
               </div>
               <div className="p-3 text-center">
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-teal-300">Infinity</p>
                 <p className="text-white font-bold mt-0.5 text-xs">
-                  ₹{infinityPrice}<span className="text-white/40 text-[10px] font-normal">/mo</span>
+                  {formatPrice(infinityPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span>
                 </p>
               </div>
             </div>
@@ -801,10 +852,10 @@ export default function PricingPage() {
 
       <UpgradeModal
         open={upgradeModal.open}
-        onClose={() => setUpgradeModal((p) => ({ ...p, open: false }))}
-        reason="upgrade"
-        targetPlan={upgradeModal.plan}
+        onClose={() => setUpgradeModal({ ...upgradeModal, open: false })}
+        plan={upgradeModal.plan}
         billingPeriod={upgradeModal.billing === "yearly" ? "yearly" : "monthly"}
+        currency={upgradeModal.currency}
       />
     </div>
   );

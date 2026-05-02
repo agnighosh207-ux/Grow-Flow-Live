@@ -64,23 +64,51 @@ router.post("/content/pack", requireAuth, enforceGenerationLimit, async (req: an
       return;
     }
 
-    const systemPrompt = `You are an elite multi-platform content strategist. Create a complete Pro-Tier Content Kit for: "${sanitizedIdea}".
-TONE: ${tone}
-TYPE: ${contentType}.
+    const systemPrompt = `You are a world-class Content Architect and Growth Strategist for an elite digital marketing agency. Your mission is to transform a simple idea into a high-authority content ecosystem that dominates the market.
+You MUST integrate the provided [LIVE RESEARCH] to ensure the content is factually accurate, trend-aligned, and deeply relevant.
 
-=== LIVE INTERNET RESEARCH ===
-Below is real-time web data regarding this topic. You MUST use these facts, trends, and statistics to ground your content. Do not invent fake data.
-[CONTEXT]: ${liveContext}`;
+[CORE MISSION]:
+- Market Analysis: Provide deep, actionable insights into WHY this content will go viral now.
+- Content Quality: Use cinematic storytelling, psychological hooks, and high-conversion structures.
+- Tone: Strictly adhere to the requested tone (${tone}).
+- No Fluff: Avoid generic advice. Be specific to the idea: "${sanitizedIdea}".
 
-    const userPrompt = `Generate a Content Kit for: "${sanitizedIdea}"
-${!isPro ? "Generate ONLY Instagram and Twitter content." : "Generate ALL formats (Instagram, Twitter, LinkedIn, Reels)."}
+[LIVE RESEARCH DATA]:
+${liveContext}`;
 
-Return ONLY a JSON object:
+    const userPrompt = `Generate an Elite Content Ecosystem for the idea: "${sanitizedIdea}"
+Target Niche: ${sanitizedNiche}
+Language: ${language}
+
+Return ONLY a strictly valid JSON object. Do NOT include any markdown formatting or prefix/suffix.
+JSON Structure:
 {
-  "instagram": { "caption": "string", "imagePrompt": "string", "carouselSlides": ["slide1", "slide2", "slide3", "slide4", "slide5"] },
-  "twitter": { "thread": ["tweet1", "tweet2", "tweet3", "tweet4", "tweet5"] },
-  ${isPro ? `"linkedin": { "post": "string", "bestTimeToPost": "string" }, "reel": { "script": "string", "audioSuggestion": "string" },` : ""}
-  "strategy": { "viralityScore": 92, "targetAudience": "string", "coreMessage": "string" }
+  "marketAnalysis": {
+    "whyThisWorksNow": "Analyze why this specific topic is trending or valuable in 2026 based on the research.",
+    "targetAudiencePsychology": "What emotional state is the audience in when they see this? What is their hidden desire?",
+    "competitorGap": "What is everyone else missing about this topic that we are capturing?",
+    "painPointAddressed": "The specific, deep-seated frustration this content solves."
+  },
+  "instagram": {
+    "caption": "Deep, high-conversion caption (200-300 words) with professional spacing and hooks.",
+    "storyStrategy": ["Slide 1 Hook", "Slide 2 Value", "Slide 3 CTA"],
+    "visualDirection": "A professional Midjourney v6 prompt to create a stunning, high-end cover image for this post.",
+    "carouselSlides": ["Slide 1: Hook", "Slide 2: Context", "Slide 3: Step 1", "Slide 4: Step 2", "Slide 5: Step 3", "Slide 6: Transformation", "Slide 7: CTA"]
+  },
+  "twitter": {
+    "viralHooks": ["Variation 1 (Controversial)", "Variation 2 (Value-driven)", "Variation 3 (Story-based)"],
+    "thread": ["Tweet 1: Viral Hook", "Tweet 2: The Stakes", "Tweet 3: The Solution", "Tweet 4: Data/Evidence", "Tweet 5: The Lesson", "Tweet 6: CTA"]
+  },
+  ${isPro ? `"linkedin": { "post": "Long-form authority post (400 words) with professional formatting.", "authorityHook": "One-line hook that stops the scroll." }, "reel": { "script": "Cinematic script with [Visual Description], [Voiceover], and [On-Screen Text].", "pacingNotes": "How should the cuts be timed? (e.g., Fast cuts to beat, slow pans)", "trendingAudioDirection": "What type of audio/music mood fits this?" },` : ""}
+  "discovery": {
+    "socialSEOKeywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+    "viralHashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]
+  },
+  "strategy": {
+    "viralityScore": 95,
+    "distributionPlan": "Specific strategy to promote this across 3 platforms for maximum reach.",
+    "coreMessage": "The one 'Golden Nugget' or breakthrough realization of this entire kit."
+  }
 }`;
 
     const rawContentObj = await generateContent({
@@ -91,7 +119,7 @@ Return ONLY a JSON object:
       userPlan: user.planType || "free",
       userId: req.userId,
       language,
-      maxTokens: isPro ? 4000 : 2000,
+      maxTokens: isPro ? 4000 : 2500,
     });
 
     if (isAborted) return;

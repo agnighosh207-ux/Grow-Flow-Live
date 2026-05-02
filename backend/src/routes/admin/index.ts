@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, usageLogsTable, contentGenerationsTable, referralsTable, systemSettingsTable, globalAnnouncementsTable } from "@workspace/db";
+import { db, usersTable, usageLogsTable, contentGenerationsTable, referralsTable, systemSettingsTable, globalAnnouncementsTable, featureUsageLogsTable, impersonationSessionsTable, securityLogsTable } from "@workspace/db";
 import { isNotNull, desc, sql, eq } from "drizzle-orm";
 import crypto from "crypto";
 import { requireAuth } from "../../middlewares/planMiddleware";
+import { logger } from "../../lib/logger";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 
 const router: IRouter = Router();
 
@@ -27,7 +29,7 @@ const requireAdmin = async (req: any, res: any, next: any) => {
     }
     next();
   } catch (error) {
-    console.error("[AUTH] Admin check error:", error);
+    logger.error({ error: error?.message }, "[AUTH] Admin check error");
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -38,7 +40,7 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
       try {
         return await promise;
       } catch (e: any) {
-        console.error(`[ADMIN-STATS] Query failed (${label}):`, e.message);
+        logger.error({ error: e.message, label }, "[ADMIN-STATS] Query failed");
         return fallback;
       }
     };
@@ -54,7 +56,8 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
       topReferrers,
       generationsDataList,
       settingsResult,
-      activeAnnouncements
+      activeAnnouncements,
+      featureUsageData
     ] = await Promise.all([
       safeQuery(db.select({ count: sql<string>`count(*)` }).from(usersTable), [{ count: "0" }], "totalUsers"),
       safeQuery(db.select({ count: sql<string>`count(*)` }).from(usersTable).where(isNotNull(usersTable.email)), [{ count: "0" }], "totalEmails"),
@@ -102,8 +105,14 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
       safeQuery(db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global")), [], "settings"),
       safeQuery(db.select()
         .from(globalAnnouncementsTable)
-        .where(eq(globalAnnouncementsTable.isActive, true))
-        .orderBy(desc(globalAnnouncementsTable.createdAt)), [], "announcements")
+        .orderBy(desc(globalAnnouncementsTable.createdAt)), [], "announcements"),
+      safeQuery(db.select({
+        feature: featureUsageLogsTable.feature,
+        count: sql<string>`count(*)`
+      })
+      .from(featureUsageLogsTable)
+      .where(sql`${featureUsageLogsTable.createdAt} >= NOW() - INTERVAL '30 days'`)
+      .groupBy(featureUsageLogsTable.feature), [], "featureUsageData")
     ]);
 
     const languageData = languageStats.length > 0 
@@ -129,11 +138,12 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
       languageData,
       revenueData,
       topReferrers: (topReferrers as any).rows || [],
-      activeAnnouncements
+      activeAnnouncements,
+      featureUsageData: featureUsageData.map((f: any) => ({ feature: f.feature, count: Number(f.count) }))
     });
 
   } catch (err: any) {
-    console.error("Admin stats error:", err);
+    logger.error({ err }, "Admin stats error");
     res.status(500).json({ error: "Failed to fetch admin stats" });
   }
 });
@@ -174,18 +184,56 @@ router.patch("/admin/modify-user", requireAuth, requireAdmin, async (req: any, r
       })
       .where(eq(usersTable.id, targetUserId));
 
+    invalidateAuthCache(targetUserId);
+
     res.json({ success: true, message: `User upgraded to ${newPlan} successfully.` });
   } catch (error) {
-    console.error("Failed to modify user:", error);
+    logger.error({ error }, "Failed to modify user");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router.post("/admin/impersonate", requireAuth, requireAdmin, async (req: any, res: any): Promise<void> => {
   try {
-    res.json({ success: true });
+    const { targetUserId, reason = "manual_troubleshooting", duration = 3600 } = req.body;
+    
+    if (!targetUserId) {
+      res.status(400).json({ error: "Missing targetUserId" });
+      return;
+    }
+
+    // Validate target exists
+    const [target] = await db.select().from(usersTable).where(eq(usersTable.id, targetUserId));
+    if (!target) {
+      res.status(404).json({ error: "Target user not found" });
+      return;
+    }
+
+    // Create session
+    const sessionId = crypto.randomUUID();
+    await db.insert(impersonationSessionsTable).values({
+      id: sessionId,
+      adminId: req.userId,
+      targetUserId,
+      reason,
+      startedAt: new Date(),
+      expiresAt: new Date(Date.now() + duration * 1000),
+      ipAddress: req.ip
+    });
+
+    // Log it
+    await db.insert(securityLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      eventType: "ADMIN_IMPERSONATION_START",
+      ipAddress: req.ip,
+      metadata: { targetUserId, sessionId, reason, duration }
+    }).catch(err => logger.error({ err }, "Failed to log impersonation"));
+
+    res.json({ success: true, sessionId });
   } catch (err: any) {
-    res.status(500).json({ error: "Failed to impersonate" });
+    logger.error({ err }, "Impersonation error");
+    res.status(500).json({ error: "Failed to create impersonation session" });
   }
 });
 
@@ -238,7 +286,7 @@ router.patch("/admin/settings/maintenance", requireAuth, requireAdmin, async (re
       
     res.json({ success: true, maintenanceMode });
   } catch (err: any) {
-    console.error("Maintenance toggle error:", err);
+    logger.error({ err }, "Maintenance toggle error");
     res.status(500).json({ error: "Failed to fully toggle maintenance settings" });
   }
 });

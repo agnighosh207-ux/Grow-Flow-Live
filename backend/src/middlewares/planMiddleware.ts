@@ -27,7 +27,6 @@ export async function getOrCreateUser(userId: string, email?: string) {
         email: email ?? null, 
         lastLoginAt: new Date(),
         generationsRemaining: 5,
-        creditsRemaining: 5,
         lastCreditReset: new Date(),
         planTier: "FREE",
         planType: "free",
@@ -60,6 +59,13 @@ export const PLAN_RANKS: Record<string, number> = {
   STARTER: 1,
   CREATOR: 2,
   INFINITY: 3
+};
+
+export const TIER_CREDITS: Record<string, number> = {
+  FREE: 5,
+  STARTER: 20,
+  CREATOR: 100,
+  INFINITY: 9999
 };
 
 

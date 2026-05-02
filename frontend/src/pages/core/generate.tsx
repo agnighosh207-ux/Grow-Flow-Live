@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -43,12 +44,12 @@ const PLATFORMS = [
 function AnimatedOrbs() {
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-      <div className="orb-1 absolute top-[10%] right-[5%] w-[380px] h-[380px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)" }} />
-      <div className="orb-2 absolute bottom-[15%] left-[3%] w-[300px] h-[300px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%)" }} />
-      <div className="orb-3 absolute top-[50%] left-[40%] w-[250px] h-[250px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(217,70,239,0.08) 0%, transparent 70%)" }} />
+      <div className="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(6,182,212,0.05) 0%, transparent 70%)" }} />
+      <div className="absolute top-[20%] -left-[10%] w-[500px] h-[500px] rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.03) 0%, transparent 70%)" }} />
+      <div className="absolute -bottom-[10%] right-[20%] w-[700px] h-[700px] rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(6,182,212,0.02) 0%, transparent 70%)" }} />
     </div>
   );
 }
@@ -108,6 +109,8 @@ interface ContentAnalysis {
 }
 
 function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; analysis?: ContentAnalysis | null; analysisLoading?: boolean }) {
+  const isMobile = useIsMobile();
+  const [showScoreOnMobile, setShowScoreOnMobile] = useState(false);
   const [showWhy, setShowWhy] = useState(false);
 
   const directViralScore = data?.content?.viral_score;
@@ -145,111 +148,81 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
   return (
       <motion.div
         id="tour-viral-score"
-        initial={{ opacity: 0, y: 12 }}
-        whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.4 }}
-        className="hyper-hover-card rounded-xl border border-white/8 overflow-hidden shadow-[0_5px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_30px_rgba(0,242,255,0.2)]"
-      style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(255,255,255,0.02) 100%)" }}
+        className="rounded-[32px] border border-white/5 overflow-hidden shadow-2xl relative group bg-white/[0.01]"
     >
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Brain className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-xs font-semibold text-white/60">
-              {analysisLoading ? "Analyzing content..." : "AI Content Score"}
-            </span>
-            {analysisLoading && (
-              <div className="w-3 h-3 border border-cyan-400/40 border-t-cyan-400 rounded-full animate-spin" />
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+      
+      <div className="p-8 md:p-10">
+        <div className="flex flex-col xl:flex-row gap-12">
+          {/* Left Side: Score Overview */}
+          <div className="xl:w-1/3 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 flex items-center justify-center">
+                 <Brain className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                 <h3 className="text-lg font-black text-white/90 tracking-tight">Campaign Intelligence</h3>
+                 <p className="text-xs text-white/30 font-medium uppercase tracking-widest">Powered by Growth AI</p>
+              </div>
+            </div>
+
+            <div className="flex items-baseline gap-2">
+              <span className={`text-6xl font-black ${avg >= 85 ? 'text-emerald-400' : avg >= 75 ? 'text-cyan-400' : 'text-amber-400'}`}>{avg}</span>
+              <span className="text-xl font-bold text-white/20">/ 100</span>
+              <div className="ml-auto px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-black text-cyan-300 uppercase tracking-widest">
+                 {avg >= 85 ? "Excellent" : avg >= 75 ? "Strong" : "Optimizing"}
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-white/5">
+              {scores.map((s: any) => (
+                <ContentScoreBadge key={s.label} score={s.score} label={s.label} color={s.color} />
+              ))}
+            </div>
+          </div>
+
+          {/* Right Side: Deep Insights */}
+          <div className="flex-1 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               {(analysis || directFeedback) && (
+                 <>
+                   <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-3">
+                      <p className="text-[10px] font-black text-red-400 uppercase tracking-widest flex items-center gap-2">
+                        <Flame className="w-3 h-3" /> Emotional Trigger
+                      </p>
+                      <p className="text-sm text-white/70 leading-relaxed font-medium">
+                        {analysis?.emotionalTrigger || "Deeply resonates with user pain points and aspirations."}
+                      </p>
+                   </div>
+                   <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-3">
+                      <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                        <Zap className="w-3 h-3" /> Curiosity Gap
+                      </p>
+                      <p className="text-sm text-white/70 leading-relaxed font-medium">
+                        {analysis?.curiosityGap || "Strong open loop that demands attention and click-through."}
+                      </p>
+                   </div>
+                 </>
+               )}
+            </div>
+
+            {directSuggestion && (
+              <div className="p-6 rounded-3xl bg-cyan-500/5 border border-cyan-500/10 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0">
+                   <Sparkles className="w-5 h-5 text-cyan-300" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-cyan-300 uppercase tracking-widest mb-1">Growth Architect Tip</p>
+                  <p className="text-sm text-white/80 leading-relaxed font-medium italic">"{directSuggestion}"</p>
+                </div>
+              </div>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className={`text-xl font-bold ${avg >= 85 ? 'text-emerald-400' : avg >= 75 ? 'text-cyan-400' : 'text-amber-400'}`}>{avg}</div>
-            <div className="text-[10px] text-white/25 font-medium">/100</div>
-          </div>
-        </div>
-        
-        {/* Pro Tip Box below Viral Score */}
-        {directSuggestion && (
-          <div className="mb-4 rounded-lg px-3 py-2.5" style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.18)" }}>
-            <p className="text-[10px] font-bold text-cyan-300/70 uppercase tracking-widest mb-1">💡 Pro Tip</p>
-            <p className="text-xs text-white/60 leading-relaxed">{directSuggestion}</p>
-          </div>
-        )}
-
-        <div className="space-y-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
-          {scores.map((s: any) => (
-            <ContentScoreBadge key={s.label} score={s.score} label={s.label} color={s.color} />
-          ))}
         </div>
       </div>
-
-      {(analysis || directFeedback) && (
-        <div className="border-t border-white/6">
-          <button
-            onClick={() => setShowWhy(!showWhy)}
-            className="w-full flex items-center justify-between px-4 py-3 text-xs text-white/40 hover:text-white/70 transition-colors group"
-          >
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400/70 group-hover:text-amber-400 transition-colors" />
-              <span className="font-semibold">Why this works</span>
-            </div>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showWhy ? "rotate-180" : ""}`} />
-          </button>
-
-          <AnimatePresence>
-            {showWhy && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.22 }}
-                className="overflow-hidden"
-              >
-                <div className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3">
-                  {directFeedback && !analysis ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest flex items-center gap-1.5">
-                        <span className="text-red-400">🔥</span> Viral Feedback
-                      </p>
-                      <p className="text-xs text-white/65 leading-relaxed">{directFeedback}</p>
-                    </div>
-                  ) : null}
-                  {analysis && (
-                    <>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest flex items-center gap-1.5">
-                          <span className="text-red-400">❤️</span> Emotional Trigger
-                        </p>
-                        <p className="text-xs text-white/65 leading-relaxed">{analysis.emotionalTrigger}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest flex items-center gap-1.5">
-                          <span className="text-amber-400">🧠</span> Curiosity Gap
-                        </p>
-                        <p className="text-xs text-white/65 leading-relaxed">{analysis.curiosityGap}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest flex items-center gap-1.5">
-                          <span className="text-cyan-400">👥</span> Audience Reaction
-                        </p>
-                        <p className="text-xs text-white/65 leading-relaxed">{analysis.targetAudienceReaction}</p>
-                      </div>
-                      {analysis.improvementTip && (
-                        <div className="rounded-lg px-3 py-2.5 mt-1"
-                          style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.18)" }}>
-                          <p className="text-[10px] font-bold text-cyan-300/70 uppercase tracking-widest mb-1">💡 Pro Tip</p>
-                          <p className="text-xs text-white/60 leading-relaxed">{analysis.improvementTip}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
     </motion.div>
   );
 }
@@ -293,6 +266,7 @@ interface CopyButtonProps {
 
 function CopyButton({ text, label, size = "sm" }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
+  const isMobile = useIsMobile();
   const { toast } = useToast();
 
   const handleCopy = () => {
@@ -310,6 +284,7 @@ function CopyButton({ text, label, size = "sm" }: CopyButtonProps) {
           ? "px-2 py-0.5 text-[10px] gap-1"
           : "px-2.5 py-1 text-xs gap-1.5"
         }
+        ${isMobile ? "w-full justify-center py-2" : "w-auto"}
         ${copied
           ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
           : "bg-white/5 hover:bg-white/10 text-white/50 hover:text-white/80 border border-white/10 hover:border-white/20"
@@ -335,7 +310,7 @@ interface SectionProps {
   tweetTotal?: number;
 }
 
-function ContentSection({ label, labelColor = "text-white/40", content, copyLabel, isHashtags, isTweet, tweetIndex, tweetTotal }: SectionProps) {
+function ContentSection({ label, labelColor = "text-cyan-400/50", content, copyLabel, isHashtags, isTweet, tweetIndex, tweetTotal }: SectionProps) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -354,12 +329,12 @@ function ContentSection({ label, labelColor = "text-white/40", content, copyLabe
         </span>
         <CopyButton text={content} label={copyLabel || label} size="xs" />
       </div>
-      <motion.div 
+        <motion.div 
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className={`text-sm leading-relaxed whitespace-pre-wrap
-        ${isHashtags ? "text-cyan-400/90 font-medium text-xs leading-loose" : "text-white/85"}
+        className={`text-xs md:text-sm leading-relaxed whitespace-pre-wrap
+        ${isHashtags ? "text-cyan-400/90 font-medium text-xs leading-loose flex flex-wrap gap-x-2" : "text-white/85"}
       `}>
         {content}
       </motion.div>
@@ -526,7 +501,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                 Repurpose
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-[#100726]/90 backdrop-blur-xl border-cyan-500/30 z-[100]">
+            <DropdownMenuContent align="end" className="w-56 glass-panel-premium border-cyan-500/20 z-[100] p-1.5 shadow-2xl">
               <DropdownMenuItem 
                 onClick={() => handleRepurpose("Convert to Twitter Thread")}
                 className="text-xs text-white/70 hover:text-white cursor-pointer focus:bg-cyan-500/20"
@@ -571,126 +546,142 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden"
+            transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <div className="px-5 py-4 space-y-4">
-              {platform === "instagram" && content && (
-                <>
-                  {content.hook && (
-                    <ContentSection label="Hook" labelColor="text-pink-400/60" content={content.hook} copyLabel="Hook" />
+            <div className="p-8 border-t border-white/5 space-y-8 bg-white/[0.01]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                {/* Primary Content Column */}
+                <div className="space-y-6">
+                  {platform === "instagram" && content && (
+                    <>
+                      {content.hook && (
+                        <div className="space-y-2">
+                           <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-pink-400">Opening Hook</span>
+                              <CopyButton text={content.hook} label="Hook" size="xs" />
+                           </div>
+                           <div className="p-4 rounded-2xl bg-pink-500/5 border border-pink-500/10 text-white font-bold text-lg leading-snug">
+                              {content.hook}
+                           </div>
+                        </div>
+                      )}
+                      {content.caption && (
+                        <ContentSection label="Main Caption" content={content.caption} copyLabel="Caption" />
+                      )}
+                    </>
                   )}
-                  {content.caption && (
-                    <ContentSection label="Caption" labelColor="text-white/40" content={content.caption} copyLabel="Caption" />
-                  )}
-                  {content.cta && (
-                    <ContentSection label="Call to Action" labelColor="text-orange-400/60" content={content.cta} copyLabel="CTA" />
-                  )}
-                  {content.visualBriefs && Array.isArray(content.visualBriefs) && content.visualBriefs.length > 0 && (
-                    <ContentSection 
-                      label="Slide-by-Slide Visual Briefs" 
-                      labelColor="text-emerald-400/60" 
-                      content={content.visualBriefs.join("\n")} 
-                      copyLabel="Briefs" 
-                    />
-                  )}
-                  {content.hashtags && (
-                    <ContentSection label="Hashtags" labelColor="text-cyan-400/60" content={content.hashtags} copyLabel="Hashtags" isHashtags />
-                  )}
-                </>
-              )}
 
-              {platform === "youtube" && content && (
-                <>
-                  {content.hook && (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-red-400/60">Hook (First 3 Seconds)</span>
-                        <CopyButton text={content.hook} label="Hook" size="xs" />
-                      </div>
-                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-white font-semibold text-sm leading-relaxed">
-                        {content.hook}
-                      </div>
+                  {platform === "youtube" && content && (
+                    <>
+                      {content.hook && (
+                        <div className="space-y-2">
+                           <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Viral Hook</span>
+                              <CopyButton text={content.hook} label="Hook" size="xs" />
+                           </div>
+                           <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-white font-bold text-lg leading-snug">
+                              {content.hook}
+                           </div>
+                        </div>
+                      )}
+                      {content.script && (
+                        <ContentSection label="Production Script" content={content.script} copyLabel="Script" />
+                      )}
+                    </>
+                  )}
+
+                  {platform === "linkedin" && content && (
+                    <>
+                      {content.headline && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">Authority Hook</span>
+                            <CopyButton text={content.headline} label="Headline" size="xs" />
+                          </div>
+                          <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 text-white font-bold text-lg leading-relaxed shadow-lg">
+                            {content.headline}
+                          </div>
+                        </div>
+                      )}
+                      {content.post && (
+                        <ContentSection label="Post Body" content={content.post} copyLabel="Post Body" />
+                      )}
+                    </>
+                  )}
+
+                  {platform === "twitter" && Array.isArray(content?.tweets) && content.tweets.length > 0 && (
+                    <div className="space-y-4">
+                      {content.tweets.map((tweet: string, i: number) => (
+                        <div
+                          key={i}
+                          className="rounded-2xl border border-white/5 bg-white/[0.02] p-5 space-y-3 hover:bg-white/[0.04] transition-all"
+                        >
+                          <ContentSection
+                            label={`Tweet ${i + 1}`}
+                            content={tweet}
+                            copyLabel={`Tweet ${i + 1}`}
+                            isTweet
+                            tweetIndex={i + 1}
+                            tweetTotal={content.tweets.length}
+                          />
+                          <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                            <span className={`text-[10px] font-black ${tweet.length > 240 ? "text-red-400" : "text-white/20"}`}>
+                              {tweet.length} / 280 Characters
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  {content.title && (
-                    <ContentSection label="Suggested Title" labelColor="text-white/40" content={content.title} copyLabel="Title" />
-                  )}
-                  {content.script && (
-                    <ContentSection label="Full Script" labelColor="text-white/40" content={content.script} copyLabel="Script" />
-                  )}
-                </>
-              )}
-
-              {platform === "twitter" && Array.isArray(content?.tweets) && content.tweets.length > 0 && (
-                <div className="space-y-3">
-                  {content.tweets.map((tweet: string, i: number) => (
-                    <div
-                      key={i}
-                      className="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 space-y-2"
-                    >
-                      <ContentSection
-                        label="Tweet"
-                        content={tweet}
-                        copyLabel={`Tweet ${i + 1}`}
-                        isTweet
-                        tweetIndex={i + 1}
-                        tweetTotal={content.tweets.length}
-                      />
-                      <div className="flex items-center justify-between pt-0.5">
-                        <span className={`text-[10px] font-mono ${tweet.length > 240 ? "text-red-400" : "text-white/20"}`}>
-                          {tweet.length}/280
-                        </span>
-                      </div>
-                    </div>
-                  ))}
                 </div>
-              )}
 
-              {platform === "linkedin" && content && (
-                <>
-                  {content.headline && (
-                    <div className="space-y-1.5">
+                {/* Strategy & Support Column */}
+                <div className="space-y-8">
+                  {content.cta && (
+                    <div className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/60">Opening Hook</span>
-                        <CopyButton text={content.headline} label="Headline" size="xs" />
+                         <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Call to Action</span>
+                         <CopyButton text={content.cta} label="CTA" size="xs" />
                       </div>
-                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 text-white font-semibold text-sm leading-relaxed">
-                        {content.headline}
+                      <p className="text-sm text-white/90 font-medium leading-relaxed italic">"{content.cta}"</p>
+                    </div>
+                  )}
+
+                  {platform === "instagram" && content.hashtags && (
+                    <ContentSection label="Viral Hashtags" content={content.hashtags} copyLabel="Hashtags" isHashtags />
+                  )}
+                  
+                  {platform === "youtube" && content.title && (
+                    <ContentSection label="Optimized Video Title" content={content.title} copyLabel="Title" />
+                  )}
+
+                  {platform === "linkedin" && content.visualBriefs && Array.isArray(content.visualBriefs) && content.visualBriefs.length > 0 && (
+                    <div className="space-y-3">
+                       <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Visual Storytelling Outline</span>
+                       <div className="space-y-2">
+                          {content.visualBriefs.map((brief: string, i: number) => (
+                             <div key={i} className="flex gap-3 text-xs text-white/60 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/5">
+                                <span className="font-bold text-emerald-400">Slide {i+1}</span>
+                                <p>{brief}</p>
+                             </div>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+
+                  {repurposedText && (
+                    <div className="p-5 rounded-2xl glass-panel-premium border-cyan-500/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">AI Adaptation</span>
+                        <CopyButton text={repurposedText} label="Adaptation" size="xs" />
+                      </div>
+                      <div className="text-white/90 text-sm whitespace-pre-wrap leading-relaxed font-medium">
+                        {repurposedText}
                       </div>
                     </div>
                   )}
-                  {content.post && (
-                    <ContentSection label="Post Body" labelColor="text-white/40" content={content.post} copyLabel="Post Body" />
-                  )}
-                  {content.cta && (
-                    <ContentSection label="Call to Action" labelColor="text-blue-400/60" content={content.cta} copyLabel="CTA" />
-                  )}
-                  {content.visualBriefs && Array.isArray(content.visualBriefs) && content.visualBriefs.length > 0 && (
-                    <ContentSection 
-                      label="Slide-by-Slide Visual Briefs" 
-                      labelColor="text-emerald-400/60" 
-                      content={content.visualBriefs.join("\n")} 
-                      copyLabel="Briefs" 
-                    />
-                  )}
-                  {content.hashtags && (
-                    <ContentSection label="Hashtags" labelColor="text-cyan-400/60" content={content.hashtags} copyLabel="Hashtags" isHashtags />
-                  )}
-                </>
-              )}
-
-              {repurposedText && (
-                <div className="mt-4 border-t border-cyan-500/20 pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">Repurposed Content</span>
-                    <CopyButton text={repurposedText} label="Repurposed Content" size="xs" />
-                  </div>
-                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl px-4 py-3 text-white/90 text-sm whitespace-pre-wrap leading-relaxed">
-                    {repurposedText}
-                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -732,6 +723,7 @@ function buildAllPlatformsText(data: any): string {
 }
 
 export default function Generate() {
+  const queryClient = useQueryClient();
   const { getToken } = useAuth();
   const searchParams = new URLSearchParams(
     typeof window !== "undefined" ? window.location.search : ""
@@ -843,6 +835,9 @@ export default function Generate() {
           setRatingTrigger("gen-3");
           setTimeout(() => setShowRatingModal(true), 1500);
         }
+        // --- FIX: Use invalidateQueries for cross-component state sync (High 5 fix) ---
+        queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+        queryClient.invalidateQueries({ queryKey: ["content-history"] });
         refetchSub();
         try {
           const upsellShown = sessionStorage.getItem("shown_post_gen_upsell");
@@ -1143,18 +1138,17 @@ export default function Generate() {
         </motion.div>
       );
     }
-    const limit = sub.generationLimit ?? 20;
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-[11px] font-semibold"
       >
-        <span className={generationsUsed >= limit && !isInfinityUser ? "text-red-400" : generationsUsed >= 300 && isInfinityUser ? "text-amber-400" : "text-cyan-300"}>
+        <span className={generationsUsed >= (sub.generationLimit ?? 20) && !isInfinityUser ? "text-red-400" : generationsUsed >= 300 && isInfinityUser ? "text-amber-400" : "text-cyan-300"}>
           {generationsUsed}
         </span>
         <span className="text-white/30">/</span>
-        <span className="text-white/50">{isInfinityUser ? "∞ / 300 soft limit" : `${limit} / mo`}</span>
+        <span className="text-white/50">{isInfinityUser ? "∞ / 300 soft limit" : `${sub.generationLimit ?? 20} / mo`}</span>
       </motion.div>
     );
   }
@@ -1165,9 +1159,10 @@ export default function Generate() {
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="space-y-6 pb-16 relative"
+      className="pb-24 relative overflow-x-hidden min-h-screen"
     >
       <AnimatedOrbs />
+      
       <UpgradeModal
         open={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
@@ -1175,732 +1170,428 @@ export default function Generate() {
         featureName={proFeatureName}
         targetPlan={upgradeReason === "pro_feature" ? "infinity" : "starter"}
       />
+      
       <FeedbackModal open={showRatingModal} onClose={() => setShowRatingModal(false)} trigger={ratingTrigger} />
 
-      <div className="relative z-10">
-        <div className="flex flex-row items-center justify-between w-full mb-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight">Generate Content</h1>
-            <p className="text-white/45 text-xs md:text-sm mt-0.5">One idea → four platforms, fully optimized.</p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <UsageCounter />
-            {[
-              { icon: Flame, label: "Hot Now", value: "Viral hooks", color: "text-orange-400" },
-              { icon: TrendingUp, label: "Trending", value: "+18% reach", color: "text-emerald-400" },
-            ].map(({ icon: Icon, label, value, color }) => (
-              <motion.div
-                key={label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/8 bg-white/[0.03]"
-              >
-                <Icon className={`w-3 h-3 ${color}`} />
-                <div>
-                  <div className={`text-[10px] font-bold ${color}`}>{value}</div>
-                  <div className="text-[9px] text-white/25">{label}</div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+      {/* Main Studio Container */}
+      <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-12 space-y-12">
+        
+        {/* Elite Header & Strategy Banner */}
+        <div className="text-center space-y-10">
+           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <Sparkles className="w-5 h-5 text-white" />
+                 </div>
+                 <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">Generate Content</h1>
+              </div>
+              <p className="text-white/40 font-medium max-w-lg mx-auto">Transform one idea into a high-authority content ecosystem across four platforms, instantly.</p>
+           </motion.div>
+
+           <motion.div 
+             initial={{ opacity: 0, scale: 0.98 }} 
+             animate={{ opacity: 1, scale: 1 }}
+             className="relative max-w-3xl mx-auto p-7 rounded-[40px] border border-cyan-500/20 bg-cyan-500/[0.03] backdrop-blur-3xl group overflow-hidden shadow-2xl"
+           >
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              <div className="flex flex-col md:flex-row items-center gap-6 text-left relative z-10">
+                 <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center shrink-0 border border-cyan-500/20 shadow-inner">
+                    <Wand2 className="w-7 h-7 text-cyan-400" />
+                 </div>
+                 <div className="space-y-1.5">
+                    <h3 className="text-[11px] font-black text-cyan-200/90 flex items-center gap-2 uppercase tracking-[0.2em]">
+                       Studio Architecture
+                       <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    </h3>
+                    <p className="text-sm text-white/45 leading-relaxed font-medium">
+                       Type a single idea or topic below. GrowFlow AI will instantly architect it into a viral Instagram Carousel, 
+                       an engaging Twitter Thread, a professional LinkedIn Post, and a script for YouTube Shorts—simultaneously formatted and ready to post.
+                    </p>
+                 </div>
+              </div>
+           </motion.div>
         </div>
 
-        <div className="flex items-start gap-3 bg-[rgba(0,242,255,0.03)] border border-[#00F2FF]/15 rounded-xl p-3.5 mb-6 max-w-4xl shadow-[0_0_20px_rgba(0,242,255,0.03)] backdrop-blur-md">
-          <Wand2 className="w-4 h-4 text-[#00F2FF] shrink-0 mt-0.5" />
-          <p className="text-xs md:text-sm text-white/70 leading-relaxed">
-            <strong className="text-[#00F2FF] font-semibold">How it works:</strong> Type a single idea or topic below. GrowFlow AI will instantly architect it into a viral Instagram Carousel, an engaging Twitter Thread, a professional LinkedIn Post, and a script for YouTube Shorts—simultaneously formatted and ready to post.
-          </p>
-        </div>
-
-        <div className="w-full mt-2 mb-4" />
-
-        {savedPrefs && (savedPrefs.niche || savedPrefs.tonePreference || savedPrefs.platformPreference) && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/8 text-[11px] text-cyan-300/80 font-medium"
-          >
-            <Sparkles className="w-3 h-3 text-cyan-400" />
-            Based on your previous content style
-            {savedPrefs.niche && <span className="text-cyan-300/60">· {savedPrefs.niche}</span>}
-            {savedPrefs.tonePreference && <span className="text-cyan-300/60">· {savedPrefs.tonePreference}</span>}
-          </motion.div>
-        )}
-
-        <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-3" />
-      </div>
-
-      <WeeklyReportCard />
-
-      <div className="relative z-10 w-full mb-6">
-        <p className="text-[10px] text-white/30 uppercase tracking-widest font-semibold mb-3">Quick Start Templates</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {TEMPLATES.map((t, i) => (
-            <motion.button
-              key={t.label}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-              onClick={() => handleTemplate(t)}
-              className="text-left px-3 py-2.5 rounded-xl border border-white/8 hover:border-cyan-500/30 bg-white/[0.02] hover:bg-cyan-500/8 transition-all duration-200 group relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-cyan-500/0 group-hover:from-cyan-600/5 group-hover:to-transparent transition-all duration-300" />
-              <div className="relative">
-                <div className="text-base mb-0.5">{t.icon}</div>
-                <div className="text-xs font-semibold text-white/75 group-hover:text-white leading-tight">{t.label}</div>
-                <div className="text-[10px] text-white/30 mt-0.5">{t.contentType} · {t.tone}</div>
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {showMidLimitWarning && (
-          <motion.div
-            key="mid-limit-warning"
-            initial={{ opacity: 0, y: -8, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -8, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="relative z-10 overflow-hidden"
-          >
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/8 px-5 py-3.5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-amber-200 font-semibold text-sm leading-tight">You're about to reach your free limit</p>
-                  <p className="text-amber-300/60 text-xs mt-0.5 truncate">1 generation remaining — upgrade for unlimited access</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs shadow-lg shadow-cyan-900/40 transition-transform hover:scale-[1.03] active:scale-[0.99]"
-                  onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
+        {/* Studio Core Input Engine */}
+        <div className="max-w-4xl mx-auto space-y-12">
+          
+          {/* Quick Start Templates Grid */}
+          <div className="space-y-5">
+            <div className="flex items-center justify-center gap-4">
+               <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/5" />
+               <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] whitespace-nowrap">Quick Start Blueprints</h3>
+               <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/5" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {TEMPLATES.map((t, i) => (
+                <motion.button
+                  key={t.label}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => handleTemplate(t)}
+                  className="group relative p-5 rounded-[32px] border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-cyan-500/30 transition-all duration-500 text-center flex flex-col items-center gap-4 overflow-hidden shadow-lg"
                 >
-                  Get 100 generations for ₹299
-                </Button>
-                <button
-                  onClick={() => setWarningDismissed(true)}
-                  className="text-amber-400/40 hover:text-amber-400/70 transition-colors p-1"
-                  aria-label="Dismiss"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showInfinitySoftWarning && (
-          <motion.div
-            key="infinity-soft-warning"
-            initial={{ opacity: 0, y: -8, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -8, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="relative z-10 overflow-hidden"
-          >
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/8 px-5 py-3.5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-amber-200 font-semibold text-sm leading-tight">High volume traffic detected</p>
-                  <p className="text-amber-300/60 text-xs mt-0.5">You've passed the 300 fair usage limit, but your generations will still process.</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setWarningDismissed(true)}
-                className="text-amber-400/40 hover:text-amber-400/70 transition-colors p-1 shrink-0"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {isLimited && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 rounded-xl border border-cyan-500/25 bg-cyan-500/8 px-5 py-4 flex items-center justify-between gap-4"
-        >
-          <div className="flex items-center gap-3">
-            <Crown className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-            <div>
-              <p className="text-cyan-200 font-semibold text-sm">
-                You've reached your free limit
-              </p>
-              <p className="text-cyan-300/60 text-xs mt-0.5">
-                You've used all 5 free monthly generations. Upgrade to continue.
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs shrink-0 shadow-lg shadow-cyan-900/40 transition-transform hover:scale-[1.03] active:scale-[0.99]"
-            onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-          >
-            <Crown className="w-4 h-4 mr-2" /> Upgrade Now
-          </Button>
-        </motion.div>
-      )}
-
-      <div className="relative z-10 w-full mb-8">
-      <div
-        className="w-full rounded-2xl border border-cyan-500/15 p-5 md:p-6 lg:p-8 xl:px-12 relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(255,255,255,0.03) 100%)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 40px rgba(124,58,237,0.08)",
-        }}
-      >
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <FormField
-              control={form.control}
-              name="idea"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-white/70 text-sm font-medium">Your idea or topic</FormLabel>
-                  <FormControl>
-                    <div className="relative w-full">
-                      <Textarea
-                        id="tour-input"
-                        placeholder="e.g. 5 ways AI is replacing junior developers — and what to do about it..."
-                        className="resize-none min-h-[140px] pt-4 pb-16 px-5 bg-slate-900/30 backdrop-blur-md border border-white/10 focus-visible:ring-teal-500/40 focus-visible:border-teal-500 text-white placeholder:text-white/25 text-base lg:text-lg rounded-2xl transition-all duration-200"
-                        {...field}
-                      />
-                      <div className="absolute bottom-3 right-3 flex justify-end">
-                        {isLimited ? (
-                          <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-sky-600 rounded-xl blur-md opacity-60 group-hover:opacity-100 transition duration-500"></div>
-                            <Button
-                              type="button"
-                              onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                              className="shine-effect relative bg-gradient-to-r from-cyan-600/80 to-teal-600/80 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all duration-300"
-                            >
-                              <Crown className="w-4 h-4 mr-2" /> Unlock Full Power
-                            </Button>
-                          </motion.div>
-                        ) : (
-                          <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-pink-500 rounded-xl blur-md opacity-40 group-hover:opacity-100 transition duration-500 group-hover:animate-pulse"></div>
-                            <Button
-                              type="submit"
-                              disabled={isLoading}
-                              className="shine-effect relative bg-gradient-to-r from-cyan-600/90 to-teal-600/90 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white font-bold rounded-xl text-sm px-5 py-2 sm:px-6 sm:py-2.5 shadow-lg transition-all duration-300"
-                            >
-                              {isLoading ? (
-                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
-                              ) : (
-                                <><Sparkles className="w-4 h-4 mr-2" /> Generate Campaign</>
-                              )}
-                            </Button>
-                          </motion.div>
-                        )}
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-red-400 text-xs" />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <FormField
-                control={form.control}
-                name="niche"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white/70 text-sm font-medium">Niche</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10">
-                          <SelectValue placeholder="Select niche" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-[#0f0a1e] border-white/10">
-                        {NICHES.map(n => (
-                          <SelectItem key={n} value={n} className="text-white/80 focus:text-white focus:bg-cyan-600/20">{n}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-red-400 text-xs" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="contentType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white/70 text-sm font-medium">Content Style</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10">
-                          <SelectValue placeholder="Select style" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-[#0f0a1e] border-white/10">
-                        <SelectItem value="Educational" className="text-white/80 focus:text-white focus:bg-cyan-600/20">
-                          <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-cyan-400" /> Educational</span>
-                        </SelectItem>
-                        <SelectItem value="Story" className="text-white/80 focus:text-white focus:bg-cyan-600/20">
-                          <span className="flex items-center gap-2"><MessageCircle className="w-3.5 h-3.5 text-blue-400" /> Story / Personal</span>
-                        </SelectItem>
-                        <SelectItem value="Viral" className="text-white/80 focus:text-white focus:bg-cyan-600/20">
-                          <span className="flex items-center gap-2"><Film className="w-3.5 h-3.5 text-pink-400" /> Viral / Controversial</span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-red-400 text-xs" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-white/70 text-sm font-medium">Tone of Voice</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10">
-                          <SelectValue placeholder="Select tone" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-[#0f0a1e] border-white/10">
-                        <SelectItem value="Casual" className="text-white/80 focus:text-white focus:bg-cyan-600/20">Casual & Approachable</SelectItem>
-                        <SelectItem value="Professional" className="text-white/80 focus:text-white focus:bg-cyan-600/20">Professional & Authoritative</SelectItem>
-                        <SelectItem value="Aggressive" className="text-white/80 focus:text-white focus:bg-cyan-600/20">Punchy & Aggressive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-red-400 text-xs" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                  <FormItem>
-                    <LanguageSelector
-                      value={field.value}
-                      onChange={field.onChange}
-                      isFreeUser={isFreeUser}
-                      onUpgradeRequired={() => {
-                        setProFeatureName("Premium Languages");
-                        setGenerationBlockedMsg("🔥 Create content in 10 Premium Languages to reach a global audience!");
-                        setUpgradeReason("pro_feature");
-                        setShowUpgradeModal(true);
-                      }}
-                    />
-                    <FormMessage className="text-red-400 text-xs" />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="rounded-xl border border-white/6 bg-white/[0.015] p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Crown className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-[11px] font-semibold text-white/50 uppercase tracking-widest">Pro Features</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { id: "viral", label: "Viral Mode", desc: "Max-engagement hooks", icon: "⚡" },
-                  { id: "multi", label: "Multi-Variation", desc: "Generate 3 variations", icon: "🔀" },
-                  { id: "style", label: "Style Modes", desc: "Bold, Story & more", icon: "🎨" },
-                ] as const).map(({ id, label, desc, icon }) => {
-                  const hasAdvancedFeatures = (sub?.planType === "creator" || sub?.planType === "infinity") && sub?.plan === "active";
-                  const isOn = id === "viral" ? viralMode : id === "multi" ? multiVariation : id === "style" ? styleMode : false;
-                  const btn = (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        if (!hasAdvancedFeatures) {
-                          setProFeatureName(label);
-                          setUpgradeReason("pro_feature");
-                          setShowUpgradeModal(true);
-                        } else {
-                          if (id === "viral") setViralMode(v => !v);
-                          if (id === "multi") setMultiVariation(v => !v);
-                          if (id === "style") setStyleMode(v => !v);
-                        }
-                      }}
-                      className={`hyper-hover-card group relative text-left p-3 rounded-xl border transition-all duration-200 group w-full
-                        ${hasAdvancedFeatures && isOn
-                          ? "border-cyan-500/40 bg-cyan-500/10"
-                          : "border-white/6 hover:border-cyan-500/20 hover:bg-cyan-500/5"
-                        }
-                      `}
-                    >
-                      <div className="flex items-start justify-between mb-1">
-                        <span className="text-base">{icon}</span>
-                        {!hasAdvancedFeatures ? (
-                          <Lock className="w-3 h-3 text-cyan-500/60" />
-                        ) : isOn ? (
-                          <div className="w-3.5 h-3.5 rounded-full bg-cyan-500 border border-cyan-400" />
-                        ) : (
-                          <div className="w-3.5 h-3.5 rounded-full border border-white/20" />
-                        )}
-                      </div>
-                      <div className="text-xs font-semibold text-white/70">{label}</div>
-                      <div className="text-[10px] text-white/30 mt-0.5">{desc}</div>
-                    </button>
-                  );
-                  if (!hasAdvancedFeatures) {
-                    return (
-                      <Tooltip key={id}>
-                        <TooltipTrigger asChild>{btn}</TooltipTrigger>
-                        <TooltipContent
-                          side="top"
-                          className="bg-[#1a0d3d] border border-cyan-500/30 text-cyan-200 text-xs px-2.5 py-1.5"
-                        >
-                          Available in Creator Plan
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  }
-                  return btn;
-                })}
-              </div>
-            </div>
-
-            <AnimatePresence>
-              {generationBlockedMsg && (
-                <motion.div
-                  key="blocked-inline"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 mb-3">
-                    <Lock className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-red-300 text-sm font-medium leading-snug">{generationBlockedMsg}</p>
-                      <button
-                        type="button"
-                        onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                        className="text-xs text-cyan-400 hover:text-cyan-300 underline mt-1 transition-colors"
-                      >
-                        Upgrade now to continue
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setGenerationBlockedMsg(null)}
-                      className="text-red-400/40 hover:text-red-400/70 transition-colors shrink-0"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                  <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-3xl group-hover:scale-125 transition-transform duration-700 relative z-10">{t.icon}</div>
+                  <div className="space-y-1.5 relative z-10">
+                    <h4 className="text-[11px] font-black text-white/90 uppercase tracking-widest leading-none">{t.label}</h4>
+                    <p className="text-[8px] text-white/20 font-black uppercase tracking-tighter">{t.contentType} · {t.tone}</p>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </form>
-        </Form>
-      </div>
-      </div>
-
-      <div className="relative z-10">
-      <AnimatePresence mode="wait">
-        {isLoading && !generatedContent && (
-          <motion.div
-            key="skeleton"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <div className="flex items-center gap-2.5 mb-5">
-              <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin shrink-0" />
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={loadingMsgIdx}
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="text-sm text-white/55 font-medium"
-                >
-                  {LOADING_MESSAGES[loadingMsgIdx]}
-                </motion.span>
-              </AnimatePresence>
-            </div>
-            <ContentSkeleton />
-          </motion.div>
-        )}
-
-        {generatedContent && !isLoading && (
-          <motion.div
-            key="content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-5"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/8 px-4 py-3"
-              style={{ background: "rgba(124,58,237,0.06)" }}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs text-white/60 font-medium">Campaign ready</span>
-                <span className="text-xs text-white/30 hidden sm:block">·</span>
-                <span className="text-xs text-white/35 hidden sm:block truncate max-w-[180px]">"{generatedContent.idea}"</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleCopyAll}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all duration-200
-                    ${copiedAll
-                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                      : "bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border-white/10 hover:border-white/20"
-                    }`}
-                >
-                  {copiedAll ? <><Check className="w-3 h-3" /> All Copied!</> : <><Copy className="w-3 h-3" /> Copy All</>}
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-200"
-                >
-                  <Download className="w-3 h-3" /> Download .txt
-                </button>
-                <button
-                  onClick={handleFavoriteToggle}
-                  disabled={favoriteLoading}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all duration-200 ${
-                    isFavorited
-                      ? "bg-pink-500/15 text-pink-400 border-pink-500/30"
-                      : "bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  {favoriteLoading
-                    ? <Loader2 className="w-3 h-3 animate-spin" />
-                    : <Heart className={`w-3 h-3 transition-all ${isFavorited ? "fill-pink-400" : ""}`} />
-                  }
-                  {isFavorited ? "Saved" : "Save"}
-                </button>
-              </div>
-            </motion.div>
-
-            <AnimatePresence>
-              {showPostGenUpsell && isFreeUser && (sub?.generationsRemaining ?? 0) <= 1 && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 via-teal-500/5 to-transparent p-5 relative overflow-hidden group shadow-lg shadow-cyan-950/20"
-                >
-                  <div className="absolute top-0 right-0 p-2">
-                    <button 
-                      onClick={() => {
-                        setShowPostGenUpsell(false);
-                        try { sessionStorage.setItem("shown_post_gen_upsell", "true"); } catch(e) {}
-                      }}
-                      className="p-1.5 rounded-lg text-white/20 hover:text-white/40 hover:bg-white/5 transition-all"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex flex-col md:flex-row items-center gap-5 pr-8">
-                    <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center text-xl shrink-0 animate-bounce-subtle">
-                      ⚡
-                    </div>
-                    <div className="flex-1 text-center md:text-left">
-                      <h4 className="text-sm font-bold text-white mb-1">
-                        You got {generatedContent?.content?.viral_score ?? 85}/100 on this post.
-                      </h4>
-                      <p className="text-xs text-white/50 leading-relaxed">
-                        Unlock Creator to generate 100 more like this every month. All premium features included.
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-center gap-2 shrink-0">
-                      <Button
-                        onClick={() => { setShowUpgradeModal(true); }}
-                        className="bg-cyan-500 hover:bg-cyan-400 text-white font-bold rounded-xl px-6 py-2 transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-cyan-500/20"
-                      >
-                        Upgrade Now for ₹249 →
-                      </Button>
-                      <span className="text-[10px] text-white/25">Cancel anytime · No hidden fees</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <motion.div
-              className="grid grid-cols-1 lg:grid-cols-2 gap-5"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            >
-              {platforms.map((platform, i) => (
-                <PlatformCard
-                  key={platform}
-                  platform={platform}
-                  content={generatedContent.content?.[platform]}
-                  onRegenerate={() => handleRegenerate(platform)}
-                  isRegenerating={regeneratingPlatform === platform}
-                  index={i}
-                />
+                </motion.button>
               ))}
-            </motion.div>
+            </div>
+          </div>
 
-            <CampaignScorePanel data={generatedContent} analysis={contentAnalysis} analysisLoading={analysisLoading} />
+          {/* Premium Content Engine */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-1.5 rounded-[48px] bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 shadow-2xl relative"
+          >
+            <div className="bg-[#0c0d12]/90 backdrop-blur-3xl rounded-[44px] p-8 space-y-10">
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-600 border border-cyan-400/30 shadow-lg shadow-cyan-600/20">
+                 <Sparkles className="w-3.5 h-3.5 text-white" />
+                 <span className="text-[10px] font-black text-white uppercase tracking-widest">Growth Engine Active</span>
+              </div>
 
-            {/* Social SEO Area */}
-            {((generatedContent.content?.seo_keywords?.length > 0) || (generatedContent.content?.hashtags?.length > 0)) && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="rounded-xl border border-white/8 p-5"
-                style={{ background: "rgba(255,255,255,0.02)" }}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <Hash className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-semibold text-white/80">Social SEO</h3>
-                </div>
-                
-                {Array.isArray(generatedContent.content?.seo_keywords) && generatedContent.content.seo_keywords.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mb-2">Keywords</p>
-                    <div className="flex flex-wrap gap-2">
-                      {generatedContent.content.seo_keywords.map((kw: string, i: number) => (
-                        <div key={i} className="flex items-center">
-                          <span className="px-2 py-1 rounded-l-md bg-white/5 border border-white/10 border-r-0 text-xs text-white/70">
-                            {kw}
-                          </span>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(kw);
-                            }}
-                            className="px-2 py-1 rounded-r-md bg-white/10 hover:bg-white/20 border border-white/10 text-xs text-white/50 hover:text-white transition-colors"
-                            aria-label="Copy keyword"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+                  <FormField
+                    control={form.control}
+                    name="idea"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between px-2 mb-4">
+                           <FormLabel className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Your Content Vision</FormLabel>
+                           <UsageCounter />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {Array.isArray(generatedContent.content?.hashtags) && generatedContent.content.hashtags.length > 0 && (
-                  <div>
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold mb-2">Hashtags</p>
-                    <div className="flex flex-wrap gap-2">
-                      {generatedContent.content.hashtags.map((ht: string, i: number) => (
-                        <div key={i} className="flex items-center">
-                          <span className="px-2 py-1 rounded-l-md bg-white/5 border border-white/10 border-r-0 text-xs text-cyan-400/90 font-medium">
-                            {ht.startsWith('#') ? ht : `#${ht}`}
-                          </span>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(ht.startsWith('#') ? ht : `#${ht}`);
-                            }}
-                            className="px-2 py-1 rounded-r-md bg-white/10 hover:bg-white/20 border border-white/10 text-xs text-white/50 hover:text-white transition-colors"
-                            aria-label="Copy hashtag"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-3">
-                      <CopyButton 
-                        text={generatedContent.content.hashtags.map((h: string) => h.startsWith('#') ? h : `#${h}`).join(" ")} 
-                        label="Copy All Hashtags" 
+                        <FormControl>
+                          <div className="relative group">
+                            <Textarea
+                              {...field}
+                              placeholder="e.g. 5 ways AI is replacing junior developers — and what to do about it..."
+                              className="min-h-[200px] p-8 rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-xl md:text-2xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
+                            />
+                            <div className="absolute bottom-6 right-6 flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 text-[10px] text-white/20 font-black uppercase tracking-widest border border-white/5">
+                               <Activity className="w-3.5 h-3.5 text-cyan-500/50" />
+                               Trending
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
+                      <FormField
+                        control={form.control}
+                        name="niche"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Niche</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-12 rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                  <SelectValue placeholder="Niche" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="glass-panel-premium border-white/10">
+                                {NICHES.map(n => <SelectItem key={n} value={n} className="text-white/80 font-bold">{n}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="contentType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Style</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-12 rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                  <SelectValue placeholder="Style" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="glass-panel-premium border-white/10">
+                                {["Educational", "Story", "Viral"].map(t => <SelectItem key={t} value={t} className="text-white/80 font-bold">{t}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="tone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Tone</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-12 rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                  <SelectValue placeholder="Tone" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="glass-panel-premium border-white/10">
+                                {["Casual", "Professional", "Aggressive"].map(t => <SelectItem key={t} value={t} className="text-white/80 font-bold">{t}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="language"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Language</FormLabel>
+                            <LanguageSelector
+                              value={field.value}
+                              onChange={field.onChange}
+                              isFreeUser={isFreeUser}
+                              onUpgradeRequired={() => {
+                                setUpgradeReason("pro_feature");
+                                setProFeatureName("Regional Languages");
+                                setShowUpgradeModal(true);
+                              }}
+                            />
+                          </FormItem>
+                        )}
                       />
                     </div>
-                  </div>
-                )}
-              </motion.div>
-            )}
 
-            {/* Micro-copy: preview hint */}
-            <motion.p
+                    <div className="pt-4">
+                      <Button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full h-16 rounded-[24px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black text-base shadow-2xl shadow-cyan-500/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 group overflow-hidden relative"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {isLoading ? (
+                          <div className="flex items-center gap-3">
+                             <Loader2 className="w-6 h-6 animate-spin" />
+                             <span>Architecting Campaign...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 relative z-10">
+                             <Zap className="w-5 h-5 fill-white" />
+                             <span className="tracking-widest uppercase">Generate High-Authority Campaign</span>
+                          </div>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Results Workspace - Spaced Grid below the engine */}
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="loading-state"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-              className="text-center text-xs text-white/25 italic"
+              exit={{ opacity: 0 }}
+              className="space-y-10 pt-12"
             >
-              This is just a preview of what you can do.
-            </motion.p>
-
-            {/* Upgrade trigger — only for non-infinity users */}
-            {sub && sub.planType !== "infinity" && (
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.85, duration: 0.5, ease: "easeOut" }}
-                className="relative rounded-2xl overflow-hidden border border-cyan-500/25"
-                style={{
-                  background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(168,85,247,0.06) 50%, rgba(10,5,30,0.95) 100%)",
-                }}
-              >
-                <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-[-40%] left-[20%] w-[60%] h-[60%] bg-cyan-600/15 blur-[70px] rounded-full" />
+              <div className="flex items-center justify-center gap-4 p-6 rounded-3xl bg-cyan-500/5 border border-cyan-500/20 max-w-xl mx-auto">
+                <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={loadingMsgIdx}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="text-sm font-black text-cyan-100 uppercase tracking-widest"
+                  >
+                    {LOADING_MESSAGES[loadingMsgIdx]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+              <ContentSkeleton />
+            </motion.div>
+          ) : generatedContent ? (
+            <motion.div
+              key="generated-content"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-12 pt-12"
+            >
+              {/* Campaign Strategy Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-6 p-8 rounded-[40px] glass-panel-premium border-cyan-500/20 relative overflow-hidden group shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-5 relative z-10">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                     <Activity className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-black text-white leading-none tracking-tight">Campaign Fully Architected</h4>
+                    <p className="text-[10px] text-emerald-400/80 uppercase font-black tracking-[0.2em] mt-2">All Platform Nodes Synchronized</p>
+                  </div>
                 </div>
-                <div className="relative z-10 p-6 flex flex-col sm:flex-row items-center gap-5">
-                  <div className="flex-1 text-center sm:text-left">
-                    <p className="text-lg font-bold text-white mb-1">
-                      🔥 Want 10x more content like this?
-                    </p>
-                    <p className="text-sm text-white/45 leading-relaxed">
-                      Unlock unlimited generations, viral hooks, and advanced AI tools.
-                    </p>
+                <div className="flex items-center gap-3 relative z-10">
+                  <button
+                    onClick={handleCopyAll}
+                    className={`h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-3 ${
+                      copiedAll 
+                        ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/30" 
+                        : "bg-white/5 hover:bg-white/10 text-white/80 border border-white/10"
+                    }`}
+                  >
+                    {copiedAll ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copiedAll ? "Campaign Copied" : "Copy Full Campaign"}
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 flex items-center gap-3 transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export PDF
+                  </button>
+                </div>
+              </div>
+
+              {/* Platform Results Grid */}
+              <div className="grid grid-cols-1 gap-12">
+                {platforms.map((platform, i) => (
+                  <PlatformCard
+                    key={platform}
+                    platform={platform}
+                    content={generatedContent.content?.[platform]}
+                    onRegenerate={() => handleRegenerate(platform)}
+                    isRegenerating={regeneratingPlatform === platform}
+                    index={i}
+                  />
+                ))}
+              </div>
+
+              <CampaignScorePanel data={generatedContent} analysis={contentAnalysis} analysisLoading={analysisLoading} />
+
+              {/* Intelligence & SEO Footer */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {((generatedContent.content?.seo_keywords?.length > 0) || (generatedContent.content?.hashtags?.length > 0)) && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-[40px] border border-white/5 p-10 bg-white/[0.01] backdrop-blur-xl relative overflow-hidden"
+                  >
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/5 blur-3xl rounded-full" />
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                         <Hash className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <h3 className="text-sm font-black text-white/80 uppercase tracking-[0.3em]">SEO Intelligence</h3>
+                    </div>
+                    
+                    <div className="space-y-8">
+                      {generatedContent.content?.seo_keywords?.length > 0 && (
+                        <div className="space-y-4">
+                          <p className="text-[10px] text-white/30 uppercase font-black tracking-[0.2em]">High-Volume Keywords</p>
+                          <div className="flex flex-wrap gap-2.5">
+                            {generatedContent.content.seo_keywords.map((kw: string, i: number) => (
+                              <div key={i} className="flex items-center group">
+                                <span className="px-4 py-2 rounded-l-2xl bg-white/5 border border-white/5 text-[11px] text-white/60 font-bold">
+                                  {kw}
+                                </span>
+                                <button
+                                  onClick={() => navigator.clipboard.writeText(kw)}
+                                  className="px-3 py-2 rounded-r-2xl bg-white/10 hover:bg-white/20 border border-white/5 text-white/40 group-hover:text-white transition-all"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Viral Pack Upsell */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="rounded-[40px] border border-cyan-500/20 p-10 relative overflow-hidden group shadow-2xl"
+                  style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(124,58,237,0.05) 100%)" }}
+                >
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 blur-[120px] rounded-full group-hover:bg-cyan-500/15 transition-all duration-1000" />
+                  <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 h-full">
+                     <div className="w-20 h-20 rounded-[32px] bg-white/5 border border-white/10 flex items-center justify-center text-4xl shadow-2xl backdrop-blur-md">📦</div>
+                     <div className="flex-1 text-center md:text-left space-y-3">
+                        <h3 className="text-2xl font-black text-white tracking-tight leading-none">Unlock Content Pack</h3>
+                        <p className="text-sm text-white/45 leading-relaxed font-medium">
+                          Convert this vision into Reel Scripts, Cinematic prompts, and LinkedIn Authority slides in one click.
+                        </p>
+                        <a
+                          href={`/pack?idea=${encodeURIComponent(generatedContent?.idea ?? "")}`}
+                          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-sm transition-all shadow-xl shadow-cyan-600/30 group-hover:scale-105 active:scale-95"
+                        >
+                          <Crown className="w-4 h-4 fill-white" />
+                          Generate Media Pack
+                        </a>
+                     </div>
                   </div>
-                  <div className="flex flex-col items-center gap-2 shrink-0">
-                    <Button
-                      onClick={() => { setUpgradeReason("limit"); setShowUpgradeModal(true); }}
-                      className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold rounded-full px-7 py-2.5 shadow-xl shadow-cyan-900/50 border border-cyan-500/20 transition-all hover:scale-[1.03] active:scale-[0.98] whitespace-nowrap"
-                    >
-                      <Zap className="w-4 h-4 mr-2" /> Unlock Full Power
-                    </Button>
-                    <span className="text-[10px] text-white/25">No credit card · Cancel anytime</span>
+                </motion.div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty-state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="py-32 flex flex-col items-center text-center space-y-10"
+            >
+               <div className="w-32 h-32 rounded-full bg-cyan-500/5 flex items-center justify-center relative">
+                  <div className="absolute inset-0 rounded-full border-2 border-cyan-500/20 animate-ping" />
+                  <div className="absolute inset-4 rounded-full border border-cyan-500/30 animate-pulse" />
+                  <Wand2 className="w-12 h-12 text-cyan-400/40 relative z-10" />
+               </div>
+               <div className="space-y-4">
+                  <h3 className="text-3xl font-black text-white/60 tracking-tight">Your Digital Studio is Ready.</h3>
+                  <p className="text-lg text-white/20 max-w-md mx-auto font-medium leading-relaxed">
+                    Enter a vision above to architect a multi-platform content ecosystem.
+                  </p>
+               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Warnings & Overlay Modals */}
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-50 pointer-events-none">
+        <div className="pointer-events-auto">
+          <AnimatePresence>
+            {showMidLimitWarning && !warningDismissed && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 30 }}
+                className="rounded-3xl border border-amber-500/30 bg-amber-500/90 text-amber-50 backdrop-blur-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-6"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                    <Zap className="w-5 h-5 fill-white" />
                   </div>
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-widest">Crucial: 1 Generation Left</p>
+                    <p className="text-xs opacity-80 font-medium">Upgrade to Infinity for unlimited architecture.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button size="sm" variant="secondary" className="font-black px-6 rounded-xl" onClick={() => setShowUpgradeModal(true)}>Upgrade</Button>
+                  <button onClick={() => setWarningDismissed(true)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
                 </div>
               </motion.div>
             )}
-
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="rounded-xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/8 to-teal-500/6 p-4 flex items-center gap-3"
-            >
-              <div className="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center text-lg shrink-0">📦</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white/80">Want Reel Script + Carousel + LinkedIn too?</p>
-                <p className="text-xs text-white/40 mt-0.5">Content Pack generates all 5 formats from one idea</p>
-              </div>
-              <a
-                href={`/pack?idea=${encodeURIComponent(generatedContent?.idea ?? "")}`}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all"
-              >
-                <Crown className="w-3.5 h-3.5" /> Try Pack
-              </a>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
     </motion.div>
   );

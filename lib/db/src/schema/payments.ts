@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, pgEnum, jsonb, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "captured", "failed", "refunded"]);
@@ -15,4 +15,8 @@ export const paymentsTable = pgTable("payments", {
   processedAt: timestamp("processed_at", { withTimezone: true }),
   metadata: jsonb("metadata").default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    userIdIdx: index("payments_user_id_idx").on(table.userId),
+  };
 });

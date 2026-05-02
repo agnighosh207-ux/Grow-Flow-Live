@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
-import { db, contentCalendarTable, contentGenerationsTable } from "@workspace/db";
+import { db, contentCalendarTable, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
+import crypto from "crypto";
 import { generateContent } from "../../services/ai-engine";
 import { fetchLiveContext } from "../../services/perplexity-search";
 
@@ -125,6 +126,12 @@ Return ONLY a JSON object:
     } catch (e) { /* non-critical */ }
 
     res.json({ plan: parsed.plan ?? [] });
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "strategy"
+    }).catch(() => {});
   } catch (err: any) {
     if (isAborted) return;
     console.error("STRATEGY GEN ERROR:", err);

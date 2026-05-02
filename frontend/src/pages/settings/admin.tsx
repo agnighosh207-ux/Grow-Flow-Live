@@ -25,6 +25,7 @@ interface AdminStats {
   topReferrers?: any[];
   generationsData?: any[];
   activeAnnouncements?: any[];
+  featureUsageData?: { feature: string; count: number }[];
 }
 
 function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
@@ -352,6 +353,21 @@ export default function AdminDashboard() {
                   <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={(val) => `₹${val}`} />
                   <RechartsTooltip contentStyle={{ backgroundColor: '#0B1215', border: '1px solid rgba(0, 242, 255, 0.2)' }} cursor={{fill: 'rgba(0, 242, 255, 0.05)'}} formatter={(val) => `₹${val}`} />
                   <Bar dataKey="amount" fill="#00F2FF" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 p-6 rounded-2xl lg:col-span-2">
+            <h3 className="text-lg font-bold mb-4">Feature Usage (Last 30 Days)</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats?.featureUsageData || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--text-muted)" strokeOpacity={0.2} vertical={false} />
+                  <XAxis dataKey="feature" stroke="var(--text-muted)" fontSize={12} className="capitalize" />
+                  <YAxis stroke="var(--text-muted)" fontSize={12} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#0B1215', border: '1px solid rgba(0, 242, 255, 0.2)' }} cursor={{fill: 'rgba(0, 242, 255, 0.05)'}} />
+                  <Bar dataKey="count" fill="#00F2FF" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

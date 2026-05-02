@@ -130,3 +130,74 @@ export async function sendRenewalEmail(email: string, planName: string) {
     logger.error({ email, error: String(error) }, "Email send failure");
   }
 }
+
+export async function sendPaymentFailedReminder3Days(email: string, planType: string) {
+  if (!resend) return;
+  try {
+    const html = emailLayout(
+      "Payment Update Required",
+      `
+        <p>Your payment for the <strong>${planType}</strong> plan failed 3 days ago.</p>
+        <p>You have <strong>4 days left</strong> before your account is automatically downgraded to the Free plan. To avoid any service interruption, please update your billing information now.</p>
+        <div style="text-align: center;"><a href="https://growflowai.space/settings" class="btn">Update Billing</a></div>
+        <p>GrowFlow AI Team</p>
+      `
+    );
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "⚠️ Action needed: Your GrowFlow AI subscription",
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Email send failure");
+  }
+}
+
+export async function sendPaymentFailedReminder7Days(email: string, planType: string) {
+  if (!resend) return;
+  try {
+    const html = emailLayout(
+      "Account Downgraded",
+      `
+        <p>Your GrowFlow AI account has been downgraded to the Free plan because we were unable to process your payment for the ${planType} plan.</p>
+        <p>Don't worry, your content is safe! However, your credits have been reset to the Free tier limits. To reactivate your premium features, you can upgrade again at any time.</p>
+        <div style="text-align: center;"><a href="https://growflowai.space/pricing" class="btn">Reactivate Subscription</a></div>
+        <p>GrowFlow AI Team</p>
+      `
+    );
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "Your GrowFlow AI account has been downgraded",
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Email send failure");
+  }
+}
+
+export async function sendStreakRewardEmail(email: string, streak: number, rewardCredits: number) {
+  if (!resend) return;
+  try {
+    const title = streak === 30 ? "👑 Elite Streak Unlocked!" : "🔥 You're on Fire!";
+    const html = emailLayout(
+      title,
+      `
+        <p>Congratulations! You've reached a <strong>${streak}-day streak</strong> on GrowFlow AI.</p>
+        <p>To celebrate your consistency, we've added <strong>${rewardCredits} bonus credits</strong> to your account.</p>
+        <p>Keep up the great work and continue growing your audience every day!</p>
+        <div style="text-align: center;"><a href="https://growflowai.space/generate" class="btn">Generate Content</a></div>
+        <p>GrowFlow AI Team</p>
+      `
+    );
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Congrats on your ${streak}-day streak! 🎁`,
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Email send failure");
+  }
+}

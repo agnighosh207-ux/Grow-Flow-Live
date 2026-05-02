@@ -2,8 +2,9 @@ import { Router, type IRouter } from "express";
 import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
-import { extractJson } from "../../services/ai-engine";
-import { db, contentGenerationsTable } from "@workspace/db";
+import { generateContent, extractJson } from "../../services/ai-engine";
+import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
+import crypto from "crypto";
 import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
@@ -102,30 +103,45 @@ Return ONLY a JSON object.`;
   try {
     if (isAborted) return;
 
-    // DIRECT Perplexity call — search + structure in ONE step
-    // NOTE: Perplexity/Sonar does NOT support response_format parameter.
-    // JSON output is enforced via system/user prompt instructions.
-    const completion = await perplexityClient.chat.completions.create({
-      model: "perplexity/sonar",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      max_tokens: 2500,
-    });
-    
-    if (isAborted) return;
-    const content = completion.choices[0]?.message?.content || "{}";
-    const parsed = extractJson(content);
-    
-    if (!parsed || !Array.isArray(parsed.ideas) || parsed.ideas.length === 0) {
-      console.error("IDEAS PARSE FAIL. Raw:", content);
-      res.status(500).json({ error: "Failed to parse ideas from AI response" });
+    let ideas: any[] = [];
+    try {
+      const completion = await perplexityClient.chat.completions.create({
+        model: "perplexity/sonar",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        max_tokens: 2500,
+      });
+      
+      if (isAborted) return;
+      const content = completion.choices[0]?.message?.content || "{}";
+      const parsed = extractJson(content);
+      ideas = parsed && Array.isArray(parsed.ideas) ? parsed.ideas : [];
+    } catch (err: any) {
+      console.warn("IDEAS DIRECT PERPLEXITY FAIL, FALLING BACK TO ENGINE:", err.message);
+      const fallback = await generateContent({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        userPlan: req.user?.planType || "free",
+        userId: req.userId,
+        language,
+        maxTokens: 2500,
+      });
+      const content = fallback.choices[0]?.message?.content || "{}";
+      const parsed = extractJson(content);
+      ideas = parsed && Array.isArray(parsed.ideas) ? parsed.ideas : [];
+    }
+
+    if (ideas.length === 0) {
+      res.status(503).json({ error: "Ideas currently unavailable. Please try again." });
       return;
     }
 
-    const responseData = { ideas: parsed.ideas };
-    if (parsed.ideas && parsed.ideas.length > 0) {
+    const responseData = { ideas };
+    if (ideas && ideas.length > 0) {
       if (redis) {
         await redis.set(cacheKey, JSON.stringify(responseData), "EX", 900);
       } else {
@@ -145,6 +161,12 @@ Return ONLY a JSON object.`;
     } catch (e) { /* non-critical */ }
 
     res.json(responseData);
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "ideas"
+    }).catch(() => {});
   } catch (err: any) {
     if (isAborted) return;
     console.error("IDEAS GEN ERROR:", err);

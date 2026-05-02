@@ -3,7 +3,8 @@ import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { generateContent, extractJson } from "../../services/ai-engine";
-import { db, contentGenerationsTable } from "@workspace/db";
+import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
+import crypto from "crypto";
 import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
@@ -108,27 +109,40 @@ JSON schema:
   try {
     if (isAborted) return;
 
-    // DIRECT Perplexity call — search + structure in ONE step
-    // NOTE: Perplexity/Sonar does NOT support response_format parameter.
-    // JSON output is enforced via system/user prompt instructions.
-    const completion = await perplexityClient.chat.completions.create({
-      model: "perplexity/sonar",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      max_tokens: 2000,
-    });
+    let trends: any[] = [];
+    try {
+      const completion = await perplexityClient.chat.completions.create({
+        model: "perplexity/sonar",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 2000,
+      });
 
-    if (isAborted) return;
-
-    const raw = completion.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
-    const parsed = extractJson(raw);
-    const trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
+      if (isAborted) return;
+      const raw = completion.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
+      const parsed = extractJson(raw);
+      trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
+    } catch (err: any) {
+      console.warn("TRENDS DIRECT PERPLEXITY FAIL, FALLING BACK TO ENGINE:", err.message);
+      const fallback = await generateContent({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        userPlan: req.user?.planType || "free",
+        userId: req.userId,
+        language,
+        maxTokens: 2000,
+      });
+      const raw = fallback.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
+      const parsed = extractJson(raw);
+      trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
+    }
 
     if (trends.length === 0) {
-      console.error("TRENDS PARSE FAIL. Raw:", raw);
-      res.status(500).json({ error: "Failed to parse trends from AI response" });
+      res.status(503).json({ error: "Trends currently unavailable. Please try again." });
       return;
     }
 
@@ -153,6 +167,12 @@ JSON schema:
     } catch (e) { /* non-critical — don't block response */ }
 
     res.json(responseData);
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "trends"
+    }).catch(() => {});
   } catch (err: any) {
     if (isAborted) return;
     console.error("TRENDS GEN ERROR:", err);
@@ -223,6 +243,12 @@ Return ONLY valid JSON:
     }
 
     res.json(analysis);
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "content_analyze"
+    }).catch(() => {});
   } catch (err) {
     console.error("ANALYZE ERROR:", err);
     res.status(500).json({ error: "Failed to analyze content" });

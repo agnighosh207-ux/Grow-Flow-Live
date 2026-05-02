@@ -20,7 +20,6 @@ export const usersTable = pgTable("users", {
   originalTrialStart: timestamp("original_trial_start", { withTimezone: true }),
   generationsRemaining: integer("generations_remaining").notNull().default(5),
   totalGenerations: integer("total_generations").notNull().default(0),
-  creditsRemaining: integer("credits_remaining").notNull().default(5),
   lastCreditReset: timestamp("last_credit_reset", { withTimezone: true }).notNull().defaultNow(),
   isBetaUser: boolean("is_beta_user").notNull().default(false),
   billingCycleStart: timestamp("billing_cycle_start", { withTimezone: true }),
@@ -45,6 +44,8 @@ export const usersTable = pgTable("users", {
   platformPreference: text("platform_preference"),
   isFirstLogin: boolean("is_first_login").notNull().default(true),
   couponCode: text("coupon_code"),
+  paymentFailedAt: timestamp("payment_failed_at", { withTimezone: true }),
+  streakRewardLastGrantedAt: timestamp("streak_reward_last_granted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -1,8 +1,15 @@
 import { toast } from "@/hooks/use-toast";
 
 export async function customFetch(url: string, options: RequestInit = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       let errorMessage = "An unexpected error occurred.";
@@ -20,8 +27,8 @@ export async function customFetch(url: string, options: RequestInit = {}) {
       } else if (response.status === 503) {
         toast({ 
           variant: "destructive", 
-          title: "Service Overloaded", 
-          description: "Our AI engine is busy. Please try again in a few seconds." 
+          title: response.statusText === "Service Unavailable: Maintenance Mode" ? "Scheduled Maintenance" : "Service Overloaded", 
+          description: errorMessage || "Our AI engine is busy. Please try again in a few seconds." 
         });
       } else if (response.status === 401) {
         // Authentication issues are usually handled by Clerk, but we can log it
@@ -47,6 +54,15 @@ export async function customFetch(url: string, options: RequestInit = {}) {
     
     return response;
   } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      toast({ 
+        variant: "destructive", 
+        title: "Request Timeout", 
+        description: "The request took too long. Please try again." 
+      });
+      throw new Error("Request timeout");
+    }
     if (error.message === 'Failed to fetch') {
       toast({ 
         variant: "destructive", 

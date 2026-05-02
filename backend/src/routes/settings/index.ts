@@ -72,22 +72,28 @@ router.patch("/settings/preferences", requireAuth, async (req: any, res): Promis
 router.delete("/settings/account", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const userId = req.userId;
-    await db.delete(contentGenerationsTable).where(eq(contentGenerationsTable.userId, userId));
-    await db.delete(supportMessagesTable).where(eq(supportMessagesTable.userId, userId));
-    await db.delete(referralsTable).where(eq(referralsTable.referrerUserId, userId));
-    await db.delete(paymentsTable).where(eq(paymentsTable.userId, userId));
-    await db.delete(contentCalendarTable).where(eq(contentCalendarTable.userId, userId));
-    await db.delete(favoritesTable).where(eq(favoritesTable.userId, userId));
-    await db.delete(usageLogsTable).where(eq(usageLogsTable.userId, userId));
-    await db.delete(dailyPlansTable).where(eq(dailyPlansTable.userId, userId));
-    await db.delete(usersTable).where(eq(usersTable.id, userId));
+    await db.transaction(async (tx) => {
+      await tx.delete(contentGenerationsTable).where(eq(contentGenerationsTable.userId, userId));
+      await tx.delete(supportMessagesTable).where(eq(supportMessagesTable.userId, userId));
+      await tx.delete(referralsTable).where(eq(referralsTable.referrerUserId, userId));
+      await tx.delete(paymentsTable).where(eq(paymentsTable.userId, userId));
+      await tx.delete(contentCalendarTable).where(eq(contentCalendarTable.userId, userId));
+      await tx.delete(favoritesTable).where(eq(favoritesTable.userId, userId));
+      await tx.delete(usageLogsTable).where(eq(usageLogsTable.userId, userId));
+      await tx.delete(dailyPlansTable).where(eq(dailyPlansTable.userId, userId));
+      await tx.delete(usersTable).where(eq(usersTable.id, userId));
+    });
 
     const secretKey = process.env.CLERK_SECRET_KEY;
     if (secretKey) {
-      await fetch(`https://api.clerk.com/v1/users/${req.userId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${secretKey}` },
-      });
+      try {
+        await fetch(`https://api.clerk.com/v1/users/${req.userId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${secretKey}` },
+        });
+      } catch (clerkErr) {
+        console.warn("Clerk user deletion failed after DB transaction success:", clerkErr);
+      }
     }
 
     res.json({ success: true });

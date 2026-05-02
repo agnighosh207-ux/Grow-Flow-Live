@@ -4,7 +4,8 @@ import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddlewar
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent } from "../../services/ai-engine";
-import { db, contentGenerationsTable } from "@workspace/db";
+import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
+import crypto from "crypto";
 
 const router: IRouter = Router();
 
@@ -122,6 +123,12 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
     } catch (e) { /* non-critical */ }
 
     res.json({ hooks });
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "hooks"
+    }).catch(() => {});
   } catch (err: any) {
     if (isAborted) return;
     console.error("HOOK GEN ERROR:", err);

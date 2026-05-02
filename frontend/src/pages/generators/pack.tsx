@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package2, Sparkles, Copy, Check, ChevronDown, Crown, Lock, Wand2, Activity,
-  Clock, Music, Target, Image as ImageIcon, MessageSquare
+  Clock, Music, Target, Image as ImageIcon, MessageSquare, Hash
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
@@ -19,27 +19,45 @@ interface PackResult {
   isCreator: boolean;
   instagram?: {
     caption: string;
-    imagePrompt?: string;
+    storyStrategy?: string[];
+    visualDirection?: string;
     carouselSlides?: string[];
   };
   reel?: {
     script: string;
-    audioSuggestion?: string;
+    pacingNotes?: string;
+    trendingAudioDirection?: string;
   };
-  twitter?: { thread: string[] };
-  linkedin?: { post: string; bestTimeToPost?: string };
+  twitter?: { 
+    thread: string[];
+    viralHooks?: string[];
+  };
+  linkedin?: { 
+    post: string; 
+    authorityHook?: string;
+  };
+  marketAnalysis?: {
+    whyThisWorksNow: string;
+    targetAudiencePsychology: string;
+    competitorGap: string;
+    painPointAddressed: string;
+  };
+  discovery?: {
+    socialSEOKeywords: string[];
+    viralHashtags: string[];
+  };
   strategy?: {
     viralityScore: number;
-    targetAudience: string;
+    distributionPlan: string;
     coreMessage: string;
   };
 }
 
-function CopyBtn({ text, label }: { text: string; label?: string }) {
+function CopyBtn({ text, label, size = "default" }: { text: string; label?: string, size?: "default" | "xs" }) {
   const [copied, setCopied] = useState(false);
   const copy = () => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   return (
-    <button onClick={copy} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/6 hover:bg-white/10 text-white/50 hover:text-white text-xs transition-all shrink-0">
+    <button onClick={copy} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/6 hover:bg-white/10 text-white/50 hover:text-white ${size === "xs" ? "text-[9px]" : "text-xs"} transition-all shrink-0`}>
       {copied ? <><Check className="w-3 h-3 text-emerald-400" />{label || "Copied!"}</> : <><Copy className="w-3 h-3" />{label || "Copy"}</>}
     </button>
   );
@@ -69,25 +87,25 @@ function SectionCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className={`rounded-2xl border ${locked ? "bg-white/[0.01] border-white/5" : "bg-white/[0.035] border-white/10 hover:border-white/15 transition-all"}`}
+      className={`rounded-2xl border ${locked ? "bg-white/[0.01] border-white/5" : "bg-white/[0.035] border-white/10 hover:border-white/15 transition-all shadow-xl"}`}
     >
       <div className={`flex items-center gap-2.5 px-4 py-3 border-b ${locked ? "border-white/5" : "border-white/8"}`}>
-        <div className={`w-7 h-7 rounded-lg ${color} flex items-center justify-center`}>
-          <Icon className="w-3.5 h-3.5" />
+        <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center shadow-lg`}>
+          <Icon className="w-4 h-4" />
         </div>
-        <span className={`text-sm font-semibold ${locked ? "text-white/30" : "text-white/80"}`}>{title}</span>
+        <span className={`text-sm font-bold tracking-tight ${locked ? "text-white/30" : "text-white/90"}`}>{title}</span>
         {badge && (
-          <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full border font-semibold ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-cyan-500/12 text-cyan-300 border-cyan-500/20"}`}>
+          <span className={`ml-auto text-[9px] px-2 py-0.5 rounded-md border font-black tracking-widest uppercase ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-cyan-500/12 text-cyan-300 border-cyan-500/20"}`}>
             {badge}
           </span>
         )}
         {locked && <Lock className="w-3.5 h-3.5 text-white/20 ml-auto" />}
       </div>
-      <div className={`p-4 ${locked ? "opacity-40" : ""}`}>
+      <div className={`p-5 ${locked ? "opacity-40" : ""}`}>
         {locked ? (
-          <div className="text-center py-4">
-            <Crown className="w-6 h-6 text-white/20 mx-auto mb-2" />
-            <p className="text-white/25 text-xs">{lockedReason || "Unlock to access"}</p>
+          <div className="text-center py-6">
+            <Crown className="w-8 h-8 text-white/10 mx-auto mb-3" />
+            <p className="text-white/20 text-xs font-medium">{lockedReason || "Unlock to access"}</p>
           </div>
         ) : children}
       </div>
@@ -107,7 +125,7 @@ export default function ContentPack() {
   const [loading, setLoading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [result, setResult] = useState<PackResult | null>(null);
-  const [activeTab, setActiveTab] = useState<"scripts" | "visuals" | "strategy">("scripts");
+  const [activeTab, setActiveTab] = useState<"blueprint" | "scripts" | "visuals" | "strategy">("blueprint");
   const [language, setLanguage] = useState("English");
 
   useEffect(() => {
@@ -119,7 +137,6 @@ export default function ContentPack() {
   const isPro = sub?.planType === "infinity" && (sub?.plan === "active" || sub?.plan === "trial");
   const isCreator = ["starter", "creator", "infinity"].includes(sub?.planType ?? "") && (sub?.plan === "active" || sub?.plan === "trial");
   const isFree = !isCreator;
-  const isFreeUser = isFree;
 
   const [saving, setSaving] = useState(false);
 
@@ -204,7 +221,7 @@ export default function ContentPack() {
       }
       const data = await res.json();
       setResult(data);
-      setActiveTab("scripts");
+      setActiveTab("blueprint");
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
     } finally {
@@ -213,61 +230,56 @@ export default function ContentPack() {
   };
 
   return (
-    <div className="w-full">
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+    <div className="w-full pb-16">
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/25 to-teal-500/25 border border-cyan-500/20 flex items-center justify-center">
-              <Package2 className="w-5 h-5 text-cyan-300" />
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 border border-cyan-500/20 flex items-center justify-center shadow-xl shadow-cyan-500/10">
+              <Package2 className="w-6 h-6 text-cyan-300" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-white">Content Kit Pro</h1>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-semibold">BETA</span>
+                <h1 className="text-2xl font-black text-white tracking-tight">Content Kit Pro</h1>
+                <span className="text-[10px] px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-black tracking-widest uppercase">BETA</span>
               </div>
-              <p className="text-white/40 text-sm">One idea → Complete cross-platform ecosystem</p>
+              <p className="text-white/40 text-sm font-medium">One idea → High-authority cross-platform ecosystem</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-5 gap-1.5 mt-3">
+          <div className="grid grid-cols-5 gap-2 mt-4">
             {[
-              { label: "Instagram", icon: "📸", locked: false },
+              { label: "Market", icon: "📊", locked: false },
               { label: "Reel Script", icon: "🎬", locked: !isPro },
               { label: "Carousel", icon: "🃏", locked: !isPro },
-              { label: "Twitter", icon: "🐦", locked: false },
-              { label: "LinkedIn", icon: "💼", locked: !isPro },
+              { label: "Twitter Thread", icon: "🐦", locked: false },
+              { label: "SEO Pack", icon: "🔍", locked: false },
             ].map(({ label, icon, locked }) => (
-              <div key={label} className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl border text-center ${locked ? "bg-white/2 border-white/5 opacity-40" : "bg-white/[0.03] border-white/8"}`}>
-                <span className="text-base">{icon}</span>
-                <span className="text-[9px] text-white/50 font-medium leading-tight">{label}</span>
+              <div key={label} className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl border text-center transition-all ${locked ? "bg-white/2 border-white/5 opacity-40" : "bg-white/[0.04] border-white/10 hover:border-cyan-500/30"}`}>
+                <span className="text-xl">{icon}</span>
+                <span className="text-[9px] text-white/50 font-black uppercase tracking-tighter leading-tight">{label}</span>
                 {locked && <Lock className="w-2.5 h-2.5 text-white/20" />}
               </div>
             ))}
           </div>
-          {!isPro && isCreator && (
-            <p className="text-[10px] text-white/30 mt-2 text-center">
-              Creator plan: Instagram + Twitter · <button onClick={() => setLocation("/pricing")} className="text-cyan-400 hover:underline">Unlock all 5 formats + Strategy with Infinity</button>
-            </p>
-          )}
           {isFree && (
-            <div className="mt-3 rounded-xl bg-amber-500/8 border border-amber-500/20 p-3 flex items-center gap-2.5">
-              <Crown className="w-4 h-4 text-amber-400 shrink-0" />
-              <p className="text-xs text-amber-200/70">Content Kit requires Creator plan (₹249/mo). <button onClick={() => setLocation("/pricing")} className="text-amber-300 font-semibold hover:underline">View plans →</button></p>
+            <div className="mt-4 rounded-2xl glass-panel-premium border-amber-500/20 p-4 flex items-center gap-3">
+              <Crown className="w-5 h-5 text-amber-400 shrink-0" />
+              <p className="text-xs text-amber-200/70 font-medium">Content Kit requires Creator plan. <button onClick={() => setLocation("/pricing")} className="text-amber-300 font-bold hover:underline">Unlock Now →</button></p>
             </div>
           )}
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="rounded-2xl bg-white/[0.03] border border-white/8 p-5 space-y-4">
+          className="rounded-3xl glass-panel-premium p-6 space-y-6">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider">Your Idea *</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Your Strategic Idea *</label>
               <button 
                 onClick={enhanceIdea} 
                 disabled={enhancing || !idea.trim()}
-                className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-cyan-400 hover:text-cyan-300 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.1em] font-black text-cyan-400 hover:text-cyan-300 disabled:opacity-50 transition-colors"
                >
-                <Wand2 className="w-3 h-3" /> {enhancing ? "Enhancing..." : "Magic Enhance"}
+                <Wand2 className="w-3.5 h-3.5" /> {enhancing ? "Architecting..." : "Magic Enhance"}
               </button>
             </div>
             <textarea
@@ -275,31 +287,28 @@ export default function ContentPack() {
               onChange={(e) => setIdea(e.target.value)}
               placeholder="e.g. 5 productivity habits I stole from Navy SEALs..."
               rows={3}
-              className="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-cyan-500/50 resize-none"
-              style={{ color: "#ffffff" }}
+              className="w-full px-5 py-4 rounded-2xl bg-white/[0.02] border border-white/10 text-white placeholder-white/20 text-base focus:outline-none focus:border-cyan-500/50 resize-none transition-all"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Content Type</label>
+              <label className="block text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Goal</label>
               <div className="relative">
                 <select value={contentType} onChange={(e) => setContentType(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none appearance-none cursor-pointer"
-                  style={{ color: "#ffffff" }}>
-                  {CONTENT_TYPES.map(t => <option key={t} value={t} className="bg-[#1a1a2e]">{t}</option>)}
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white text-sm focus:outline-none appearance-none cursor-pointer">
+                  {CONTENT_TYPES.map(t => <option key={t} value={t} className="bg-[#0B1215]">{t}</option>)}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Tone</label>
+              <label className="block text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Tone</label>
               <div className="relative">
                 <select value={tone} onChange={(e) => setTone(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none appearance-none cursor-pointer"
-                  style={{ color: "#ffffff" }}>
-                  {TONES.map(t => <option key={t} value={t} className="bg-[#1a1a2e]">{t}</option>)}
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white text-sm focus:outline-none appearance-none cursor-pointer">
+                  {TONES.map(t => <option key={t} value={t} className="bg-[#0B1215]">{t}</option>)}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/30 pointer-events-none" />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -307,40 +316,44 @@ export default function ContentPack() {
           <LanguageSelector
             value={language}
             onChange={setLanguage}
-            isFreeUser={isFreeUser}
+            isFreeUser={isFree}
             onUpgradeRequired={() => toast({ title: "\ud83d\udd12 Premium Languages", description: "Upgrade for regional language content kits!", variant: "destructive" })}
           />
 
           <button
             onClick={generate}
             disabled={loading || !idea.trim() || isFree}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-cyan-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             {loading ? (
-              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Building your kit...</>
+              <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Building your ecosystem...</>
             ) : (
-              <><Sparkles className="w-4 h-4" />Generate Content Kit</>
+              <><Sparkles className="w-4 h-4 group-hover:scale-125 transition-transform" />Generate Content Ecosystem</>
             )}
           </button>
         </motion.div>
 
         <AnimatePresence>
           {result && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
               
-              <div className="flex items-center justify-between">
-                <div className="flex bg-white/5 p-1 rounded-xl w-full max-w-sm">
-                  {(["scripts", "visuals", "strategy"] as const).map(tab => (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex bg-white/5 p-1 rounded-2xl w-full max-w-sm border border-white/5">
+                  {[
+                    { id: "kit", label: "The Kit", icon: Wand2 },
+                    { id: "blueprint", label: "The Blueprint", icon: Brain }
+                  ].map(tab => (
                     <button 
-                      key={tab} 
-                      onClick={() => setActiveTab(tab)}
-                      className={`flex-1 flex items-center justify-center py-2 text-xs font-semibold capitalize rounded-lg transition-all ${
-                        activeTab === tab 
-                          ? "bg-cyan-600 text-white shadow-lg" 
-                          : "text-white/40 hover:text-white/80"
+                      key={tab.id} 
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                        activeTab === tab.id 
+                          ? "bg-cyan-600 text-white shadow-lg shadow-cyan-500/20" 
+                          : "text-white/30 hover:text-white/60"
                       }`}
                     >
-                      {tab}
+                      <tab.icon className="w-3.5 h-3.5" />
+                      {tab.label}
                     </button>
                   ))}
                 </div>
@@ -348,146 +361,247 @@ export default function ContentPack() {
                 <button 
                   onClick={savePack}
                   disabled={saving}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/15 rounded-xl text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white text-[10px] font-black uppercase tracking-widest border border-white/5 transition-all disabled:opacity-50"
                  >
-                  {saving ? "Saving..." : "Save Pack"}
+                  {saving ? "Saving..." : "Save Ecosystem"}
                 </button>
               </div>
 
-              {activeTab === "scripts" && (
-                <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-3">
-                  {result.instagram && (
-                    <SectionCard icon={() => <span className="text-sm">📸</span>} title="Instagram Caption" color="bg-pink-500/20 text-pink-300" delay={0}>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap flex-1">{result.instagram.caption}</p>
-                        <CopyBtn text={result.instagram.caption} />
+               {activeTab === "blueprint" && (
+                <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-6">
+                   {/* Strategic Foundations */}
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <SectionCard icon={Activity} title="Strategic Context" color="bg-emerald-500/10 text-emerald-300" delay={0}>
+                         <div className="space-y-6">
+                            <div>
+                               <h4 className="text-[11px] font-bold text-emerald-400/80 uppercase tracking-wider mb-2">Market Sentiment</h4>
+                               <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.whyThisWorksNow}</p>
+                            </div>
+                            <div>
+                               <h4 className="text-[11px] font-bold text-emerald-400/80 uppercase tracking-wider mb-2">Audience Psychology</h4>
+                               <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.targetAudiencePsychology}</p>
+                            </div>
+                         </div>
+                      </SectionCard>
+                      <SectionCard icon={Target} title="The Competitive Edge" color="bg-cyan-500/10 text-cyan-300" delay={0.05}>
+                         <div className="space-y-6">
+                            <div>
+                               <h4 className="text-[11px] font-bold text-cyan-400/80 uppercase tracking-wider mb-2">The Unfair Advantage</h4>
+                               <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.competitorGap}</p>
+                            </div>
+                            <div>
+                               <h4 className="text-[11px] font-bold text-cyan-400/80 uppercase tracking-wider mb-2">Core Value Proposition</h4>
+                               <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.painPointAddressed}</p>
+                            </div>
+                         </div>
+                      </SectionCard>
+                   </div>
+
+                   {/* Discovery & Growth */}
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="md:col-span-2">
+                        <SectionCard icon={Hash} title="Search & Discovery Engine" color="bg-indigo-500/10 text-indigo-300" delay={0.1}>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                              <div>
+                                 <h4 className="text-[11px] font-bold text-indigo-400/80 uppercase tracking-wider mb-3">High-Impact Keywords</h4>
+                                 <div className="flex flex-wrap gap-2">
+                                    {result.discovery?.socialSEOKeywords?.map((kw, i) => (
+                                       <span key={i} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 text-xs text-white/70 font-semibold">{kw}</span>
+                                    ))}
+                                 </div>
+                              </div>
+                              <div>
+                                 <h4 className="text-[11px] font-bold text-indigo-400/80 uppercase tracking-wider mb-3">Viral Hashtag Stack</h4>
+                                 <div className="flex flex-wrap gap-2">
+                                    {result.discovery?.viralHashtags?.map((tag, i) => (
+                                       <span key={i} className="text-sm font-black text-cyan-400 drop-shadow-sm">{tag}</span>
+                                    ))}
+                                 </div>
+                              </div>
+                           </div>
+                        </SectionCard>
                       </div>
-                    </SectionCard>
-                  )}
-                  {result.twitter && (
-                    <SectionCard icon={() => <span className="text-sm">🐦</span>} title="Twitter Thread" color="bg-sky-500/20 text-sky-300" delay={0.05}>
-                      <div className="space-y-2">
-                        {Array.isArray(result.twitter?.thread) && result.twitter.thread.map((tweet, i) => (
-                          <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/4 border border-white/6">
-                            <span className="text-[10px] text-white/30 font-mono mt-0.5 w-4 shrink-0">{i + 1}/</span>
-                            <p className="text-white/80 text-sm flex-1 leading-snug">{tweet}</p>
-                            <CopyBtn text={tweet} label="Copy" />
-                          </div>
-                        ))}
+
+                      <div className="bg-emerald-500/5 border border-emerald-500/10 p-8 rounded-3xl flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Activity className="w-8 h-8 text-emerald-400 mb-4 relative z-10" />
+                        <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-2 relative z-10">Virality Score</p>
+                        <p className="text-5xl font-black text-white relative z-10">{result.strategy?.viralityScore ?? 95}<span className="text-xl text-emerald-500 ml-1">/100</span></p>
                       </div>
-                      <div className="mt-3 flex justify-end"><CopyBtn text={Array.isArray(result.twitter?.thread) ? result.twitter.thread.join("\n\n") : ""} label="Copy Thread" /></div>
-                    </SectionCard>
-                  )}
-                  {result.linkedin ? (
-                    <SectionCard icon={() => <span className="text-sm">💼</span>} title="LinkedIn Post" badge="Infinity" color="bg-blue-500/20 text-blue-300" delay={0.1}>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap flex-1">{result.linkedin.post}</p>
-                        <CopyBtn text={result.linkedin.post} />
+                   </div>
+
+                   {/* Final Strategy */}
+                   <SectionCard icon={MessageSquare} title="The 'Golden Nugget' Message" color="bg-cyan-500/10 text-cyan-300" delay={0.15}>
+                      <div className="flex flex-col md:flex-row gap-8 items-center">
+                        <div className="flex-1">
+                          <p className="text-2xl font-black text-white leading-tight italic border-l-4 border-cyan-500 pl-8 py-2 mb-4">
+                             "{result.strategy?.coreMessage}"
+                          </p>
+                          <p className="text-xs text-white/40 font-medium leading-relaxed">
+                             This is the singular emotional hook that binds the entire ecosystem together. Every piece of content in this kit reinforces this message.
+                          </p>
+                        </div>
+                        <div className="shrink-0 glass-panel-premium border border-white/10 p-6 rounded-3xl w-full md:w-64">
+                           <Target className="w-5 h-5 text-cyan-400 mb-3" />
+                           <h4 className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-2">Distribution Focus</h4>
+                           <p className="text-sm text-white/90 font-bold leading-relaxed">{result.strategy?.distributionPlan ?? "Multi-platform sync"}</p>
+                        </div>
                       </div>
-                    </SectionCard>
-                  ) : (
-                    <SectionCard icon={() => <span className="text-sm">💼</span>} title="LinkedIn Post" badge="Infinity" color="bg-blue-500/20 text-blue-300" delay={0.1} locked lockedReason="Unlock LinkedIn with Infinity" />
-                  )}
-                  {result.reel ? (
-                    <SectionCard icon={() => <span className="text-sm">🎬</span>} title="Reel Script" badge="Infinity" color="bg-red-500/20 text-red-300" delay={0.15}>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap flex-1">{result.reel.script}</p>
-                        <CopyBtn text={result.reel.script} />
-                      </div>
-                    </SectionCard>
-                  ) : (
-                    <SectionCard icon={() => <span className="text-sm">🎬</span>} title="Reel Script" badge="Infinity" color="bg-red-500/20 text-red-300" delay={0.15} locked lockedReason="Unlock Reels with Infinity" />
-                  )}
+                   </SectionCard>
                 </motion.div>
               )}
-
-              {activeTab === "visuals" && (
-                <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-3">
-                  {result.instagram?.imagePrompt && (
-                    <SectionCard icon={ImageIcon} title="AI Image Prompt (Thumbnail)" color="bg-indigo-500/20 text-indigo-300" delay={0}>
-                      <div className="p-3 bg-indigo-500/5 border border-indigo-500/20 rounded-xl space-y-2">
-                        <p className="text-white/80 text-sm font-mono leading-relaxed">{result.instagram.imagePrompt}</p>
-                        <div className="flex justify-end"><CopyBtn text={result.instagram.imagePrompt} label="Copy Prompt" /></div>
-                      </div>
-                      <p className="text-[10px] text-white/30 mt-2 text-center">Paste this into Midjourney, DALL-E, or Grok to generate your cover photo.</p>
-                    </SectionCard>
-                  )}
-                  
-                  {result.instagram?.carouselSlides ? (
-                    <SectionCard icon={() => <span className="text-sm">🃏</span>} title="Interactive Carousel Preview" badge="Infinity" color="bg-amber-500/20 text-amber-300" delay={0.05}>
-                      <div className="flex overflow-x-auto gap-3 pb-4 snap-x no-scrollbar">
-                        {Array.isArray(result.instagram?.carouselSlides) && result.instagram.carouselSlides.map((slide, i) => (
-                          <div key={i} className="shrink-0 w-64 h-64 snap-center bg-gradient-to-br from-[#1a1a2e] to-[#0f0f1a] border border-white/10 rounded-2xl p-6 flex flex-col justify-center text-center relative group">
-                            <span className="absolute top-4 left-4 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white/50">{i + 1}</span>
-                            <p className="text-white font-bold text-lg leading-snug">{slide}</p>
+              
+              {activeTab === "kit" && (
+                <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-8">
+                   {/* 📸 Instagram Section */}
+                   {result.instagram && (
+                    <SectionCard icon={() => <span className="text-xl">📸</span>} title="Instagram Ecosystem" color="bg-pink-500/10 text-pink-300" delay={0}>
+                      <div className="space-y-6">
+                        <div>
+                          <h4 className="text-[10px] font-black text-pink-400/60 uppercase tracking-widest mb-3">Conversion Caption</h4>
+                          <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 shadow-inner">
+                            <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap flex-1">{result.instagram.caption}</p>
+                            <CopyBtn text={result.instagram.caption} />
                           </div>
-                        ))}
-                      </div>
-                      <div className="mt-1 flex items-center justify-between">
-                         <p className="text-[10px] text-white/30">Swipe to view slides</p>
-                         <CopyBtn text={Array.isArray(result.instagram?.carouselSlides) ? result.instagram.carouselSlides.join("\n\n") : ""} label="Copy All Texts" />
-                      </div>
-                    </SectionCard>
-                  ) : (
-                    <SectionCard icon={() => <span className="text-sm">🃏</span>} title="Carousel Visuals" badge="Infinity" color="bg-amber-500/20 text-amber-300" delay={0.05} locked lockedReason="Unlock Carousel formats with Infinity" />
-                  )}
-                </motion.div>
-              )}
+                        </div>
 
-              {activeTab === "strategy" && (
-                <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
-                       <Activity className="w-5 h-5 text-emerald-400 mb-2" />
-                       <p className="text-xs text-white/50 font-bold uppercase tracking-widest mb-1">Virality Score</p>
-                       <p className="text-3xl font-bold text-white">{result.strategy?.viralityScore ?? 85}<span className="text-lg text-emerald-500">/100</span></p>
-                    </div>
-                    <div className="bg-white/[0.03] border border-white/8 p-4 rounded-2xl flex flex-col justify-center">
-                       <Target className="w-4 h-4 text-cyan-400 mb-1.5" />
-                       <p className="text-[10px] text-white/50 font-bold uppercase tracking-widest mb-1">Target Audience</p>
-                       <p className="text-sm text-white/90 leading-snug">{result.strategy?.targetAudience ?? "Broad audience"}</p>
-                    </div>
-                  </div>
+                        {result.instagram.storyStrategy && (
+                          <div className="space-y-3">
+                             <h4 className="text-[10px] font-black text-pink-400/60 uppercase tracking-widest">Story Engagement Sequence</h4>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {result.instagram.storyStrategy.map((story, i) => (
+                                   <div key={i} className="p-4 rounded-2xl bg-pink-500/5 border border-pink-500/10 text-xs text-white/70 leading-relaxed shadow-sm">
+                                      <span className="font-bold text-pink-400 block mb-1">Slide {i+1}</span> {story}
+                                   </div>
+                                ))}
+                             </div>
+                          </div>
+                        )}
 
-                  <SectionCard icon={MessageSquare} title="Core Message" color="bg-cyan-500/20 text-cyan-300" delay={0.05}>
-                     <p className="text-lg font-semibold text-white/95 italic border-l-2 border-cyan-500 pl-4 py-1">"{result.strategy?.coreMessage}"</p>
-                  </SectionCard>
-
-                  {result.linkedin?.bestTimeToPost && (
-                    <SectionCard icon={Clock} title="Publishing Metadata" color="bg-blue-500/20 text-blue-300" delay={0.1}>
-                      <div className="flex items-center justify-between p-3 bg-white/4 rounded-xl border border-white/8">
-                         <span className="text-sm text-white/60">LinkedIn Best Time:</span>
-                         <span className="text-sm font-semibold text-white">{result.linkedin.bestTimeToPost}</span>
+                        {result.instagram.carouselSlides && (
+                           <div className="space-y-4 pt-4 border-t border-white/5">
+                             <h4 className="text-[10px] font-black text-amber-400/60 uppercase tracking-widest flex items-center gap-2">
+                               <Sparkles className="w-3 h-3" /> Educational Carousel Blueprint
+                             </h4>
+                             <div className="flex overflow-x-auto gap-4 pb-4 snap-x no-scrollbar">
+                                {result.instagram.carouselSlides.map((slide, i) => (
+                                  <div key={i} className="shrink-0 w-64 h-72 snap-center bg-white/[0.02] border border-white/10 rounded-3xl p-8 flex flex-col justify-center text-center relative group hover:border-cyan-500/30 transition-all shadow-xl">
+                                    <span className="absolute top-6 left-6 w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center text-[10px] font-black text-cyan-400 border border-cyan-500/20">{i + 1}</span>
+                                    <p className="text-white font-bold text-lg leading-tight">{slide}</p>
+                                    <div className="absolute bottom-6 inset-x-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                       <CopyBtn text={slide} size="xs" />
+                                    </div>
+                                  </div>
+                                ))}
+                             </div>
+                           </div>
+                        )}
                       </div>
                     </SectionCard>
-                  )}
+                   )}
 
-                  {result.reel?.audioSuggestion && (
-                    <SectionCard icon={Music} title="Audio Strategy" color="bg-red-500/20 text-red-300" delay={0.15}>
-                      <div className="flex items-center gap-3 p-3 bg-white/4 rounded-xl border border-white/8">
-                         <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-                           <Music className="w-4 h-4 text-red-400" />
-                         </div>
-                         <div>
-                           <p className="text-xs text-white/50">Trending audio recommendation</p>
-                           <p className="text-sm font-semibold text-white">{result.reel.audioSuggestion}</p>
-                         </div>
+                   {/* 🐦 Twitter/X Section */}
+                   {result.twitter && (
+                    <SectionCard icon={() => <span className="text-xl">🐦</span>} title="Viral X Thread" color="bg-sky-500/10 text-sky-300" delay={0.05}>
+                      <div className="space-y-6">
+                        {result.twitter.viralHooks && (
+                           <div className="space-y-3">
+                              <h4 className="text-[10px] font-black text-sky-400/60 uppercase tracking-widest">Hook Variations</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                 {result.twitter.viralHooks.map((hook, i) => (
+                                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-sky-500/5 border border-sky-500/10 shadow-sm">
+                                       <p className="text-sm text-white/80 italic font-medium">"{hook}"</p>
+                                       <CopyBtn text={hook} label="Copy" />
+                                    </div>
+                                 ))}
+                              </div>
+                           </div>
+                        )}
+                        <div className="space-y-4 pt-2">
+                          <h4 className="text-[10px] font-black text-sky-400/60 uppercase tracking-widest">Complete Thread Sequence</h4>
+                          <div className="space-y-3">
+                            {result.twitter.thread.map((tweet, i) => (
+                              <div key={i} className="flex items-start gap-4 p-5 rounded-2xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-all">
+                                <span className="text-[10px] text-white/20 font-black mt-1 w-6 shrink-0">{i + 1}</span>
+                                <p className="text-white/85 text-sm flex-1 leading-relaxed font-medium">{tweet}</p>
+                                <CopyBtn text={tweet} label="Copy" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </SectionCard>
-                  )}
+                   )}
+
+                   {/* 💼 Professional & Cinematic Section (High Tier) */}
+                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                      {result.linkedin ? (
+                        <SectionCard icon={() => <span className="text-xl">💼</span>} title="LinkedIn Authority" badge="Infinity" color="bg-blue-500/10 text-blue-300" delay={0.1}>
+                          <div className="space-y-5">
+                            {result.linkedin.authorityHook && (
+                               <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-inner">
+                                  <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Authority Hook</h4>
+                                  <p className="text-base text-white font-black leading-tight">{result.linkedin.authorityHook}</p>
+                               </div>
+                            )}
+                            <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5">
+                              <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap flex-1">{result.linkedin.post}</p>
+                              <CopyBtn text={result.linkedin.post} />
+                            </div>
+                          </div>
+                        </SectionCard>
+                      ) : (
+                        <SectionCard icon={() => <span className="text-xl">💼</span>} title="LinkedIn Authority" badge="Infinity" color="bg-blue-500/10 text-blue-300" delay={0.1} locked lockedReason="Unlock Authority Posts with Infinity" />
+                      )}
+
+                      {result.reel ? (
+                        <SectionCard icon={() => <span className="text-xl">🎬</span>} title="Cinematic Reel" badge="Infinity" color="bg-red-500/10 text-red-300" delay={0.15}>
+                          <div className="space-y-5">
+                            <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-red-500/5 border border-red-500/10 shadow-inner">
+                              <p className="text-white/90 text-sm leading-relaxed whitespace-pre-wrap flex-1 font-mono">{result.reel.script}</p>
+                              <CopyBtn text={result.reel.script} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10">
+                                  <h4 className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-2">Pacing</h4>
+                                  <p className="text-xs text-white/70 font-medium">{result.reel.pacingNotes}</p>
+                               </div>
+                               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10">
+                                  <h4 className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-2">Audio Direction</h4>
+                                  <p className="text-xs text-white/70 font-medium">{result.reel.trendingAudioDirection}</p>
+                               </div>
+                            </div>
+                          </div>
+                        </SectionCard>
+                      ) : (
+                        <SectionCard icon={() => <span className="text-xl">🎬</span>} title="Cinematic Script" badge="Infinity" color="bg-red-500/10 text-red-300" delay={0.15} locked lockedReason="Unlock Cinematic Scripts with Infinity" />
+                      )}
+                   </div>
+
+                   {/* Visual Direction Prompt */}
+                   {result.instagram?.visualDirection && (
+                    <SectionCard icon={ImageIcon} title="Midjourney Visual Architecture" color="bg-indigo-500/10 text-indigo-300" delay={0.2}>
+                      <div className="p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl flex flex-col md:flex-row items-center gap-6">
+                        <div className="flex-1">
+                          <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Advanced Visual Prompt</h4>
+                          <p className="text-white/80 text-sm font-mono leading-relaxed italic">"{result.instagram.visualDirection}"</p>
+                        </div>
+                        <CopyBtn text={result.instagram.visualDirection} label="Copy Prompt" />
+                      </div>
+                    </SectionCard>
                 </motion.div>
               )}
 
               {!isPro && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                  className="rounded-xl bg-gradient-to-r from-cyan-500/10 to-teal-500/8 border border-cyan-500/20 p-4 flex items-center gap-3">
-                  <Crown className="w-5 h-5 text-cyan-400 shrink-0" />
+                  className="rounded-2xl bg-gradient-to-r from-cyan-600/20 to-teal-600/10 border border-cyan-500/30 p-5 flex items-center gap-4 shadow-2xl">
+                  <Crown className="w-6 h-6 text-cyan-400 shrink-0 animate-pulse" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-white/80">Get Full Strategy, Carousel Previews & Reels</p>
-                    <p className="text-xs text-white/40 mt-0.5">Unlock all tools with Infinity plan</p>
+                    <p className="text-sm font-black text-white uppercase tracking-tight">Unlock the Full Ecosystem</p>
+                    <p className="text-xs text-white/40 mt-0.5 font-medium">Reel Scripts, LinkedIn Authority & Visual Blueprints are reserved for Infinity.</p>
                   </div>
                   <button onClick={() => setLocation("/pricing")}
-                    className="shrink-0 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition-all">
+                    className="shrink-0 px-6 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all">
                     Upgrade
                   </button>
                 </motion.div>

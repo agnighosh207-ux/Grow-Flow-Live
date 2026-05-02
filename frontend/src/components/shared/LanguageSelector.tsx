@@ -32,8 +32,8 @@ export function LanguageSelector({
 
   return (
     <div className={className}>
-      <label className="text-sm font-medium text-white/70 mb-1.5 flex items-center gap-1.5">
-        <Globe className="w-3.5 h-3.5" />
+      <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 flex items-center gap-1.5">
+        <Globe className="w-3 h-3" />
         {label}
       </label>
       <style dangerouslySetInnerHTML={{ __html: `
@@ -56,16 +56,16 @@ export function LanguageSelector({
           transition: all 0.2s ease;
         }
         .language-select-item:focus, .language-select-item[data-highlighted] {
-          background: linear-gradient(90deg, rgba(6, 182, 212, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%) !important;
+          background: rgba(6, 182, 212, 0.1) !important;
           color: #06b6d4 !important;
           outline: none !important;
         }
       `}} />
       <Select value={value} onValueChange={handleChange}>
-        <SelectTrigger className="bg-white/5 backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-colors hover:bg-white/10 h-11">
+        <SelectTrigger className="bg-white/[0.03] backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-all hover:bg-white/10 h-11">
           <SelectValue placeholder="Select language" />
         </SelectTrigger>
-        <SelectContent className="bg-[#0f0a1e]/95 backdrop-blur-2xl border-white/10 rounded-xl max-h-[330px] language-select-content shadow-2xl shadow-cyan-950/20">
+        <SelectContent className="glass-panel-premium border-white/10 rounded-xl max-h-[330px] language-select-content shadow-2xl">
           {SUPPORTED_LANGUAGES.map((lang) => (
             <SelectItem
               key={lang.value}

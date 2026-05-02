@@ -22,9 +22,6 @@ export function useReferralInfo() {
       });
       if (!res.ok) throw new Error("Failed to fetch referral info");
       const data = await res.json();
-      const origin = window.location.origin;
-      const basePath = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-      data.shareableLink = `${origin}${basePath}${data.shareableLink}`;
       return data;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes

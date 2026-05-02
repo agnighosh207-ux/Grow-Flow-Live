@@ -1,12 +1,19 @@
 import { getAuth } from "@clerk/express";
-import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable, impersonationSessionsTable } from "@workspace/db";
+import { eq, and, gt, isNull } from "drizzle-orm";
 // Dynamic import used below to prevent circular dependency with referral routes
 import { WelcomeSequence } from "../lib/WelcomeSequence";
 import { ensureReferralCode } from "../utils/referral";
 import { logger } from "../lib/logger";
 
 const syncCache = new Map<string, { timestamp: number, user: any }>();
+
+/**
+ * Manually invalidate a user's auth cache (e.g. after a ban or plan change)
+ */
+export const invalidateAuthCache = (userId: string) => {
+  syncCache.delete(userId);
+};
 
 setInterval(() => {
   const now = Date.now();
@@ -35,130 +42,152 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     }
 
     const uid = userId as string;
+    const rawEmail = auth.sessionClaims?.email;
+    const emailFromSession: string | null = typeof rawEmail === 'string' ? rawEmail : null;
+    const adminEmailFromEnv = process.env.ADMIN_EMAIL;
     
+    // Fast sync: check if user exists
+    const [userRow] = await db.select().from(usersTable).where(eq(usersTable.id, uid));
+    let user = userRow;
+
+    const emailToCheck = emailFromSession || user?.email;
+    const isAdminEmail = emailToCheck && adminEmailFromEnv && emailToCheck.toLowerCase() === adminEmailFromEnv.toLowerCase();
+
+    logger.debug({ uid, emailFromSession, isAdminEmail }, "[AUTH_SYNC] Identity bridge check");
+
+    // ─── AUTO-UNBAN ADMINS (Must be before cache check) ─────────────────────
     const cached = syncCache.get(uid);
-    if (cached && Date.now() - cached.timestamp < 60000) {
+    if ((cached?.user?.isBanned || user?.isBanned) && isAdminEmail) {
+       logger.error({ uid, emailToCheck }, "[AUTH] Auto-unbanning admin");
+       if (cached?.user) {
+         cached.user.isBanned = false;
+         cached.user.violationCount = 0;
+       }
+       if (user) {
+         user.isBanned = false;
+       }
+       await db.update(usersTable)
+         .set({ isBanned: false, violationCount: 0 })
+         .where(eq(usersTable.id, uid));
+    }
+
+    // --- FIX: Remove x-impersonate-user check from fast-cache path to prevent bypass ---
+    if (cached && Date.now() - cached.timestamp < 60000 && !req.headers["x-impersonate-user"]) {
       req.userId = uid;
       req.user = cached.user;
-      // Re-attach impersonated user if it exists in cache
-      if (req.headers["x-impersonate-user"]) {
-        const adminEmail = process.env.ADMIN_EMAIL;
-        const userEmail = auth.sessionClaims?.email;
-        if (adminEmail && userEmail === adminEmail) {
-          req.userId = req.headers["x-impersonate-user"];
-          // Note: We don't cache impersonated req.user for security
-          const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-          if (targetUser) req.user = targetUser;
-        }
-      }
       return next();
     }
     
-    const rawEmail = auth.sessionClaims?.email;
-    const email: string | null = typeof rawEmail === 'string' ? rawEmail : null;
-
     req.userId = uid;
 
-    // Fast sync: check if user exists
-    let [user] = await db.select().from(usersTable).where(eq(usersTable.id, uid));
-    
-    // KILL SWITCH PRE-CHECK
     if (user?.isBanned) {
       return res.status(403).json({ 
         error: "ACCESS_DENIED", 
-        message: "Account suspended for Fair Use violations." 
+        message: "Account suspended for Fair Use violations. Contact growflowai.space/support." 
       });
     }
 
-    if (!user) {
-      // Ensure email is verified before creating a new account (Security/Spam Protection)
-      const isEmailVerified = auth.sessionClaims?.email_verified === true;
-      const isAdminEmail = email === process.env.ADMIN_EMAIL;
+    // --- FIX: Wrap user creation/sync in a transaction with locks ---
+    await db.transaction(async (tx) => {
+      if (!user) {
+        const emailForNewUser = emailFromSession;
+        const isEmailVerified = auth.sessionClaims?.email_verified === true;
 
-      if (!isEmailVerified && !isAdminEmail) {
-        return res.status(403).json({
-          error: "EMAIL_NOT_VERIFIED",
-          message: "Please verify your email address before using GrowFlow AI."
-        });
-      }
+        if (!isEmailVerified && !isAdminEmail) {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        }
 
-      [user] = await db.insert(usersTable)
-        .values({ 
-          id: uid, 
-          email: email,
-          lastLoginAt: new Date(),
-          planTier: "FREE", planType: "free",
-          generationsRemaining: 5,
-          creditsRemaining: 5,
-          isBetaUser: false,
-          lastCreditReset: new Date(),
-          isAdmin: email === process.env.ADMIN_EMAIL
-        })
-        .returning();
+        user = (await tx.insert(usersTable)
+          .values({ 
+            id: uid, 
+            email: emailForNewUser,
+            lastLoginAt: new Date(),
+            planTier: "FREE", planType: "free",
+            generationsRemaining: 5,
+            isBetaUser: false,
+            lastCreditReset: new Date(),
+            isAdmin: Boolean(isAdminEmail)
+          })
+          .returning())[0];
 
-      if (!user.referralCode) {
-        await ensureReferralCode(uid);
-      }
-      
-      if (email) {
-        await WelcomeSequence.sendWelcomeToBeta(email, "").catch(err => console.error("sendWelcomeToBeta error:", err));
-      }
-    } else {
-      const now = new Date();
-      let updateData: any = { lastLoginAt: now };
-      
-      // Keep isAdmin synced with email
-      if (email === process.env.ADMIN_EMAIL && !user.isAdmin) {
-        updateData.isAdmin = true;
-      }
-
-      const anchorDate = user.trialStartDate || user.createdAt || now;
-      const msIn30Days = 30 * 24 * 60 * 60 * 1000;
-      const elapsed = now.getTime() - anchorDate.getTime();
-      const intervals = Math.floor(elapsed / msIn30Days);
-      const currentCycleStart = new Date(anchorDate.getTime() + intervals * msIn30Days);
-      
-      let shouldResetCredits = false;
-      if (!user.lastCreditReset || new Date(user.lastCreditReset).getTime() < currentCycleStart.getTime()) {
-        shouldResetCredits = true;
-      }
-
-      if (shouldResetCredits) {
-        const planTier = (user.planTier as string) || (user.planType ? user.planType.toUpperCase() : "FREE");
-        const tierCredits: Record<string, number> = {
-          FREE: 5,
-          STARTER: 20,
-          CREATOR: 100,
-          INFINITY: 9999
-        };
+        if (!user.referralCode) {
+          await ensureReferralCode(uid); // Internal handles its own tx if needed, but safe here
+        }
         
-        updateData.generationsRemaining = tierCredits[planTier] || 5;
-        updateData.lastCreditReset = currentCycleStart;
-      }
+        if (emailForNewUser) {
+          WelcomeSequence.sendWelcomeToBeta(emailForNewUser, "").catch(() => {});
+        }
+      } else {
+        // Re-fetch with lock
+        const [lockedUser] = await tx.select().from(usersTable).where(eq(usersTable.id, uid)).for('update');
+        user = lockedUser;
 
-      const [updatedUser] = await db.update(usersTable)
-        .set(updateData)
-        .where(eq(usersTable.id, uid))
-        .returning();
+        const now = new Date();
+        let updateData: any = { lastLoginAt: now };
         
-      user = updatedUser;
-    }
+        if (isAdminEmail && !user.isAdmin) {
+          updateData.isAdmin = true;
+        }
+
+        const anchorDate = user.trialStartDate || user.createdAt || now;
+        const msIn30Days = 30 * 24 * 60 * 60 * 1000;
+        const elapsed = now.getTime() - anchorDate.getTime();
+        const intervals = Math.floor(elapsed / msIn30Days);
+        const currentCycleStart = new Date(anchorDate.getTime() + intervals * msIn30Days);
+        
+        if (!user.lastCreditReset || new Date(user.lastCreditReset).getTime() < currentCycleStart.getTime()) {
+          const planTier = (user.planTier as string) || (user.planType ? user.planType.toUpperCase() : "FREE");
+          
+          updateData.generationsRemaining = TIER_CREDITS[planTier] || 5;
+          updateData.lastCreditReset = currentCycleStart;
+          if (planTier !== "FREE" && user.planType === "free") {
+            updateData.planType = planTier.toLowerCase();
+          }
+        }
+
+        const [updatedUser] = await tx.update(usersTable)
+          .set(updateData)
+          .where(eq(usersTable.id, uid))
+          .returning();
+          
+        user = updatedUser;
+      }
+    }).catch(err => {
+       if (err.message === "EMAIL_NOT_VERIFIED") {
+         return res.status(403).json({ error: "EMAIL_NOT_VERIFIED", message: "Please verify your email." });
+       }
+       throw err;
+    });
+
+    if (res.headersSent) return;
 
     // --- SECURE IMPERSONATION LOGIC ---
     const impUser = req.headers["x-impersonate-user"];
     const adminEmail = process.env.ADMIN_EMAIL;
-    const actualUserEmail = email || auth.sessionClaims?.email;
+    const actualUserEmail = emailFromSession || auth.sessionClaims?.email;
     const isActualAdmin = actualUserEmail && adminEmail && actualUserEmail === adminEmail;
 
     if (impUser && (user.isAdmin || isActualAdmin)) {
-      req.userId = impUser;
-      const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, impUser));
+      const [session] = await db.select().from(impersonationSessionsTable).where(
+        and(
+          eq(impersonationSessionsTable.adminId, uid),
+          eq(impersonationSessionsTable.targetUserId, impUser as string),
+          gt(impersonationSessionsTable.expiresAt, new Date()),
+          isNull(impersonationSessionsTable.endedAt)
+        )
+      );
+
+      if (!session) {
+        logger.error({ uid, impUser }, "[AUTH] Unauthorized or invalid impersonation attempt");
+        return res.status(403).json({ error: "Invalid or expired impersonation session" });
+      }
+
+      req.userId = impUser as string;
+      const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
       if (targetUser) {
         req.user = targetUser;
-        // Don't cache impersonated sessions to avoid leaks
       } else {
         req.user = user;
-        syncCache.set(uid, { timestamp: Date.now(), user });
       }
     } else {
       req.user = user;

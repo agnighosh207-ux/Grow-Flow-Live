@@ -179,7 +179,7 @@ function CreditCounter({ sub }: { sub: any }) {
   }
 
   // Future-proof reading directly from backend or fallback to limit calc
-  const remaining = typeof sub.creditsRemaining === "number" ? sub.creditsRemaining : (sub.generationLimit ? Math.max(0, sub.generationLimit - (sub.monthlyGenerationsUsed || 0)) : (sub.plan === "free" ? 5 : 0));
+  const remaining = typeof sub.generationsRemaining === "number" ? sub.generationsRemaining : (typeof sub.creditsRemaining === "number" ? sub.creditsRemaining : (sub.generationLimit ? Math.max(0, sub.generationLimit - (sub.monthlyGenerationsUsed || 0)) : (sub.plan === "free" ? 5 : 0)));
   const total = sub.generationLimit || (sub.planType === 'starter' ? 20 : (sub.planType === 'creator' ? 100 : 5));
   
   const percentage = Math.min(100, Math.max(0, (remaining / total) * 100));

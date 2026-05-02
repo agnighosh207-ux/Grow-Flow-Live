@@ -32,3 +32,5 @@ export * from './contentCalendar';
 export * from './globalAnnouncements';
 export * from './securityLogs';
 export * from './payments';
+export * from './featureUsageLogs';
+export * from './impersonationSessions';

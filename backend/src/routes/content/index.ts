@@ -2,8 +2,9 @@ import { Router, type IRouter, type Response } from "express";
 import { type AuthenticatedRequest } from "../../types";
 import { getAuth } from "@clerk/express";
 import { eq, desc, count, sql, and, gte, inArray, lt, isNull } from "drizzle-orm";
-import { db, contentGenerationsTable, usersTable, usageLogsTable } from "@workspace/db";
+import { db, contentGenerationsTable, usersTable, usageLogsTable, featureUsageLogsTable, securityLogsTable } from "@workspace/db";
 import { logger } from "../../lib/logger";
+import crypto from "crypto";
 import {
   GenerateContentBody,
   GenerateVariationsBody,
@@ -237,22 +238,11 @@ router.post("/content/generate", requireAuth, enforceGenerationLimit, async (req
     return;
   }
 
-  // Use the pre-fetched user from authSyncMiddleware if available
-  let user = (req as any).user;
+  // Use the pre-fetched user from authSyncMiddleware (Identity Bridge)
+  const user = (req as any).user;
   if (!user) {
-    [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    if (!user) {
-      // Create user if they don't exist yet (Identity Bridge)
-      await db.insert(usersTable).values({ 
-        id: req.userId,
-        planType: "free",
-        planTier: "FREE",
-        generationsRemaining: 5,
-        creditsRemaining: 5
-      }).onConflictDoNothing();
-      // MUST re-fetch to get the full user object
-      [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    }
+    res.status(401).json({ error: "User context synchronization failed. Please refresh." });
+    return;
   }
 
   // Limit enforcement is now handled by the global enforceGenerationLimit middleware (Flaw 5 fix)
@@ -363,6 +353,12 @@ router.post("/content/generate", requireAuth, enforceGenerationLimit, async (req
       generationsRemaining: user?.generationsRemaining ?? 0,
       plan: status,
     });
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "content_generate"
+    }).catch(() => {});
   } catch (err: any) {
     console.error("ROUTE ERROR (/content/generate):", err);
     const httpStatus = err?.status || 500;
@@ -452,14 +448,6 @@ router.post("/content/variations", requireAuth, enforceGenerationLimit, async (r
     return;
   }
 
-  // Fallback for unexpected plan/status combinations
-  res.status(403).json({
-    error: "forbidden",
-    message: "Your current plan does not support content regeneration. Please upgrade to Creator or Infinity.",
-  });
-  return;
-
-
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
   const language = bodyLanguage2 ?? "English";
 
@@ -540,6 +528,12 @@ Return ONLY this JSON:
       await db.update(contentGenerationsTable).set({ content: updatedContent }).where(eq(contentGenerationsTable.id, existingGeneration.id));
     }
     res.json({ variations: variations.variations ?? [] });
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "variations"
+    }).catch(() => {});
   } catch (err: any) {
     res.status(500).json({ error: "Failed to save variation. Please try again." });
     return;
@@ -619,6 +613,12 @@ router.get("/content/history/:id", requireAuth, async (req: any, res): Promise<v
     }
 
     res.json({ item });
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "content_generate"
+    }).catch(() => {});
   } catch (err) {
     console.error("History item fetch error:", err);
     res.status(500).json({ error: "Failed to fetch history item" });

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
 export const usageLogsTable = pgTable("usage_logs", {
@@ -7,6 +7,10 @@ export const usageLogsTable = pgTable("usage_logs", {
   promptLanguage: text("prompt_language").notNull(),
   action: text("action").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    userIdIdx: index("usage_logs_user_id_idx").on(table.userId),
+  };
 });
 
 export type UsageLog = typeof usageLogsTable.$inferSelect;

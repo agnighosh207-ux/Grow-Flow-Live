@@ -15,6 +15,9 @@ import { logger } from "./lib/logger";
 import { db, systemSettingsTable, securityLogsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import { validateAIConfig } from "./services/ai-engine";
+
+validateAIConfig();
 
 export let isShuttingDown = false;
 export function setShuttingDown(val: boolean) { isShuttingDown = val; }
@@ -46,27 +49,6 @@ app.use(
   }),
 );
 
-// ─── 2.1 Security logging ──────────────────────────────────────────────────
-app.use((req: any, res, next) => {
-  if (req.path.startsWith("/api/") && req.path !== "/api/health") {
-    res.on("finish", async () => {
-      try {
-        await db.insert(securityLogsTable).values({
-          id: crypto.randomUUID(),
-          userId: (req as any).userId || null,
-          eventType: "API_REQUEST",
-          ipAddress: req.ip || "unknown",
-          userAgent: req.get("User-Agent") || "unknown",
-          metadata: { method: req.method, path: req.path, statusCode: res.statusCode }
-        });
-      } catch (err) {
-        // Silent
-      }
-    });
-  }
-  next();
-});
-
 // ─── 2.2 Graceful shutdown check ───────────────────────────────────────────
 app.use((req, res, next) => {
   if (isShuttingDown && req.path.startsWith("/api/")) {
@@ -80,19 +62,27 @@ app.use((req, res, next) => {
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
 // ─── 4. CORS ─────────────────────────────────────────────────────────────────
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",")
-  : ["http://localhost:5173", "http://localhost:3000", "https://growflowai.space", "https://www.growflowai.space"];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .filter(Boolean)
+  .map(o => o.trim());
 
 app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+      // If no origin (e.g. server-to-server or curl), only allow if it's not a CORS-sensitive request
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else if (process.env.NODE_ENV !== "production" && (origin.startsWith("http://localhost:") || origin.endsWith(".vercel.app"))) {
+        // Allow localhost and Vercel previews in non-production
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
       }
     },
   }),
@@ -126,6 +116,27 @@ app.use((req: any, res: any, next: any) => {
 app.use(authSyncMiddleware);
 app.use(guardianMiddleware);
 
+// ─── 7. Security logging (After Auth Sync to capture userId) ────────────────
+app.use((req: any, res, next) => {
+  if (req.path.startsWith("/api/") && req.path !== "/api/health") {
+    res.on("finish", async () => {
+      try {
+        await db.insert(securityLogsTable).values({
+          id: crypto.randomUUID(),
+          userId: (req as any).userId || null,
+          eventType: "API_REQUEST",
+          ipAddress: req.ip || "unknown",
+          userAgent: req.get("User-Agent") || "unknown",
+          metadata: { method: req.method, path: req.path, statusCode: res.statusCode }
+        });
+      } catch (err) {
+        logger.error({ err, path: req.path }, "FAILED_TO_WRITE_SECURITY_LOG");
+      }
+    });
+  }
+  next();
+});
+
 // ─── 7. Maintenance mode (cached) ──────────────────────────────────────────
 let maintenanceModeCache = { value: false, lastChecked: 0 };
 
@@ -141,13 +152,17 @@ app.use(async (req, res, next) => {
         const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
         maintenanceModeCache = { value: !!settings?.maintenanceMode, lastChecked: now };
       } catch (err) {
-        // DB unavailable — assume not in maintenance
-        maintenanceModeCache = { value: false, lastChecked: now };
+        logger.error({ err }, "Maintenance mode DB check failed");
+        // --- FIX: Fail-closed. If DB is down, assume maintenance to prevent data corruption ---
+        maintenanceModeCache = { value: true, lastChecked: now - 25000 }; // Re-check sooner (5s)
       }
     }
 
     if (maintenanceModeCache.value) {
-      res.status(503).json({ error: "Service Unavailable: Maintenance Mode" });
+      res.status(503).json({ 
+        error: "Service Unavailable: Maintenance Mode",
+        message: "We are currently performing scheduled maintenance. Please check back in a few minutes."
+      });
       return;
     }
   }
@@ -164,7 +179,6 @@ const generalLimiter = rateLimit({
   skip: (req) => req.path.startsWith(CLERK_PROXY_PATH),
 });
 
-app.use("/api", generalLimiter);
 app.use("/api", generalLimiter);
 
 // ─── 9. API router ─────────────────────────────────────────────────────────
