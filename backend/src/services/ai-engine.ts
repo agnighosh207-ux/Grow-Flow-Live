@@ -90,10 +90,9 @@ export const validateAIConfig = () => {
   const active = providers.filter(p => p.key && p.key.trim() !== "");
   
   if (active.length === 0) {
-    logger.error("[CRITICAL] No AI providers configured. At least one API key must be set.");
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("No AI providers configured");
-    }
+    logger.error("[CRITICAL] No AI providers configured. At least one API key must be set in Environment Variables.");
+    // --- FIX: Do not crash in production so that the app can still serve non-AI routes and health checks ---
+    // throw new Error("No AI providers configured");
   } else {
     logger.info(`[AI] Initialized with providers: ${active.map(p => p.name).join(", ")}`);
   }

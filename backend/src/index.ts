@@ -29,9 +29,9 @@ console.log("[BOOT] Node:", process.version, "| CWD:", process.cwd());
 console.log("[BOOT] PORT:", PORT, "| NODE_ENV:", process.env.NODE_ENV);
 console.log("[BOOT] DATABASE_URL set:", !!process.env.DATABASE_URL);
 
-// ─── 4. Dynamic-import the Express app AFTER env is ready ────────────────────
-const { default: app } = await import("./app.js");
-const { initSentry } = await import("./sentry.js");
+// ─── 4. Import the Express app AFTER diagnostics ────────────────────────────
+import app from "./app.js";
+import { initSentry } from "./sentry.js";
 
 initSentry();
 
