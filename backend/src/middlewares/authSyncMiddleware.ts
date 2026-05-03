@@ -57,22 +57,19 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     logger.debug({ uid, emailFromSession, isAdminEmail }, "[AUTH_SYNC] Identity bridge check");
 
     // ─── AUTO-UNBAN ADMINS (Must be before cache check) ─────────────────────
-    const cached = syncCache.get(uid);
-    if ((cached?.user?.isBanned || user?.isBanned) && isAdminEmail) {
+    if ((user?.isBanned) && isAdminEmail) {
        logger.error({ uid, emailToCheck }, "[AUTH] Auto-unbanning admin");
-       if (cached?.user) {
-         cached.user.isBanned = false;
-         cached.user.violationCount = 0;
-       }
-       if (user) {
-         user.isBanned = false;
-       }
+       if (user) user.isBanned = false;
+       
        await db.update(usersTable)
          .set({ isBanned: false, violationCount: 0 })
          .where(eq(usersTable.id, uid));
+       
+       invalidateAuthCache(uid);
     }
 
     // --- FIX: Remove x-impersonate-user check from fast-cache path to prevent bypass ---
+    const cached = syncCache.get(uid);
     if (cached && Date.now() - cached.timestamp < 60000 && !req.headers["x-impersonate-user"]) {
       // Force refresh if this is an admin email but the cache doesn't know it yet
       if (isAdminEmail && !cached.user.isAdmin) {
@@ -94,87 +91,90 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     }
 
     // --- FIX: Wrap user creation/sync in a transaction with locks ---
-    await db.transaction(async (tx) => {
-      if (!user) {
-        const emailForNewUser = emailFromSession;
-        // Allow through if:
-        // 1. Clerk explicitly marks email as verified (email+password signups that clicked the link)
-        // 2. email_verified is undefined (OAuth users - Google/GitHub - Clerk guarantees these are verified)
-        // 3. This is the admin email
-        const emailVerifiedClaim = auth.sessionClaims?.email_verified;
-        const isEmailVerified = emailVerifiedClaim === true || emailVerifiedClaim === undefined;
+    try {
+      await db.transaction(async (tx) => {
+        if (!user) {
+          const emailForNewUser = emailFromSession;
+          // Allow through if:
+          // 1. Clerk explicitly marks email as verified (email+password signups that clicked the link)
+          // 2. email_verified is undefined (OAuth users - Google/GitHub - Clerk guarantees these are verified)
+          // 3. This is the admin email
+          const emailVerifiedClaim = auth.sessionClaims?.email_verified;
+          const isEmailVerified = emailVerifiedClaim === true || emailVerifiedClaim === undefined;
 
-        if (!isEmailVerified && !isAdminEmail) {
-          throw new Error("EMAIL_NOT_VERIFIED");
-        }
-
-        user = (await tx.insert(usersTable)
-          .values({ 
-            id: uid, 
-            email: emailForNewUser,
-            lastLoginAt: new Date(),
-            planTier: "FREE", planType: "free",
-            generationsRemaining: 5,
-            isBetaUser: false,
-            lastCreditReset: new Date(),
-            isAdmin: Boolean(isAdminEmail)
-          })
-          .returning())[0];
-
-        if (!user.referralCode) {
-          await ensureReferralCode(uid); // Internal handles its own tx if needed, but safe here
-        }
-        
-        if (emailForNewUser) {
-          WelcomeSequence.sendWelcomeToBeta(emailForNewUser, "").catch(() => {});
-        }
-      } else {
-        // Re-fetch with lock
-        const [lockedUser] = await tx.select().from(usersTable).where(eq(usersTable.id, uid)).for('update');
-        user = lockedUser;
-
-        const now = new Date();
-        let updateData: any = { lastLoginAt: now };
-        
-        if (isAdminEmail && !user.isAdmin) {
-          updateData.isAdmin = true;
-        }
-
-        const anchorDate = user.trialStartDate || user.createdAt || now;
-        const msIn30Days = 30 * 24 * 60 * 60 * 1000;
-        const elapsed = now.getTime() - anchorDate.getTime();
-        const intervals = Math.floor(elapsed / msIn30Days);
-        const currentCycleStart = new Date(anchorDate.getTime() + intervals * msIn30Days);
-        
-        if (!user.lastCreditReset || new Date(user.lastCreditReset).getTime() < currentCycleStart.getTime() || (isAdminEmail && user.planTier !== "INFINITY")) {
-          let planTier = (user.planTier as string) || (user.planType ? user.planType.toUpperCase() : "FREE");
-          
-          if (isAdminEmail) {
-            planTier = "INFINITY";
-            updateData.planTier = "INFINITY";
-            updateData.planType = "infinity";
+          if (!isEmailVerified && !isAdminEmail) {
+            throw new Error("EMAIL_NOT_VERIFIED");
           }
 
-          updateData.generationsRemaining = TIER_CREDITS[planTier] || 5;
-          updateData.lastCreditReset = currentCycleStart;
-          if (planTier !== "FREE" && user.planType === "free") {
-            updateData.planType = planTier.toLowerCase();
-          }
-        }
+          user = (await tx.insert(usersTable)
+            .values({ 
+              id: uid, 
+              email: emailForNewUser,
+              lastLoginAt: new Date(),
+              planTier: "FREE", planType: "free",
+              generationsRemaining: 5,
+              isBetaUser: false,
+              lastCreditReset: new Date(),
+              isAdmin: Boolean(isAdminEmail)
+            })
+            .returning())[0];
 
-        const [updatedUser] = await tx.update(usersTable)
-          .set(updateData)
-          .where(eq(usersTable.id, uid))
-          .returning();
+          if (!user.referralCode) {
+            await ensureReferralCode(uid); // Internal handles its own tx if needed, but safe here
+          }
           
-        user = updatedUser;
+          if (emailForNewUser) {
+            const firstName = auth.sessionClaims?.firstName || "";
+            WelcomeSequence.sendWelcomeToBeta(emailForNewUser, firstName as string).catch(() => {});
+          }
+        } else {
+          // Re-fetch with lock
+          const [lockedUser] = await tx.select().from(usersTable).where(eq(usersTable.id, uid)).for('update');
+          user = lockedUser;
+
+          const now = new Date();
+          let updateData: any = { lastLoginAt: now };
+          
+          if (isAdminEmail && !user.isAdmin) {
+            updateData.isAdmin = true;
+          }
+
+          const anchorDate = user.trialStartDate || user.createdAt || now;
+          const msIn30Days = 30 * 24 * 60 * 60 * 1000;
+          const elapsed = now.getTime() - anchorDate.getTime();
+          const intervals = Math.floor(elapsed / msIn30Days);
+          const currentCycleStart = new Date(anchorDate.getTime() + intervals * msIn30Days);
+          
+          if (!user.lastCreditReset || new Date(user.lastCreditReset).getTime() < currentCycleStart.getTime() || (isAdminEmail && user.planTier !== "INFINITY")) {
+            let planTier = (user.planTier as string) || (user.planType ? user.planType.toUpperCase() : "FREE");
+            
+            if (isAdminEmail) {
+              planTier = "INFINITY";
+              updateData.planTier = "INFINITY";
+              updateData.planType = "infinity";
+            }
+
+            updateData.generationsRemaining = TIER_CREDITS[planTier] || 5;
+            updateData.lastCreditReset = currentCycleStart;
+            if (planTier !== "FREE" && user.planType === "free") {
+              updateData.planType = planTier.toLowerCase();
+            }
+          }
+
+          const [updatedUser] = await tx.update(usersTable)
+            .set(updateData)
+            .where(eq(usersTable.id, uid))
+            .returning();
+            
+          user = updatedUser;
+        }
+      });
+    } catch (err: any) {
+      if (err.message === "EMAIL_NOT_VERIFIED") {
+        return res.status(403).json({ error: "EMAIL_NOT_VERIFIED", message: "Please verify your email." });
       }
-    }).catch(err => {
-       if (err.message === "EMAIL_NOT_VERIFIED") {
-         return res.status(403).json({ error: "EMAIL_NOT_VERIFIED", message: "Please verify your email." });
-       }
-       throw err;
-    });
+      throw err;
+    }
 
     if (res.headersSent) return;
 
@@ -184,7 +184,8 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     const actualUserEmail = emailFromSession || auth.sessionClaims?.email;
     const isActualAdmin = actualUserEmail && adminEmail && actualUserEmail === adminEmail;
 
-    if (impUser && (user.isAdmin || isActualAdmin)) {
+    // --- H-6 FIX: Prevent self-impersonation from triggering session checks ---
+    if (impUser && impUser !== uid && (user.isAdmin || isActualAdmin)) {
       const [session] = await db.select().from(impersonationSessionsTable).where(
         and(
           eq(impersonationSessionsTable.adminId, uid),
@@ -208,6 +209,13 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       }
     } else {
       req.user = user;
+      
+      // --- L-10 FIX: Add max-size guard to prevent unbounded growth ---
+      if (syncCache.size > 5000) {
+        logger.warn("[AUTH] syncCache exceeded 5000 entries, performing emergency flush");
+        syncCache.clear();
+      }
+      
       syncCache.set(uid, { timestamp: Date.now(), user });
     }
 

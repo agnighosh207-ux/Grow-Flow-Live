@@ -17,19 +17,19 @@ import {
 import { MagneticButton } from "@/components/shared/MagneticButton";
 import { Hover3DCard } from "@/components/shared/Hover3DCard";
 
-type BillingPeriod = "monthly" | "quarterly" | "biannual" | "yearly";
+type BillingPeriod = "monthly" | "quarterly" | "half-yearly" | "yearly";
 
 const BILLING_OPTIONS: { key: BillingPeriod; label: string; badge?: string }[] = [
   { key: "monthly", label: "Monthly" },
   { key: "quarterly", label: "3-Month", badge: "Save 10%" },
-  { key: "biannual", label: "6-Month", badge: "Save 20%" },
+  { key: "half-yearly", label: "6-Month", badge: "Save 20%" },
   { key: "yearly", label: "Yearly", badge: "Best Deal" },
 ];
 
 const BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 109, quarterly: 98, biannual: 87, yearly: 72 },
-  creator: { monthly: 249, quarterly: 224, biannual: 199, yearly: 166 },
-  infinity: { monthly: 499, quarterly: 449, biannual: 399, yearly: 332 },
+  starter: { monthly: 109, quarterly: 109, "half-yearly": 109, yearly: 91 },
+  creator: { monthly: 299, quarterly: 299, "half-yearly": 299, yearly: 249 },
+  infinity: { monthly: 499, quarterly: 499, "half-yearly": 499, yearly: 416 },
 };
 
 const STRIKETHROUGH_PRICES: Record<string, number> = {
@@ -39,15 +39,15 @@ const STRIKETHROUGH_PRICES: Record<string, number> = {
 };
 
 const BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 109, quarterly: 294, biannual: 522, yearly: 864 },
-  creator: { monthly: 249, quarterly: 672, biannual: 1194, yearly: 1992 },
-  infinity: { monthly: 499, quarterly: 1347, biannual: 2394, yearly: 3984 },
+  starter: { monthly: 109, quarterly: 327, "half-yearly": 654, yearly: 1090 },
+  creator: { monthly: 299, quarterly: 897, "half-yearly": 1794, yearly: 2990 },
+  infinity: { monthly: 499, quarterly: 1497, "half-yearly": 2994, yearly: 4990 },
 };
 
 const USD_BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 4, quarterly: 3.6, biannual: 3.2, yearly: 3.33 },
-  creator: { monthly: 12, quarterly: 10.8, biannual: 9.6, yearly: 10 },
-  infinity: { monthly: 20, quarterly: 18, biannual: 16, yearly: 16.66 },
+  starter: { monthly: 4, quarterly: 3.6, "half-yearly": 3.2, yearly: 3.33 },
+  creator: { monthly: 12, quarterly: 10.8, "half-yearly": 9.6, yearly: 10 },
+  infinity: { monthly: 20, quarterly: 18, "half-yearly": 16, yearly: 16.66 },
 };
 
 const USD_STRIKETHROUGH_PRICES: Record<string, number> = {
@@ -57,13 +57,13 @@ const USD_STRIKETHROUGH_PRICES: Record<string, number> = {
 };
 
 const USD_BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 4, quarterly: 10.8, biannual: 19.2, yearly: 40 },
-  creator: { monthly: 12, quarterly: 32.4, biannual: 57.6, yearly: 120 },
-  infinity: { monthly: 20, quarterly: 54, biannual: 96, yearly: 200 },
+  starter: { monthly: 4, quarterly: 10.8, "half-yearly": 19.2, yearly: 40 },
+  creator: { monthly: 12, quarterly: 32.4, "half-yearly": 57.6, yearly: 120 },
+  infinity: { monthly: 20, quarterly: 54, "half-yearly": 96, yearly: 200 },
 };
 
 function getBillingMonths(period: BillingPeriod): number {
-  return { monthly: 1, quarterly: 3, biannual: 6, yearly: 12 }[period];
+  return { monthly: 1, quarterly: 3, "half-yearly": 6, yearly: 12 }[period];
 }
 
 interface Feature {
@@ -128,8 +128,16 @@ const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, inf
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
-  const [currency, setCurrency] = useState<"INR" | "USD">(() => {
-    return (localStorage.getItem("pricing_currency") as "INR" | "USD") || "INR";
+  const [currency, setCurrency] = useState<"INR" | "USD">((): "INR" | "USD" => {
+    try {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("pricing_currency");
+        if (stored === "INR" || stored === "USD") return stored;
+      }
+    } catch (e) {
+      console.warn("localStorage access denied");
+    }
+    return "INR";
   });
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity"; billing: BillingPeriod; currency: "INR" | "USD" }>({ 
     open: false, plan: "starter", billing: "monthly", currency: "INR" 
@@ -193,7 +201,7 @@ export default function PricingPage() {
 
   const billingLabel = (period: BillingPeriod) => {
     if (period === "quarterly") return "every 3 months";
-    if (period === "biannual") return "every 6 months";
+    if (period === "half-yearly") return "every 6 months";
     if (period === "yearly") return "yearly";
     return "monthly";
   };

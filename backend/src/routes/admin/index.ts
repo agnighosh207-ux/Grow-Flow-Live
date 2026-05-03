@@ -180,7 +180,8 @@ router.patch("/modify-user", requireAuth, requireAdmin, async (req: any, res: an
         planType: newPlan,
         planTier: newTier as any,
         subscriptionStatus: newStatus,
-        generationsRemaining: generationsLimit
+        generationsRemaining: generationsLimit,
+        lastCreditReset: new Date() // --- H-5 FIX: Reset credit cycle to now ---
       })
       .where(eq(usersTable.id, targetUserId));
 

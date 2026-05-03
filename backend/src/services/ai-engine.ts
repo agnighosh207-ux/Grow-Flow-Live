@@ -129,7 +129,8 @@ export const generateContent = async ({
 
     if (useRedis) {
       const key = `burst:${userId}`;
-      await redis!.zadd(key, now, now.toString());
+      const member = crypto.randomUUID();
+      await redis!.zadd(key, now, member);
       await redis!.zremrangebyscore(key, 0, now - 10000);
       burstCount = await redis!.zcard(key);
       await redis!.expire(key, 15); // Cleanup insurance
@@ -200,18 +201,6 @@ export const generateContent = async ({
       apiKey: process.env.SAMBANOVA_API_KEY,
       baseURL: "https://api.sambanova.ai/v1",
       model: isInfinity ? "Meta-Llama-3.1-70B-Instruct" : "Meta-Llama-3.1-8B-Instruct",
-    },
-    {
-       name: "OpenRouter Search",
-       apiKey: process.env.PERPLEXITY_AI_API,
-       baseURL: "https://openrouter.ai/api/v1",
-       model: "perplexity/sonar",
-    },
-    {
-       name: "Groq Llama 3.3 70B",
-       apiKey: process.env.GROQ_API_KEY,
-       baseURL: "https://api.groq.com/openai/v1",
-       model: "llama-3.3-70b-versatile",
     }
   ];
 

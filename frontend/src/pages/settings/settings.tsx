@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useUser, useClerk } from "@clerk/react";
+import { useUser, useClerk, useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -134,6 +134,7 @@ function DeleteConfirmModal({ onConfirm, onClose, loading }: {
 
 export default function SettingsPage() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { signOut } = useClerk();
   const { data: sub, refetch: refetchSub } = useSubscriptionStatus();
   const { data: referral } = useReferralInfo();
@@ -181,8 +182,20 @@ export default function SettingsPage() {
   const [retryLoading, setRetryLoading] = useState(false);
   const retrySub = useRetrySubscription();
 
+  async function secureFetch(url: string, options: RequestInit = {}) {
+    const token = await getToken();
+    return fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+        ...options.headers,
+      }
+    });
+  }
+
   useEffect(() => {
-    fetch("/api/settings")
+    secureFetch("/api/settings")
       .then(r => r.json())
       .then(data => {
         if (data.notifications) {
@@ -192,7 +205,7 @@ export default function SettingsPage() {
       })
       .catch(() => setPrefsLoaded(true));
 
-    fetch("/api/settings/preferences")
+    secureFetch("/api/settings/preferences")
       .then(r => r.json())
       .then(data => {
         setContentPrefs({
@@ -213,7 +226,7 @@ export default function SettingsPage() {
   async function saveContentPrefs() {
     setContentPrefsSaving(true);
     try {
-      const res = await fetch("/api/settings/preferences", {
+      const res = await secureFetch("/api/settings/preferences", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -252,7 +265,7 @@ export default function SettingsPage() {
     setPrefs(updated);
     setPrefsSaving(true);
     try {
-      await fetch("/api/settings/notifications", {
+      await secureFetch("/api/settings/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [key]: value }),
@@ -280,12 +293,19 @@ export default function SettingsPage() {
   async function handleCancelSubscription() {
     setCancelLoading(true);
     try {
-      const res = await fetch("/api/subscription/cancel", { method: "POST" });
-      if (!res.ok) throw new Error();
+      const res = await secureFetch("/api/subscription/cancel", { method: "POST" });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to cancel with payment provider");
+      }
       toast({ title: "Subscription cancelled", description: "Access continues until end of billing period." });
       refetchSub();
-    } catch {
-      toast({ variant: "destructive", title: "Failed to cancel subscription" });
+    } catch (e: any) {
+      toast({ 
+        variant: "destructive", 
+        title: "Cancellation failed", 
+        description: e.message || "Please try again or contact support." 
+      });
     } finally {
       setCancelLoading(false);
     }
@@ -294,7 +314,7 @@ export default function SettingsPage() {
   async function handleDeleteAccount() {
     setDeleteLoading(true);
     try {
-      const res = await fetch("/api/settings/account", { method: "DELETE" });
+      const res = await secureFetch("/api/settings/account", { method: "DELETE" });
       if (!res.ok) throw new Error();
       await signOut();
       navigate("/");

@@ -33,14 +33,14 @@ const premiumHtmlWrapper = (title: string, bodyContent: string) => `
 <body>
   <div class="container">
     <div class="header">
-      <h1>Grow Flow AI</h1>
+      <h1>GrowFlow AI</h1>
     </div>
     <div class="content">
       <h2 style="color: #ffffff; margin-top: 0;">${title}</h2>
       ${bodyContent}
     </div>
     <div class="footer">
-      © ${new Date().getFullYear()} Grow Flow AI. All rights reserved.<br>
+      © ${new Date().getFullYear()} GrowFlow AI. All rights reserved.<br>
       You are receiving this because you registered at growflowai.space
     </div>
   </div>
@@ -71,7 +71,7 @@ export class WelcomeSequence {
     try {
       const content = `
         <p>Hey <b>${name || 'Creator'}</b>,</p>
-        <p>We're thrilled to welcome you to the <b>Grow Flow AI</b> family.</p>
+        <p>We're thrilled to welcome you to the <b>GrowFlow AI</b> family.</p>
         <p>Our platform is built to skyrocket your productivity and content creation speed.</p>
         <p>Your workspace is fully ready, and we’ve unlocked advanced modules for you to try immediately. Experience dynamic content generation, audience tailoring, and deep platform analytics.</p>
         <div style="text-align: center; margin-top: 30px;">
@@ -79,12 +79,12 @@ export class WelcomeSequence {
         </div>
       `;
       
-      const html = premiumHtmlWrapper('Welcome to Grow Flow AI! 🚀', content);
+      const html = premiumHtmlWrapper('Welcome to GrowFlow AI! 🚀', content);
       
       await retry(() => resend.emails.send({
         from: FROM_EMAIL,
         to: email, 
-        subject: 'Welcome to Grow Flow AI! 🚀',
+        subject: 'Welcome to GrowFlow AI! 🚀',
         html,
       }));
       logger.info(`Premium Welcome email sent to ${email}`);

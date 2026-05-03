@@ -69,7 +69,10 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
           eq(referralsTable.id, referralId)
         ));
 
-      if (!inserted) return;
+      if (!inserted) {
+        console.log(`[Referral] Duplicate reward attempt blocked for referred user: ${referredUserId}`);
+        return;
+      }
 
       const referredTrialBase = referredUser.trialEndsAt && referredUser.trialEndsAt > now
         ? referredUser.trialEndsAt

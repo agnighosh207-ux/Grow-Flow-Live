@@ -1,5 +1,4 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
 import { logger } from "../../lib/logger";
 import { eq, count, gte, and, sql } from "drizzle-orm";
 import { db, usersTable, contentGenerationsTable, couponsTable, securityLogsTable, paymentsTable } from "@workspace/db";
@@ -33,6 +32,24 @@ function getRazorpay() {
 
 // requireAuth and getOrCreateUser are now centralized in planMiddleware.ts (Flaw 20 & 21 fix)
 
+function getTierFromPlanId(planId: string): "starter" | "creator" | "infinity" | null {
+  const tiers = ["STARTER", "CREATOR", "INFINITY"] as const;
+  const cycles = ["MONTHLY", "QUARTERLY", "HALFYEARLY", "YEARLY"] as const;
+  const currencies = ["", "_USD"] as const;
+
+  for (const tier of tiers) {
+    for (const cycle of cycles) {
+      for (const curr of currencies) {
+        const key = `RAZORPAY_PLAN_${tier}_${cycle}${curr}`;
+        if (process.env[key] === planId) {
+          return tier.toLowerCase() as any;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 function computePlan(user: any, totalGenerations: number, monthlyGenerations: number) {
   const now = new Date();
   const planType = (user.planType || "free") as "free" | "starter" | "creator" | "infinity";
@@ -54,7 +71,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
         plan: "active" as const, planType,
         canGenerate: generationsRemaining > 0,
         trialDaysLeft: null, generationLimit: 20,
-        monthlyGenerationsUsed: 20 - generationsRemaining,
+        monthlyGenerationsUsed: Math.max(0, 20 - generationsRemaining),
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -63,7 +80,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
         plan: "active" as const, planType,
         canGenerate: generationsRemaining > 0,
         trialDaysLeft: null, generationLimit: 100,
-        monthlyGenerationsUsed: 100 - generationsRemaining,
+        monthlyGenerationsUsed: Math.max(0, 100 - generationsRemaining),
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -85,11 +102,15 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
   if (user.subscriptionStatus === "trial" && user.trialEndsAt && new Date(user.trialEndsAt) > now) {
     const msLeft = new Date(user.trialEndsAt).getTime() - now.getTime();
     const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+    
+    const tierLimits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
+    const limit = tierLimits[planType] || 5;
+
     return {
-      plan: "trial" as const, planType: "creator",
-      canGenerate: generationsRemaining > 0,
-      trialDaysLeft: daysLeft, generationLimit: 100,
-      monthlyGenerationsUsed: 100 - generationsRemaining,
+      plan: "trial" as const, planType,
+      canGenerate: planType === "infinity" ? true : generationsRemaining > 0,
+      trialDaysLeft: daysLeft, generationLimit: limit,
+      monthlyGenerationsUsed: Math.max(0, limit - generationsRemaining),
       totalGenerationsUsed: totalGenerations,
     };
   }
@@ -169,7 +190,7 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Respon
 
   res.json({
     ...result,
-    generationsUsed: totalGenerations,
+    generationsUsed: monthlyGenerations,
     generationsRemaining: user.generationsRemaining,
     trialEndsAt: user.trialEndsAt?.toISOString() ?? null,
     planExpiry: user.planExpiry?.toISOString() ?? null,
@@ -296,6 +317,36 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
+  const [currentUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+  if (!currentUser) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  // --- H-4 FIX: Verify subscription ownership via Razorpay API ---
+  const rzp = getRazorpay();
+  if (!rzp) {
+    res.status(503).json({ error: "Payment gateway not configured" });
+    return;
+  }
+
+  try {
+    const sub = await rzp.subscriptions.fetch(razorpay_subscription_id);
+    if (!sub || (sub.notes as any)?.clerk_user_id !== req.userId) {
+      logger.warn({ 
+        userId: req.userId, 
+        providedSubId: razorpay_subscription_id, 
+        razorpayNoteId: (sub.notes as any)?.clerk_user_id 
+      }, "Subscription ownership mismatch attempt blocked");
+      res.status(403).json({ error: "Subscription ownership mismatch. This payment does not belong to your account." });
+      return;
+    }
+  } catch (err: any) {
+    logger.error({ err: err.message, subId: razorpay_subscription_id }, "Failed to fetch subscription for verification");
+    res.status(400).json({ error: "Invalid subscription ID provided or payment gateway error" });
+    return;
+  }
+
   const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
   const keySecret = isProd 
     ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
@@ -316,50 +367,64 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
-  // Idempotency check (Flaw 27 fix)
-  const [currentUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-  if (currentUser && currentUser.subscriptionStatus === "active" && currentUser.razorpaySubscriptionId === razorpay_subscription_id) {
-    res.json({
-      success: true,
-      planType: currentUser.planType,
-      message: "Subscription already active.",
-      alreadyActive: true
+  const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
+  const planTierStr = effectivePlan.toUpperCase();
+  const credits = TIER_CREDITS[planTierStr] || 20;
+  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  // --- C2 FIX: Use Transaction and Absolute SET for Idempotency ---
+  try {
+    const success = await db.transaction(async (tx) => {
+      // 1. Strict Idempotency Check
+      const [existingPayment] = await tx.select()
+        .from(paymentsTable)
+        .where(eq(paymentsTable.id, razorpay_payment_id))
+        .for('update');
+
+      if (existingPayment) {
+        return "ALREADY_PROCESSED";
+      }
+
+      // 2. Record Payment
+      await tx.insert(paymentsTable).values({
+        id: razorpay_payment_id,
+        userId: req.userId,
+        subscriptionId: razorpay_subscription_id,
+        amount: 0, // Actual amount synced via webhook
+        status: "captured",
+        processedAt: new Date()
+      });
+
+      // 3. Update User (Set to "trial" status initially)
+      await tx.update(usersTable)
+        .set({ 
+          subscriptionStatus: "trial", // C-2 Fix: Set to trial initially
+          planType: effectivePlan, 
+          planTier: planTierStr as any,
+          trialStartDate: new Date(),
+          trialEndsAt: trialEndsAt,
+          generationsRemaining: credits, 
+          couponCode: couponCode || currentUser.couponCode || null
+        } as any)
+        .where(eq(usersTable.id, req.userId));
+
+      return "SUCCESS";
     });
+
+    if (success === "ALREADY_PROCESSED") {
+      res.json({
+        success: true,
+        planType: currentUser.planType,
+        message: "Subscription already active.",
+        alreadyActive: true
+      });
+      return;
+    }
+  } catch (err: any) {
+    logger.error({ err: err.message, userId: req.userId }, "Failed to verify payment transaction");
+    res.status(500).json({ error: "Failed to process payment activation" });
     return;
   }
-
-  const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
-
-  // Record initial payment (Idempotency)
-  if (razorpay_payment_id) {
-    const [existing] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, razorpay_payment_id));
-    if (!existing) {
-       await db.insert(paymentsTable).values({
-         id: razorpay_payment_id,
-         userId: req.userId,
-         subscriptionId: razorpay_subscription_id,
-         amount: 0, // Verification only, actual amount synced via webhook
-         status: "captured",
-         processedAt: new Date()
-       }).catch(() => {});
-    }
-  }
-
-  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const planTierStr = effectivePlan.toUpperCase();
-  const creditsToAdd = TIER_CREDITS[planTierStr] || 20;
-
-  await db.update(usersTable)
-    .set({ 
-      subscriptionStatus: "active", 
-      planType: effectivePlan, 
-      planTier: planTierStr as any,
-      trialStartDate: new Date(),
-      trialEndsAt: trialEndsAt,
-      generationsRemaining: sql`${usersTable.generationsRemaining} + ${creditsToAdd}`,
-      couponCode: couponCode || (currentUser as any).couponCode || null
-    } as any)
-    .where(eq(usersTable.id, req.userId));
 
   if (couponCode) {
     await db.update(couponsTable)
@@ -387,11 +452,15 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
   });
 });
 
+
 router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const razorpay = getRazorpay();
   const user = await getOrCreateUser(req.userId);
 
-  if (razorpay && user.razorpaySubscriptionId) {
+  // --- M-7 FIX: Only cancel if the user actually has an active or trial subscription ---
+  const canCancel = user.subscriptionStatus === "active" || user.subscriptionStatus === "trial";
+  
+  if (razorpay && user.razorpaySubscriptionId && canCancel) {
     try {
       await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, true);
     } catch (e: any) {
@@ -423,14 +492,12 @@ router.post("/retry", requireAuth, async (req: AuthenticatedRequest, res: Respon
     }
   }
 
-  // Reset plan fully to prevent inconsistent state (planType=infinity + status=free)
+  // Set status to pending while we wait for new subscription. 
+  // DO NOT reset planType/credits yet to avoid destructive downgrade if resubscribe fails.
   await db.update(usersTable)
     .set({
-      subscriptionStatus: "free",
-      planType: "free",
-      planTier: "FREE" as any,
+      subscriptionStatus: "pending",
       razorpaySubscriptionId: null,
-      generationsRemaining: 5,
     })
     .where(eq(usersTable.id, req.userId));
 
@@ -508,17 +575,8 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
     } else if (newStatus === "active" || event.event === "subscription.activated" || event.event === "subscription.updated") {
       const planId = event?.payload?.subscription?.entity?.plan_id;
       if (planId) {
-        let pType = "starter";
-        const env = process.env;
-        
-        // Dynamic Tier Detection
-        if (Object.keys(env).some(k => k.startsWith('RAZORPAY_PLAN_INFINITY') && env[k] === planId)) {
-          pType = "infinity";
-        } else if (Object.keys(env).some(k => k.startsWith('RAZORPAY_PLAN_CREATOR') && env[k] === planId)) {
-          pType = "creator";
-        } else if (Object.keys(env).some(k => k.startsWith('RAZORPAY_PLAN_STARTER') && env[k] === planId)) {
-          pType = "starter";
-        }
+        // --- H-7 FIX: Deterministic Tier Detection ---
+        const pType = getTierFromPlanId(planId) || "starter";
         
         updates.planType = pType;
         updates.planTier = pType.toUpperCase() as any;
@@ -564,13 +622,13 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
 
             await tx.update(usersTable)
               .set({ 
-                generationsRemaining: sql`${usersTable.generationsRemaining} + ${credits}`,
+                generationsRemaining: credits, // C2 Fix: Absolute SET for renewals
                 subscriptionStatus: "active",
                 planExpiry: planExpiry
               })
               .where(eq(usersTable.id, u.id));
 
-            logger.info({ userId: u.id, credits }, "Webhook: Payment verified and credits added successfully");
+            logger.info({ userId: u.id, credits }, "Webhook: Payment verified and credits reset successfully");
           });
         } catch (err: any) {
           logger.error({ err: err?.message, paymentId }, "FAILED_TO_PROCESS_WEBHOOK_TRANSACTION");
@@ -602,6 +660,8 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
           id: crypto.randomUUID(),
           userId: u.id,
           eventType: "AUTH_FAILURE" as any,
+          ipAddress: "razorpay-webhook",
+          userAgent: "razorpay",
           metadata: { event: event.event, reason: "Subscription halted or failed" }
         }).catch(() => {});
       }
@@ -617,6 +677,8 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
           id: crypto.randomUUID(),
           userId: u.id,
           eventType: "AUTH_FAILURE" as any,
+          ipAddress: "razorpay-webhook",
+          userAgent: "razorpay",
           metadata: { event: event.event, reason: "Payment execution failure" }
         }).catch(() => {});
       }

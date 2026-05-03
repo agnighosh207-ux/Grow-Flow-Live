@@ -27,7 +27,7 @@ interface UpgradeModalProps {
   featureName?: string;
   message?: string;
   targetPlan?: "starter" | "creator" | "infinity";
-  billingPeriod?: "monthly" | "yearly";
+  billingPeriod?: "monthly" | "quarterly" | "half-yearly" | "yearly";
   currency?: "INR" | "USD";
 }
 
@@ -116,17 +116,48 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
 
   const highlights = selectedPlan === "infinity" ? INFINITY_HIGHLIGHTS : selectedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS;
   
-  const price = currency === "USD"
-    ? (selectedPlan === "infinity" 
-        ? (billingPeriod === "yearly" ? "$200" : "$20") 
-        : selectedPlan === "creator" 
-          ? (billingPeriod === "yearly" ? "$120" : "$12") 
-          : (billingPeriod === "yearly" ? "$40" : "$4"))
-    : (selectedPlan === "infinity" 
-        ? (billingPeriod === "yearly" ? "₹4990" : "₹499") 
-        : selectedPlan === "creator" 
-          ? (billingPeriod === "yearly" ? "₹2490" : "₹249") 
-          : (billingPeriod === "yearly" ? "₹1090" : "₹109"));
+  const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
+    if (currency === "USD") {
+      if (plan === "infinity") {
+        if (period === "yearly") return "$200";
+        if (period === "half-yearly") return "$96";
+        if (period === "quarterly") return "$54";
+        return "$20";
+      }
+      if (plan === "creator") {
+        if (period === "yearly") return "$120";
+        if (period === "half-yearly") return "$57.6";
+        if (period === "quarterly") return "$32.4";
+        return "$12";
+      }
+      // starter
+      if (period === "yearly") return "$40";
+      if (period === "half-yearly") return "$19.2";
+      if (period === "quarterly") return "$10.8";
+      return "$4";
+    } else {
+      // INR
+      if (plan === "infinity") {
+        if (period === "yearly") return "₹3984";
+        if (period === "half-yearly") return "₹2394";
+        if (period === "quarterly") return "₹1347";
+        return "₹499";
+      }
+      if (plan === "creator") {
+        if (period === "yearly") return "₹1992";
+        if (period === "half-yearly") return "₹1194";
+        if (period === "quarterly") return "₹672";
+        return "₹249";
+      }
+      // starter
+      if (period === "yearly") return "₹864";
+      if (period === "half-yearly") return "₹522";
+      if (period === "quarterly") return "₹294";
+      return "₹109";
+    }
+  };
+
+  const price = getPriceDisplay(selectedPlan, billingPeriod);
 
   const planLabel = selectedPlan === "infinity" ? "Infinity" : selectedPlan === "creator" ? "Creator" : "Starter";
   const purchasedPlanLabel = purchasedPlan === "infinity" ? "Infinity" : purchasedPlan === "creator" ? "Creator" : "Starter";
@@ -144,17 +175,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
     setPaymentState("pending");
 
     try {
-      const priceForCheckout = currency === "USD"
-        ? (plan === "infinity" 
-            ? (billingPeriod === "yearly" ? "$200" : "$20") 
-            : plan === "creator" 
-              ? (billingPeriod === "yearly" ? "$120" : "$12") 
-              : (billingPeriod === "yearly" ? "$40" : "$4"))
-        : (plan === "infinity" 
-            ? (billingPeriod === "yearly" ? "₹4990" : "₹499") 
-            : plan === "creator" 
-              ? (billingPeriod === "yearly" ? "₹2490" : "₹249") 
-              : (billingPeriod === "yearly" ? "₹1090" : "₹109"));
+      const priceForCheckout = getPriceDisplay(plan, billingPeriod);
 
       const loaded = await loadRazorpay();
       if (!loaded) {

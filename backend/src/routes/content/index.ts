@@ -557,8 +557,10 @@ router.get("/history", requireAuth, async (req: any, res): Promise<void> => {
       isNull(contentGenerationsTable.deletedAt),
     ];
 
-    const cursor = typeof req.query.cursor === "string" ? parseInt(req.query.cursor) : undefined;
-    if (cursor) {
+    const cursorStr = typeof req.query.cursor === "string" ? req.query.cursor : undefined;
+    const cursor = cursorStr ? Number(cursorStr) : undefined;
+    
+    if (cursor !== undefined && Number.isInteger(cursor) && cursor > 0) {
       conditions.push(lt(contentGenerationsTable.id, cursor));
     }
 
@@ -617,7 +619,7 @@ router.get("/history/:id", requireAuth, async (req: any, res): Promise<void> => 
     db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),
       userId: req.userId,
-      feature: "content_generate"
+      feature: "content_view"
     }).catch(() => {});
   } catch (err) {
     console.error("History item fetch error:", err);

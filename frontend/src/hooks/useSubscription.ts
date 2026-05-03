@@ -62,11 +62,11 @@ async function fetchWithAuth(url: string, token: string, options?: RequestInit) 
 }
 
 export function useSubscriptionStatus() {
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken, isSignedIn, isLoaded } = useAuth();
 
   return useQuery<SubscriptionStatus>({
     queryKey: ["subscription-status"],
-    enabled: !!isSignedIn,
+    enabled: isLoaded && !!isSignedIn,
     queryFn: async () => {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
@@ -83,7 +83,12 @@ export function useSubscriptionStatus() {
 export function useCreateSubscription() {
   const { getToken } = useAuth();
   return useMutation({
-    mutationFn: async (params: { planType: "starter" | "creator" | "infinity", couponCode?: string, billingPeriod?: "monthly" | "yearly", currency?: "INR" | "USD" }) => {
+    mutationFn: async (params: { 
+      planType: "starter" | "creator" | "infinity", 
+      couponCode?: string, 
+      billingPeriod?: "monthly" | "yearly" | "quarterly" | "half-yearly", 
+      currency?: "INR" | "USD" 
+    }) => {
       const token = await getToken();
       return fetchWithAuth(`${BASE}/api/subscription/create`, token!, {
         method: "POST",

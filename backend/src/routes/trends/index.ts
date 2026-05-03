@@ -52,6 +52,16 @@ const nicheTrendDrivers: Record<string, string> = {
 const TRENDS_CACHE = new Map<string, { data: any, timestamp: number }>();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+// --- M-10 FIX: Prune in-memory cache to prevent leaks in non-Redis path ---
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, cached] of TRENDS_CACHE.entries()) {
+    if (now - cached.timestamp > CACHE_TTL) {
+      TRENDS_CACHE.delete(key);
+    }
+  }
+}, 10 * 60 * 1000).unref();
+
 // ─── /trends/generate — 100% PERPLEXITY SEARCH ROUTE ──────────────────────
 // Perplexity sonar searches the live web AND structures JSON in ONE call.
 // Groq is NOT involved here. JSON output enforced via prompt instructions.

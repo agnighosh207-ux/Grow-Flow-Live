@@ -72,6 +72,28 @@ router.patch("/preferences", requireAuth, async (req: any, res): Promise<void> =
 router.delete("/account", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const userId = req.userId;
+    const secretKey = process.env.CLERK_SECRET_KEY;
+
+    // --- C-5 FIX: Delete from Clerk FIRST ---
+    // This prevents the "silent recovery" bug where Clerk remains but DB is wiped.
+    if (secretKey) {
+      const response = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${secretKey}` },
+      });
+      
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        console.error("Clerk user deletion failed:", errorBody);
+        res.status(502).json({ 
+          error: "Identity provider deletion failed", 
+          message: "We could not verify account removal with our identity provider. Please try again or contact support." 
+        });
+        return;
+      }
+    }
+
+    // Now delete from DB
     await db.transaction(async (tx) => {
       await tx.delete(contentGenerationsTable).where(eq(contentGenerationsTable.userId, userId));
       await tx.delete(supportMessagesTable).where(eq(supportMessagesTable.userId, userId));
@@ -83,18 +105,6 @@ router.delete("/account", requireAuth, async (req: any, res): Promise<void> => {
       await tx.delete(dailyPlansTable).where(eq(dailyPlansTable.userId, userId));
       await tx.delete(usersTable).where(eq(usersTable.id, userId));
     });
-
-    const secretKey = process.env.CLERK_SECRET_KEY;
-    if (secretKey) {
-      try {
-        await fetch(`https://api.clerk.com/v1/users/${req.userId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${secretKey}` },
-        });
-      } catch (clerkErr) {
-        console.warn("Clerk user deletion failed after DB transaction success:", clerkErr);
-      }
-    }
 
     res.json({ success: true });
   } catch (err: any) {

@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from "../types";
 import { getAuth } from "@clerk/express";
 import { ensureReferralCode } from "../utils/referral";
 
-export const FREE_TRIALS_PER_TOOL = 3;
+export const FREE_TRIALS_PER_TOOL = 5;
 
 export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   if ((req as any).userId) {
@@ -94,12 +94,13 @@ export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string
 export function requirePlanOrTrial(toolKey: string) {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const user = await getOrCreateUser(req.userId);
+      // Use existing user from req if available (Identity Bridge), else fetch
+      const user = (req as any).user || await getOrCreateUser(req.userId);
       if (!user) {
         return res.status(401).json({ error: "User not found" });
       }
 
-      req.user = user; // Attach user to request for downstream handlers
+      req.user = user; // Ensure it's attached for downstream
 
       const planTier = (user.planTier as string) || "FREE";
       
@@ -116,7 +117,8 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
-      if (user.generationsRemaining > 0) {
+      // --- M-2 FIX: Limit Free credit bypass to STARTER level tools only ---
+      if (user.generationsRemaining > 0 && requiredLevel <= PLAN_RANKS.STARTER) {
         return next();
       }
 

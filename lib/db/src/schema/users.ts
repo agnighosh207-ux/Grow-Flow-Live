@@ -46,6 +46,8 @@ export const usersTable = pgTable("users", {
   isFirstLogin: boolean("is_first_login").notNull().default(true),
   couponCode: text("coupon_code"),
   paymentFailedAt: timestamp("payment_failed_at", { withTimezone: true }),
+  reminderSent3Day: boolean("reminder_sent_3_day").notNull().default(false),
+  reminderSent7Day: boolean("reminder_sent_7_day").notNull().default(false),
   streakRewardLastGrantedAt: timestamp("streak_reward_last_granted_at", { withTimezone: true }),
   voiceProfile: jsonb("voice_profile").$type<{
     sentenceStyle: string;

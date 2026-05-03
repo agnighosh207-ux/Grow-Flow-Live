@@ -15,17 +15,24 @@ function getRazorpayClient() {
 
 /**
  * Maps GrowFlow AI tiers mapping dynamically to Razorpay Plan IDs.
- * Note: You must create these plans dynamically in the Razorpay Dashboard first.
- * For example:
- * - STARTER_PLAN: ₹10900 (paise)
- * - CREATOR_PLAN: ₹24900 (paise)
- * - INFINITY_PLAN: ₹49900 (paise)
  */
 const RAZORPAY_PLAN_MAP: Record<string, string> = {
-  STARTER: process.env.RAZORPAY_PLAN_STARTER || "plan_xyz_starter",
-  CREATOR: process.env.RAZORPAY_PLAN_CREATOR || "plan_xyz_creator",
-  INFINITY: process.env.RAZORPAY_PLAN_INFINITY || "plan_xyz_infinity",
+  STARTER: process.env.RAZORPAY_PLAN_STARTER || "",
+  CREATOR: process.env.RAZORPAY_PLAN_CREATOR || "",
+  INFINITY: process.env.RAZORPAY_PLAN_INFINITY || "",
 };
+
+// --- L-9 FIX: Validate Plan IDs at startup to prevent silent 400s from Razorpay ---
+const isProdOrBeta = process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA";
+if (isProdOrBeta) {
+  const missing = Object.entries(RAZORPAY_PLAN_MAP).filter(([_, v]) => !v).map(([k]) => k);
+  if (missing.length > 0) {
+    logger.error(`[CRITICAL] Missing Razorpay Plan IDs for: ${missing.join(", ")}. Subscriptions will fail.`);
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(`Missing required Razorpay Plan IDs: ${missing.join(", ")}`);
+    }
+  }
+}
 
 export const createSubscription = async (userId: string, planId: string, planTier: string, customerEmail?: string, totalCount?: number) => {
   try {

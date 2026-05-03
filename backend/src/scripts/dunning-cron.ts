@@ -8,13 +8,10 @@ async function runDunningCron() {
   logger.info("[DUNNING] Starting dunning cron job...");
   const now = new Date();
   
-  // 3-day reminder: failed between 72 and 73 hours ago
-  const threeDaysAgoStart = new Date(now.getTime() - 73 * 60 * 60 * 1000);
-  const threeDaysAgoEnd = new Date(now.getTime() - 72 * 60 * 60 * 1000);
-
-  // 7-day reminder & downgrade: failed between 168 and 169 hours ago
-  const sevenDaysAgoStart = new Date(now.getTime() - 169 * 60 * 60 * 1000);
-  const sevenDaysAgoEnd = new Date(now.getTime() - 168 * 60 * 60 * 1000);
+  // 3-day reminder: failed more than 72 hours ago
+  const threeDaysAgoCutoff = new Date(now.getTime() - 72 * 60 * 60 * 1000);
+  // 7-day reminder & downgrade: failed more than 168 hours ago
+  const sevenDaysAgoCutoff = new Date(now.getTime() - 168 * 60 * 60 * 1000);
 
   try {
     // 1. Process 3-day reminders
@@ -22,15 +19,19 @@ async function runDunningCron() {
       .from(usersTable)
       .where(and(
         eq(usersTable.subscriptionStatus, "past_due"),
+        eq(usersTable.reminderSent3Day, false),
         isNotNull(usersTable.paymentFailedAt),
-        gte(usersTable.paymentFailedAt, threeDaysAgoStart),
-        lt(usersTable.paymentFailedAt, threeDaysAgoEnd)
+        lt(usersTable.paymentFailedAt, threeDaysAgoCutoff)
       ));
 
     for (const user of pastDueUsers3d) {
       if (user.email) {
         logger.info({ userId: user.id }, "[DUNNING] Sending 3-day reminder");
         await sendPaymentFailedReminder3Days(user.email, user.planType || "Starter");
+        
+        await db.update(usersTable)
+          .set({ reminderSent3Day: true })
+          .where(eq(usersTable.id, user.id));
       }
     }
 
@@ -39,9 +40,9 @@ async function runDunningCron() {
       .from(usersTable)
       .where(and(
         eq(usersTable.subscriptionStatus, "past_due"),
+        eq(usersTable.reminderSent7Day, false),
         isNotNull(usersTable.paymentFailedAt),
-        gte(usersTable.paymentFailedAt, sevenDaysAgoStart),
-        lt(usersTable.paymentFailedAt, sevenDaysAgoEnd)
+        lt(usersTable.paymentFailedAt, sevenDaysAgoCutoff)
       ));
 
     for (const user of pastDueUsers7d) {
@@ -56,6 +57,8 @@ async function runDunningCron() {
               planType: "free",
               planTier: "FREE",
               subscriptionStatus: "free",
+              reminderSent3Day: false, // Reset for next time if they subscribe again
+              reminderSent7Day: false,
               // --- FIX: Use centralized constant (High 3 fix) ---
               generationsRemaining: TIER_CREDITS.FREE || 5, 
               paymentFailedAt: null // Clear flag

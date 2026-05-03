@@ -31,7 +31,21 @@ app.get("/api/health", (_req, res) => {
 
 // ─── 2. Standard middleware ──────────────────────────────────────────────────
 app.set("trust proxy", 1);
-app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
+app.use(helmet({ 
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*.clerk.accounts.dev", "clerk.growflowai.space", "checkout.razorpay.com"],
+      connectSrc: ["'self'", "*.clerk.accounts.dev", "clerk.growflowai.space", "api.razorpay.com", "v1.generate.growflowai.space"],
+      imgSrc: ["'self'", "data:", "blob:", "*.clerk.com", "images.unsplash.com", "checkout.razorpay.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
+      fontSrc: ["'self'", "fonts.gstatic.com"],
+      frameSrc: ["'self'", "checkout.razorpay.com"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(compression());
 
 app.use(
@@ -71,11 +85,17 @@ app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
-      // If no origin (e.g. server-to-server or curl), only allow if it's not a CORS-sensitive request
+      // 1. Explicitly reject "null" origin (security risk from file:// or sandboxed iframes)
+      if (origin === "null") {
+        return callback(new Error(`Origin "null" not allowed by CORS`));
+      }
+
+      // 2. Allow requests with no origin (e.g. server-to-server, mobile apps, or curl)
       if (!origin) {
         return callback(null, true);
       }
       
+      // 3. Check allowed list
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else if (process.env.NODE_ENV !== "production" && (origin.startsWith("http://localhost:") || origin.endsWith(".vercel.app"))) {
@@ -141,7 +161,7 @@ app.use((req: any, res, next) => {
   next();
 });
 
-// ─── 7. Maintenance mode (cached) ──────────────────────────────────────────
+// ─── 8. Maintenance mode (cached) ──────────────────────────────────────────
 let maintenanceModeCache = { value: false, lastChecked: 0 };
 
 app.use(async (req, res, next) => {
@@ -173,7 +193,7 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// ─── 8. Rate limiting ──────────────────────────────────────────────────────
+// ─── 9. Rate limiting ──────────────────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 300,
@@ -185,10 +205,10 @@ const generalLimiter = rateLimit({
 
 app.use("/api", generalLimiter);
 
-// ─── 9. API router ─────────────────────────────────────────────────────────
+// ─── 10. API router ─────────────────────────────────────────────────────────
 app.use("/api", router);
 
-// ─── 10. Frontend serving (production only) ─────────────────────────────────
+// ─── 11. Frontend serving (production only) ─────────────────────────────────
 if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA") {
   const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
   
@@ -217,7 +237,7 @@ if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCT
   });
 }
 
-// ─── 11. Error handler ──────────────────────────────────────────────────────
+// ─── 12. Error handler ──────────────────────────────────────────────────────
 app.use((err: any, req: any, res: any, _next: any) => {
   logger.error({ err }, "Unhandled application error");
   if (!res.headersSent) {

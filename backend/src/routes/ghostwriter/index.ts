@@ -7,7 +7,7 @@ import { eq, desc, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-router.post("/analyze-voice", requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
+router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
   const userId = req.userId;
 
   try {
@@ -78,7 +78,7 @@ Return JSON:
   }
 });
 
-router.post("/write", requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { topic, platform, length, useVoice } = req.body;
   const userId = req.userId;
 
@@ -139,7 +139,7 @@ router.post("/write", requirePlanOrTrial("ghostwriter"), enforceGenerationLimit,
   }
 });
 
-router.get("/history", requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
+router.get("/history", requireAuth, requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
   try {
     const history = await db.select()
       .from(contentGenerationsTable)
@@ -155,7 +155,7 @@ router.get("/history", requirePlanOrTrial("ghostwriter"), async (req: any, res):
   }
 });
 
-router.patch("/voice-profile", requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
+router.patch("/voice-profile", requireAuth, requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
   try {
     const { profile } = req.body;
     await db.update(usersTable)
@@ -167,7 +167,7 @@ router.patch("/voice-profile", requirePlanOrTrial("ghostwriter"), async (req: an
   }
 });
 
-router.get("/voice-profile", requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
+router.get("/voice-profile", requireAuth, requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
     res.json(user?.voiceProfile || null);

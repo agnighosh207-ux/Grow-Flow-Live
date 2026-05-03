@@ -10,7 +10,7 @@ const router: IRouter = Router();
 const COACH_CACHE = new Map<string, { data: any, timestamp: number }>();
 const COACH_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-router.post("/analyze", requirePlanOrTrial("coach"), async (req: any, res): Promise<void> => {
+router.post("/analyze", requireAuth, requirePlanOrTrial("coach"), async (req: any, res): Promise<void> => {
   const userId = req.userId;
 
   // 1. Cache Check
