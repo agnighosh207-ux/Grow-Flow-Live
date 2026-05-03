@@ -1044,6 +1044,7 @@ export default function Generate() {
             };
           });
         }
+        queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
         setRegeneratingPlatform(null);
       },
       onError: () => {
@@ -1068,6 +1069,8 @@ export default function Generate() {
     const { idea, niche, contentType } = generatedContent;
     const platforms = generatedContent.content ?? {};
     
+    const controller = new AbortController();
+
     (async () => {
       try {
         const token = await getToken();
@@ -1075,20 +1078,28 @@ export default function Generate() {
         
         const { data } = await api.post("/content/analyze", 
           { idea, niche, contentType, platforms }, 
-          { headers: { "Authorization": `Bearer ${token}` } }
+          { 
+            headers: { "Authorization": `Bearer ${token}` },
+            signal: controller.signal
+          }
         );
         if (data && typeof data.viralityScore === "number") {
           setContentAnalysis(data);
         } else {
           setContentAnalysis({ _error: "Failed to parse analysis" } as any);
         }
-      } catch (err) {
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
         console.error("Analysis failed:", err);
         setContentAnalysis({ _error: "Failed to analyze content" } as any);
       } finally {
-        setAnalysisLoading(false);
+        if (!controller.signal.aborted) {
+          setAnalysisLoading(false);
+        }
       }
     })();
+
+    return () => controller.abort();
   }, [generatedContent?.id]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -1112,25 +1123,33 @@ export default function Generate() {
     }
 
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    const controller = new AbortController();
 
     debounceTimer.current = setTimeout(async () => {
       setIsScoringHook(true);
       try {
-        const { data } = await api.post("/hook-scorer/score", {
-          hook: currentIdea,
-          platform: "Instagram",
-          niche: currentNiche || "General"
-        });
+        const { data } = await api.post("/hook-scorer/score", 
+          {
+            hook: currentIdea,
+            platform: "Instagram",
+            niche: currentNiche || "General"
+          },
+          { signal: controller.signal }
+        );
         setHookScore(data);
-      } catch (e) {
+      } catch (e: any) {
+        if (e.name === 'AbortError') return;
         console.error("Hook score failed", e);
       } finally {
-        setIsScoringHook(false);
+        if (!controller.signal.aborted) {
+          setIsScoringHook(false);
+        }
       }
     }, 1200);
 
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      controller.abort();
     };
   }, [currentIdea, currentNiche]);
 
@@ -1142,7 +1161,9 @@ export default function Generate() {
         headers: token ? { "Authorization": `Bearer ${token}` } : {},
       }).then(r => r.json()).then(data => {
         if (data.languagePreference) form.setValue("language", data.languagePreference);
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error("Failed to load language preferences:", err);
+      });
     })();
   }, []);
 
@@ -1164,7 +1185,14 @@ export default function Generate() {
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         },
         body: JSON.stringify({ languagePreference: values.language }),
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error("Failed to save language preference:", err);
+        toast({ 
+          variant: "destructive", 
+          title: "Preference Sync Error", 
+          description: "Your language choice couldn't be saved to your profile." 
+        });
+      });
     })();
     
     if (values.language !== "English" && isFreeUser) {

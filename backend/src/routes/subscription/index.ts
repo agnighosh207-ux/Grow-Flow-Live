@@ -282,6 +282,15 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       120 
     );
 
+    // Prevent overwriting active subscriptions to avoid orphaned payments
+    if (user.razorpaySubscriptionId && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trial")) {
+      res.status(400).json({ 
+        error: "subscription_active", 
+        message: "You already have an active subscription. Please manage it in Settings." 
+      });
+      return;
+    }
+
     await db.update(usersTable)
       .set({
         razorpaySubscriptionId: subscription.id,
@@ -362,7 +371,10 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
     .digest("hex");
 
-  if (expectedSig !== razorpay_signature) {
+  const signatureBuffer = Buffer.from(razorpay_signature);
+  const expectedSigBuffer = Buffer.from(expectedSig);
+
+  if (signatureBuffer.length !== expectedSigBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedSigBuffer)) {
     res.status(400).json({ error: "Invalid payment signature" });
     return;
   }
