@@ -63,12 +63,23 @@ router.post("/items", requirePlanOrTrial("calendar"), async (req: any, res: Resp
 });
 
 router.patch("/items/:id", requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const updates = req.body;
-  
   try {
-    const updateData: any = { ...updates };
-    if (updates.date) updateData.date = new Date(updates.date);
+    const { id } = req.params;
+  const { date, idea, platform, contentType, scheduledTime, notes, color, status } = req.body;
+  const updateData: any = {};
+  if (date !== undefined) updateData.date = new Date(date);
+  if (idea !== undefined) updateData.idea = String(idea).substring(0, 500);
+  if (platform !== undefined) updateData.platform = String(platform).substring(0, 50);
+  if (contentType !== undefined) updateData.contentType = String(contentType).substring(0, 50);
+  if (scheduledTime !== undefined) updateData.scheduledTime = String(scheduledTime).substring(0, 20);
+  if (notes !== undefined) updateData.notes = String(notes).substring(0, 1000);
+  if (color !== undefined) updateData.color = String(color).substring(0, 20);
+  if (status !== undefined) updateData.status = String(status).substring(0, 20);
+
+  if (Object.keys(updateData).length === 0) {
+    res.status(400).json({ error: "No valid fields to update" });
+    return;
+  }
 
     const [item] = await db.update(contentCalendarTable)
       .set(updateData)
@@ -104,12 +115,22 @@ router.delete("/items/:id", requirePlanOrTrial("calendar"), async (req: any, res
 router.post("/ai-schedule", requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
   const { niche, goal, daysAhead, existingItems } = req.body;
 
+  const sanitizedNiche = typeof niche === 'string' ? niche.substring(0, 50).replace(/[`<>{}\\]/g, '') : 'General';
+  const sanitizedGoal = typeof goal === 'string' ? goal.substring(0, 100).replace(/[`<>{}\\]/g, '') : 'Growth';
+  const sanitizedDays = Math.min(Math.max(Number(daysAhead) || 7, 1), 30);
+  const sanitizedItems = Array.isArray(existingItems) 
+    ? existingItems.slice(0, 50).map(item => ({ 
+        date: typeof item?.date === 'string' ? item.date.substring(0, 10) : '', 
+        platform: typeof item?.platform === 'string' ? item.platform.substring(0, 20) : '' 
+      }))
+    : [];
+
   const systemPrompt = `You are a content scheduling strategist. Create an optimal posting schedule avoiding the dates that already have content. Consider platform best practices for posting times and days. Return a JSON schedule array. Return ONLY valid JSON.`;
   const userPrompt = `
-NICHE: ${niche || "General"}
-GOAL: ${goal || "Growth"}
-DURATION: ${daysAhead || 7} days
-EXISTING CONTENT DATES: ${JSON.stringify(existingItems || [])}
+NICHE: ${sanitizedNiche}
+GOAL: ${sanitizedGoal}
+DURATION: ${sanitizedDays} days
+EXISTING CONTENT DATES: ${JSON.stringify(sanitizedItems)}
 
 Return JSON:
 {
@@ -138,20 +159,33 @@ Return JSON:
         return;
     }
 
-    const insertedItems = await Promise.all(schedule.map((s: any) => 
-      db.insert(contentCalendarTable).values({
-        userId: req.userId,
-        date: new Date(s.date),
-        idea: s.topic,
-        platform: s.platform,
-        contentType: s.contentType,
-        scheduledTime: s.bestTime,
-        notes: s.reasoning,
-        status: "planned"
-      }).returning()
-    ));
+    const results = await Promise.allSettled(
+      schedule.map((s: any) => {
+        const date = new Date(s.date);
+        if (isNaN(date.getTime())) return Promise.reject(new Error('Invalid date'));
+        return db.insert(contentCalendarTable).values({
+          userId: req.userId,
+          date,
+          idea: String(s.topic || '').substring(0, 500),
+          platform: String(s.platform || 'Instagram').substring(0, 50),
+          contentType: String(s.contentType || 'Educational').substring(0, 50),
+          scheduledTime: String(s.bestTime || '').substring(0, 20),
+          notes: String(s.reasoning || '').substring(0, 500),
+          status: "planned"
+        }).returning();
+      })
+    );
+    
+    const insertedItems = results
+      .filter(r => r.status === 'fulfilled')
+      .flatMap(r => (r as PromiseFulfilledResult<any>).value);
 
-    res.json({ schedule: insertedItems.flat() });
+    if (insertedItems.length === 0) {
+      res.status(503).json({ error: "No schedule items could be saved. Please try again." });
+      return;
+    }
+
+    res.json({ schedule: insertedItems, skipped: results.filter(r => r.status === 'rejected').length });
   } catch (err) {
     console.error("AI SCHEDULE ERROR:", err);
     res.status(503).json({ error: "AI Scheduling failed. Please try again." });
@@ -172,8 +206,12 @@ router.post("/items/:id/generate", requirePlanOrTrial("calendar"), enforceGenera
       return;
     }
 
+    const safePlatform = String(item.platform || 'Instagram').substring(0, 30);
+    const safeIdea = String(item.idea || '').substring(0, 300).replace(/[`<>{}\\]/g, '');
+    const safeContentType = String(item.contentType || 'Educational').substring(0, 30);
+
     // Call the AI engine directly with high-quality instructions
-    const systemPrompt = `You are a world-class content creator. Generate viral content for ${item.platform}. Topic: ${item.idea}. Content Type: ${item.contentType}. Return ONLY valid JSON.`;
+    const systemPrompt = `You are a world-class content creator. Generate viral content for ${safePlatform}. Topic: ${safeIdea}. Content Type: ${safeContentType}. Return ONLY valid JSON.`;
     
     const response = await generateContent({
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Generate the full content for this ${item.contentType} post.` }],

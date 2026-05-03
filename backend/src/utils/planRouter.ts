@@ -7,6 +7,36 @@ export type PlanTier = 'starter' | 'creator' | 'infinity';
 export type BillingCycle = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
 
 /**
+ * REQUIRED RAZORPAY PLAN IDs — Create these in Razorpay Dashboard > Products > Subscriptions > Plans
+ * Each plan ID is unique to its price. You MUST create NEW plans for updated prices.
+ * Old plan IDs cannot have their price changed.
+ *
+ * INR PLANS (amounts in paise):
+ * RAZORPAY_PLAN_STARTER_MONTHLY      = plan_xxxx  (₹149/mo = 14900 paise, interval: monthly, period: monthly)
+ * RAZORPAY_PLAN_STARTER_QUARTERLY    = plan_xxxx  (₹417/quarter = 41700 paise, interval: 3, period: monthly)
+ * RAZORPAY_PLAN_STARTER_HALFYEARLY   = plan_xxxx  (₹798/6mo = 79800 paise, interval: 6, period: monthly)
+ * RAZORPAY_PLAN_STARTER_YEARLY       = plan_xxxx  (₹1430/yr = 143000 paise, interval: yearly, period: yearly)
+ *
+ * RAZORPAY_PLAN_CREATOR_MONTHLY      = plan_xxxx  (₹449/mo = 44900 paise)
+ * RAZORPAY_PLAN_CREATOR_QUARTERLY    = plan_xxxx  (₹1257/quarter = 125700 paise)
+ * RAZORPAY_PLAN_CREATOR_HALFYEARLY   = plan_xxxx  (₹2428/6mo = 242800 paise)
+ * RAZORPAY_PLAN_CREATOR_YEARLY       = plan_xxxx  (₹4300/yr = 430000 paise)
+ *
+ * RAZORPAY_PLAN_INFINITY_MONTHLY     = plan_xxxx  (₹799/mo = 79900 paise)
+ * RAZORPAY_PLAN_INFINITY_QUARTERLY   = plan_xxxx  (₹2247/quarter = 224700 paise)
+ * RAZORPAY_PLAN_INFINITY_HALFYEARLY  = plan_xxxx  (₹4320/6mo = 432000 paise)
+ * RAZORPAY_PLAN_INFINITY_YEARLY      = plan_xxxx  (₹7660/yr = 766000 paise)
+ *
+ * USD PLANS (amounts in cents):
+ * RAZORPAY_PLAN_STARTER_MONTHLY_USD  = plan_xxxx  ($5/mo = 500 cents)
+ * RAZORPAY_PLAN_STARTER_YEARLY_USD   = plan_xxxx  ($48/yr = 4800 cents)
+ * RAZORPAY_PLAN_CREATOR_MONTHLY_USD  = plan_xxxx  ($15/mo = 1500 cents)
+ * RAZORPAY_PLAN_CREATOR_YEARLY_USD   = plan_xxxx  ($144/yr = 14400 cents)
+ * RAZORPAY_PLAN_INFINITY_MONTHLY_USD = plan_xxxx  ($27/mo = 2700 cents)
+ * RAZORPAY_PLAN_INFINITY_YEARLY_USD  = plan_xxxx  ($259/yr = 25920 cents)
+ */
+
+/**
  * Resolves the correct Razorpay Plan ID from environment variables.
  * @param tier - The subscription tier (starter, creator, infinity)
  * @param cycle - The billing cycle (monthly, quarterly, half-yearly, yearly)

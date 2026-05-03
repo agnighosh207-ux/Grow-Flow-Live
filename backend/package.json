@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development pnpm run build && pnpm run start",
+    "dev": "cross-env NODE_ENV=development tsx --watch src/index.ts",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "cron:archival": "cross-env NODE_ENV=production tsx ./src/scripts/archival-cron.ts",
+    "seed:vault": "tsx scripts/src/seed-vault.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

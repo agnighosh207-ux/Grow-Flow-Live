@@ -58,7 +58,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hashtags"), enforceGen
   }
 });
 
-router.post("/analyze", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { hashtags, platform, niche } = req.body;
 
   if (!hashtags) {

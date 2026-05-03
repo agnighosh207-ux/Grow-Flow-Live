@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useAuth } from "@clerk/react";
+import { PageWrapper } from "@/components/shared/PageWrapper";
 
 const PLATFORMS = ["Instagram", "Twitter", "LinkedIn", "YouTube", "Blog/Article", "General"] as const;
 
@@ -173,8 +174,7 @@ export default function CaptionEnhancer() {
   };
 
   return (
-    <div className="w-full">
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+    <PageWrapper maxWidth="sm" className="py-6 space-y-5">
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
             <Wand2 className="w-6 h-6 text-emerald-400" />
@@ -372,7 +372,6 @@ export default function CaptionEnhancer() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

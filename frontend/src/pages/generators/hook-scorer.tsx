@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Target, AlertCircle, CheckCircle2, ShieldCheck, ArrowRight, Sparkles, TrendingUp, Search, Info } from "lucide-react";
+import { Zap, Target, AlertCircle, CheckCircle2, ShieldCheck, ArrowRight, Sparkles, TrendingUp, Search, Info, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 interface ScoreResult {
   score: number;
@@ -82,29 +85,32 @@ export default function HookScorerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-8 max-w-[1200px] mx-auto space-y-12 pb-32">
-      {/* Premium Header */}
-      <header className="relative py-12 px-8 rounded-[2.5rem] overflow-hidden border border-white/5 bg-zinc-950/40 backdrop-blur-3xl">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-cyan-500/10 via-transparent to-indigo-500/10 pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-6 text-center md:text-left">
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-cyan-600 to-indigo-600 shadow-[0_0_40px_rgba(6,182,212,0.3)]">
-              <Target className="h-10 w-10 text-white" />
-            </div>
-            <div className="space-y-1">
-              <h1 className="text-4xl font-black tracking-tight text-white">
-                Hook <span className="bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">Radar</span>
-              </h1>
-              <p className="text-zinc-400 font-medium">Real-time engagement scoring for your first 5 seconds.</p>
-            </div>
-          </div>
-          
+    <PageWrapper maxWidth="xl" className="space-y-12 pb-32">
+      <FeatureGuideBanner 
+        toolKey="hook-scorer" 
+        title="Hook Intelligence Scorer" 
+        icon={<BarChart3 className="w-5 h-5 text-teal-400" />}
+        tagline="Upload your hooks and get an instant psychological impact score before you post."
+        whatYouGet={["Psychological score (1-100)", "Why it works/fails", "3 AI-suggested improvements"]}
+        whenToUse="Use this when you have a hook idea but aren't sure if it will actually perform."
+        proTip="Higher scores don't always mean more views, but they mean more resonance. Aim for 80+."
+        planRequired="Creator"
+      />
+      
+      <PageHeader 
+        icon={<BarChart3/>} 
+        iconBg="bg-teal-500/10" 
+        iconColor="text-teal-400" 
+        title="Hook Intelligence" 
+        subtitle="Data-backed scoring for your openings."
+        badge="Creator"
+        action={
           <div className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-2xl border border-white/5 backdrop-blur-xl">
              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
              <span className="text-xs font-black text-cyan-300 uppercase tracking-widest">Live Engine Active</span>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Input Section */}
@@ -124,7 +130,7 @@ export default function HookScorerPage() {
                     placeholder="Paste your hook here (e.g. Stop scrolling if you want to scale...)" 
                     value={hook} 
                     onChange={(e) => setHook(e.target.value)}
-                    className="relative bg-black/40 border-white/5 h-20 rounded-2xl text-xl font-bold px-6 focus-visible:ring-cyan-500/50 placeholder:text-white/10"
+                    className="relative bg-black/40 border-white/5 h-16 md:h-20 rounded-2xl text-base md:text-xl font-bold px-6 focus-visible:ring-cyan-500/50 placeholder:text-white/10"
                   />
                 </div>
               </div>
@@ -133,7 +139,7 @@ export default function HookScorerPage() {
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Platform</label>
                   <Select value={platform} onValueChange={setPlatform}>
-                    <SelectTrigger className="bg-black/40 border-white/5 h-14 rounded-xl font-bold">
+                    <SelectTrigger className="bg-black/40 border-white/5 h-14 rounded-xl font-bold text-base">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-950 border-white/10">
@@ -151,7 +157,7 @@ export default function HookScorerPage() {
                     placeholder="e.g. SaaS" 
                     value={niche} 
                     onChange={(e) => setNiche(e.target.value)}
-                    className="bg-black/40 border-white/5 h-14 rounded-xl font-bold"
+                    className="bg-black/40 border-white/5 h-14 rounded-xl font-bold text-base"
                   />
                 </div>
               </div>
@@ -297,6 +303,6 @@ export default function HookScorerPage() {
            </div>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

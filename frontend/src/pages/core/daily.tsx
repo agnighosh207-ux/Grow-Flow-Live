@@ -7,6 +7,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 interface DailyPlan {
   id: number;
@@ -63,7 +65,7 @@ function StreakBadge({ streak }: { streak: number }) {
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${streakColor} flex items-center justify-center text-2xl shadow-lg`}>
+          <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br ${streakColor} flex items-center justify-center text-2xl md:text-3xl shadow-lg`}>
             🔥
           </div>
           <div>
@@ -159,19 +161,14 @@ export default function DailyActionMode() {
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <div className="w-full">
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500/25 to-amber-500/25 border border-orange-500/20 flex items-center justify-center text-lg">
-              🔥
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">Daily Growth Plan</h1>
-              <p className="text-white/40 text-sm">{today}</p>
-            </div>
-          </div>
-        </motion.div>
+    <PageWrapper maxWidth="sm" className="py-6 space-y-5">
+        <PageHeader 
+          icon={<Flame/>} 
+          iconBg="bg-orange-500/10" 
+          iconColor="text-orange-400" 
+          title="Daily Growth Plan" 
+          subtitle="One daily task. Consistent growth."
+        />
 
         {streak > 0 && <StreakBadge streak={streak} />}
 
@@ -260,7 +257,7 @@ export default function DailyActionMode() {
                 onClick={markAsPosted}
                 disabled={completing}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base transition-all disabled:opacity-60 shadow-lg shadow-emerald-900/30"
+                className="w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base transition-all disabled:opacity-60 shadow-lg shadow-emerald-900/30"
               >
                 {completing ? (
                   <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Marking...</>
@@ -322,7 +319,6 @@ export default function DailyActionMode() {
             ))}
           </div>
         </motion.div>
-      </div>
-    </div>
+    </PageWrapper>
   );
 }

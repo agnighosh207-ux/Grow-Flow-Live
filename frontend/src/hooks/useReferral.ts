@@ -4,7 +4,9 @@ export interface ReferralInfo {
   referralCode: string;
   shareableLink: string;
   successfulReferrals: number;
+  totalReferrals: number;
   totalBonusDays: number;
+  totalBonusCredits: number;
   hasNewReward: boolean;
   hasSeenReferralPopup: boolean;
 }

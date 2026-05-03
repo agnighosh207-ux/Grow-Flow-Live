@@ -11,6 +11,9 @@ import {
   CalendarDays, Loader2, Wand2, Instagram, Linkedin, Twitter,
   BookOpen, Flame, Repeat2, ChevronDown
 } from "lucide-react";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { SiYoutube } from "react-icons/si";
 import { ContentCalendar } from "@/components/shared/ContentCalendar";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
@@ -36,6 +39,16 @@ const CONTENT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string
   Educational: { icon: <BookOpen className="w-3.5 h-3.5" />, color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20", label: "Educational" },
   Story: { icon: <Repeat2 className="w-3.5 h-3.5" />, color: "bg-amber-500/15 text-amber-300 border-amber-500/20", label: "Story" },
   Viral: { icon: <Flame className="w-3.5 h-3.5" />, color: "bg-orange-500/15 text-orange-300 border-orange-500/20", label: "Viral" },
+};
+
+const DAY_BORDER: Record<number, string> = {
+  0: "border-l-4 border-l-cyan-500",
+  1: "border-l-4 border-l-blue-500",
+  2: "border-l-4 border-l-violet-500",
+  3: "border-l-4 border-l-pink-500",
+  4: "border-l-4 border-l-amber-500",
+  5: "border-l-4 border-l-emerald-500",
+  6: "border-l-4 border-l-orange-500",
 };
 
 const DAY_ACCENT: string[] = [
@@ -112,15 +125,23 @@ function StrategyPlannerInner() {
   }
 
   return (
-    <div className="space-y-8 pb-16 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
-          <CalendarDays className="w-6 h-6 text-cyan-400" />
-          Content Strategy
-        </h1>
-        <p className="text-white/50 text-sm">A full week of content — platform-specific, psychologically sequenced, ready to execute.</p>
-        <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-5" />
-      </div>
+    <PageWrapper maxWidth="md" className="pb-16">
+      <FeatureGuideBanner 
+        toolKey="strategy" 
+        title="7-Day Strategy Planner" 
+        icon={<CalendarDays className="w-5 h-5 text-cyan-400" />}
+        tagline="Get a complete 7-day content plan with topics, formats, and posting sequence designed to grow your audience."
+        whatYouGet={["7 daily content topics", "Format per day (reel/thread/post)", "Auto-added to your calendar"]}
+        whenToUse="Use this at the start of each week to have a clear plan instead of posting randomly."
+        proTip="After generating your strategy, go to the Calendar page to see it laid out visually and generate the actual content for each day."
+      />
+      <PageHeader 
+        icon={<CalendarDays/>} 
+        iconBg="bg-cyan-500/10" 
+        iconColor="text-cyan-400" 
+        title="7-Day Strategy Planner" 
+        subtitle="A full content week planned in 30 seconds"
+      />
 
       <div
         className="rounded-2xl border border-white/8 p-5 md:p-6 space-y-5"
@@ -134,7 +155,7 @@ function StrategyPlannerInner() {
           <div className="space-y-2">
             <label className="text-white/70 text-sm font-medium">Your Niche</label>
             <Select value={niche} onValueChange={(v) => setNiche(v as any)}>
-              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-cyan-500/40 rounded-xl">
+              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-cyan-500/40 rounded-xl text-base min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#0f0a1e] border-white/10">
@@ -151,7 +172,7 @@ function StrategyPlannerInner() {
               value={goal}
               onChange={e => setGoal(e.target.value)}
               placeholder="e.g. establish authority..."
-              className="bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-cyan-500/40 rounded-xl h-10"
+              className="bg-black/20 border-white/10 text-white text-base placeholder:text-white/25 focus-visible:ring-cyan-500/40 rounded-xl h-12"
               onKeyDown={e => e.key === "Enter" && generateStrategy()}
             />
           </div>
@@ -159,7 +180,7 @@ function StrategyPlannerInner() {
           <div className="space-y-2">
             <label className="text-white/70 text-sm font-medium">Duration</label>
             <Select value={duration} onValueChange={(v) => setDuration(v as any)}>
-              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-cyan-500/40 rounded-xl">
+              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-cyan-500/40 rounded-xl text-base min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#0f0a1e] border-white/10">
@@ -180,11 +201,11 @@ function StrategyPlannerInner() {
         </div>
 
         <div className="flex justify-end">
-          <Button
-            onClick={generateStrategy}
-            disabled={loading}
-            className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 rounded-xl px-6"
-          >
+        <Button
+          onClick={generateStrategy}
+          disabled={loading}
+          className="w-full h-12 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white text-base font-bold shadow-lg shadow-cyan-900/40 rounded-xl"
+        >
             {loading ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
             ) : (
@@ -240,7 +261,7 @@ function StrategyPlannerInner() {
                     initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: Math.min(i * 0.04, 0.4) }}
-                    className={`rounded-xl border transition-colors overflow-hidden ${isExpanded ? "border-cyan-500/40 shadow-lg shadow-cyan-500/10" : "border-white/8"}`}
+                    className={`rounded-xl border transition-colors overflow-hidden ${DAY_BORDER[i % 7]} ${isExpanded ? "border-cyan-500/40 shadow-lg shadow-cyan-500/10" : "border-white/8"}`}
                     style={{ background: "rgba(255,255,255,0.02)" }}
                   >
                     <button
@@ -338,7 +359,7 @@ function StrategyPlannerInner() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageWrapper>
   );
 }
 

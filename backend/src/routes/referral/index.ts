@@ -11,7 +11,7 @@ const router: IRouter = Router();
 
 // Referral utility functions moved to backend/src/utils/referral.ts to fix circular dependency risks.
 
-router.post("/referral/claim", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/claim", requireAuth, async (req: any, res): Promise<void> => {
   const { code } = req.body as { code?: string };
 
   if (!code || typeof code !== "string") {
@@ -62,7 +62,7 @@ router.post("/referral/claim", requireAuth, async (req: any, res): Promise<void>
   }
 });
 
-router.post("/referral/popup-seen", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/popup-seen", requireAuth, async (req: any, res): Promise<void> => {
   try {
     await db.update(usersTable)
       .set({ hasSeenReferralPopup: true })
@@ -74,7 +74,7 @@ router.post("/referral/popup-seen", requireAuth, async (req: any, res): Promise<
   }
 });
 
-router.get("/referral/info", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const code = await ensureReferralCode(req.userId);
 
@@ -86,15 +86,17 @@ router.get("/referral/info", requireAuth, async (req: any, res): Promise<void> =
     const shareableLink = `${appUrl}/?ref=${code}`;
 
     const [referralStats] = await db
-      .select({ total: count() })
+      .select({ 
+        successful: sql<number>`count(CASE WHEN ${referralsTable.rewardGranted} = true THEN 1 END)`,
+        total: count()
+      })
       .from(referralsTable)
-      .where(and(
-        eq(referralsTable.referrerUserId, req.userId),
-        eq(referralsTable.rewardGranted, true)
-      ));
+      .where(eq(referralsTable.referrerUserId, req.userId));
 
-    const successfulReferrals = Number(referralStats?.total ?? 0);
+    const successfulReferrals = Number(referralStats?.successful ?? 0);
+    const totalReferrals = Number(referralStats?.total ?? 0);
     const totalBonusDays = successfulReferrals * 15;
+    const totalBonusCredits = successfulReferrals * 20;
 
     const unseenReferrals = await db.select({ id: referralsTable.id })
       .from(referralsTable)
@@ -117,7 +119,9 @@ router.get("/referral/info", requireAuth, async (req: any, res): Promise<void> =
       referralCode: code,
       shareableLink,
       successfulReferrals,
+      totalReferrals,
       totalBonusDays,
+      totalBonusCredits,
       hasNewReward,
       hasSeenReferralPopup: userRow?.hasSeenReferralPopup ?? false,
     });

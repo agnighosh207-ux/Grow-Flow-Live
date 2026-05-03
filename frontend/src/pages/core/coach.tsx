@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { PageWrapper } from "@/components/shared/PageWrapper";
 
 interface CoachReport {
   weeklyScore: number;
@@ -82,7 +84,17 @@ export default function ContentCoachPage() {
   };
 
   return (
-    <div className="container mx-auto py-10 px-4 space-y-8 max-w-5xl">
+    <PageWrapper maxWidth="md" className="py-10">
+      <FeatureGuideBanner 
+        toolKey="coach" 
+        title="AI Content Coach" 
+        icon={<Brain className="w-5 h-5 text-indigo-500" />}
+        tagline="Get a personalized weekly audit of your content and a step-by-step growth action plan."
+        whatYouGet={["Weekly performance score", "Top strengths & gaps", "3 specific tasks for next week"]}
+        whenToUse="Use this every Monday to review your previous week's performance and set your goals."
+        proTip="The coach analyzes your actual generation history to find patterns you might have missed yourself."
+        planRequired="Infinity"
+      />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
@@ -268,6 +280,6 @@ export default function ContentCoachPage() {
           </Button>
         </div>
       )}
-    </div>
+    </PageWrapper>
   );
 }

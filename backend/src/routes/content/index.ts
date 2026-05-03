@@ -20,7 +20,7 @@ import {
 } from "@workspace/api-zod";
 // Note: zod is NOT a direct dependency of backend — use manual validation instead
 import { generateContent, extractJson } from "../../services/ai-engine";
-import { requireAuth, getOrCreateUser, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { requireAuth, getOrCreateUser, requirePlanOrTrial, requireActivePlan } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { sendCreditWarningEmail } from "../../services/email";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
@@ -372,7 +372,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
   }
 });
 
-router.post("/variations", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/variations", requireAuth, requireActivePlan, enforceGenerationLimit, async (req: any, res): Promise<void> => {
   // Manual validation (zod is not a direct backend dependency)
   const { idea, contentType, tone, platform, language: bodyLanguage2 } = req.body || {};
   const validContentTypes2 = ['Educational', 'Story', 'Viral'];
@@ -390,21 +390,9 @@ router.post("/variations", requireAuth, enforceGenerationLimit, async (req: any,
     return;
   }
 
-  let user = (req as any).user;
-  if (!user) {
-    const [fetchedUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    user = fetchedUser;
-  }
-  const status = user?.subscriptionStatus ?? "free";
+  const user = (req as any).user;
   const planType = user?.planType ?? "free";
-
-  if (status !== "active" && status !== "trial") {
-    res.status(402).json({
-      error: "upgrade_required",
-      message: "Upgrade to a paid plan to use the Regenerate feature.",
-    });
-    return;
-  }
+  const status = user?.subscriptionStatus ?? "free";
 
 
   // Track regenerations per topic
@@ -668,59 +656,76 @@ router.post("/history/:id/restore", requireAuth, async (req: any, res): Promise<
 });
 
 router.get("/stats", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay());
-  weekStart.setHours(0, 0, 0, 0);
+  try {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
 
-  const [statsData] = await db
-    .select({
-      total: count(),
-      thisMonth: sql<number>`count(*) filter (where ${contentGenerationsTable.createdAt} >= ${monthStart})`,
-      thisWeek: sql<number>`count(*) filter (where ${contentGenerationsTable.createdAt} >= ${weekStart})`,
-    })
-    .from(contentGenerationsTable)
-    .where(eq(contentGenerationsTable.userId, req.userId));
+    const [statsData] = await db
+      .select({
+        total: count(),
+        thisMonth: sql<number>`count(*) filter (where ${contentGenerationsTable.createdAt} >= ${monthStart})`,
+        thisWeek: sql<number>`count(*) filter (where ${contentGenerationsTable.createdAt} >= ${weekStart})`,
+      })
+      .from(contentGenerationsTable)
+      .where(and(
+        eq(contentGenerationsTable.userId, req.userId),
+        isNull(contentGenerationsTable.deletedAt)
+      ));
 
-  const topContentTypeRows = await db
-    .select({ contentType: contentGenerationsTable.contentType, count: count() })
-    .from(contentGenerationsTable)
-    .where(eq(contentGenerationsTable.userId, req.userId))
-    .groupBy(contentGenerationsTable.contentType)
-    .orderBy(desc(count()))
-    .limit(1);
+    const topContentTypeRows = await db
+      .select({ contentType: contentGenerationsTable.contentType, count: count() })
+      .from(contentGenerationsTable)
+      .where(and(
+        eq(contentGenerationsTable.userId, req.userId),
+        isNull(contentGenerationsTable.deletedAt)
+      ))
+      .groupBy(contentGenerationsTable.contentType)
+      .orderBy(desc(count()))
+      .limit(1);
 
-  const topToneRows = await db
-    .select({ tone: contentGenerationsTable.tone, count: count() })
-    .from(contentGenerationsTable)
-    .where(eq(contentGenerationsTable.userId, req.userId))
-    .groupBy(contentGenerationsTable.tone)
-    .orderBy(desc(count()))
-    .limit(1);
+    const topToneRows = await db
+      .select({ tone: contentGenerationsTable.tone, count: count() })
+      .from(contentGenerationsTable)
+      .where(and(
+        eq(contentGenerationsTable.userId, req.userId),
+        isNull(contentGenerationsTable.deletedAt)
+      ))
+      .groupBy(contentGenerationsTable.tone)
+      .orderBy(desc(count()))
+      .limit(1);
 
-  const platformStats = await db
-    .select({ platform: contentGenerationsTable.platform, count: count() })
-    .from(contentGenerationsTable)
-    .where(eq(contentGenerationsTable.userId, req.userId))
-    .groupBy(contentGenerationsTable.platform);
+    const platformStats = await db
+      .select({ platform: contentGenerationsTable.platform, count: count() })
+      .from(contentGenerationsTable)
+      .where(and(
+        eq(contentGenerationsTable.userId, req.userId),
+        isNull(contentGenerationsTable.deletedAt)
+      ))
+      .groupBy(contentGenerationsTable.platform);
 
-  const breakdown: Record<string, number> = {};
-  platformStats.forEach(s => {
-    if (s.platform) {
-      breakdown[s.platform.toLowerCase()] = Number(s.count);
-    }
-  });
+    const breakdown: Record<string, number> = {};
+    platformStats.forEach(s => {
+      if (s.platform) {
+        breakdown[s.platform.toLowerCase()] = Number(s.count);
+      }
+    });
 
-  const statsResponse: GetContentStatsResponse & { thisMonth: number; platformBreakdown: any } = {
-    totalGenerations: Number(statsData?.total ?? 0),
-    thisWeek: Number(statsData?.thisWeek ?? 0),
-    thisMonth: Number(statsData?.thisMonth ?? 0),
-    topContentType: topContentTypeRows[0]?.contentType ?? "Educational",
-    topTone: topToneRows[0]?.tone ?? "Professional",
-    platformBreakdown: breakdown as any
-  };
-  res.json(statsResponse);
+    const statsResponse: GetContentStatsResponse & { thisMonth: number; platformBreakdown: any } = {
+      totalGenerations: Number(statsData?.total ?? 0),
+      thisWeek: Number(statsData?.thisWeek ?? 0),
+      thisMonth: Number(statsData?.thisMonth ?? 0),
+      topContentType: topContentTypeRows[0]?.contentType ?? "Educational",
+      topTone: topToneRows[0]?.tone ?? "Professional",
+      platformBreakdown: breakdown as any
+    };
+    res.json(statsResponse);
+  } catch (err) {
+    console.error("Stats fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
 });
 
 router.post("/analyze", requireAuth, requirePlanOrTrial("content_analyze"), enforceGenerationLimit, async (req: any, res): Promise<void> => {

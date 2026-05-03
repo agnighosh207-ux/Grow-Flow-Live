@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Lightbulb, Loader2, Wand2, ArrowRight, Zap, Target, TrendingUp, ChevronRight } from "lucide-react";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const NICHES = ["General", "Fitness", "Finance", "Tech", "Motivation", "Business", "Lifestyle"] as const;
 
@@ -108,15 +111,23 @@ function IdeasGeneratorInner() {
   }
 
   return (
-    <div className="space-y-8 pb-16">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
-          <Lightbulb className="w-6 h-6 text-yellow-400" />
-          Idea Generator
-        </h1>
-        <p className="text-white/50 text-sm">Get 10 battle-tested content ideas with hooks, angles, and the psychology behind each one.</p>
-        <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-5" />
-      </div>
+    <PageWrapper maxWidth="md" className="pb-16">
+      <FeatureGuideBanner 
+        toolKey="ideas" 
+        title="Idea Generator" 
+        icon={<Lightbulb className="w-5 h-5 text-yellow-400" />}
+        tagline="Never run out of content topics. Get fresh, niche-specific ideas powered by live search."
+        whatYouGet={["10 content ideas per niche", "Platform tags per idea", "Viral angle for each"]}
+        whenToUse="Use this every Sunday to plan your content week. Save ideas you like to your calendar."
+        proTip="Ideas are cached for 15 minutes per niche — if you want fresh ones, change the goal field slightly."
+      />
+      <PageHeader 
+        icon={<Lightbulb/>} 
+        iconBg="bg-yellow-500/10" 
+        iconColor="text-yellow-400" 
+        title="Idea Generator" 
+        subtitle="Fresh content topics powered by live search"
+      />
 
       <div
         className="rounded-2xl border border-white/8 p-5 md:p-6 lg:p-8 space-y-5"
@@ -130,7 +141,7 @@ function IdeasGeneratorInner() {
           <div className="space-y-2">
             <label className="text-white/70 text-sm font-medium">Your Niche</label>
             <Select value={niche} onValueChange={(v) => setNiche(v as any)}>
-              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-yellow-500/40 rounded-xl">
+              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-yellow-500/40 rounded-xl text-base min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#0f0a1e] border-white/10">
@@ -147,7 +158,7 @@ function IdeasGeneratorInner() {
               value={goal}
               onChange={e => setGoal(e.target.value)}
               placeholder="e.g. grow my audience, establish authority..."
-              className="bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-yellow-500/40 rounded-xl h-10"
+              className="bg-black/20 border-white/10 text-white text-base placeholder:text-white/25 focus-visible:ring-yellow-500/40 rounded-xl h-12"
               onKeyDown={e => e.key === "Enter" && generateIdeas()}
             />
           </div>
@@ -166,7 +177,7 @@ function IdeasGeneratorInner() {
           <Button
             onClick={generateIdeas}
             disabled={loading}
-            className="bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white font-semibold shadow-lg shadow-yellow-900/40 rounded-xl px-6"
+            className="w-full sm:w-auto h-12 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white text-base font-semibold shadow-lg shadow-yellow-900/40 rounded-xl px-6"
           >
             {loading ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
@@ -302,7 +313,7 @@ function IdeasGeneratorInner() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageWrapper>
   );
 }
 

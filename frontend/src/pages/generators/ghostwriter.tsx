@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { PenTool, Brain, Sparkles, RefreshCw, Copy, Share2, AlertCircle, Wand2, Mic, Fingerprint, ChevronRight, History as HistoryIcon, Settings2, Trash2, X, Check } from "lucide-react";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,6 +15,8 @@ import { api } from "@/lib/api-client";
 import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 interface VoiceProfile {
   sentenceStyle: string;
@@ -74,7 +77,11 @@ export default function GhostwriterPage() {
       const { data } = await api.get("/ghostwriter/voice-profile");
       setProfile(data);
       if (data) setUseVoice(true);
-    } catch (err) {}
+    } catch (err: any) {
+      if (err?.status !== 404 && err?.status !== 403) {
+        toast({ variant: "destructive", title: "Error", description: "Failed to load voice profile." });
+      }
+    }
   };
 
   const fetchHistory = async () => {
@@ -140,137 +147,136 @@ export default function GhostwriterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-8 space-y-10 max-w-7xl mx-auto">
-      {/* Header Section */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
-      >
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 shadow-lg shadow-rose-500/20">
-              <PenTool className="h-7 w-7 text-white" />
-            </div>
-            <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-white via-white to-white/40 bg-clip-text text-transparent">
-              AI Ghostwriter
-            </h1>
-          </div>
-          <p className="text-muted-foreground text-lg font-medium">
-            Master your digital twin. Write with your exact DNA.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl">
-           <Sheet>
-             <SheetTrigger asChild>
-               <Button variant="ghost" className="rounded-xl gap-2 text-white/60 hover:text-white" onClick={fetchHistory}>
-                  <HistoryIcon className="h-4 w-4" /> History
-               </Button>
-             </SheetTrigger>
-             <SheetContent className="bg-zinc-950 border-white/10 text-white w-full sm:max-w-md">
-                <SheetHeader className="mb-6">
-                  <SheetTitle className="text-white text-2xl font-black">Generation History</SheetTitle>
-                  <SheetDescription className="text-zinc-400">Your past ghostwritten masterpieces.</SheetDescription>
-                </SheetHeader>
-                <ScrollArea className="h-[calc(100vh-120px)] pr-4">
-                  {loadingHistory ? (
-                    <div className="flex items-center justify-center py-20"><RefreshCw className="animate-spin h-8 w-8 text-rose-500" /></div>
-                  ) : history.length === 0 ? (
-                    <div className="text-center py-20 text-zinc-500 font-bold">No history yet. Start manifesting!</div>
-                  ) : (
-                    <div className="space-y-4">
-                      {history.map(item => (
-                        <Card key={item.id} className="bg-white/5 border-white/10 hover:border-rose-500/50 transition-colors cursor-pointer group" onClick={() => setOutput(item.content)}>
-                          <CardContent className="p-4 space-y-2">
-                            <div className="flex justify-between items-start">
-                              <Badge className="bg-rose-500/20 text-rose-400 text-[10px] uppercase">{item.contentType}</Badge>
-                              <span className="text-[10px] text-zinc-500">{new Date(item.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <p className="text-sm font-bold line-clamp-2 text-zinc-200 group-hover:text-white">{item.idea}</p>
-                            <div className="flex items-center gap-2 text-[10px] text-zinc-500">
-                               <Fingerprint className="h-3 w-3 text-emerald-500" />
-                               <span>{item.content.voiceMatchScore}% Match</span>
-                               <span className="ml-auto">{item.content.wordCount} words</span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-             </SheetContent>
-           </Sheet>
-
-           <Sheet>
-             <SheetTrigger asChild disabled={!profile}>
-               <Button variant="ghost" className="rounded-xl gap-2 text-white/60 hover:text-white" disabled={!profile}>
-                  <Settings2 className="h-4 w-4" /> Tuning
-               </Button>
-             </SheetTrigger>
-             <SheetContent className="bg-zinc-950 border-white/10 text-white w-full sm:max-w-md">
-                <SheetHeader className="mb-6">
-                  <SheetTitle className="text-white text-2xl font-black">Voice Tuning</SheetTitle>
-                  <SheetDescription className="text-zinc-400">Manually refine your writing fingerprint.</SheetDescription>
-                </SheetHeader>
-                {profile && (
-                  <ScrollArea className="h-[calc(100vh-180px)] pr-4">
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Tone Fingerprint</label>
-                        <Input 
-                          value={profile.toneFingerprint} 
-                          onChange={(e) => setProfile({...profile, toneFingerprint: e.target.value})}
-                          className="bg-white/5 border-white/10"
-                        />
+    <PageWrapper maxWidth="xl" className="space-y-10">
+      <FeatureGuideBanner 
+        toolKey="ghostwriter" 
+        title="AI Ghostwriter" 
+        icon={<PenTool className="w-5 h-5 text-rose-500" />}
+        tagline="Capture your unique writing DNA and generate content that sounds exactly like you."
+        whatYouGet={["Voice DNA profile", "Tonal fingerprint", "Content matching your style"]}
+        whenToUse="Use this when you want AI to write for you without the 'AI feel'. It's your digital twin."
+        proTip="The more content you generate in the main 'Generator', the more accurate your Voice DNA profile becomes."
+        planRequired="Infinity"
+      />
+      <PageHeader 
+        icon={<PenTool/>} 
+        iconBg="bg-orange-500/10" 
+        iconColor="text-orange-400" 
+        title="AI Ghostwriter" 
+        subtitle="Write like a pro. In your voice."
+        badge="Infinity"
+        action={
+          <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl">
+             <Sheet>
+               <SheetTrigger asChild>
+                 <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-white/60 hover:text-white px-3" onClick={fetchHistory}>
+                    <HistoryIcon className="h-4 w-4" /> <span className="hidden sm:inline">History</span>
+                 </Button>
+               </SheetTrigger>
+               <SheetContent className="bg-zinc-950 border-white/10 text-white w-full sm:max-w-md">
+                  <SheetHeader className="mb-6">
+                    <SheetTitle className="text-white text-2xl font-black">Generation History</SheetTitle>
+                    <SheetDescription className="text-zinc-400">Your past ghostwritten masterpieces.</SheetDescription>
+                  </SheetHeader>
+                  <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+                    {loadingHistory ? (
+                      <div className="flex items-center justify-center py-20"><RefreshCw className="animate-spin h-8 w-8 text-rose-500" /></div>
+                    ) : history.length === 0 ? (
+                      <div className="text-center py-20 text-zinc-500 font-bold">No history yet. Start manifesting!</div>
+                    ) : (
+                      <div className="space-y-4">
+                        {history.map(item => (
+                          <Card key={item.id} className="bg-white/5 border-white/10 hover:border-rose-500/50 transition-colors cursor-pointer group" onClick={() => setOutput(item.content)}>
+                            <CardContent className="p-4 space-y-2">
+                              <div className="flex justify-between items-start">
+                                <Badge className="bg-rose-500/20 text-rose-400 text-[10px] uppercase">{item.contentType}</Badge>
+                                <span className="text-[10px] text-zinc-500">{new Date(item.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <p className="text-sm font-bold line-clamp-2 text-zinc-200 group-hover:text-white">{item.idea}</p>
+                              <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                                 <Fingerprint className="h-3 w-3 text-emerald-500" />
+                                 <span>{item.content.voiceMatchScore}% Match</span>
+                                 <span className="ml-auto">{item.content.wordCount} words</span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Sentence Style</label>
-                        <Input 
-                          value={profile.sentenceStyle} 
-                          onChange={(e) => setProfile({...profile, sentenceStyle: e.target.value})}
-                          className="bg-white/5 border-white/10"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Vocabulary Level</label>
-                        <Input 
-                          value={profile.vocabularyLevel} 
-                          onChange={(e) => setProfile({...profile, vocabularyLevel: e.target.value})}
-                          className="bg-white/5 border-white/10"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Opening Style</label>
-                        <Input 
-                          value={profile.openingStyle} 
-                          onChange={(e) => setProfile({...profile, openingStyle: e.target.value})}
-                          className="bg-white/5 border-white/10"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Closing Style</label>
-                        <Input 
-                          value={profile.closingStyle} 
-                          onChange={(e) => setProfile({...profile, closingStyle: e.target.value})}
-                          className="bg-white/5 border-white/10"
-                        />
-                      </div>
-                      <Button 
-                        onClick={() => saveTuning(profile)} 
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 font-bold h-12 rounded-xl"
-                        disabled={savingTuning}
-                      >
-                        {savingTuning ? <RefreshCw className="animate-spin h-4 w-4 mr-2" /> : <Check className="h-4 w-4 mr-2" />}
-                        Save Changes
-                      </Button>
-                    </div>
+                    )}
                   </ScrollArea>
-                )}
-             </SheetContent>
-           </Sheet>
-        </div>
-      </motion.div>
+               </SheetContent>
+             </Sheet>
+
+             <Sheet>
+               <SheetTrigger asChild disabled={!profile}>
+                 <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-white/60 hover:text-white px-3" disabled={!profile}>
+                    <Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Tuning</span>
+                 </Button>
+               </SheetTrigger>
+               <SheetContent className="bg-zinc-950 border-white/10 text-white w-full sm:max-w-md">
+                  <SheetHeader className="mb-6">
+                    <SheetTitle className="text-white text-2xl font-black">Voice Tuning</SheetTitle>
+                    <SheetDescription className="text-zinc-400">Manually refine your writing fingerprint.</SheetDescription>
+                  </SheetHeader>
+                  {profile && (
+                    <ScrollArea className="h-[calc(100vh-180px)] pr-4">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Tone Fingerprint</label>
+                          <Input 
+                            value={profile.toneFingerprint} 
+                            onChange={(e) => setProfile({...profile, toneFingerprint: e.target.value})}
+                            className="bg-white/5 border-white/10 h-11 text-base"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Sentence Style</label>
+                          <Input 
+                            value={profile.sentenceStyle} 
+                            onChange={(e) => setProfile({...profile, sentenceStyle: e.target.value})}
+                            className="bg-white/5 border-white/10 h-11 text-base"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Vocabulary Level</label>
+                          <Input 
+                            value={profile.vocabularyLevel} 
+                            onChange={(e) => setProfile({...profile, vocabularyLevel: e.target.value})}
+                            className="bg-white/5 border-white/10 h-11 text-base"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Opening Style</label>
+                          <Input 
+                            value={profile.openingStyle} 
+                            onChange={(e) => setProfile({...profile, openingStyle: e.target.value})}
+                            className="bg-white/5 border-white/10 h-11 text-base"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Closing Style</label>
+                          <Input 
+                            value={profile.closingStyle} 
+                            onChange={(e) => setProfile({...profile, closingStyle: e.target.value})}
+                            className="bg-white/5 border-white/10 h-11 text-base"
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => saveTuning(profile)} 
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 font-bold h-12 rounded-xl text-base"
+                          disabled={savingTuning}
+                        >
+                          {savingTuning ? <RefreshCw className="animate-spin h-4 w-4 mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                          Save Changes
+                        </Button>
+                      </div>
+                    </ScrollArea>
+                  )}
+               </SheetContent>
+             </Sheet>
+          </div>
+        }
+      />
 
       <motion.div 
         variants={containerVariants}
@@ -388,7 +394,7 @@ export default function GhostwriterPage() {
                   </div>
                   <Textarea 
                     placeholder="Tell the Ghostwriter what to write about... be as specific as you want." 
-                    className="min-h-[160px] text-xl font-medium bg-transparent border-none focus-visible:ring-0 p-0 placeholder:text-white/10 resize-none"
+                    className="min-h-[120px] md:min-h-[160px] text-base md:text-xl font-medium bg-transparent border-none focus-visible:ring-0 p-0 placeholder:text-white/10 resize-none"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                   />
@@ -398,7 +404,7 @@ export default function GhostwriterPage() {
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Platform Target</label>
                     <Select value={platform} onValueChange={setPlatform}>
-                      <SelectTrigger className="bg-white/5 border-white/10 h-12 rounded-xl text-white font-bold">
+                      <SelectTrigger className="bg-white/5 border-white/10 h-12 rounded-xl text-white font-bold text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-900 border-white/10 text-white">
@@ -417,7 +423,7 @@ export default function GhostwriterPage() {
                         <button
                           key={l}
                           onClick={() => setLength(l)}
-                          className={`py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all ${length === l ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white/60'}`}
+                          className={`py-2.5 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all ${length === l ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white/60'}`}
                         >
                           {l}
                         </button>
@@ -429,7 +435,7 @@ export default function GhostwriterPage() {
                 <Button 
                   onClick={writeContent} 
                   disabled={writing || !topic}
-                  className="w-full h-16 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white text-xl font-black shadow-2xl shadow-rose-600/30 group relative overflow-hidden rounded-2xl"
+                  className="w-full h-14 md:h-16 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white text-base md:text-xl font-black shadow-2xl shadow-rose-600/30 group relative overflow-hidden rounded-2xl"
                 >
                   <motion.div 
                     className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"
@@ -510,6 +516,6 @@ export default function GhostwriterPage() {
           </AnimatePresence>
         </div>
       </motion.div>
-    </div>
+    </PageWrapper>
   );
 }

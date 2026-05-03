@@ -56,29 +56,35 @@ const INFINITY_BENEFITS = [
 ];
 
 const STARTER_HIGHLIGHTS = [
-  "20 content generations per month",
-  "1 Regeneration per topic",
-  "Instagram, YouTube, Twitter, LinkedIn",
-  "Basic English + 1 Premium Language",
+  "25 content generations per month",
+  "All core generation tools",
+  "Viral Hooks, Bio & Caption Generator",
+  "Content Calendar & Swipe Vault",
+  "7-Day Strategy Planner",
+  "1 Premium Language",
   "Cancel anytime",
 ];
 
 const CREATOR_HIGHLIGHTS = [
-  "100 content generations per month",
-  "3 Regenerations per topic",
-  "🌍 Multi-language (Hindi, Hinglish, Bengali)",
-  "Multi-Variation (3 outputs per gen)",
-  "Viral Score™ enabled",
+  "150 content generations per month",
+  "Everything in Starter",
+  "Trend Engine (live Perplexity search)",
+  "Hashtag Intelligence + Performance Predictor",
+  "Competitor Analyzer + Content Repurposer",
+  "A/B Hook Tester + Viral Score™",
+  "10 Premium Languages",
   "Cancel anytime",
 ];
 
 const INFINITY_HIGHLIGHTS = [
   "Unlimited content generations",
-  "Unlimited Regenerations per topic",
-  "🌍 10+ Global Languages supported",
-  "AI Writing Styles (Bold · Viral · Story · Pro)",
-  "Trending Topics Feed — daily fresh ideas",
-  "Priority AI (2× faster) + Priority Support",
+  "Everything in Creator",
+  "AI Content Coach (weekly growth reports)",
+  "AI Ghostwriter (learns your exact voice)",
+  "Priority 70B AI Models (2× faster)",
+  "Weekly Trend Alert email digest",
+  "VIP 24/7 Priority Support",
+  "Cancel anytime",
 ];
 
 export function UpgradeModal({ open, onClose, reason = "limit", featureName, message, targetPlan = "starter", billingPeriod = "monthly", currency = "INR" }: UpgradeModalProps) {
@@ -116,46 +122,22 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
 
   const highlights = selectedPlan === "infinity" ? INFINITY_HIGHLIGHTS : selectedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS;
   
-  const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
-    if (currency === "USD") {
-      if (plan === "infinity") {
-        if (period === "yearly") return "$200";
-        if (period === "half-yearly") return "$96";
-        if (period === "quarterly") return "$54";
-        return "$20";
-      }
-      if (plan === "creator") {
-        if (period === "yearly") return "$120";
-        if (period === "half-yearly") return "$57.6";
-        if (period === "quarterly") return "$32.4";
-        return "$12";
-      }
-      // starter
-      if (period === "yearly") return "$40";
-      if (period === "half-yearly") return "$19.2";
-      if (period === "quarterly") return "$10.8";
-      return "$4";
-    } else {
-      // INR
-      if (plan === "infinity") {
-        if (period === "yearly") return "₹3984";
-        if (period === "half-yearly") return "₹2394";
-        if (period === "quarterly") return "₹1347";
-        return "₹499";
-      }
-      if (plan === "creator") {
-        if (period === "yearly") return "₹1992";
-        if (period === "half-yearly") return "₹1194";
-        if (period === "quarterly") return "₹672";
-        return "₹249";
-      }
-      // starter
-      if (period === "yearly") return "₹864";
-      if (period === "half-yearly") return "₹522";
-      if (period === "quarterly") return "₹294";
-      return "₹109";
-    }
+const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
+  if (currency === "USD") {
+    const usdPrices: Record<PlanType, Record<string, string>> = {
+      starter: { monthly: "$5", quarterly: "$4.50", "half-yearly": "$4.25", yearly: "$4" },
+      creator: { monthly: "$15", quarterly: "$13.50", "half-yearly": "$13", yearly: "$12" },
+      infinity: { monthly: "$27", quarterly: "$24.30", "half-yearly": "$23.40", yearly: "$21.60" },
+    };
+    return usdPrices[plan][period] || usdPrices[plan]["monthly"];
+  }
+  const inrPrices: Record<PlanType, Record<string, string>> = {
+    starter: { monthly: "₹149", quarterly: "₹139", "half-yearly": "₹133", yearly: "₹119" },
+    creator: { monthly: "₹449", quarterly: "₹419", "half-yearly": "₹404", yearly: "₹358" },
+    infinity: { monthly: "₹799", quarterly: "₹749", "half-yearly": "₹720", yearly: "₹638" },
   };
+  return inrPrices[plan][period] || inrPrices[plan]["monthly"];
+};
 
   const price = getPriceDisplay(selectedPlan, billingPeriod);
 
@@ -376,7 +358,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
 
                     <div className="flex items-center justify-between mb-4 px-1">
                       <div>
-                        <span className="text-2xl font-bold text-white">{currency === "USD" ? "$20" : "₹499"}</span>
+                        <span className="text-2xl font-bold text-white">{currency === "USD" ? "$27" : "₹799"}</span>
                         <span className="text-white/40 text-xs ml-1">/month</span>
                       </div>
                       <span className="text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2.5 py-1 font-semibold">
@@ -489,8 +471,8 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
                             <span>{p === "infinity" ? "Infinity" : p === "creator" ? "Creator" : "Starter"}</span>
                             <span className="text-[10px] font-normal opacity-80">
                               {currency === "USD" 
-                                ? (p === "infinity" ? "$20/mo" : p === "creator" ? "$12/mo" : "$4/mo")
-                                : (p === "infinity" ? "₹499/mo" : p === "creator" ? "₹249/mo" : "₹109/mo")
+                                ? (p === "infinity" ? "$27/mo" : p === "creator" ? "$15/mo" : "$5/mo")
+                                : (p === "infinity" ? "₹799/mo" : p === "creator" ? "₹449/mo" : "₹149/mo")
                               }
                             </span>
                           </div>

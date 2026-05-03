@@ -31,7 +31,7 @@ setInterval(() => {
  */
 export const authSyncMiddleware = async (req: any, res: any, next: any) => {
   try {
-    if (!req.path.startsWith("/api/") || req.path.startsWith("/api/health") || req.path.startsWith("/api/subscription/webhook")) {
+    if (!req.path.startsWith("/api/") || req.path.startsWith("/api/health") || req.path.startsWith("/api/subscription/webhook") || req.path.startsWith("/api/public")) {
       return next();
     }
 
@@ -110,6 +110,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
             .values({ 
               id: uid, 
               email: emailForNewUser,
+              firstName: (auth.sessionClaims?.firstName as string) || null,
               lastLoginAt: new Date(),
               planTier: "FREE", planType: "free",
               generationsRemaining: 5,
@@ -139,6 +140,10 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
             updateData.isAdmin = true;
           }
 
+          if (auth.sessionClaims?.firstName && auth.sessionClaims.firstName !== user.firstName) {
+            updateData.firstName = auth.sessionClaims.firstName as string;
+          }
+
           const anchorDate = user.trialStartDate || user.createdAt || now;
           const msIn30Days = 30 * 24 * 60 * 60 * 1000;
           const elapsed = now.getTime() - anchorDate.getTime();
@@ -152,6 +157,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
               planTier = "INFINITY";
               updateData.planTier = "INFINITY";
               updateData.planType = "infinity";
+              updateData.subscriptionStatus = "active";
             }
 
             updateData.generationsRemaining = TIER_CREDITS[planTier] || 5;

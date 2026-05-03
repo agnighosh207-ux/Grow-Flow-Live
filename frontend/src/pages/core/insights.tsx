@@ -196,9 +196,10 @@ export default function Insights() {
             <h3 className="font-semibold text-white/90 mb-5 text-sm">Weekly activity</h3>
             <div className="flex items-end gap-1.5 h-20">
               {weeklyHeights.map((height, i) => {
-                const isToday = i === 6; // The last item in the array is always today based on our loop
+                const isToday = i === 6;
+                // On mobile (less than md), only show last 5 days (indices 2 to 6)
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div key={i} className={`flex-1 flex flex-col items-center gap-1 ${i < 2 ? "hidden md:flex" : "flex"}`}>
                       <motion.div
                         initial={{ height: 0 }}
                         animate={{ height: `${height}%` }}
@@ -206,7 +207,7 @@ export default function Insights() {
                         className={`w-full rounded-t-md ${isToday ? "bg-[#00F2FF] shadow-[0_0_12px_#00F2FF]" : ""}`}
                         style={{ minHeight: 2, backgroundColor: isToday ? '#00F2FF' : 'var(--surface-petrol)' }}
                       />
-                      <span className={`text-[9px] font-medium ${isToday ? "text-[#00F2FF]" : "text-[var(--text-muted)]"}`}>{weeklyDays[i]}</span>
+                      <span className={`hidden md:block text-[9px] font-medium ${isToday ? "text-[#00F2FF]" : "text-[var(--text-muted)]"}`}>{weeklyDays[i]}</span>
                   </div>
                 );
               })}

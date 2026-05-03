@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, contentGenerationsTable, supportMessagesTable, referralsTable, paymentsTable, contentCalendarTable, favoritesTable, usageLogsTable, dailyPlansTable } from "@workspace/db";
+import { db, usersTable, contentGenerationsTable, supportMessagesTable, referralsTable, paymentsTable, contentCalendarTable, favoritesTable, usageLogsTable, dailyPlansTable, featureUsageLogsTable, securityLogsTable, impersonationSessionsTable } from "@workspace/db";
 import { eq, count, and } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -103,6 +103,10 @@ router.delete("/account", requireAuth, async (req: any, res): Promise<void> => {
       await tx.delete(favoritesTable).where(eq(favoritesTable.userId, userId));
       await tx.delete(usageLogsTable).where(eq(usageLogsTable.userId, userId));
       await tx.delete(dailyPlansTable).where(eq(dailyPlansTable.userId, userId));
+      await tx.delete(featureUsageLogsTable).where(eq(featureUsageLogsTable.userId, userId));
+      await tx.delete(securityLogsTable).where(eq(securityLogsTable.userId, userId));
+      await tx.delete(impersonationSessionsTable).where(eq(impersonationSessionsTable.adminId, userId));
+      await tx.delete(impersonationSessionsTable).where(eq(impersonationSessionsTable.targetUserId, userId));
       await tx.delete(usersTable).where(eq(usersTable.id, userId));
     });
 

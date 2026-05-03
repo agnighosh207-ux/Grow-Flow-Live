@@ -234,6 +234,77 @@ export default function Home() {
         />
       </div>
 
+function Leaderboard() {
+  const [creators, setCreators] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/public/top-creators")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setCreators(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading || creators.length === 0) return null;
+
+  return (
+    <section className="relative z-10 py-24 px-4 overflow-hidden border-t border-white/[0.04]">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">Creators crushing it with GrowFlow AI</h2>
+          <p className="text-white/40 max-w-xl mx-auto">Real creators, real growth, real consistency. See who's dominating the content game this month.</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3">
+          {creators.map((c, i) => {
+            const rank = i + 1;
+            const isTop3 = rank <= 3;
+            const rankColor = rank === 1 ? "text-yellow-400" : rank === 2 ? "text-slate-300" : rank === 3 ? "text-orange-400" : "text-white/20";
+            const planBadge = c.planTier === "INFINITY" ? "👑" : c.planTier === "CREATOR" ? "⚡" : "🌱";
+            
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.01] ${isTop3 ? "border-white/10 bg-white/[0.04] shadow-xl" : "border-white/5 bg-white/[0.01]"}`}
+              >
+                <div className="flex items-center gap-5">
+                  <div className={`text-2xl font-black w-8 text-center ${rankColor}`}>{rank}</div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-bold text-base">{c.name}</span>
+                      <span className="text-sm" title={c.planTier}>{planBadge}</span>
+                    </div>
+                    <span className="text-[10px] text-white/30 uppercase tracking-widest font-semibold">Member since {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-mono font-black text-white">{(c.totalGenerations || 0).toLocaleString()}</div>
+                  <div className="text-[10px] text-white/30 uppercase tracking-widest font-bold">Content pieces</div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+        
+        <div className="mt-12 text-center">
+          <Link href="/sign-up">
+            <div className="inline-flex items-center gap-2 text-cyan-400 font-bold hover:text-cyan-300 transition-colors cursor-pointer group">
+              Join them and start growing <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </div>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
       <nav className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 max-w-7xl mx-auto">
         <Logo size="sm" />
         <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
@@ -859,6 +930,8 @@ export default function Home() {
         )}
       </AnimatePresence>
 
+      <Leaderboard />
+
       <section className="relative z-10 py-16 px-4 border-y border-white/[0.04]"
         style={{ background: "rgba(255,255,255,0.01)" }}
       >
@@ -884,6 +957,58 @@ export default function Home() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 py-24 px-4 overflow-hidden">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">What you'd pay for these tools separately</h2>
+            <p className="text-white/40">GrowFlow AI replaces your entire content team for a fraction of the cost.</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 gap-4 mb-8">
+            {[
+              { tool: "Hootsuite / Buffer", price: "₹3,500/mo", feature: "Content scheduling" },
+              { tool: "Jasper / Copy.ai", price: "₹4,200/mo", feature: "AI copywriting" },
+              { tool: "Brandwatch", price: "₹8,000/mo", feature: "Trend monitoring" },
+              { tool: "A human content writer", price: "₹15,000/mo", feature: "Ghostwriting" },
+              { tool: "A social media strategist", price: "₹20,000/mo", feature: "Strategy + coaching" },
+            ].map((item, i) => (
+              <motion.div
+                key={item.tool}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02]"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                  <span className="text-white font-semibold">{item.tool}</span>
+                  <span className="text-xs text-white/30 tracking-wide uppercase">{item.feature}</span>
+                </div>
+                <span className="text-white/60 font-mono">{item.price}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="text-center p-8 rounded-3xl border border-[#00F2FF]/30 bg-[#00F2FF]/5 shadow-[0_0_50px_rgba(0,242,255,0.1)] mb-6"
+          >
+            <div className="text-white/40 text-sm mb-2 line-through font-medium">Total: ₹50,700/mo</div>
+            <div className="text-2xl md:text-4xl font-bold text-[#00F2FF] mb-2">
+              GrowFlow AI Infinity gives you all of this for ₹799/month
+            </div>
+            <p className="text-sm text-cyan-300/60 font-medium">That's 98% cheaper than hiring the equivalent team.</p>
+          </motion.div>
         </div>
       </section>
 

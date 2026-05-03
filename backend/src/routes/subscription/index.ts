@@ -70,8 +70,8 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
       return {
         plan: "active" as const, planType,
         canGenerate: generationsRemaining > 0,
-        trialDaysLeft: null, generationLimit: 20,
-        monthlyGenerationsUsed: Math.max(0, 20 - generationsRemaining),
+        trialDaysLeft: null, generationLimit: 25,
+        monthlyGenerationsUsed: Math.max(0, 25 - generationsRemaining),
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -79,8 +79,8 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
       return {
         plan: "active" as const, planType,
         canGenerate: generationsRemaining > 0,
-        trialDaysLeft: null, generationLimit: 100,
-        monthlyGenerationsUsed: Math.max(0, 100 - generationsRemaining),
+        trialDaysLeft: null, generationLimit: 150,
+        monthlyGenerationsUsed: Math.max(0, 150 - generationsRemaining),
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -92,7 +92,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
       return {
         plan: "active" as const, planType,
         canGenerate: true, // Unlimited
-        trialDaysLeft: daysLeft, generationLimit: 300, // Soft limit
+        trialDaysLeft: daysLeft, generationLimit: 500, // Soft display limit — actual DB limit is 9999
         monthlyGenerationsUsed: monthlyGenerations,
         totalGenerationsUsed: totalGenerations,
       };
@@ -103,7 +103,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     const msLeft = new Date(user.trialEndsAt).getTime() - now.getTime();
     const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
     
-    const tierLimits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
+    const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
     const limit = tierLimits[planType] || 5;
 
     return {
@@ -118,7 +118,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
   // Handle pending status — user initiated payment but hasn't completed it yet
   // Preserve their planType so they don't appear downgraded
   if (user.subscriptionStatus === "pending" && planType !== "free") {
-    const tierLimits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
+    const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
     const limit = tierLimits[planType] || 5;
     return {
       plan: "pending" as const, planType,
@@ -131,7 +131,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
 
   // Handle past_due — subscription payment failed but user is still a paying user
   if (user.subscriptionStatus === "past_due" && planType !== "free") {
-    const tierLimits: Record<string, number> = { starter: 20, creator: 100, infinity: 9999 };
+    const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
     const limit = tierLimits[planType] || 5;
     return {
       plan: "past_due" as const, planType,
@@ -203,39 +203,45 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Respon
 const PLAN_CONFIG = {
   starter: {
     displayName: "Starter",
-    monthly: { amount: 10900, period: "monthly" as const, interval: 1, totalCount: 12 },
-    quarterly: { amount: 32700, period: "monthly" as const, interval: 3, totalCount: 4 },
-    "half-yearly": { amount: 65400, period: "monthly" as const, interval: 6, totalCount: 2 },
-    yearly: { amount: 109000, period: "yearly" as const, interval: 1, totalCount: 1 },
+    monthly: { amount: 14900, period: "monthly" as const, interval: 1, totalCount: 120 },
+    quarterly: { amount: 41700, period: "monthly" as const, interval: 3, totalCount: 40 },
+    "half-yearly": { amount: 79800, period: "monthly" as const, interval: 6, totalCount: 20 },
+    yearly: { amount: 143000, period: "yearly" as const, interval: 1, totalCount: 10 },
   },
   creator: {
     displayName: "Creator",
-    monthly: { amount: 29900, period: "monthly" as const, interval: 1, totalCount: 12 },
-    quarterly: { amount: 89700, period: "monthly" as const, interval: 3, totalCount: 4 },
-    "half-yearly": { amount: 179400, period: "monthly" as const, interval: 6, totalCount: 2 },
-    yearly: { amount: 299000, period: "yearly" as const, interval: 1, totalCount: 1 },
+    monthly: { amount: 44900, period: "monthly" as const, interval: 1, totalCount: 120 },
+    quarterly: { amount: 125700, period: "monthly" as const, interval: 3, totalCount: 40 },
+    "half-yearly": { amount: 242800, period: "monthly" as const, interval: 6, totalCount: 20 },
+    yearly: { amount: 430000, period: "yearly" as const, interval: 1, totalCount: 10 },
   },
   infinity: {
     displayName: "Infinity",
-    monthly: { amount: 49900, period: "monthly" as const, interval: 1, totalCount: 12 },
-    quarterly: { amount: 149700, period: "monthly" as const, interval: 3, totalCount: 4 },
-    "half-yearly": { amount: 299400, period: "monthly" as const, interval: 6, totalCount: 2 },
-    yearly: { amount: 499000, period: "yearly" as const, interval: 1, totalCount: 1 },
+    monthly: { amount: 79900, period: "monthly" as const, interval: 1, totalCount: 120 },
+    quarterly: { amount: 224700, period: "monthly" as const, interval: 3, totalCount: 40 },
+    "half-yearly": { amount: 432000, period: "monthly" as const, interval: 6, totalCount: 20 },
+    yearly: { amount: 766000, period: "yearly" as const, interval: 1, totalCount: 10 },
   },
   USD: {
     starter: {
-      monthly: { amount: 400, period: "monthly" as const, interval: 1, totalCount: 12 },
-      yearly: { amount: 4000, period: "yearly" as const, interval: 1, totalCount: 1 },
+      monthly: { amount: 500, period: "monthly" as const, interval: 1, totalCount: 120 },
+      quarterly: { amount: 1350, period: "monthly" as const, interval: 3, totalCount: 40 },
+      "half-yearly": { amount: 2550, period: "monthly" as const, interval: 6, totalCount: 20 },
+      yearly: { amount: 4800, period: "yearly" as const, interval: 1, totalCount: 10 },
     },
     creator: {
-      monthly: { amount: 1200, period: "monthly" as const, interval: 1, totalCount: 12 },
-      yearly: { amount: 12000, period: "yearly" as const, interval: 1, totalCount: 1 },
+      monthly: { amount: 1500, period: "monthly" as const, interval: 1, totalCount: 120 },
+      quarterly: { amount: 4050, period: "monthly" as const, interval: 3, totalCount: 40 },
+      "half-yearly": { amount: 7800, period: "monthly" as const, interval: 6, totalCount: 20 },
+      yearly: { amount: 14400, period: "yearly" as const, interval: 1, totalCount: 10 },
     },
     infinity: {
-      monthly: { amount: 2000, period: "monthly" as const, interval: 1, totalCount: 12 },
-      yearly: { amount: 20000, period: "yearly" as const, interval: 1, totalCount: 1 },
-    }
-  }
+      monthly: { amount: 2700, period: "monthly" as const, interval: 1, totalCount: 120 },
+      quarterly: { amount: 7290, period: "monthly" as const, interval: 3, totalCount: 40 },
+      "half-yearly": { amount: 14040, period: "monthly" as const, interval: 6, totalCount: 20 },
+      yearly: { amount: 25920, period: "yearly" as const, interval: 1, totalCount: 10 },
+    },
+  },
 };
 
 router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {

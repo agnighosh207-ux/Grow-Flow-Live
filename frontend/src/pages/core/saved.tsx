@@ -110,23 +110,23 @@ export default function Saved() {
         </div>
       ) : items.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-20 space-y-4"
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-3xl border border-white/6 p-14 text-center flex flex-col items-center justify-center bg-white/[0.02] backdrop-blur-xl"
         >
-          <div className="w-18 h-18 rounded-2xl bg-pink-500/10 border border-pink-500/15 flex items-center justify-center mx-auto" style={{ width: 72, height: 72 }}>
-            <Heart className="w-8 h-8 text-pink-400/40" />
+          <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+            <Heart className="w-10 h-10 text-white/10" />
           </div>
-          <div>
-            <p className="text-white/60 font-medium">No saved content yet</p>
-            <p className="text-white/30 text-sm mt-1">Tap the heart icon on any generated content to save it here.</p>
-          </div>
-          <Button
-            size="sm"
+          <h3 className="text-xl font-bold text-white mb-2">Nothing saved yet</h3>
+          <p className="text-white/40 text-sm max-w-xs mb-8 leading-relaxed">
+            Tap the heart icon on any generated content to save it here.
+          </p>
+          <Button 
+            size="lg" 
             onClick={() => navigate("/generate")}
-            className="bg-white/8 hover:bg-white/12 text-white/70 border border-white/10 rounded-xl text-xs mt-2"
+            className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-black px-8 rounded-2xl"
           >
-            <Wand2 className="w-3.5 h-3.5 mr-1.5" /> Generate Content
+            → Go Generate
           </Button>
         </motion.div>
       ) : (

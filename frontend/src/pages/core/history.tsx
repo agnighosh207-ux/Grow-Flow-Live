@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import {
   Copy, Check, Zap, TrendingUp, Calendar,
   Target, MessageSquare, BarChart2, Loader2, Trash2, Clock, AlertCircle,
-  Lightbulb, Map, FileText, AtSign, PenTool, Type, Package
+  Lightbulb, Map, FileText, AtSign, PenTool, Type, Package, History as HistoryIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -273,13 +273,21 @@ export default function History() {
         </div>
       ) : items.length === 0 ? (
         <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-          className="rounded-2xl border border-white/6 p-14 text-center flex flex-col items-center" style={{ background: "rgba(255,255,255,0.02)" }}
+          className="rounded-3xl border border-white/6 p-14 text-center flex flex-col items-center justify-center bg-white/[0.02] backdrop-blur-xl"
         >
-          <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-4"><Clock className="w-6 h-6 text-white/25" /></div>
-          <h3 className="text-base font-semibold text-white/70 mb-1.5">No history in this category</h3>
-          <p className="text-white/35 text-sm max-w-xs mb-5">Generate content to see it appear here. History is kept for 15 days.</p>
-          <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white text-xs" onClick={() => setLocation("/generate")}>
-            <Zap className="w-3.5 h-3.5 mr-1.5" /> Generate Now
+          <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+            <HistoryIcon className="w-10 h-10 text-white/10" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">No history yet</h3>
+          <p className="text-white/40 text-sm max-w-xs mb-8 leading-relaxed">
+            Generate your first piece of content to see it here. History is kept for 15 days.
+          </p>
+          <Button 
+            size="lg" 
+            className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black px-8 rounded-2xl" 
+            onClick={() => setLocation("/generate")}
+          >
+            → Go Generate
           </Button>
         </motion.div>
       ) : (

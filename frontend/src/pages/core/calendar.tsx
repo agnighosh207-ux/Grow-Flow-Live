@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
+import { PageWrapper } from "@/components/shared/PageWrapper";
 
 interface CalendarItem {
   id: number;
@@ -212,7 +213,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="container mx-auto py-10 px-4 space-y-8 max-w-[1600px]">
+    <PageWrapper maxWidth="xl" className="py-10">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
@@ -392,6 +393,6 @@ export default function CalendarPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

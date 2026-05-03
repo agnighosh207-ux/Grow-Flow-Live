@@ -60,6 +60,7 @@ const Hashtags = React.lazy(() => import("@/pages/generators/hashtags"));
 const Repurpose = React.lazy(() => import("@/pages/generators/repurpose"));
 const ABTest = React.lazy(() => import("@/pages/generators/ab-test"));
 const HookScorer = React.lazy(() => import("@/pages/generators/hook-scorer"));
+import { OnboardingModal } from "@/components/modals/OnboardingModal";
 
 const SuspenseFallback = () => (
   <div className="w-full max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -160,6 +161,9 @@ export function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <LoginTracker />
         <ReferralCodeCapture />
+        <SignedIn>
+          <OnboardingModal />
+        </SignedIn>
         <React.Suspense fallback={<SuspenseFallback />}>
           <Switch>
             <Route path="/" component={HomeRedirect} />

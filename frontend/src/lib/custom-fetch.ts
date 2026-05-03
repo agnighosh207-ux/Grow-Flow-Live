@@ -4,10 +4,12 @@ export async function customFetch(url: string, options: RequestInit = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
+  const finalSignal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal;
+
   try {
     const response = await fetch(url, {
       ...options,
-      signal: controller.signal
+      signal: finalSignal
     });
     clearTimeout(timeoutId);
     

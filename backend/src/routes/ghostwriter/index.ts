@@ -65,9 +65,15 @@ Return JSON:
     const content = response.choices[0]?.message?.content || "{}";
     const parsed = extractJson(content);
 
-    if (parsed?.voiceProfile) {
+    const vp = parsed?.voiceProfile;
+    const isValidVoiceProfile = vp && 
+      typeof vp.sentenceStyle === 'string' && 
+      typeof vp.toneFingerprint === 'string' &&
+      Array.isArray(vp.signaturePatterns);
+
+    if (isValidVoiceProfile) {
       await db.update(usersTable)
-        .set({ voiceProfile: parsed.voiceProfile })
+        .set({ voiceProfile: vp })
         .where(eq(usersTable.id, userId));
     }
 

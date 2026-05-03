@@ -219,7 +219,15 @@ export const generateContent = async ({
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const langInstruction = LANGUAGE_INSTRUCTIONS[language as keyof typeof LANGUAGE_INSTRUCTIONS] || "";
-        let finalMessages = messages.map(m => ({ ...m }));
+        // --- FIX: Prevent Context-Window Overflow ---
+        // Truncate any overly large message payload to prevent API draining/crashing
+        let finalMessages = messages.map(m => {
+          let content = m.content;
+          if (typeof content === 'string' && content.length > 20000) {
+            content = content.substring(0, 20000) + "... [TRUNCATED DUE TO SIZE]";
+          }
+          return { ...m, content };
+        });
         
         if (langInstruction) {
           const systemMsgIdx = finalMessages.findIndex(m => m.role === 'system');

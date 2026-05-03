@@ -1,5 +1,5 @@
 import { db, usersTable } from "@workspace/db";
-import { eq, and, isNotNull, lt, gte } from "drizzle-orm";
+import { eq, and, isNotNull, lt, gte, gt, isNull } from "drizzle-orm";
 import { sendPaymentFailedReminder3Days, sendPaymentFailedReminder7Days } from "../services/email";
 import { logger } from "../lib/logger";
 import { TIER_CREDITS } from "../middlewares/planMiddleware";
@@ -21,7 +21,9 @@ async function runDunningCron() {
         eq(usersTable.subscriptionStatus, "past_due"),
         eq(usersTable.reminderSent3Day, false),
         isNotNull(usersTable.paymentFailedAt),
-        lt(usersTable.paymentFailedAt, threeDaysAgoCutoff)
+        lt(usersTable.paymentFailedAt, threeDaysAgoCutoff),
+        gt(usersTable.paymentFailedAt, sevenDaysAgoCutoff),
+        isNull(usersTable.dunningReminderSentAt)
       ));
 
     for (const user of pastDueUsers3d) {
@@ -30,7 +32,10 @@ async function runDunningCron() {
         await sendPaymentFailedReminder3Days(user.email, user.planType || "Starter");
         
         await db.update(usersTable)
-          .set({ reminderSent3Day: true })
+          .set({ 
+            reminderSent3Day: true,
+            dunningReminderSentAt: new Date() 
+          })
           .where(eq(usersTable.id, user.id));
       }
     }

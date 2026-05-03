@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BarChart2, Zap, Instagram, Twitter, Linkedin, Youtube, Check, X, Info, Copy, RefreshCw, History, ArrowRight, TrendingUp } from "lucide-react";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 interface PredictionResult {
   overallScore: number;
@@ -98,19 +101,31 @@ export default function PredictorPage() {
   };
 
   return (
-    <div className="container mx-auto py-10 px-4 space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
-          <BarChart2 className="h-10 w-10 text-indigo-500" />
-          Performance Predictor
-        </h1>
-        <p className="text-muted-foreground mt-1">Know if your post will flop before you hit publish.</p>
-      </div>
+    <PageWrapper maxWidth="lg" className="py-10">
+      <FeatureGuideBanner 
+        toolKey="predictor" 
+        title="Viral Predictor" 
+        icon={<BarChart2 className="w-5 h-5 text-indigo-500" />}
+        tagline="Know if your post will flop before you hit publish. Our AI simulates the algorithm's reaction."
+        whatYouGet={["Virality score (0-100)", "Hook strength audit", "Algorithm signal analysis"]}
+        whenToUse="Use this right before you post. If your score is below 70, use the suggested 'Top Fix' to improve it."
+        proTip="The 'Improved Version' provided in the results isn't just a suggestion — it's optimized for the specific platform's current algorithm."
+        planRequired="Creator"
+      />
+      <PageHeader 
+        icon={<TrendingUp/>} 
+        iconBg="bg-emerald-500/10" 
+        iconColor="text-emerald-400" 
+        title="Viral Predictor" 
+        subtitle="Predict performance before you post."
+        badge="Infinity"
+        badgeColor="bg-purple-500/10 text-purple-400 border-purple-500/20"
+      />
 
       <Tabs defaultValue="predict" className="space-y-6">
-        <TabsList className="bg-muted/50 p-1">
-          <TabsTrigger value="predict" className="px-8">Analyze Post</TabsTrigger>
-          <TabsTrigger value="history" className="px-8 flex gap-2">
+        <TabsList className="bg-muted/50 p-1 overflow-x-auto no-scrollbar whitespace-nowrap w-full flex justify-start">
+          <TabsTrigger value="predict" className="flex-1 md:flex-none px-6 md:px-8 h-10 md:h-12 text-sm md:text-base">Analyze Post</TabsTrigger>
+          <TabsTrigger value="history" className="flex-1 md:flex-none px-6 md:px-8 h-10 md:h-12 text-sm md:text-base flex gap-2">
             <History className="h-4 w-4" />
             History ({history.length})
           </TabsTrigger>
@@ -129,7 +144,7 @@ export default function PredictorPage() {
                   </div>
                   <Textarea
                     placeholder="Paste your caption, tweet, post, or script here..."
-                    className="min-h-[200px] text-lg border-indigo-500/10 focus-visible:ring-indigo-500 bg-indigo-500/[0.01]"
+                    className="min-h-[120px] md:min-h-[200px] text-base md:text-lg border-indigo-500/10 focus-visible:ring-indigo-500 bg-indigo-500/[0.01]"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                   />
@@ -139,7 +154,7 @@ export default function PredictorPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-bold">Platform</label>
                     <Select value={platform} onValueChange={setPlatform}>
-                      <SelectTrigger className="bg-muted/30">
+                      <SelectTrigger className="bg-muted/30 h-12 text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -153,7 +168,7 @@ export default function PredictorPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-bold">Niche</label>
                     <Select value={niche} onValueChange={setNiche}>
-                      <SelectTrigger className="bg-muted/30">
+                      <SelectTrigger className="bg-muted/30 h-12 text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -169,7 +184,7 @@ export default function PredictorPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-bold">Type</label>
                     <Select value={contentType} onValueChange={setContentType}>
-                      <SelectTrigger className="bg-muted/30">
+                      <SelectTrigger className="bg-muted/30 h-12 text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -185,7 +200,7 @@ export default function PredictorPage() {
                 <Button
                   onClick={handlePredict}
                   disabled={loading || content.length < 50}
-                  className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-lg font-bold shadow-xl shadow-indigo-600/20"
+                  className="w-full h-14 md:h-16 bg-indigo-600 hover:bg-indigo-700 text-base md:text-lg font-bold shadow-xl shadow-indigo-600/20"
                 >
                   {loading ? <RefreshCw className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
                   Predict Performance
@@ -349,6 +364,6 @@ export default function PredictorPage() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+    </PageWrapper>
   );
 };

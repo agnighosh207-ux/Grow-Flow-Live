@@ -6,6 +6,7 @@ export const userPlanEnum = pgEnum("user_plan", ["FREE", "STARTER", "CREATOR", "
 export const usersTable = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email"),
+  firstName: text("first_name"),
   razorpayCustomerId: text("razorpay_customer_id"),
   razorpaySubscriptionId: text("razorpay_subscription_id"),
   subscriptionStatus: text("subscription_status").notNull().default("free"),
@@ -48,6 +49,7 @@ export const usersTable = pgTable("users", {
   paymentFailedAt: timestamp("payment_failed_at", { withTimezone: true }),
   reminderSent3Day: boolean("reminder_sent_3_day").notNull().default(false),
   reminderSent7Day: boolean("reminder_sent_7_day").notNull().default(false),
+  dunningReminderSentAt: timestamp("dunning_reminder_sent_at", { withTimezone: true }),
   streakRewardLastGrantedAt: timestamp("streak_reward_last_granted_at", { withTimezone: true }),
   voiceProfile: jsonb("voice_profile").$type<{
     sentenceStyle: string;

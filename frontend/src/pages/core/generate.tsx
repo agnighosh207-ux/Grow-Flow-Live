@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Loader2, Copy, RefreshCw, Check, Sparkles, Linkedin, Twitter, X,
   Download, Hash, Zap, MessageCircle, Film, ChevronDown, ChevronUp, Crown, Heart,
-  TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2, AlertCircle, Lightbulb
+  TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2, AlertCircle, Lightbulb, Share2
 } from "lucide-react";
 import { SiInstagram, SiYoutube } from "react-icons/si";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,6 +30,7 @@ import { WeeklyReportCard } from "@/components/shared/WeeklyReportCard";
 import { SUPPORTED_LANGUAGES } from "@/lib/languages";
 import { api } from "@/lib/api-client";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 // ─── Constants ───
 const PLATFORMS = [
@@ -58,7 +59,7 @@ function AnimatedOrbs() {
 function ContentScoreBadge({ score, label, color }: { score: number; label: string; color: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-white/40 font-medium w-20 shrink-0">{label}</span>
+      <span className="text-xs text-white/40 font-medium w-16 md:w-20 shrink-0">{label}</span>
       <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
         <div
           className={`h-full rounded-full score-bar ${color}`}
@@ -435,9 +436,42 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
   const [repurposedText, setRepurposedText] = useState<string | null>(null);
   const [isRepurposing, setIsRepurposing] = useState(false);
   const { toast } = useToast();
+  const { data: sub } = useSubscriptionStatus();
+  
+  const isFreeUser = !sub || (sub.planType === "free" && sub.plan === "free") || sub.plan === "blocked";
+
   const config = PLATFORM_CONFIG[platform];
   const Icon = config.icon;
   const fullText = buildPlatformText(platform, content);
+
+  const handleShareTwitter = () => {
+    const text = fullText.substring(0, 280);
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const handleShareLinkedIn = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://growflowai.space")}`, "_blank");
+  };
+
+  const handleCopyWithAttribution = () => {
+    const attribution = "\n\n—\nGenerated with GrowFlow AI: https://growflowai.space";
+    navigator.clipboard.writeText(fullText + attribution);
+    toast({ title: "Copied with attribution!", description: "Thanks for supporting GrowFlow AI! 🚀" });
+  };
+
+  const handleDownloadTxt = () => {
+    const blob = new Blob([fullText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const date = new Date().toISOString().split('T')[0];
+    a.href = url;
+    a.download = `growflow-${platform}-${date}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: "Content downloaded!" });
+  };
 
   const handleRepurpose = async (targetFormat: string) => {
     setIsRepurposing(true);
@@ -490,7 +524,54 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
           <span className="font-semibold text-sm text-white/90 tracking-tight">{config.label}</span>
         </div>
         <div className="flex items-center gap-1">
-          <CopyButton text={fullText} label={config.label} />
+          <CopyButton 
+            text={isFreeUser ? (fullText + "\n\n—\nGenerated with GrowFlow AI: https://growflowai.space") : fullText} 
+            label={isFreeUser ? "Copy (Attributed)" : config.label} 
+          />
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md bg-white/5 hover:bg-white/10 text-white/50 hover:text-white border border-white/10 hover:border-white/20 transition-all font-medium"
+              >
+                <Share2 className="w-3 h-3" />
+                Share
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 glass-panel-premium border-white/10 z-[100] p-1.5 shadow-2xl">
+              {platform === "twitter" && (
+                <DropdownMenuItem onClick={handleShareTwitter} className="text-xs text-white/70 hover:text-white cursor-pointer focus:bg-white/5">
+                  <X className="w-3.5 h-3.5 mr-2 text-white" /> Post to Twitter/X
+                </DropdownMenuItem>
+              )}
+              {platform === "linkedin" && (
+                <DropdownMenuItem onClick={handleShareLinkedIn} className="text-xs text-white/70 hover:text-white cursor-pointer focus:bg-white/5">
+                  <Linkedin className="w-3.5 h-3.5 mr-2 text-blue-400" /> Share on LinkedIn
+                </DropdownMenuItem>
+              )}
+              
+              <DropdownMenuItem onClick={handleCopyWithAttribution} className="text-xs text-emerald-400 hover:text-emerald-300 cursor-pointer focus:bg-emerald-500/10">
+                <Copy className="w-3.5 h-3.5 mr-2" /> Copy with Attribution
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={() => !isFreeUser && navigator.clipboard.writeText(fullText).then(() => toast({ title: "Copied without attribution" }))} 
+                disabled={isFreeUser}
+                className={`text-xs flex items-center justify-between cursor-pointer ${isFreeUser ? "opacity-50 grayscale pointer-events-none" : "text-white/70 hover:text-white focus:bg-white/5"}`}
+              >
+                <div className="flex items-center">
+                  <Copy className="w-3.5 h-3.5 mr-2" /> Copy without attribution
+                </div>
+                {isFreeUser && <Lock className="w-3 h-3 text-amber-400" />}
+              </DropdownMenuItem>
+
+              <div className="h-px bg-white/5 my-1" />
+
+              <DropdownMenuItem onClick={handleDownloadTxt} className="text-xs text-white/70 hover:text-white cursor-pointer focus:bg-white/5">
+                <Download className="w-3.5 h-3.5 mr-2" /> Download as .txt
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -549,7 +630,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <div className="p-8 border-t border-white/5 space-y-8 bg-white/[0.01]">
+            <div className="p-4 md:p-8 border-t border-white/5 space-y-8 bg-white/[0.01]">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {/* Primary Content Column */}
                 <div className="space-y-6">
@@ -843,7 +924,6 @@ export default function Generate() {
         // --- FIX: Use invalidateQueries for cross-component state sync (High 5 fix) ---
         queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
         queryClient.invalidateQueries({ queryKey: ["content-history"] });
-        refetchSub();
         try {
           const upsellShown = sessionStorage.getItem("shown_post_gen_upsell");
           if (!upsellShown && sub && sub.plan === "free" && (sub.generationsRemaining ?? 0) <= 1 && !showUpgradeModal) {
@@ -887,7 +967,6 @@ export default function Generate() {
           setShowUpgradeModal(true);
           const msg = error?.data?.message;
           setGenerationBlockedMsg(msg || "You've reached your generation limit. Upgrade to continue.");
-          refetchSub();
           if (checkShouldShowFeedback()) {
             setTimeout(() => { setRatingTrigger("limit-hit"); setShowRatingModal(true); }, 2500);
           }
@@ -1221,6 +1300,15 @@ export default function Generate() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="pb-24 relative overflow-x-hidden min-h-screen"
     >
+      <FeatureGuideBanner 
+        toolKey="generate" 
+        title="Content Generator" 
+        icon={<Wand2 className="w-5 h-5" />}
+        tagline="Turn one idea into ready-to-post content for Instagram, YouTube, Twitter, and LinkedIn simultaneously."
+        whatYouGet={["Instagram caption + hashtags", "YouTube script", "Twitter thread", "LinkedIn post"]}
+        whenToUse="Use this when you have a topic idea and need actual post-ready content for all 4 platforms."
+        proTip="The more specific your idea, the better the output. Instead of 'fitness tips', try 'the one squat mistake beginners make'."
+      />
       <AnimatedOrbs />
       
       <UpgradeModal
@@ -1248,28 +1336,7 @@ export default function Generate() {
               <p className="text-white/40 font-medium max-w-lg mx-auto">Transform one idea into a high-authority content ecosystem across four platforms, instantly.</p>
            </motion.div>
 
-           <motion.div 
-             initial={{ opacity: 0, scale: 0.98 }} 
-             animate={{ opacity: 1, scale: 1 }}
-             className="relative max-w-3xl mx-auto p-7 rounded-[40px] border border-cyan-500/20 bg-cyan-500/[0.03] backdrop-blur-3xl group overflow-hidden shadow-2xl"
-           >
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              <div className="flex flex-col md:flex-row items-center gap-6 text-left relative z-10">
-                 <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center shrink-0 border border-cyan-500/20 shadow-inner">
-                    <Wand2 className="w-7 h-7 text-cyan-400" />
-                 </div>
-                 <div className="space-y-1.5">
-                    <h3 className="text-[11px] font-black text-cyan-200/90 flex items-center gap-2 uppercase tracking-[0.2em]">
-                       Studio Architecture
-                       <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                    </h3>
-                    <p className="text-sm text-white/45 leading-relaxed font-medium">
-                       Type a single idea or topic below. GrowFlow AI will instantly architect it into a viral Instagram Carousel, 
-                       an engaging Twitter Thread, a professional LinkedIn Post, and a script for YouTube Shorts—simultaneously formatted and ready to post.
-                    </p>
-                 </div>
-              </div>
-           </motion.div>
+
         </div>
 
         {/* Studio Core Input Engine */}
@@ -1289,12 +1356,12 @@ export default function Generate() {
                   whileHover={{ y: -6, scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => handleTemplate(t)}
-                  className="group relative p-5 rounded-[32px] border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-cyan-500/30 transition-all duration-500 text-center flex flex-col items-center gap-4 overflow-hidden shadow-lg"
+                  className="group relative p-5 min-h-[72px] md:min-h-0 rounded-[32px] border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-cyan-500/30 transition-all duration-500 text-center flex flex-col items-center gap-4 overflow-hidden shadow-lg"
                 >
                   <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="text-3xl group-hover:scale-125 transition-transform duration-700 relative z-10">{t.icon}</div>
-                  <div className="space-y-1.5 relative z-10">
-                    <h4 className="text-[11px] font-black text-white/90 uppercase tracking-widest leading-none">{t.label}</h4>
+                  <div className="space-y-1.5 relative z-10 w-full overflow-hidden">
+                    <h4 className="text-[10px] md:text-[11px] font-black text-white/90 uppercase tracking-widest leading-none overflow-hidden text-ellipsis whitespace-nowrap">{t.label}</h4>
                     <p className="text-[8px] text-white/20 font-black uppercase tracking-tighter">{t.contentType} · {t.tone}</p>
                   </div>
                 </motion.button>
@@ -1330,7 +1397,7 @@ export default function Generate() {
                             <Textarea
                               {...field}
                               placeholder="e.g. 5 ways AI is replacing junior developers — and what to do about it..."
-                              className="min-h-[200px] p-8 rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-xl md:text-2xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
+                              className="min-h-[120px] md:min-h-[180px] p-6 md:p-8 rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
                             />
                             <div className="absolute bottom-6 right-6 flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 text-[10px] text-white/20 font-black uppercase tracking-widest border border-white/5">
                                <Activity className="w-3.5 h-3.5 text-cyan-500/50" />
@@ -1507,7 +1574,7 @@ export default function Generate() {
                       <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full h-16 rounded-[24px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black text-base shadow-2xl shadow-cyan-500/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 group overflow-hidden relative"
+                        className="w-full h-14 md:h-16 rounded-[24px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black text-base shadow-2xl shadow-cyan-500/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 group overflow-hidden relative"
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         {isLoading ? (

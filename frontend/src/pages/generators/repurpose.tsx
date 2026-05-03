@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { RefreshCw, Sparkles, Copy, Download, ArrowRight, ArrowLeft, Instagram, Linkedin, Twitter, Youtube, FileText, Mail, CheckCircle2, Zap, Brain, ChevronRight, Share2, Layers, Smartphone, MousePointer2 } from "lucide-react";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const formats = [
   { id: "instagram_caption", label: "Instagram", icon: <Instagram className="h-6 w-6" />, color: "from-pink-500 to-rose-500 shadow-pink-500/20" },
@@ -88,27 +91,46 @@ export default function RepurposePage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-8 space-y-12 max-w-[1400px] mx-auto pb-32">
-      {/* Dynamic Header & Progress */}
-      <header className="flex flex-col items-center space-y-10 text-center">
-        <div className="inline-flex items-center gap-4 bg-white/5 p-2 rounded-3xl border border-white/10 backdrop-blur-3xl shadow-2xl">
+    <PageWrapper maxWidth="xl" className="space-y-12 pb-32">
+      <FeatureGuideBanner 
+        toolKey="repurpose" 
+        title="Content Repurposer" 
+        icon={<Share2 className="w-5 h-5 text-cyan-400" />}
+        tagline="One piece of content. Every platform. Master the multi-channel algorithm by automatically adapting your message."
+        whatYouGet={["Platform-specific adaptations", "Core insight extraction", "Cross-platform export (.txt)"]}
+        whenToUse="Use this when you have a winning piece of content (like a blog post or viral tweet) and want to milk it for all its worth on other platforms."
+        proTip="Always start with your longest/most detailed piece of content as the 'Source'. It gives the AI more 'meat' to work with for the adaptations."
+        planRequired="Creator"
+      />
+      <div className="flex flex-col gap-8">
+        <PageHeader 
+          icon={<RefreshCw/>} 
+          iconBg="bg-teal-500/10" 
+          iconColor="text-teal-400" 
+          title="Content Repurposer" 
+          subtitle="One video. Infinite posts."
+          badge="Creator"
+          action={
+            <div className="hidden md:flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-3xl shadow-2xl">
+               {[1, 2, 3].map(i => (
+                 <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-500 ${step === i ? 'bg-cyan-600 text-white font-black shadow-lg scale-105' : 'text-white/20'}`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${step === i ? 'bg-white text-cyan-600' : 'bg-white/5 text-white/20'}`}>{i}</div>
+                    <span className="text-[10px] uppercase tracking-widest">{i === 1 ? 'Source' : i === 2 ? 'Distribute' : 'Results'}</span>
+                 </div>
+               ))}
+            </div>
+          }
+        />
+        {/* Mobile Progress Bar */}
+        <div className="flex md:hidden items-center justify-between gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar">
            {[1, 2, 3].map(i => (
-             <div key={i} className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-500 ${step === i ? 'bg-cyan-600 text-white font-black shadow-2xl shadow-cyan-600/40 scale-105' : 'text-white/20'}`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${step === i ? 'bg-white text-cyan-600' : 'bg-white/5 text-white/20'}`}>{i}</div>
-                <span className="text-xs uppercase tracking-[0.2em]">{i === 1 ? 'Source' : i === 2 ? 'Distribute' : 'Results'}</span>
+             <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-500 shrink-0 ${step === i ? 'bg-cyan-600 text-white font-black' : 'text-white/20'}`}>
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black ${step === i ? 'bg-white text-cyan-600' : 'bg-white/5 text-white/20'}`}>{i}</div>
+                <span className="text-[8px] uppercase tracking-widest whitespace-nowrap">{i === 1 ? 'Source' : i === 2 ? 'Distribute' : 'Results'}</span>
              </div>
            ))}
         </div>
-        
-        <div className="space-y-4">
-          <h1 className="text-7xl font-black tracking-tighter bg-gradient-to-b from-white to-white/30 bg-clip-text text-transparent italic leading-tight">
-            Content Repurposer
-          </h1>
-          <p className="text-cyan-400/80 text-xl font-bold tracking-wide max-w-2xl mx-auto italic">
-            One piece of content. Every platform. Master the multi-channel algorithm.
-          </p>
-        </div>
-      </header>
+      </div>
 
       <AnimatePresence mode="wait">
         {step === 1 && (
@@ -124,9 +146,9 @@ export default function RepurposePage() {
                   <Share2 className="h-64 w-64" />
                </div>
                
-               <CardContent className="p-12 space-y-12 relative">
-                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-                     <div className="xl:col-span-5 space-y-8">
+               <CardContent className="p-6 md:p-12 space-y-8 md:space-y-12 relative">
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-12">
+                     <div className="xl:col-span-5 space-y-6 md:space-y-8">
                         <div className="space-y-4">
                            <label className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Original Format</label>
                            <div className="grid grid-cols-2 gap-3">
@@ -134,7 +156,7 @@ export default function RepurposePage() {
                                 <button
                                   key={f.id}
                                   onClick={() => setSourceFormat(f.id)}
-                                  className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all group ${sourceFormat === f.id ? 'bg-indigo-600/10 border-indigo-600 text-white shadow-xl shadow-indigo-600/10' : 'bg-white/[0.02] border-white/5 text-white/30 hover:border-white/20 hover:bg-white/5'}`}
+                                  className={`flex items-center gap-3 md:gap-4 p-4 md:p-5 rounded-2xl border-2 transition-all group ${sourceFormat === f.id ? 'bg-indigo-600/10 border-indigo-600 text-white shadow-xl shadow-indigo-600/10' : 'bg-white/[0.02] border-white/5 text-white/30 hover:border-white/20 hover:bg-white/5'}`}
                                 >
                                   <div className={`${sourceFormat === f.id ? 'text-indigo-400' : 'text-white/20 group-hover:text-white/40'} transition-colors`}>{f.icon}</div>
                                   <span className="text-sm font-black uppercase tracking-widest">{f.label}</span>
@@ -147,7 +169,7 @@ export default function RepurposePage() {
                            <div className="space-y-3">
                               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Brand Voice</label>
                               <Select value={tone} onValueChange={setTone}>
-                                <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                                <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-zinc-950 border-white/10 text-white">
@@ -165,7 +187,7 @@ export default function RepurposePage() {
                                 placeholder="e.g. Crypto Trading" 
                                 value={niche} 
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNiche(e.target.value)}
-                                className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold"
+                                className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base"
                               />
                            </div>
                         </div>
@@ -178,7 +200,7 @@ export default function RepurposePage() {
                         </div>
                         <Textarea 
                           placeholder="Paste your original caption, script, or blog post here for multi-channel transformation..."
-                          className="min-h-[450px] bg-white/[0.02] border-white/10 rounded-[2.5rem] text-xl p-10 focus-visible:ring-indigo-500/50 leading-relaxed resize-none shadow-inner"
+                          className="min-h-[300px] md:min-h-[450px] bg-white/[0.02] border-white/10 rounded-[2rem] md:rounded-[2.5rem] text-base md:text-xl p-6 md:p-10 focus-visible:ring-indigo-500/50 leading-relaxed resize-none shadow-inner"
                           value={sourceContent}
                           onChange={(e) => setSourceContent(e.target.value)}
                         />
@@ -186,11 +208,11 @@ export default function RepurposePage() {
                   </div>
 
                   <Button 
-                    className="w-full h-24 bg-white text-black font-black text-3xl rounded-[2.5rem] hover:scale-[1.01] transition-all shadow-[0_20px_50px_rgba(255,255,255,0.1)] active:scale-95"
+                    className="w-full h-16 md:h-24 bg-white text-black font-black text-xl md:text-3xl rounded-[1.5rem] md:rounded-[2.5rem] hover:scale-[1.01] transition-all shadow-[0_20px_50px_rgba(255,255,255,0.1)] active:scale-95"
                     onClick={() => setStep(2)}
                     disabled={sourceContent.length < 50}
                   >
-                    CONTINUE TO DISTRIBUTION <ChevronRight className="ml-3 h-10 w-10" />
+                    CONTINUE TO DISTRIBUTION <ChevronRight className="ml-2 md:ml-3 h-6 w-6 md:h-10 md:w-10" />
                   </Button>
                </CardContent>
             </Card>
@@ -362,6 +384,6 @@ export default function RepurposePage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageWrapper>
   );
 }

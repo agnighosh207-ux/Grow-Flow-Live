@@ -9,6 +9,9 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useLocation } from "wouter";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useAuth } from "@clerk/react";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 const TONES = ["Professional", "Casual", "Aggressive", "Inspirational", "Educational"] as const;
 const CONTENT_TYPES = ["Educational", "Story", "Viral", "Product/Service", "Opinion"] as const;
@@ -230,44 +233,43 @@ export default function ContentPack() {
   };
 
   return (
-    <div className="w-full pb-16">
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center gap-4 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 border border-cyan-500/20 flex items-center justify-center shadow-xl shadow-cyan-500/10">
-              <Package2 className="w-6 h-6 text-cyan-300" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black text-white tracking-tight">Content Kit Pro</h1>
-                <span className="text-[10px] px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-black tracking-widest uppercase">BETA</span>
-              </div>
-              <p className="text-white/40 text-sm font-medium">One idea → High-authority cross-platform ecosystem</p>
-            </div>
-          </div>
+    <PageWrapper maxWidth="xl" className="pb-16">
+      <FeatureGuideBanner 
+        toolKey="pack" 
+        title="Viral Content Packs" 
+        icon={<Package2 className="w-5 h-5 text-indigo-400" />}
+        tagline="Turn one idea into a 30-day cross-platform content ecosystem. The ultimate growth machine."
+        whatYouGet={["Reel scripts + Trending audio", "Instagram carousel blueprints", "X threads", "LinkedIn authority posts"]}
+        whenToUse="Use this when you have a winning content pillar and want to dominate every platform for the next month."
+        proTip="The 'Magic Enhance' button uses expert copywriting frameworks like AIDA to make your core idea 10x more provocative before generating the pack."
+        planRequired="Infinity"
+      />
+      
+      <PageHeader 
+        icon={<Package2/>} 
+        iconBg="bg-indigo-500/10" 
+        iconColor="text-indigo-400" 
+        title="Viral Content Packs" 
+        subtitle="Bulk content for your entire month"
+        badge="Infinity"
+        badgeColor="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-none"
+      />
 
-          <div className="grid grid-cols-5 gap-2 mt-4">
-            {[
-              { label: "Market", icon: "📊", locked: false },
-              { label: "Reel Script", icon: "🎬", locked: !isPro },
-              { label: "Carousel", icon: "🃏", locked: !isPro },
-              { label: "Twitter Thread", icon: "🐦", locked: false },
-              { label: "SEO Pack", icon: "🔍", locked: false },
-            ].map(({ label, icon, locked }) => (
-              <div key={label} className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl border text-center transition-all ${locked ? "bg-white/2 border-white/5 opacity-40" : "bg-white/[0.04] border-white/10 hover:border-cyan-500/30"}`}>
-                <span className="text-xl">{icon}</span>
-                <span className="text-[9px] text-white/50 font-black uppercase tracking-tighter leading-tight">{label}</span>
-                {locked && <Lock className="w-2.5 h-2.5 text-white/20" />}
-              </div>
-            ))}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-4 mb-8">
+        {[
+          { label: "Market", icon: "📊", locked: false },
+          { label: "Reel Script", icon: "🎬", locked: !isPro },
+          { label: "Carousel", icon: "🃏", locked: !isPro },
+          { label: "Twitter Thread", icon: "🐦", locked: false },
+          { label: "SEO Pack", icon: "🔍", locked: false },
+        ].map(({ label, icon, locked }) => (
+          <div key={label} className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl border text-center transition-all ${locked ? "bg-white/2 border-white/5 opacity-40" : "bg-white/[0.04] border-white/10 hover:border-cyan-500/30"}`}>
+            <span className="text-xl">{icon}</span>
+            <span className="text-[9px] text-white/50 font-black uppercase tracking-tighter leading-tight">{label}</span>
+            {locked && <Lock className="w-2.5 h-2.5 text-white/20" />}
           </div>
-          {isFree && (
-            <div className="mt-4 rounded-2xl glass-panel-premium border-amber-500/20 p-4 flex items-center gap-3">
-              <Crown className="w-5 h-5 text-amber-400 shrink-0" />
-              <p className="text-xs text-amber-200/70 font-medium">Content Kit requires Creator plan. <button onClick={() => setLocation("/pricing")} className="text-amber-300 font-bold hover:underline">Unlock Now →</button></p>
-            </div>
-          )}
-        </motion.div>
+        ))}
+      </div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="rounded-3xl glass-panel-premium p-6 space-y-6">
@@ -286,8 +288,7 @@ export default function ContentPack() {
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
               placeholder="e.g. 5 productivity habits I stole from Navy SEALs..."
-              rows={3}
-              className="w-full px-5 py-4 rounded-2xl bg-white/[0.02] border border-white/10 text-white placeholder-white/20 text-base focus:outline-none focus:border-cyan-500/50 resize-none transition-all"
+              className="w-full px-5 py-4 min-h-[100px] md:min-h-[150px] rounded-2xl bg-white/[0.02] border border-white/10 text-white placeholder-white/20 text-base md:text-lg focus:outline-none focus:border-cyan-500/50 resize-none transition-all"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -295,7 +296,7 @@ export default function ContentPack() {
               <label className="block text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Goal</label>
               <div className="relative">
                 <select value={contentType} onChange={(e) => setContentType(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white text-sm focus:outline-none appearance-none cursor-pointer">
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white text-base focus:outline-none appearance-none cursor-pointer">
                   {CONTENT_TYPES.map(t => <option key={t} value={t} className="bg-[#0B1215]">{t}</option>)}
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
@@ -305,7 +306,7 @@ export default function ContentPack() {
               <label className="block text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Tone</label>
               <div className="relative">
                 <select value={tone} onChange={(e) => setTone(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white text-sm focus:outline-none appearance-none cursor-pointer">
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white text-base focus:outline-none appearance-none cursor-pointer">
                   {TONES.map(t => <option key={t} value={t} className="bg-[#0B1215]">{t}</option>)}
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
@@ -323,7 +324,7 @@ export default function ContentPack() {
           <button
             onClick={generate}
             disabled={loading || !idea.trim() || isFree}
-            className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-cyan-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+            className="w-full flex items-center justify-center gap-2.5 h-14 md:h-16 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold text-base shadow-xl shadow-cyan-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             {loading ? (
               <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Building your ecosystem...</>
@@ -611,6 +612,6 @@ export default function ContentPack() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

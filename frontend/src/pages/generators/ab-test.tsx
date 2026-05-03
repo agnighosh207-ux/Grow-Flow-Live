@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { GitBranch, Sparkles, Copy, Loader2, ArrowRight, TrendingUp, AlertCircle, RefreshCw, Trophy, Lightbulb, Zap, Users, Target } from "lucide-react";
+import { GitBranch, Sparkles, Copy, Loader2, ArrowRight, TrendingUp, AlertCircle, RefreshCw, Trophy, Lightbulb, Zap, Users, Target, ArrowRightLeft } from "lucide-react";
+import { PageHeader } from "@/components/shared/PageHeader";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
+import { PageWrapper } from "@/components/shared/PageWrapper";
 
 export default function ABTestPage() {
   const [idea, setIdea] = useState("");
@@ -48,32 +51,33 @@ export default function ABTestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-8 max-w-[1400px] mx-auto space-y-16 pb-32">
-      {/* Premium Header */}
-      <header className="relative py-12 px-8 rounded-[3rem] overflow-hidden border border-white/5 bg-zinc-950/40 backdrop-blur-3xl shadow-2xl">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/10 via-transparent to-cyan-500/10 pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-8 text-center md:text-left">
-            <div className="p-6 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-cyan-500 shadow-[0_0_50px_rgba(79,70,229,0.4)] transform -rotate-3 animate-pulse-subtle">
-              <GitBranch className="h-12 w-12 text-white" />
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-6xl font-black tracking-tighter text-white">
-                A/B <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent italic">Duel</span>
-              </h1>
-              <p className="text-zinc-400 text-xl font-medium tracking-tight">
-                AI-driven split testing for maximum engagement.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-3xl border border-white/5 backdrop-blur-xl">
+    <PageWrapper maxWidth="xl" className="space-y-16 pb-32">
+      <FeatureGuideBanner 
+        toolKey="ab-test" 
+        title="Hook A/B Duel" 
+        icon={<GitBranch className="w-5 h-5 text-indigo-400" />}
+        tagline="Test two different hooks for two different audiences. See which one wins before you post."
+        whatYouGet={["Winner prediction", "Statistical confidence score", "A 'Hybrid' hook that combines both"]}
+        whenToUse="Use this when you have a good idea but aren't sure which angle will resonate more with a specific group."
+        proTip="The 'Hybrid' hook is usually the safest bet as it tries to capture the best of both variants."
+        planRequired="Infinity"
+      />
+      <PageHeader 
+        icon={<ArrowRightLeft/>} 
+        iconBg="bg-blue-500/10" 
+        iconColor="text-blue-400" 
+        title="A/B Audience Lab" 
+        subtitle="Test two hooks. See which one wins."
+        badge="Creator"
+        action={
+          <div className="hidden md:flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/5 backdrop-blur-xl">
              <div className="flex -space-x-4">
-                {[1,2,3].map(i => <div key={i} className={`w-10 h-10 rounded-full border-2 border-zinc-950 bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center text-[10px] font-bold text-zinc-500`}>A{i}</div>)}
+                {[1,2,3].map(i => <div key={i} className={`w-8 h-8 rounded-full border-2 border-zinc-950 bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center text-[8px] font-bold text-zinc-500`}>A{i}</div>)}
              </div>
-             <p className="text-sm font-bold text-zinc-300">Simulate <span className="text-cyan-400">10,000+</span> impressions</p>
+             <p className="text-[10px] font-bold text-zinc-300">Simulate <span className="text-cyan-400">10,000+</span> impressions</p>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <AnimatePresence mode="wait">
         {!result ? (
@@ -97,46 +101,46 @@ export default function ABTestPage() {
                         placeholder="What's your primary hook or content idea? (e.g. 5 secrets to scaling your SaaS...)" 
                         value={idea} 
                         onChange={(e) => setIdea(e.target.value)}
-                        className="bg-black/40 border-white/5 min-h-[180px] rounded-[2rem] text-xl font-bold p-8 focus:ring-indigo-500/50 transition-all placeholder:text-white/10"
+                        className="bg-black/40 border-white/5 min-h-[120px] md:min-h-[180px] rounded-[2rem] text-base md:text-xl font-bold p-6 md:p-8 focus:ring-indigo-500/50 transition-all placeholder:text-white/10"
                       />
                       <div className="absolute bottom-6 right-6 text-[10px] font-black text-white/20 uppercase tracking-widest">{idea.length} / 3000</div>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Platform</label>
-                      <Select value={platform} onValueChange={setPlatform}>
-                        <SelectTrigger className="bg-black/40 border-white/5 h-16 rounded-2xl font-black text-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-950 border-white/10 text-white rounded-2xl">
-                          <SelectItem value="Instagram">Instagram</SelectItem>
-                          <SelectItem value="Twitter">Twitter (X)</SelectItem>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                          <SelectItem value="YouTube Shorts">YouTube Shorts</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Niche</label>
-                      <Input 
-                        placeholder="e.g. AI Business" 
-                        value={niche} 
-                        onChange={(e) => setNiche(e.target.value)}
-                        className="bg-black/40 border-white/5 h-16 rounded-2xl font-black text-lg"
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Tone</label>
-                      <Input 
-                        placeholder="e.g. Aggressive" 
-                        value={tone} 
-                        onChange={(e) => setTone(e.target.value)}
-                        className="bg-black/40 border-white/5 h-16 rounded-2xl font-black text-lg"
-                      />
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Platform</label>
+                          <Select value={platform} onValueChange={setPlatform}>
+                            <SelectTrigger className="bg-black/40 border-white/5 h-14 rounded-2xl font-black text-base md:text-lg">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-zinc-950 border-white/10 text-white rounded-2xl">
+                              <SelectItem value="Instagram">Instagram</SelectItem>
+                              <SelectItem value="Twitter">Twitter (X)</SelectItem>
+                              <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                              <SelectItem value="YouTube Shorts">YouTube Shorts</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Niche</label>
+                          <Input 
+                            placeholder="e.g. AI Business" 
+                            value={niche} 
+                            onChange={(e) => setNiche(e.target.value)}
+                            className="bg-black/40 border-white/5 h-14 rounded-2xl font-black text-base md:text-lg"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Tone</label>
+                          <Input 
+                            placeholder="e.g. Aggressive" 
+                            value={tone} 
+                            onChange={(e) => setTone(e.target.value)}
+                            className="bg-black/40 border-white/5 h-14 rounded-2xl font-black text-base md:text-lg"
+                          />
+                        </div>
+                      </div>
                 </CardContent>
               </Card>
             </div>
@@ -179,7 +183,7 @@ export default function ABTestPage() {
                    </div>
 
                    <Button 
-                    className="w-full h-24 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-2xl font-black rounded-3xl shadow-[0_20px_50px_rgba(79,70,229,0.3)] transition-all hover:-translate-y-1 active:translate-y-0.5 group"
+                    className="w-full h-16 md:h-24 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-lg md:text-2xl font-black rounded-3xl shadow-[0_20px_50px_rgba(79,70,229,0.3)] transition-all hover:-translate-y-1 active:translate-y-0.5 group"
                     onClick={handleGenerate}
                     disabled={generating || !idea || !audienceA || !audienceB}
                   >
@@ -391,6 +395,6 @@ export default function ABTestPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageWrapper>
   );
 }

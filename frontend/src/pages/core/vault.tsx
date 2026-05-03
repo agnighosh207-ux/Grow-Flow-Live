@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageWrapper } from "@/components/shared/PageWrapper";
 
 interface VaultItem {
   id: string;
@@ -268,7 +269,7 @@ export default function SwipeVaultPage() {
   );
 
   return (
-    <div className="container mx-auto py-10 px-4 space-y-8 max-w-7xl">
+    <PageWrapper maxWidth="2xl" className="py-10">
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-black tracking-tight flex items-center justify-center gap-3">
           <Flame className="h-10 w-10 text-orange-500 fill-orange-500" />
@@ -332,7 +333,27 @@ export default function SwipeVaultPage() {
 
           {loading ? (
             <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-              {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="break-inside-avoid mb-6 rounded-3xl border border-white/6 p-6 space-y-4 bg-white/[0.02] animate-pulse">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 w-24 bg-white/5 rounded-full" />
+                    <div className="h-4 w-16 bg-white/5 rounded-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-6 w-full bg-white/10 rounded-lg" />
+                    <div className="h-6 w-4/5 bg-white/10 rounded-lg" />
+                  </div>
+                  <div className="h-16 w-full bg-white/5 rounded-xl" />
+                  <div className="flex gap-2">
+                    <div className="h-5 w-12 bg-white/5 rounded-full" />
+                    <div className="h-5 w-12 bg-white/5 rounded-full" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <div className="h-9 bg-white/5 rounded-lg" />
+                    <div className="h-9 bg-white/10 rounded-lg" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
@@ -363,6 +384,6 @@ export default function SwipeVaultPage() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+    </PageWrapper>
   );
 }

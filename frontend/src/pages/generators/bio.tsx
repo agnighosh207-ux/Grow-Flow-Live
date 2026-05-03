@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Sparkles, Instagram, Twitter, Linkedin, Youtube, Share2, Copy, Smartphone, Save, Check, RefreshCw, Mic, Layout, MessageSquare, Target, Award, Brain, Terminal, Shield, ChevronRight, BarChart2 } from "lucide-react";
+import { User, Sparkles, Instagram, Twitter, Linkedin, Youtube, Share2, Copy, Smartphone, Save, Check, RefreshCw, Mic, Layout, MessageSquare, Target, Award, Brain, Terminal, Shield, ChevronRight, BarChart2, Fingerprint } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +13,8 @@ import { api } from "@/lib/api-client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const formats = [
   { id: "instagram", label: "Instagram", icon: <Instagram className="h-5 w-5" />, limit: 150 },
@@ -97,27 +99,20 @@ export default function CreatorProfilePage() {
   }, [practiceMode, result, activeTab]);
 
   return (
-    <div className="min-h-screen bg-transparent p-4 md:p-8 space-y-12 max-w-[1600px] mx-auto pb-32">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-center gap-8 border-b border-white/5 pb-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 rounded-[2rem] bg-gradient-to-br from-cyan-500 to-blue-600 shadow-2xl shadow-cyan-500/30 transform -rotate-3">
-            <User className="h-10 w-10 text-white" />
-          </div>
-          <div>
-            <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-white via-white to-white/40 bg-clip-text text-transparent">
-              Creator Profile Suite
-            </h1>
-            <p className="text-cyan-400/80 text-xl font-bold italic tracking-wide">
-              Your brand identity, engineered for every platform.
-            </p>
-          </div>
-        </div>
-        
-        <Button onClick={saveToProfile} variant="outline" className="h-14 px-10 border-white/10 bg-white/5 text-white font-black text-lg rounded-2xl hover:bg-white/10 shadow-xl transition-all hidden md:flex">
-           <Save className="mr-2 h-6 w-6 text-purple-500" /> Save All Assets
-        </Button>
-      </header>
+    <PageWrapper maxWidth="xl" className="space-y-12 pb-32">
+      <PageHeader 
+        icon={<Fingerprint/>} 
+        iconBg="bg-indigo-500/10" 
+        iconColor="text-indigo-400" 
+        title="Bio Optimizer" 
+        subtitle="First impressions matter. Make it count."
+        badge="Starter"
+        action={
+          <Button onClick={saveToProfile} variant="outline" className="h-12 px-6 border-white/10 bg-white/5 text-white font-black text-sm rounded-xl hover:bg-white/10 shadow-xl transition-all hidden md:flex">
+             <Save className="mr-2 h-5 w-5 text-purple-500" /> Save All Assets
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 items-start">
         {/* Left Panel: Persona Config */}
@@ -136,7 +131,7 @@ export default function CreatorProfilePage() {
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder="e.g. Elena Vance"
-                  className="bg-white/[0.02] border-white/10 h-14 rounded-2xl text-lg font-bold focus:ring-purple-500/50"
+                  className="bg-white/[0.02] border-white/10 h-14 rounded-2xl text-base md:text-lg font-bold focus:ring-purple-500/50"
                 />
               </div>
 
@@ -144,7 +139,7 @@ export default function CreatorProfilePage() {
                 <div className="space-y-3">
                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Domain</label>
                   <Select value={formData.niche} onValueChange={(v) => setFormData({...formData, niche: v})}>
-                    <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                    <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-950 border-white/10 text-white">
@@ -159,7 +154,7 @@ export default function CreatorProfilePage() {
                 <div className="space-y-3">
                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Aesthetic</label>
                   <Select value={formData.tone} onValueChange={(v: any) => setFormData({...formData, tone: v})}>
-                    <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                    <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-950 border-white/10 text-white">
@@ -180,7 +175,7 @@ export default function CreatorProfilePage() {
                   value={formData.mainTopic}
                   onChange={(e) => setFormData({...formData, mainTopic: e.target.value})}
                   placeholder="e.g. Future of Generative Art"
-                  className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold"
+                  className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base"
                 />
               </div>
 
@@ -192,7 +187,7 @@ export default function CreatorProfilePage() {
                   value={formData.achievement}
                   onChange={(e) => setFormData({...formData, achievement: e.target.value})}
                   placeholder="e.g. Featured in NYT, TEDx Speaker"
-                  className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold"
+                  className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base"
                 />
               </div>
 
@@ -212,14 +207,14 @@ export default function CreatorProfilePage() {
                 </div>
               </div>
 
-              <Button 
-                className="w-full h-20 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-2xl font-black rounded-3xl shadow-2xl shadow-cyan-600/30 transition-all active:scale-95 group"
-                onClick={generateProfile}
-                disabled={generating || !formData.name}
-              >
-                {generating ? <RefreshCw className="mr-3 h-7 w-7 animate-spin" /> : <Sparkles className="mr-3 h-7 w-7 group-hover:scale-110 transition-transform" />}
-                {generating ? "SYNTHESIZING..." : "BUILD BRAND SUITE"}
-              </Button>
+               <Button 
+                 className="w-full h-16 md:h-20 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-lg md:text-2xl font-black rounded-3xl shadow-2xl shadow-cyan-600/30 transition-all active:scale-95 group"
+                 onClick={generateProfile}
+                 disabled={generating || !formData.name}
+               >
+                 {generating ? <RefreshCw className="mr-2 md:mr-3 h-5 w-5 md:h-7 md:w-7 animate-spin" /> : <Sparkles className="mr-2 md:mr-3 h-5 w-5 md:h-7 md:w-7 group-hover:scale-110 transition-transform" />}
+                 {generating ? "SYNTHESIZING..." : "BUILD BRAND SUITE"}
+               </Button>
             </CardContent>
           </Card>
         </div>
@@ -234,9 +229,9 @@ export default function CreatorProfilePage() {
                   className="space-y-10"
                 >
                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
-                      <TabsList className="bg-white/5 p-2 rounded-[2.5rem] border border-white/10 backdrop-blur-3xl h-20 w-full flex items-center justify-between shadow-2xl">
+                      <TabsList className="bg-white/5 p-2 rounded-2xl md:rounded-[2.5rem] border border-white/10 backdrop-blur-3xl h-16 md:h-20 w-full flex items-center justify-start md:justify-between shadow-2xl overflow-x-auto no-scrollbar whitespace-nowrap">
                          {formData.formats.map(f => (
-                           <TabsTrigger key={f} value={f} className="flex-1 rounded-2xl h-14 font-black uppercase tracking-widest text-xs data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all gap-3 mx-1">
+                           <TabsTrigger key={f} value={f} className="flex-1 shrink-0 rounded-xl md:rounded-2xl h-12 md:h-14 font-black uppercase tracking-widest text-[10px] md:text-xs data-[state=active]:bg-white/10 data-[state=active]:text-white transition-all gap-2 md:gap-3 mx-1 px-4">
                               {formats.find(fmt => fmt.id === f)?.icon}
                               <span className="hidden lg:inline">{formats.find(fmt => fmt.id === f)?.label}</span>
                            </TabsTrigger>
@@ -443,6 +438,6 @@ export default function CreatorProfilePage() {
            </AnimatePresence>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

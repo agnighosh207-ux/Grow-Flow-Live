@@ -146,7 +146,7 @@ app.use((req: any, res, next) => {
         try {
           await db.insert(securityLogsTable).values({
             id: crypto.randomUUID(),
-            userId: (req as any).userId || null,
+            userId: (req as any).userId || "anonymous",
             eventType: res.statusCode === 401 || res.statusCode === 403 ? "AUTH_FAILURE" : "API_REQUEST",
             ipAddress: req.ip || "unknown",
             userAgent: req.get("User-Agent") || "unknown",
@@ -176,9 +176,10 @@ app.use(async (req, res, next) => {
         const [settings] = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, "global"));
         maintenanceModeCache = { value: !!settings?.maintenanceMode, lastChecked: now };
       } catch (err) {
-        logger.error({ err }, "Maintenance mode DB check failed");
-        // --- FIX: Fail-closed. If DB is down, assume maintenance to prevent data corruption ---
-        maintenanceModeCache = { value: true, lastChecked: now - 25000 }; // Re-check sooner (5s)
+        logger.error({ err }, "Maintenance mode DB check failed — preserving last known state");
+        // Preserve last known state rather than assuming maintenance
+        // This prevents a brief DB timeout from locking out all users
+        maintenanceModeCache = { value: maintenanceModeCache.value, lastChecked: now - 25000 };
       }
     }
 

@@ -40,6 +40,7 @@ import {
   RefreshCw,
   GitBranch,
   Target,
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -142,10 +143,10 @@ const SIDEBAR_NAV = NAV_GROUPS.flatMap((g) => g.items);
 
 const BOTTOM_NAV = [
   { path: "/generate", label: "Generate", icon: Wand2 },
+  { path: "/hooks", label: "Hooks", icon: MessageSquareQuote },
   { path: "/ideas", label: "Ideas", icon: Lightbulb },
-  { path: "/saved", label: "Saved", icon: Heart },
   { path: "/history", label: "History", icon: History },
-  { path: "menu", label: "More", icon: MoreHorizontal },
+  { path: "menu", label: "All Tools", icon: MoreHorizontal },
 ];
 
 function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
@@ -313,6 +314,55 @@ function NavItem({
   );
 }
 
+function StreakBanner({ streak, completedToday }: { streak: number; completedToday: boolean }) {
+  if (streak === 0) return null;
+
+  const milestones = [7, 14, 30];
+  const nextMilestone = milestones.find(m => m > streak) || 100;
+  const progress = Math.min(100, (streak / nextMilestone) * 100);
+
+  const isElite = streak >= 30;
+  const isSteady = streak >= 7;
+
+  return (
+    <div className={`mx-3 mb-4 p-3 rounded-xl border transition-all duration-500 overflow-hidden relative group
+      ${isElite ? "bg-gradient-to-br from-yellow-500/20 to-amber-600/10 border-yellow-500/40 shadow-[0_0_20px_rgba(234,179,8,0.15)]" : 
+        isSteady ? "bg-slate-900/60 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]" : 
+        "bg-white/[0.03] border-white/10"}`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className={`p-1.5 rounded-lg ${isElite ? "bg-yellow-500/20" : isSteady ? "bg-amber-500/10" : "bg-white/5"}`}>
+            {isElite ? <Crown className="w-3.5 h-3.5 text-yellow-400" /> : <Flame className={`w-3.5 h-3.5 ${isSteady ? "text-amber-500" : "text-orange-500"}`} />}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-white leading-tight">{streak} Day Streak</p>
+            <p className="text-[10px] text-white/40 font-medium">Next: {nextMilestone} days</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden mb-3">
+        <motion.div 
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          className={`h-full rounded-full ${isElite ? "bg-yellow-500 shadow-[0_0_10px_#EAB308]" : isSteady ? "bg-amber-500 shadow-[0_0_8px_#F59E0B]" : "bg-orange-500 shadow-[0_0_8px_#F97316]"}`}
+        />
+      </div>
+
+      {!completedToday && (
+        <Link href="/daily">
+          <div className="flex items-center justify-between text-[10px] font-bold text-cyan-400 group-hover:text-cyan-300 transition-colors cursor-pointer">
+            Complete today's plan <ArrowRight className="w-3 h-3 ml-1 transition-transform group-hover:translate-x-1" />
+          </div>
+        </Link>
+      )}
+      
+      {isSteady && <div className="absolute -right-4 -top-4 w-12 h-12 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all duration-700" />}
+    </div>
+  );
+}
+
 function SidebarContent({
   isPro,
   sub,
@@ -353,6 +403,7 @@ function SidebarContent({
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-1 space-y-6">
+        <StreakBanner streak={streak} completedToday={!!streakData?.completedToday} />
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
             <p className="text-[11px] font-semibold text-white/20 uppercase tracking-widest mb-1.5 border-l-2 border-white/10 pl-2 ml-3">
@@ -532,35 +583,29 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="flex items-center justify-center w-full">
           <Logo size="sm" />
         </div>
-        <div className="hidden">
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-white/60">
-                <Menu className="w-4 h-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-72 p-0 flex flex-col border-l-white/[0.06]"
-              style={{ background: "rgba(8,3,22,0.98)", backdropFilter: "blur(24px)" }}
-            >
-              <SidebarContent
-                isPro={isPro}
-                sub={sub}
-                user={user}
-                signOut={signOut}
-                location={location}
-                onClick={() => setIsSheetOpen(false)}
-              />
-            </SheetContent>
-          </Sheet>
-        </div>
       </header>
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent
+          side="left"
+          className="w-[280px] p-0 flex flex-col border-r border-white/[0.06]"
+          style={{ background: "rgba(8,3,22,0.98)", backdropFilter: "blur(24px)" }}
+        >
+          <SidebarContent
+            isPro={isPro}
+            sub={sub}
+            user={user}
+            signOut={signOut}
+            location={location}
+            onClick={() => setIsSheetOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
 
       <main className="md:pl-64 xl:pl-72 min-h-screen flex flex-col">
         <TopBanner />
         <ImpersonationBanner />
-        <div className="flex-1 w-full px-4 md:px-8 xl:px-12 py-6 md:py-10 pb-24 md:pb-12">
+        <div className="flex-1 w-full px-4 md:px-6 py-4 md:py-8 pb-28 md:pb-10 max-w-screen-2xl mx-auto">
           <NotificationBanner />
           <FoundersBanner />
           <ReferralRewardNotifier />

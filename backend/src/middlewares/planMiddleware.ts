@@ -21,6 +21,18 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
   next();
 };
 
+export const requireActivePlan = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+  const status = user.subscriptionStatus ?? "free";
+  const isAdmin = user.isAdmin === true;
+  if (isAdmin || status === "active" || status === "trial") return next();
+  return res.status(402).json({
+    error: "upgrade_required",
+    message: "Upgrade to a paid plan to use the Regenerate feature."
+  });
+};
+
 export async function getOrCreateUser(userId: string, email?: string) {
   let [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
   if (!user) {
@@ -66,29 +78,35 @@ export const PLAN_RANKS: Record<string, number> = {
 
 export const TIER_CREDITS: Record<string, number> = {
   FREE: 5,
-  STARTER: 20,
-  CREATOR: 100,
-  INFINITY: 9999
+  STARTER: 25,
+  CREATOR: 150,
+  INFINITY: 9999,
 };
 
 
 export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string }> = {
-  ideas: { name: "Idea Generator", requiredPlan: "STARTER" },
-  strategy: { name: "7-Day Strategy", requiredPlan: "STARTER" },
-  hooks: { name: "Viral Hooks", requiredPlan: "STARTER" },
-  trends: { name: "Trend Engine", requiredPlan: "STARTER" },
-  content_analyze: { name: "Content Analysis", requiredPlan: "STARTER" },
-  bio: { name: "Bio Generator", requiredPlan: "STARTER" },
+  // ── STARTER TIER (₹149/mo) ── Core generation tools ──────────────────
   content: { name: "Content Generator", requiredPlan: "STARTER" },
+  hooks: { name: "Viral Hooks Generator", requiredPlan: "STARTER" },
   caption: { name: "Caption Enhancer", requiredPlan: "STARTER" },
-  coach: { name: "AI Content Coach", requiredPlan: "CREATOR" },
-  vault: { name: "Swipe Vault", requiredPlan: "STARTER" },
-  ghostwriter: { name: "AI Ghostwriter", requiredPlan: "CREATOR" },
-  predictor: { name: "Performance Predictor", requiredPlan: "STARTER" },
+  bio: { name: "Bio Generator", requiredPlan: "STARTER" },
+  ideas: { name: "Idea Generator", requiredPlan: "STARTER" },
+  strategy: { name: "7-Day Strategy Planner", requiredPlan: "STARTER" },
   calendar: { name: "Content Calendar", requiredPlan: "STARTER" },
-  hashtags: { name: "Hashtag Generator", requiredPlan: "STARTER" },
-  competitor: { name: "Competitor Analysis", requiredPlan: "STARTER" },
-  repurpose: { name: "Content Repurposing", requiredPlan: "STARTER" },
+  vault: { name: "Swipe Vault", requiredPlan: "STARTER" },
+
+  // ── CREATOR TIER (₹449/mo) ── Analytics + power tools ─────────────────
+  trends: { name: "Trend Engine", requiredPlan: "CREATOR" },
+  content_analyze: { name: "Content Performance Analyzer", requiredPlan: "CREATOR" },
+  hashtags: { name: "Hashtag Intelligence", requiredPlan: "CREATOR" },
+  competitor: { name: "Competitor Intelligence", requiredPlan: "CREATOR" },
+  repurpose: { name: "Content Repurposer", requiredPlan: "CREATOR" },
+  predictor: { name: "Performance Predictor", requiredPlan: "CREATOR" },
+  "ab-test": { name: "A/B Content Tester", requiredPlan: "CREATOR" },
+
+  // ── INFINITY TIER (₹799/mo) ── AI Identity + Agency tools ─────────────
+  coach: { name: "AI Content Coach", requiredPlan: "INFINITY" },
+  ghostwriter: { name: "AI Ghostwriter", requiredPlan: "INFINITY" },
 };
 
 export function requirePlanOrTrial(toolKey: string) {
@@ -122,9 +140,30 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
+      if (user.generationsRemaining <= 0 && requiredLevel <= PLAN_RANKS.STARTER) {
+        return res.status(402).json({
+          error: "upgrade_required",
+          message: `You've used all your generations. Please upgrade to ${config.requiredPlan}.`
+        });
+      }
+
+      const upgradeMessages: Record<string, string> = {
+        trends: "🔥 Trend Engine is a Creator+ feature. Upgrade to see what's trending in your niche right now.",
+        hashtags: "📊 Hashtag Intelligence is a Creator+ feature. Upgrade to get strategy-grade hashtag sets.",
+        predictor: "🎯 Performance Predictor is a Creator+ feature. Score your content before you post.",
+        competitor: "🕵️ Competitor Intelligence is a Creator+ feature. Analyze and outperform any creator.",
+        repurpose: "🔄 Content Repurposer is a Creator+ feature. Turn 1 post into 6 formats instantly.",
+        "ab-test": "⚡ A/B Hook Tester is a Creator+ feature. Find your highest-converting hook every time.",
+        content_analyze: "📈 Content Analyzer is a Creator+ feature. Get surgical AI feedback on your content.",
+        coach: "🧠 AI Content Coach is an Infinity feature. Get a personalized weekly growth plan.",
+        ghostwriter: "✍️ AI Ghostwriter is an Infinity feature. Let AI write in your exact voice at scale.",
+      };
+
       return res.status(402).json({
         error: "upgrade_required",
-        message: `You've used all your generations. Please upgrade to ${config.requiredPlan}.`
+        message: upgradeMessages[toolKey] || `${config.name} requires the ${config.requiredPlan} plan. Upgrade to unlock it.`,
+        requiredPlan: config.requiredPlan,
+        toolName: config.name,
       });
 
     } catch (e: any) {

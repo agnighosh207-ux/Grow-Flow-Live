@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 const NICHES = [
   { value: "General", emoji: "🌐", label: "General" },
@@ -233,6 +234,16 @@ export default function TrendEngine() {
 
   return (
     <div className="space-y-12 pb-24">
+      <FeatureGuideBanner 
+        toolKey="trends" 
+        title="Trend Engine" 
+        icon={<TrendingUp className="w-5 h-5 text-red-400" />}
+        tagline="Discover what's trending RIGHT NOW in your niche using live AI-powered web search."
+        whatYouGet={["5 trending topics", "Why each is trending", "Suggested content angle"]}
+        whenToUse="Use this when you want to create timely content that rides a current wave."
+        proTip="Trends are live-searched through Perplexity AI — results are always fresh, not from outdated training data."
+        planRequired="Creator"
+      />
       {/* Premium Weekly Trend Alerts */}
       <section className="relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[3rem] blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200" />

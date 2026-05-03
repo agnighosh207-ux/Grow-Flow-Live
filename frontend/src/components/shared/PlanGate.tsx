@@ -7,6 +7,7 @@ import { useUser } from "@clerk/react";
 import { motion } from "framer-motion";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
 import { api } from "@/lib/api-client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const PLAN_LEVEL: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3 };
 
@@ -35,6 +36,7 @@ interface PlanGateProps {
 }
 
 export function PlanGate({ requiredPlan, featureName, description, toolKey, freeTrials = 0, children }: PlanGateProps) {
+  const queryClient = useQueryClient();
   const { data: sub, isLoading: subLoading } = useSubscriptionStatus();
   const { user } = useUser();
 
@@ -48,10 +50,12 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
     if (!toolKey) return;
     try {
       await api.post("/trial/use", { toolKey });
+      // --- FIX: Stale State Vulnerability ---
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       console.error("[PlanGate] Error consuming trial:", err);
     }
-  }, [toolKey]);
+  }, [toolKey, queryClient]);
 
   // Don't block render — show content optimistically, overlay trial info when ready
   if (subLoading) {
@@ -89,12 +93,9 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               }
             </p>
           </div>
-          <Link href="/pricing">
-            <Button
-              size="sm"
-              className="shrink-0 bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1.5 h-auto rounded-lg"
-            >
-              Upgrade
+          <Link href="/pricing" className="w-full sm:w-auto">
+            <Button className="w-full bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(124,58,237,0.3)] h-12 rounded-xl font-bold">
+              Upgrade Plan
             </Button>
           </Link>
         </motion.div>
@@ -179,13 +180,15 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               className="space-y-3"
             >
               <Button
-                className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold rounded-xl shadow-lg shadow-cyan-900/40"
+                className="w-full h-14 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold rounded-2xl shadow-lg shadow-cyan-900/40 text-base"
                 onClick={() => setShowUpgradeModal(true)}
               >
-                <Crown className="w-4 h-4 mr-2" />
+                <Crown className="w-5 h-5 mr-2" />
                 Unlock {planLabel} Plan
               </Button>
-              <p className="text-white/20 text-xs">Easy payments · Cancel anytime</p>
+              <p className="text-[11px] text-white/40 mt-4 text-center">
+                7-day free trial included. No charge until day 8.
+              </p>
             </motion.div>
           </div>
         </motion.div>

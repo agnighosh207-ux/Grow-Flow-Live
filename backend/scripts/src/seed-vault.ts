@@ -124,6 +124,11 @@ while (finalItems.length < 40) {
 }
 
 async function seed() {
+  const [existing] = await db.select().from(vaultItemsTable).limit(1);
+  if (existing) {
+    console.log("Vault already seeded. Skipping.");
+    process.exit(0);
+  }
   console.log("🌱 Seeding Vault Items...");
   try {
     await db.insert(vaultItemsTable).values(finalItems);

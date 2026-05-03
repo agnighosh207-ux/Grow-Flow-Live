@@ -27,39 +27,39 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string; badge?: string }[] =
 ];
 
 const BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 109, quarterly: 109, "half-yearly": 109, yearly: 91 },
-  creator: { monthly: 299, quarterly: 299, "half-yearly": 299, yearly: 249 },
-  infinity: { monthly: 499, quarterly: 499, "half-yearly": 499, yearly: 416 },
+  starter: { monthly: 149, quarterly: 139, "half-yearly": 133, yearly: 119 },
+  creator: { monthly: 449, quarterly: 419, "half-yearly": 404, yearly: 358 },
+  infinity: { monthly: 799, quarterly: 749, "half-yearly": 720, yearly: 638 },
 };
 
 const STRIKETHROUGH_PRICES: Record<string, number> = {
-  starter: 299,
-  creator: 499,
-  infinity: 699,
+  starter: 449,
+  creator: 799,
+  infinity: 1299,
 };
 
 const BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 109, quarterly: 327, "half-yearly": 654, yearly: 1090 },
-  creator: { monthly: 299, quarterly: 897, "half-yearly": 1794, yearly: 2990 },
-  infinity: { monthly: 499, quarterly: 1497, "half-yearly": 2994, yearly: 4990 },
+  starter: { monthly: 149, quarterly: 417, "half-yearly": 798, yearly: 1430 },
+  creator: { monthly: 449, quarterly: 1257, "half-yearly": 2428, yearly: 4300 },
+  infinity: { monthly: 799, quarterly: 2247, "half-yearly": 4320, yearly: 7660 },
 };
 
 const USD_BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 4, quarterly: 3.6, "half-yearly": 3.2, yearly: 3.33 },
-  creator: { monthly: 12, quarterly: 10.8, "half-yearly": 9.6, yearly: 10 },
-  infinity: { monthly: 20, quarterly: 18, "half-yearly": 16, yearly: 16.66 },
+  starter: { monthly: 5, quarterly: 4.5, "half-yearly": 4.25, yearly: 4 },
+  creator: { monthly: 15, quarterly: 13.5, "half-yearly": 13, yearly: 12 },
+  infinity: { monthly: 27, quarterly: 24.3, "half-yearly": 23.4, yearly: 21.6 },
 };
 
 const USD_STRIKETHROUGH_PRICES: Record<string, number> = {
-  starter: 10,
-  creator: 25,
+  starter: 15,
+  creator: 27,
   infinity: 45,
 };
 
 const USD_BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 4, quarterly: 10.8, "half-yearly": 19.2, yearly: 40 },
-  creator: { monthly: 12, quarterly: 32.4, "half-yearly": 57.6, yearly: 120 },
-  infinity: { monthly: 20, quarterly: 54, "half-yearly": 96, yearly: 200 },
+  starter: { monthly: 5, quarterly: 13.5, "half-yearly": 25.5, yearly: 48 },
+  creator: { monthly: 15, quarterly: 40.5, "half-yearly": 78, yearly: 144 },
+  infinity: { monthly: 27, quarterly: 72.9, "half-yearly": 140.4, yearly: 259.2 },
 };
 
 function getBillingMonths(period: BillingPeriod): number {
@@ -78,35 +78,47 @@ interface Feature {
 }
 
 const FEATURES: Feature[] = [
-  { key: "generations", label: "Content Generations", free: "5 / month", starter: "20 / month", creator: "100 / month", infinity: "Unlimited*", section: "core" },
-  { key: "regen", label: "Regenerations per Topic", free: false, starter: "1 / topic", creator: "3 / topic", infinity: "Unlimited", section: "core" },
+  // Core
+  { key: "generations", label: "Content Generations / Month", free: "5", starter: "25", creator: "150", infinity: "Unlimited*", section: "core" },
   { key: "platforms", label: "All 4 Platforms", free: true, starter: true, creator: true, infinity: true, section: "core" },
+  { key: "regen", label: "Regenerations per Topic", free: false, starter: "1 / topic", creator: "3 / topic", infinity: "Unlimited", section: "core" },
   { key: "language", label: "Multi-Language Output", free: "English Only", starter: "Eng + 1 Premium", creator: "10 Languages", infinity: "10 Languages", section: "core" },
-  { key: "hooks", label: "Hooks, CTAs & Hashtags", free: false, starter: true, creator: true, infinity: true, section: "core" },
-  { key: "formats", label: "Captions, Scripts & Threads", free: false, starter: true, creator: true, infinity: true, section: "core" },
+  { key: "watermark", label: "Content Watermark Removed", free: false, starter: true, creator: true, infinity: true, section: "core" },
+  
+  // Starter Tools
+  { key: "hooks", label: "Viral Hooks Generator", free: false, starter: true, creator: true, infinity: true, section: "tools" },
+  { key: "bio", label: "Bio & Caption Generator", free: false, starter: true, creator: true, infinity: true, section: "tools" },
   { key: "ideas", label: "Idea Generator", free: false, starter: true, creator: true, infinity: true, section: "tools" },
   { key: "strategy", label: "7-Day Strategy Planner", free: false, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "viralhooks", label: "Viral Hooks Generator", free: false, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "saved", label: "Saved Favorites & History", free: false, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "download", label: "Download as .txt", free: false, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "improve", label: "Improve Competitor Content", free: false, starter: true, creator: true, infinity: true, section: "tools" },
-  { key: "styles", label: "AI Writing Styles", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Bold · Viral · Story · Pro" },
-  { key: "viralscore", label: "Viral Score™", free: false, starter: false, creator: true, infinity: true, section: "infinity", infinityLabel: "AI rates 0–100" },
-  { key: "trending", label: "Trending Topics Feed", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Fresh daily ideas" },
-  { key: "multivar", label: "Multi-Variation Output", free: false, starter: false, creator: true, infinity: true, section: "infinity", infinityLabel: "3 versions per gen" },
-  { key: "calendar", label: "Content Calendar", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
-  { key: "insights", label: "Performance Insights", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
-  { key: "priority", label: "Priority AI (2× faster)", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
-  { key: "support", label: "Priority Support", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
+  { key: "calendar", label: "Content Calendar", free: false, starter: true, creator: true, infinity: true, section: "tools" },
+  { key: "vault", label: "Swipe Vault (Inspiration Library)", free: false, starter: true, creator: true, infinity: true, section: "tools" },
+  { key: "history", label: "Content History & Favorites", free: false, starter: true, creator: true, infinity: true, section: "tools" },
+
+  // Creator Tools
+  { key: "trends", label: "Trend Engine (Live Search)", free: false, starter: false, creator: true, infinity: true, section: "infinity" },
+  { key: "hashtags", label: "Hashtag Intelligence Suite", free: false, starter: false, creator: true, infinity: true, section: "infinity" },
+  { key: "predictor", label: "Performance Predictor (Pre-Post Score)", free: false, starter: false, creator: true, infinity: true, section: "infinity" },
+  { key: "competitor", label: "Competitor Content Analyzer", free: false, starter: false, creator: true, infinity: true, section: "infinity" },
+  { key: "repurpose", label: "Content Repurposer (6 Formats)", free: false, starter: false, creator: true, infinity: true, section: "infinity" },
+  { key: "abtest", label: "A/B Hook Tester", free: false, starter: false, creator: true, infinity: true, section: "infinity" },
+  { key: "viralscore", label: "Viral Score™ (0–100 AI Rating)", free: false, starter: false, creator: true, infinity: true, section: "infinity", infinityLabel: "AI rates 0–100" },
+  { key: "analyze", label: "Content Performance Analyzer", free: false, starter: false, creator: true, infinity: true, section: "infinity" },
+
+  // Infinity Exclusives
+  { key: "coach", label: "AI Content Coach (Weekly Report)", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Personalized growth advice" },
+  { key: "ghostwriter", label: "AI Ghostwriter (Your Voice)", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Learns your writing style" },
+  { key: "trenddigest", label: "Weekly Trend Alert Email", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Fresh every Monday" },
+  { key: "priority", label: "Priority 70B AI Models (2× faster)", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
+  { key: "support", label: "VIP Priority Support", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
 ];
 
 const INFINITY_EXCLUSIVES = [
-  { icon: Wand2, color: "text-cyan-400", label: "AI Writing Styles", desc: "Switch between Bold, Viral, Storytelling, and Professional tones — AI matches your unique voice." },
-  { icon: Flame, color: "text-orange-400", label: "Viral Score™", desc: "Every piece gets rated 0–100 for virality potential before you even post it." },
-  { icon: TrendingUp, color: "text-emerald-400", label: "Trending Topics Feed", desc: "Fresh content ideas pulled from what's trending daily — never run out of inspiration." },
-  { icon: Sparkles, color: "text-pink-400", label: "Multi-Variation Output", desc: "Get 3 completely different versions of each post and pick the one that hits hardest." },
-  { icon: CalendarDays, color: "text-blue-400", label: "Content Calendar", desc: "Plan your entire week of content in one place — stay consistent and see the big picture." },
-  { icon: BarChart3, color: "text-yellow-400", label: "Performance Insights", desc: "See which topics and formats perform best so you double down on what works." },
+  { icon: Brain, color: "text-violet-400", label: "AI Content Coach", desc: "Weekly personalized growth report analyzing your content patterns, strengths, and exact 3-task action plan." },
+  { icon: Wand2, color: "text-cyan-400", label: "AI Ghostwriter", desc: "Trains on your past content to write in your exact voice. The more you use it, the better it sounds like you." },
+  { icon: Flame, color: "text-orange-400", label: "Viral Score™", desc: "Every piece of content gets scored 0-100 for virality potential by AI before you post it." },
+  { icon: TrendingUp, color: "text-emerald-400", label: "Trend Engine", desc: "Perplexity-powered live search finds what's trending right now in your niche, not last week." },
+  { icon: Sparkles, color: "text-pink-400", label: "Multi-Variation Output", desc: "Get 3 completely different angles on every topic — A/B test before you post." },
+  { icon: CalendarDays, color: "text-blue-400", label: "Full Content Suite", desc: "Calendar, Repurposer, Competitor Intelligence, Hashtag Strategist — everything a content agency uses." },
 ];
 
 function CellContent({ value, infinityLabel }: { value: boolean | string; infinityLabel?: string }) {

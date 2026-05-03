@@ -68,12 +68,15 @@ export function FeatureGuard({ children, fallback, requiredPlan = "infinity", fe
             <Button variant="ghost" className="text-white/50 hover:text-white" onClick={() => setShowUpgradeModal(false)}>
               Cancel
             </Button>
-            <Link href="/pricing">
-              <Button className="bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+            <Link href="/pricing" className="w-full">
+              <Button className="w-full bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(124,58,237,0.3)] h-12 rounded-xl font-bold">
                 Upgrade Plan
               </Button>
             </Link>
           </div>
+          <p className="text-[11px] text-white/40 mt-4 text-center">
+            7-day free trial included. No charge until day 8.
+          </p>
         </DialogContent>
       </Dialog>
     </>

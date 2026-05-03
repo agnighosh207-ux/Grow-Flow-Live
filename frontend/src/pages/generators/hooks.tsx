@@ -13,6 +13,10 @@ import { Loader2, Copy, Check, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { MessageSquareQuote } from "lucide-react";
+import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const HOOK_PATTERN_LABELS = [
   { type: "Curiosity Gap", color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20" },
@@ -74,15 +78,23 @@ function HooksGeneratorInner() {
   const isLoading = generateMutation.isPending;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-16">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 flex items-center gap-3 text-white">
-          <Zap className="w-6 h-6 text-cyan-400" />
-          Viral Hook Generator
-        </h1>
-        <p className="text-white/50 text-sm">10 hooks, 10 different psychological triggers. The first line is everything.</p>
-        <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-5" />
-      </div>
+    <PageWrapper maxWidth="md" className="pb-16">
+      <FeatureGuideBanner 
+        toolKey="hooks" 
+        title="Viral Hooks Generator" 
+        icon={<MessageSquareQuote className="w-5 h-5" />}
+        tagline="Generate scroll-stopping opening lines that make people stop and read your full post."
+        whatYouGet={["10 hook variations", "Pattern labels (curiosity/fear/data)", "One-click copy"]}
+        whenToUse="Use this before writing any post — a great hook is the difference between 100 and 100,000 views."
+        proTip="Generate hooks first, pick your favourite, then use it as the idea in the main Generate page."
+      />
+      <PageHeader 
+        icon={<MessageSquareQuote/>} 
+        iconBg="bg-teal-500/10" 
+        iconColor="text-teal-400" 
+        title="Viral Hooks Generator" 
+        subtitle="Scroll-stopping opening lines that triple your reach"
+      />
 
       <div
         className="rounded-2xl border border-white/8 p-5 md:p-6"
@@ -103,7 +115,7 @@ function HooksGeneratorInner() {
                   <FormControl>
                     <Input
                       placeholder="e.g. Why most diets fail in the first 2 weeks..."
-                      className="bg-black/20 border-white/10 h-11 rounded-xl text-white placeholder:text-white/25 focus-visible:ring-teal-500/40"
+                      className="bg-black/20 border-white/10 h-11 md:h-12 rounded-xl text-white text-base placeholder:text-white/25 focus-visible:ring-teal-500/40"
                       {...field}
                     />
                   </FormControl>
@@ -120,7 +132,7 @@ function HooksGeneratorInner() {
                   <FormLabel className="text-white/70 text-sm font-medium">Tone</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-teal-500/40 rounded-xl h-11">
+                      <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-teal-500/40 rounded-xl h-11 md:h-12 text-base">
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
@@ -147,7 +159,7 @@ function HooksGeneratorInner() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full sm:w-auto h-11 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-semibold shadow-lg shadow-teal-900/40 rounded-xl px-6"
+              className="w-full sm:w-auto h-12 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-base font-semibold shadow-lg shadow-teal-900/40 rounded-xl px-6"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Zap className="w-4 h-4 mr-1.5" /> Generate</>}
             </Button>
@@ -198,8 +210,8 @@ function HooksGeneratorInner() {
                   className="group rounded-xl border border-white/8 p-4 flex items-start gap-3 hover:bg-white/3 transition-colors"
                   style={{ background: "rgba(255,255,255,0.015)" }}
                 >
-                  <div className="w-7 h-7 rounded-lg bg-black/30 border border-white/10 flex items-center justify-center text-white/40 font-mono text-xs shrink-0 mt-0.5">
-                    {i + 1}
+                  <div className="w-8 h-8 rounded-lg bg-black/30 border border-white/10 flex items-center justify-center text-white/40 font-mono text-xs shrink-0 mt-0.5">
+                    {(i + 1).toString().padStart(2, '0')}
                   </div>
 
                   <div className="flex-1 min-w-0 space-y-2">
@@ -208,7 +220,7 @@ function HooksGeneratorInner() {
                         {pattern.type}
                       </span>
                     )}
-                    <p className="text-white/85 text-sm leading-relaxed">{hook}</p>
+                    <p className="text-white/90 text-base md:text-lg font-medium leading-relaxed">{hook}</p>
                   </div>
 
                   <button
@@ -244,7 +256,7 @@ function HooksGeneratorInner() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageWrapper>
   );
 }
 
