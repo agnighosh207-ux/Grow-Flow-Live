@@ -57,3 +57,22 @@ export const enforceGenerationLimit = async (req: any, res: any, next: any) => {
     return res.status(500).json({ error: "Internal server error while verifying generations" });
   }
 };
+
+/**
+ * Refund a credit if the generation fails (e.g. AI timeout, malformed JSON)
+ * Call this in the catch block of routes that use enforceGenerationLimit.
+ */
+export const refundGenerationCredit = async (userId: string, userPlanTier?: string) => {
+  if (userPlanTier === 'INFINITY') return; // Infinity doesn't use credits
+  
+  try {
+    await db.update(usersTable)
+      .set({
+        generationsRemaining: sql`${usersTable.generationsRemaining} + 1`,
+        totalGenerations: sql`GREATEST(0, ${usersTable.totalGenerations} - 1)`
+      })
+      .where(eq(usersTable.id, userId));
+  } catch (err) {
+    logger.error({ uid: userId, err: String(err) }, "Failed to refund generation credit");
+  }
+};

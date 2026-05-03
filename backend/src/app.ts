@@ -117,8 +117,12 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true }));
 
 // ─── 6. Auth (with timeout protection) ──────────────────────────────────────
-// Skip Clerk for non-API routes (static files, SPA) — they don't need auth
-const clerkMw = clerkMiddleware();
+let clerkMw: any = (req: any, res: any, next: any) => next();
+try {
+  clerkMw = clerkMiddleware();
+} catch (err: any) {
+  logger.error(`[CRITICAL] Failed to initialize Clerk Middleware: ${err?.message}. Authentication is disabled.`);
+}
 app.use((req: any, res: any, next: any) => {
   if (!req.path.startsWith("/api/")) return next();
   if (req.path.startsWith("/api/subscription/webhook")) return next();
@@ -141,8 +145,8 @@ app.use(guardianMiddleware);
 app.use((req: any, res, next) => {
   if (req.path.startsWith("/api/") && req.path !== "/api/health") {
     res.on("finish", async () => {
-      // Only log non-2xx responses (auth failures, errors, rate limits) to avoid DB saturation
-      if (res.statusCode >= 400) {
+      // Only log non-2xx responses. EXCLUDE 429 to avoid DB saturation/DOS during an attack
+      if (res.statusCode >= 400 && res.statusCode !== 429) {
         try {
           await db.insert(securityLogsTable).values({
             id: crypto.randomUUID(),

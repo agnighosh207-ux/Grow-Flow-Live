@@ -16,15 +16,13 @@ if (loadedEnv) {
 const { Pool } = pg;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+  console.error("[CRITICAL] DATABASE_URL is missing! Database operations will fail. Please provision a database or check environment variables.");
 }
 
 const isProduction = process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION";
 
 export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || "postgres://dummy:dummy@localhost:5432/dummy",
   max: 20, // Reduced for pooling efficiency
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,

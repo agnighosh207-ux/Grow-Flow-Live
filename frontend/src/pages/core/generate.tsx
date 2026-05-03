@@ -1071,20 +1071,20 @@ export default function Generate() {
     (async () => {
       try {
         const token = await getToken();
-        const r = await fetch("/api/content/analyze", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` 
-          },
-          body: JSON.stringify({ idea, niche, contentType, platforms }),
-        });
-        const data = r.ok ? await r.json() : null;
+        if (!token) throw new Error("No token");
+        
+        const { data } = await api.post("/content/analyze", 
+          { idea, niche, contentType, platforms }, 
+          { headers: { "Authorization": `Bearer ${token}` } }
+        );
         if (data && typeof data.viralityScore === "number") {
           setContentAnalysis(data);
+        } else {
+          setContentAnalysis({ _error: "Failed to parse analysis" } as any);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Analysis failed:", err);
+        setContentAnalysis({ _error: "Failed to analyze content" } as any);
       } finally {
         setAnalysisLoading(false);
       }

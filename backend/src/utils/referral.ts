@@ -30,7 +30,9 @@ export async function ensureReferralCode(userId: string): Promise<string> {
       .where(eq(usersTable.id, userId));
     return retryUser?.referralCode || code;
   } catch (err) {
-    return ensureReferralCode(userId);
+    console.error(`[Referral] Failed to ensure code for ${userId}:`, err);
+    // Return a temporary local code or null to prevent infinite recursion
+    return code;
   }
 }
 

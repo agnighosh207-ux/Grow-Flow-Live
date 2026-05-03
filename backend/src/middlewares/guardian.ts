@@ -131,6 +131,10 @@ export const guardianMiddleware = async (req: any, res: any, next: any) => {
       user = fetchedUser;
     }
     
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized", message: "User record not found. Please log out and log back in." });
+    }
+    
     if (user?.isBanned) {
       return res.status(403).json({
         error: "ACCESS_DENIED",

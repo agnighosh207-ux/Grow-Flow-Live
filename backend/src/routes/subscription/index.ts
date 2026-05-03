@@ -564,7 +564,12 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
     } else if (newStatus === "active" || event.event === "subscription.activated" || event.event === "subscription.updated") {
       const planId = event?.payload?.subscription?.entity?.plan_id;
       if (planId) {
-        const pType = getTierFromPlanId(planId) || "starter";
+        const pType = getTierFromPlanId(planId);
+        if (!pType) {
+          logger.error(`[WEBHOOK_CRITICAL] Unmapped Razorpay Plan ID received: ${planId}. Rejecting webhook to prevent silent downgrade.`);
+          res.status(400).json({ error: "Unmapped Plan ID. Webhook failed." });
+          return;
+        }
         
         updates.planType = pType;
         updates.planTier = pType.toUpperCase() as any;

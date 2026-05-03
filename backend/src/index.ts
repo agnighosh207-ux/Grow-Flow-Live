@@ -18,7 +18,7 @@ process.on("uncaughtException", (err) => {
 });
 process.on("unhandledRejection", (reason) => {
   console.error("[CRITICAL] Unhandled Rejection:", reason);
-  process.exit(1);
+  // process.exit(1); // Removed: Do not crash the entire app for unhandled promises
 });
 
 // ─── 3. Boot diagnostics ─────────────────────────────────────────────────────

@@ -21,7 +21,7 @@ import {
 // Note: zod is NOT a direct dependency of backend — use manual validation instead
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { requireAuth, getOrCreateUser, requirePlanOrTrial, requireActivePlan } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { sendCreditWarningEmail } from "../../services/email";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
@@ -315,6 +315,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     }
   } catch (err: any) {
     console.error("AI Generation Fast Error:", err);
+    await refundGenerationCredit(req.userId, user?.planTier);
     res.status(503).json({ error: "AI is temporarily unavailable. Please try again in a moment." });
     return;
   }
@@ -361,6 +362,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     }).catch(() => {});
   } catch (err: any) {
     console.error("ROUTE ERROR (/content/generate):", err);
+    await refundGenerationCredit(req.userId, user?.planTier);
     const httpStatus = err?.status || 500;
     const message = err?.message || "An unexpected error occurred during generation.";
     res.status(httpStatus).json({ 
