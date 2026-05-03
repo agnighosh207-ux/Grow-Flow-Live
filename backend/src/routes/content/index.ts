@@ -246,7 +246,8 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
   }
 
   // Limit enforcement is now handled by the global enforceGenerationLimit middleware (Flaw 5 fix)
-  const status = user?.subscriptionStatus ?? "free";
+  const isAdminUser = (req as any).user?.isAdmin === true;
+  const status = isAdminUser ? "active" : (user?.subscriptionStatus ?? "free");
   const planTier = user?.planTier ?? "FREE";
   const generationsRemaining = user?.generationsRemaining ?? 0;
 
