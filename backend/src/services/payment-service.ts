@@ -27,10 +27,11 @@ const isProdOrBeta = process.env.NODE_ENV === "production" || process.env.APP_ST
 if (isProdOrBeta) {
   const missing = Object.entries(RAZORPAY_PLAN_MAP).filter(([_, v]) => !v).map(([k]) => k);
   if (missing.length > 0) {
-    logger.error(`[CRITICAL] Missing Razorpay Plan IDs for: ${missing.join(", ")}. Subscriptions will fail.`);
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(`Missing required Razorpay Plan IDs: ${missing.join(", ")}`);
-    }
+    logger.error(`[CRITICAL] Missing Razorpay Plan IDs for: ${missing.join(", ")}. Subscriptions will fail until these are set in the Environment Variables.`);
+    // --- FIX: Do not crash in production to allow the server to start and serve non-payment routes ---
+    // if (process.env.NODE_ENV === "production") {
+    //   throw new Error(`Missing required Razorpay Plan IDs: ${missing.join(", ")}`);
+    // }
   }
 }
 
