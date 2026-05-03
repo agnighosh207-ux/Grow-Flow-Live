@@ -34,7 +34,7 @@ router.get("/items", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/remix", requirePlanOrTrial("vault"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/remix", requireAuth, requirePlanOrTrial("vault"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { vaultItemId, userTopic, userNiche, tone } = req.body;
 
   if (!vaultItemId || !userTopic) {

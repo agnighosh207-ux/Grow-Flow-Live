@@ -69,23 +69,18 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
 
   await db.transaction(async (tx) => {
     try {
-      await tx.insert(referralsTable).values({
-        id: referralId,
-        referrerUserId: referrerUser.id,
-        referredUserId,
-        rewardGranted: true,
-        rewardSeen: false,
-      }).onConflictDoNothing({ target: referralsTable.referredUserId });
-
-      const [inserted] = await tx.select({ id: referralsTable.id })
-        .from(referralsTable)
+      // Update the existing pending referral to mark it as rewarded
+      const [updatedReferral] = await tx.update(referralsTable)
+        .set({ rewardGranted: true })
         .where(and(
           eq(referralsTable.referredUserId, referredUserId),
-          eq(referralsTable.id, referralId)
-        ));
+          eq(referralsTable.rewardGranted, false)
+        ))
+        .returning({ id: referralsTable.id });
 
-      if (!inserted) {
-        console.log(`[Referral] Duplicate reward attempt blocked for referred user: ${referredUserId}`);
+      if (!updatedReferral) {
+        // Either already rewarded or no pending referral exists — both are fine
+        console.log(`[Referral] No pending referral to reward for: ${referredUserId}`);
         return;
       }
 

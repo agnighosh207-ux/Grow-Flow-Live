@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { db, usersTable } from "@workspace/db";
 import { eq, and, isNotNull } from "drizzle-orm";
 import { sendWeeklyTrendDigest } from "../../services/email";
@@ -90,20 +90,7 @@ router.post("/generate-digest", async (req, res): Promise<void> => {
   }
 });
 
-router.get("/latest", requireAuth, async (req: any, res): Promise<void> => {
-  const user = (req as any).user;
-  const planTier = user?.planTier || "FREE";
-  const isAdmin = user?.isAdmin === true;
-  
-  if (!isAdmin && planTier !== "INFINITY") {
-    res.status(402).json({
-      error: "upgrade_required",
-      message: "🔔 Weekly Trend Alert digest is an Infinity feature. Upgrade to get fresh trending opportunities delivered every week.",
-      requiredPlan: "INFINITY"
-    });
-    return;
-  }
-
+router.get("/latest", requireAuth, requirePlanOrTrial("trend-alerts"), async (req: any, res): Promise<void> => {
   try {
     const [user] = await db.select({ niche: usersTable.niche }).from(usersTable).where(eq(usersTable.id, req.userId));
     if (!user) {
@@ -131,20 +118,7 @@ router.get("/latest", requireAuth, async (req: any, res): Promise<void> => {
   }
 });
 
-router.post("/preferences", requireAuth, async (req: any, res): Promise<void> => {
-  const user = (req as any).user;
-  const planTier = user?.planTier || "FREE";
-  const isAdmin = user?.isAdmin === true;
-  
-  if (!isAdmin && planTier !== "INFINITY") {
-    res.status(402).json({
-      error: "upgrade_required",
-      message: "🔔 Weekly Trend Alert digest is an Infinity feature. Upgrade to get fresh trending opportunities delivered every week.",
-      requiredPlan: "INFINITY"
-    });
-    return;
-  }
-
+router.post("/preferences", requireAuth, requirePlanOrTrial("trend-alerts"), async (req: any, res): Promise<void> => {
   try {
     const { weeklyDigest } = req.body;
     await db.update(usersTable)

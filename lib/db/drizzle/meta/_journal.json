@@ -15,6 +15,13 @@
       "when": 1777816126003,
       "tag": "0001_wise_master_mold",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777834426457,
+      "tag": "0002_petite_marvel_apes",
+      "breakpoints": true
     }
   ]
 }

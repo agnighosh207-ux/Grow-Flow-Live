@@ -18,6 +18,19 @@ const client = new OpenAI({
 // Aggressive Global Cache: TTL 30 minutes (1,800,000 ms)
 const CACHE_TTL = 1800000;
 const searchCache = new Map<string, { data: string; timestamp: number }>();
+const MAX_CACHE_SIZE = 200;
+
+function pruneCache() {
+  if (searchCache.size <= MAX_CACHE_SIZE) return;
+  // Delete oldest entries (Map iterates in insertion order)
+  const deleteCount = searchCache.size - MAX_CACHE_SIZE;
+  let deleted = 0;
+  for (const key of searchCache.keys()) {
+    if (deleted >= deleteCount) break;
+    searchCache.delete(key);
+    deleted++;
+  }
+}
 
 /**
  * Fetches live web context for a specific niche and topic.
@@ -60,6 +73,7 @@ export async function fetchLiveContext(niche: string, topic?: string): Promise<s
         data: result,
         timestamp: Date.now(),
       });
+      pruneCache();
     }
 
     return result;

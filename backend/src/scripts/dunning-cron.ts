@@ -19,7 +19,6 @@ async function runDunningCron() {
       .from(usersTable)
       .where(and(
         eq(usersTable.subscriptionStatus, "past_due"),
-        eq(usersTable.reminderSent3Day, false),
         isNotNull(usersTable.paymentFailedAt),
         lt(usersTable.paymentFailedAt, threeDaysAgoCutoff),
         gt(usersTable.paymentFailedAt, sevenDaysAgoCutoff),
@@ -33,7 +32,6 @@ async function runDunningCron() {
         
         await db.update(usersTable)
           .set({ 
-            reminderSent3Day: true,
             dunningReminderSentAt: new Date() 
           })
           .where(eq(usersTable.id, user.id));
@@ -45,7 +43,6 @@ async function runDunningCron() {
       .from(usersTable)
       .where(and(
         eq(usersTable.subscriptionStatus, "past_due"),
-        eq(usersTable.reminderSent7Day, false),
         isNotNull(usersTable.paymentFailedAt),
         lt(usersTable.paymentFailedAt, sevenDaysAgoCutoff)
       ));
@@ -62,8 +59,6 @@ async function runDunningCron() {
               planType: "free",
               planTier: "FREE",
               subscriptionStatus: "free",
-              reminderSent3Day: false, // Reset for next time if they subscribe again
-              reminderSent7Day: false,
               // --- FIX: Use centralized constant (High 3 fix) ---
               generationsRemaining: TIER_CREDITS.FREE || 5, 
               paymentFailedAt: null // Clear flag

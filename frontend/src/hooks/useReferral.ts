@@ -16,9 +16,10 @@ import { useAuth } from "@clerk/react";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export function useReferralInfo() {
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
   return useQuery<ReferralInfo>({
     queryKey: ["referral-info"],
+    enabled: !!isSignedIn,
     queryFn: async () => {
       const token = await getToken();
       const res = await fetch(`${BASE}/api/referral/info`, {

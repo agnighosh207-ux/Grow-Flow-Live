@@ -19,8 +19,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { useReferralInfo } from "@/hooks/useReferral";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 
 const NICHES = [
@@ -59,7 +62,21 @@ export function OnboardingModal() {
   const [platform, setPlatform] = useState("");
   const [copied, setCopied] = useState(false);
   const [, navigate] = useLocation();
-  const { data: referral, isLoading: referralLoading } = useReferralInfo();
+  const { getToken } = useAuth();
+  const [fetchReferral, setFetchReferral] = useState(false);
+  const { data: referral, isLoading: referralLoading } = useQuery({
+    queryKey: ["referral-info"],
+    queryFn: async () => {
+      const token = await getToken();
+      const res = await fetch(`${BASE}/api/referral/info`, {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: fetchReferral && step === 3,
+    staleTime: 60000,
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -104,7 +121,9 @@ export function OnboardingModal() {
       localStorage.setItem("gf_user_niche", niche);
       localStorage.setItem("gf_user_platform", platform);
     }
-    setStep(s => s + 1);
+    const nextS = step + 1;
+    if (nextS === 3) setFetchReferral(true);
+    setStep(nextS);
   };
 
   if (!isOpen) return null;

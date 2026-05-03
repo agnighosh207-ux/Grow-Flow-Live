@@ -140,6 +140,10 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
             updateData.isAdmin = true;
           }
 
+          if (user.isFirstLogin) {
+            updateData.isFirstLogin = false;
+          }
+
           if (auth.sessionClaims?.firstName && auth.sessionClaims.firstName !== user.firstName) {
             updateData.firstName = auth.sessionClaims.firstName as string;
           }

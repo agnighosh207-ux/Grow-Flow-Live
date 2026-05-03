@@ -107,6 +107,7 @@ export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string
   // ── INFINITY TIER (₹799/mo) ── AI Identity + Agency tools ─────────────
   coach: { name: "AI Content Coach", requiredPlan: "INFINITY" },
   ghostwriter: { name: "AI Ghostwriter", requiredPlan: "INFINITY" },
+  "trend-alerts": { name: "Trend Alert Digest", requiredPlan: "INFINITY" },
 };
 
 export function requirePlanOrTrial(toolKey: string) {
@@ -157,6 +158,7 @@ export function requirePlanOrTrial(toolKey: string) {
         content_analyze: "📈 Content Analyzer is a Creator+ feature. Get surgical AI feedback on your content.",
         coach: "🧠 AI Content Coach is an Infinity feature. Get a personalized weekly growth plan.",
         ghostwriter: "✍️ AI Ghostwriter is an Infinity feature. Let AI write in your exact voice at scale.",
+        "trend-alerts": "🔔 Trend Alert Digest is an Infinity feature. Get real-time alerts when a trend hits your niche.",
       };
 
       return res.status(402).json({
