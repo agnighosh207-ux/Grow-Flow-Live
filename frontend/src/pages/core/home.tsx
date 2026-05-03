@@ -176,64 +176,6 @@ const TRUST = [
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function Home() {
-  const [taglineIdx, setTaglineIdx] = useState(0);
-  const [activePlatform, setActivePlatform] = useState(0);
-  const [testimonials, setTestimonials] = useState(TESTIMONIALS);
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [newReview, setNewReview] = useState({ name: "", role: "", text: "", stars: 0 });
-  const [hoveredStar, setHoveredStar] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTaglineIdx(i => (i + 1) % TAGLINES.length);
-    }, 2800);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActivePlatform(i => (i + 1) % PLATFORMS.length);
-    }, 3200);
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="min-h-screen bg-[#060312] text-foreground overflow-x-hidden selection:bg-cyan-500/30 font-sans"
-    >
-
-      <div className="fixed inset-0 pointer-events-none z-0" style={{ transform: "translateZ(0)" }}>
-        <div className="absolute top-[-15%] left-[-15%] w-[55%] h-[55%] bg-cyan-700/25 blur-[140px] rounded-full" style={{ willChange: "transform" }} />
-        <div className="absolute bottom-[-20%] right-[-15%] w-[55%] h-[55%] bg-teal-700/25 blur-[140px] rounded-full" style={{ willChange: "transform" }} />
-        <div className="absolute top-[35%] right-[15%] w-[35%] h-[35%] bg-pink-700/15 blur-[120px] rounded-full" style={{ willChange: "transform" }} />
-        <div className="absolute top-[60%] left-[10%] w-[30%] h-[30%] bg-blue-700/10 blur-[100px] rounded-full" style={{ willChange: "transform" }} />
-        
-        {/* Floating God-Level Icons */}
-        <motion.div className="absolute top-[10%] right-[10%] opacity-10 animate-float" style={{ animationDelay: '1s' }}><Brain className="w-48 h-48 text-[var(--accent-cyan)]" /></motion.div>
-        <motion.div className="absolute bottom-[10%] left-[5%] opacity-10 animate-float" style={{ animationDelay: '2.5s' }}><Zap className="w-64 h-64 text-purple-500" /></motion.div>
-        <motion.div className="absolute top-[50%] left-[2%] opacity-10 animate-float" style={{ animationDelay: '4s' }}><Sparkles className="w-32 h-32 text-pink-500" /></motion.div>
-
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.5) 1px, transparent 1px)`,
-            backgroundSize: "60px 60px",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)`,
-            backgroundSize: "30px 30px",
-          }}
-        />
-      </div>
-
 function Leaderboard() {
   const [creators, setCreators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -296,7 +238,7 @@ function Leaderboard() {
         <div className="mt-12 text-center">
           <Link href="/sign-up">
             <div className="inline-flex items-center gap-2 text-cyan-400 font-bold hover:text-cyan-300 transition-colors cursor-pointer group">
-              Join them and start growing <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              {"Join them and start growing"} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </div>
           </Link>
         </div>
@@ -304,6 +246,64 @@ function Leaderboard() {
     </section>
   );
 }
+
+export default function Home() {
+  const [taglineIdx, setTaglineIdx] = useState(0);
+  const [activePlatform, setActivePlatform] = useState(0);
+  const [testimonials, setTestimonials] = useState(TESTIMONIALS);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [newReview, setNewReview] = useState({ name: "", role: "", text: "", stars: 0 });
+  const [hoveredStar, setHoveredStar] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTaglineIdx(i => (i + 1) % TAGLINES.length);
+    }, 2800);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActivePlatform(i => (i + 1) % PLATFORMS.length);
+    }, 3200);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="min-h-screen bg-[#060312] text-foreground overflow-x-hidden selection:bg-cyan-500/30 font-sans"
+    >
+
+      <div className="fixed inset-0 pointer-events-none z-0" style={{ transform: "translateZ(0)" }}>
+        <div className="absolute top-[-15%] left-[-15%] w-[55%] h-[55%] bg-cyan-700/25 blur-[140px] rounded-full will-change-transform" />
+        <div className="absolute bottom-[-20%] right-[-15%] w-[55%] h-[55%] bg-teal-700/25 blur-[140px] rounded-full will-change-transform" />
+        <div className="absolute top-[35%] right-[15%] w-[35%] h-[35%] bg-pink-700/15 blur-[120px] rounded-full will-change-transform" />
+        <div className="absolute top-[60%] left-[10%] w-[30%] h-[30%] bg-blue-700/10 blur-[100px] rounded-full will-change-transform" />
+        
+        {/* Floating God-Level Icons */}
+        <motion.div className="absolute top-[10%] right-[10%] opacity-10 animate-float" style={{ animationDelay: '1s' }}><Brain className="w-48 h-48 text-[var(--accent-cyan)]" /></motion.div>
+        <motion.div className="absolute bottom-[10%] left-[5%] opacity-10 animate-float" style={{ animationDelay: '2.5s' }}><Zap className="w-64 h-64 text-purple-500" /></motion.div>
+        <motion.div className="absolute top-[50%] left-[2%] opacity-10 animate-float" style={{ animationDelay: '4s' }}><Sparkles className="w-32 h-32 text-pink-500" /></motion.div>
+
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.5) 1px, transparent 1px)`,
+            backgroundSize: "60px 60px",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)`,
+            backgroundSize: "30px 30px",
+          }}
+        />
+      </div>
 
       <nav className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 max-w-7xl mx-auto">
         <Logo size="sm" />
@@ -439,16 +439,16 @@ function Leaderboard() {
           {/* God Tier Cinematic Hero Console */}
           <div className="relative min-h-[550px] sm:min-h-[650px] w-[110%] -ml-[5%] md:w-full md:ml-0 rounded-[20px] sm:rounded-[40px] overflow-hidden border border-[#00F2FF]/15 shadow-[0_0_150px_rgba(0,242,255,0.05),inset_0_0_40px_rgba(0,242,255,0.05)] flex flex-col items-center justify-center bg-[#050B0D]/90 mt-16 group py-16 sm:py-20" style={{ transform: "translateZ(0)" }}>
              
-             {/* Streaming Data Background */}
-             <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+             {/* Streaming Data Background - Optimized */}
+             <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
                <motion.div
-                 animate={{ y: ["0%", "-100%"] }}
-                 transition={{ duration: 40, ease: "linear", repeat: Infinity }}
-                 className="absolute inset-x-0 top-0 h-[200%] w-full flex flex-col font-mono text-[8px] sm:text-[10px] text-[#00F2FF]/40 leading-relaxed p-4"
+                 animate={{ y: ["0%", "-50%"] }}
+                 transition={{ duration: 30, ease: "linear", repeat: Infinity }}
+                 className="absolute inset-x-0 top-0 h-[200%] w-full flex flex-col font-mono text-[10px] text-[#00F2FF]/30 leading-relaxed p-4 will-change-transform"
                >
-                 {Array.from({ length: 40 }).map((_, i) => (
-                   <span key={i} className="whitespace-pre">
-                     {`[SYS.${Math.floor(Math.random()*9000)}] INJECT: { payload: 0x${Math.random().toString(16).slice(2, 8).toUpperCase()}, node: ${Math.random().toString(36).slice(2, 6).toUpperCase()} } -- SUCCESS`}
+                 {Array.from({ length: 15 }).map((_, i) => (
+                   <span key={i} className="whitespace-pre truncate">
+                     {`[SYS.${Math.floor(Math.random()*9000)}] INJECT: { payload: 0x${Math.random().toString(16).slice(2, 8).toUpperCase()} } -- SUCCESS`}
                    </span>
                  ))}
                </motion.div>

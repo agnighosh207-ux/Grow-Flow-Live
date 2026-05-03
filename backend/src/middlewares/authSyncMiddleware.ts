@@ -217,9 +217,14 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       req.user = user;
       
       // --- L-10 FIX: Add max-size guard to prevent unbounded growth ---
+      // --- L-10 FIX: Gradual cache clearing to prevent DB spikes ---
       if (syncCache.size > 5000) {
-        logger.warn("[AUTH] syncCache exceeded 5000 entries, performing emergency flush");
-        syncCache.clear();
+        logger.warn("[AUTH] syncCache exceeded 5000 entries, performing gradual cleanup");
+        const entriesToRemove = 1000;
+        const sorted = Array.from(syncCache.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp);
+        for (let i = 0; i < entriesToRemove; i++) {
+          syncCache.delete(sorted[i][0]);
+        }
       }
       
       syncCache.set(uid, { timestamp: Date.now(), user });

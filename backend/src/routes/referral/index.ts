@@ -7,9 +7,13 @@ import { ensureReferralCode, grantReferralReward } from "../../utils/referral";
 
 const router: IRouter = Router();
 
+console.log("[DEBUG] Initializing referralRouter...");
+
 // requireAuth is now centralized in planMiddleware.ts (Flaw 20 fix)
 
 // Referral utility functions moved to backend/src/utils/referral.ts to fix circular dependency risks.
+
+router.get("/test", (req, res) => res.json({ ok: true }));
 
 router.post("/claim", requireAuth, async (req: any, res): Promise<void> => {
   const { code } = req.body as { code?: string };
@@ -76,7 +80,9 @@ router.post("/popup-seen", requireAuth, async (req: any, res): Promise<void> => 
 
 router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
   try {
+    console.log(`[DEBUG] Getting referral info for user: ${req.userId}`);
     const code = await ensureReferralCode(req.userId);
+    console.log(`[DEBUG] Found code: ${code}`);
 
     const [userRow] = await db.select({ hasSeenReferralPopup: usersTable.hasSeenReferralPopup })
       .from(usersTable)

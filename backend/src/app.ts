@@ -207,6 +207,10 @@ const generalLimiter = rateLimit({
 app.use("/api", generalLimiter);
 
 // ─── 10. API router ─────────────────────────────────────────────────────────
+app.use("/api", (req, res, next) => {
+  console.log(`[API_REQUEST] ${req.method} ${req.path}`);
+  next();
+});
 app.use("/api", router);
 
 // ─── 11. Frontend serving (production only) ─────────────────────────────────

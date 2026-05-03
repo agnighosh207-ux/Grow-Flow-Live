@@ -274,23 +274,19 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       ? ((PLAN_CONFIG as any).USD[effectivePlan][billing] || (PLAN_CONFIG as any).USD[effectivePlan]['monthly'])
       : ((PLAN_CONFIG as any)[effectivePlan][billing] || (PLAN_CONFIG as any)[effectivePlan]['monthly']);
 
-    // Ensure we trigger the secure .env mapped Razorpay Subscription Engine
     const subscription = await createSubscription(
       req.userId, 
       razorpayPlanId,
       effectivePlan.toUpperCase(), 
       user.email || undefined,
-      120 // Set to high number for continuous autopay as per Task 3
+      120 
     );
-
-    const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await db.update(usersTable)
       .set({
         razorpaySubscriptionId: subscription.id,
         subscriptionStatus: "pending", 
         planType: effectivePlan,
-        // trialEndsAt should only be set after successful payment/verification (Bug 2 fix)
         couponCode: couponCode || null,
         billingPeriod: billing,
         subscriptionAmount: config.amount,
@@ -304,7 +300,6 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       billingPeriod: billing,
       amount: config.amount,
       currency: currency,
-      // Returning null here as trial hasn't started yet
       trialEndsAt: null,
       ghostMode: false
     });
@@ -329,7 +324,6 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
-  // --- H-4 FIX: Verify subscription ownership via Razorpay API ---
   const rzp = getRazorpay();
   if (!rzp) {
     res.status(503).json({ error: "Payment gateway not configured" });
@@ -355,8 +349,8 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
 
   const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
   const keySecret = isProd 
-    ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
-    : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET);
+    ? process.env.RAZORPAY_LIVE_KEY_SECRET
+    : process.env.RAZORPAY_TEST_KEY_SECRET;
 
   if (!keySecret) {
     res.status(503).json({ error: "Payment gateway not configured" });
@@ -378,10 +372,8 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
   const credits = TIER_CREDITS[planTierStr] || 20;
   const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // --- C2 FIX: Use Transaction and Absolute SET for Idempotency ---
   try {
     const success = await db.transaction(async (tx) => {
-      // 1. Strict Idempotency Check
       const [existingPayment] = await tx.select()
         .from(paymentsTable)
         .where(eq(paymentsTable.id, razorpay_payment_id))
@@ -391,20 +383,18 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
         return "ALREADY_PROCESSED";
       }
 
-      // 2. Record Payment
       await tx.insert(paymentsTable).values({
         id: razorpay_payment_id,
         userId: req.userId,
         subscriptionId: razorpay_subscription_id,
-        amount: 0, // Actual amount synced via webhook
+        amount: 0,
         status: "captured",
         processedAt: new Date()
       });
 
-      // 3. Update User (Set to "trial" status initially)
       await tx.update(usersTable)
         .set({ 
-          subscriptionStatus: "trial", // C-2 Fix: Set to trial initially
+          subscriptionStatus: "trial", 
           planType: effectivePlan, 
           planTier: planTierStr as any,
           trialStartDate: new Date(),
@@ -463,7 +453,6 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
   const razorpay = getRazorpay();
   const user = await getOrCreateUser(req.userId);
 
-  // --- M-7 FIX: Only cancel if the user actually has an active or trial subscription ---
   const canCancel = user.subscriptionStatus === "active" || user.subscriptionStatus === "trial";
   
   if (razorpay && user.razorpaySubscriptionId && canCancel) {
@@ -478,10 +467,6 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
       return;
     }
   }
-
-  // We do NOT downgrade immediately in the DB.
-  // Razorpay will keep the subscription active until the end of the period (cancel_at_cycle_end: 1).
-  // The /subscription/webhook handler will process 'subscription.cancelled' and downgrade the user then.
 
   res.json({ success: true, message: "Subscription will end at period close." });
 });
@@ -498,8 +483,6 @@ router.post("/retry", requireAuth, async (req: AuthenticatedRequest, res: Respon
     }
   }
 
-  // Set status to pending while we wait for new subscription. 
-  // DO NOT reset planType/credits yet to avoid destructive downgrade if resubscribe fails.
   await db.update(usersTable)
     .set({
       subscriptionStatus: "pending",
@@ -572,16 +555,15 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
   if (newStatus) {
     const updates: any = { subscriptionStatus: newStatus };
     
-    // Sync planTier and planType
     if (newStatus === "canceled") {
-      // Grace Period Logic: Only downgrade if the event is actually 'expired' or 'cancelled' (end of cycle)
-      // Note: subscription.cancelled in Razorpay is sent at the end of the period if cancel_at_cycle_end=1
-      updates.planType = "free";
-      updates.planTier = "FREE";
+      // Grace Period Logic: Only downgrade if the event is 'expired'
+      if (event.event === "subscription.expired") {
+        updates.planType = "free";
+        updates.planTier = "FREE";
+      }
     } else if (newStatus === "active" || event.event === "subscription.activated" || event.event === "subscription.updated") {
       const planId = event?.payload?.subscription?.entity?.plan_id;
       if (planId) {
-        // --- H-7 FIX: Deterministic Tier Detection ---
         const pType = getTierFromPlanId(planId) || "starter";
         
         updates.planType = pType;
@@ -600,13 +582,12 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
       const planExpiry = currentEnd ? new Date(currentEnd * 1000) : null;
 
       for (const u of updatedUsers) {
-        // --- FIX: Use Transaction for Idempotency and Atomic Credit Update (Critical 1 fix) ---
         try {
           await db.transaction(async (tx) => {
             const [existingPayment] = await tx.select()
               .from(paymentsTable)
               .where(eq(paymentsTable.id, paymentId))
-              .for('update'); // Lock for this transaction
+              .for('update'); 
 
             if (existingPayment) {
               logger.info({ paymentId }, "Payment already processed in transaction, skipping.");
@@ -628,7 +609,7 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
 
             await tx.update(usersTable)
               .set({ 
-                generationsRemaining: credits, // C2 Fix: Absolute SET for renewals
+                generationsRemaining: credits, 
                 subscriptionStatus: "active",
                 planExpiry: planExpiry
               })

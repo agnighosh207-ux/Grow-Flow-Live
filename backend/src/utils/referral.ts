@@ -1,4 +1,4 @@
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, isNull } from "drizzle-orm";
 import { db, usersTable, referralsTable } from "@workspace/db";
 import crypto from "crypto";
 
@@ -13,19 +13,25 @@ export async function ensureReferralCode(userId: string): Promise<string> {
 
   if (user?.referralCode) return user.referralCode;
 
-  let attempts = 0;
-  while (attempts < 10) {
-    const code = generateReferralCode();
-    try {
-      await db.update(usersTable)
-        .set({ referralCode: code })
-        .where(eq(usersTable.id, userId));
-      return code;
-    } catch {
-      attempts++;
-    }
+  const code = generateReferralCode();
+  try {
+    const [updated] = await db.update(usersTable)
+      .set({ referralCode: code })
+      .where(and(
+        eq(usersTable.id, userId),
+        isNull(usersTable.referralCode)
+      ))
+      .returning({ referralCode: usersTable.referralCode });
+    
+    if (updated?.referralCode) return updated.referralCode;
+    
+    const [retryUser] = await db.select({ referralCode: usersTable.referralCode })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    return retryUser?.referralCode || code;
+  } catch (err) {
+    return ensureReferralCode(userId);
   }
-  throw new Error("Failed to generate unique referral code");
 }
 
 export async function grantReferralReward(referredUserId: string): Promise<void> {

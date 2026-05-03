@@ -13,20 +13,22 @@ export interface ReferralInfo {
 
 import { useAuth } from "@clerk/react";
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 export function useReferralInfo() {
   const { getToken } = useAuth();
   return useQuery<ReferralInfo>({
     queryKey: ["referral-info"],
     queryFn: async () => {
       const token = await getToken();
-      const res = await fetch("/api/referral/info", {
+      const res = await fetch(`${BASE}/api/referral/info`, {
         headers: token ? { "Authorization": `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error("Failed to fetch referral info");
       const data = await res.json();
       return data;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30 * 1000, // 30 seconds for faster updates
     refetchOnWindowFocus: false,
   });
 }
@@ -37,7 +39,7 @@ export function useMarkReferralPopupSeen() {
   return useMutation({
     mutationFn: async () => {
       const token = await getToken();
-      const res = await fetch("/api/referral/popup-seen", {
+      const res = await fetch(`${BASE}/api/referral/popup-seen`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -61,7 +63,7 @@ export function useApplyReferralCode() {
   return useMutation({
     mutationFn: async (code: string) => {
       const token = await getToken();
-      const res = await fetch("/api/referral/claim", {
+      const res = await fetch(`${BASE}/api/referral/claim`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

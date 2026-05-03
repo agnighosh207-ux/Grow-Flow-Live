@@ -39,6 +39,7 @@ import userRouter from "./user";
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use("/referral", referralRouter);
 router.use("/public", publicRouter);
 router.use("/subscription", subscriptionRouter);
 router.use("/content", contentRouter);
@@ -48,7 +49,6 @@ router.use("/strategy", strategyRouter);
 router.use("/support", supportRouter);
 router.use("/settings", settingsRouter);
 router.use("/favorites", favoritesRouter);
-router.use("/referral", referralRouter);
 router.use("/trends", trendsRouter);
 router.use("/improve-competitor", improveCompetitorRouter);
 router.use("/early-access", earlyAccessRouter);

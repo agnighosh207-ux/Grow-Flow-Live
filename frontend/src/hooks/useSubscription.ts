@@ -22,7 +22,7 @@ export interface SubscriptionStatus {
   isAdmin: boolean;
 }
 
-async function fetchWithAuth(url: string, token: string, options?: RequestInit) {
+async function fetchWithAuth(url: string, token: string, options?: RequestInit & { signal?: AbortSignal }) {
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -41,8 +41,8 @@ async function fetchWithAuth(url: string, token: string, options?: RequestInit) 
       try {
         const errData = await res.json();
         errorMessage = errData.error || errData.message || errorMessage;
-      } catch (e) {
-        // Fallback
+      } catch (e: any) {
+        errorMessage = `Failed to parse error: ${e.message}`;
       }
     } else {
       const text = await res.text();
@@ -56,7 +56,9 @@ async function fetchWithAuth(url: string, token: string, options?: RequestInit) 
   }
 
   if (isJson) {
-    return res.json().catch(() => ({}));
+    return res.json().catch((err) => {
+      throw new Error(`JSON_PARSE_ERROR: ${err.message}`);
+    });
   }
   return res.text();
 }
@@ -67,10 +69,10 @@ export function useSubscriptionStatus() {
   return useQuery<SubscriptionStatus>({
     queryKey: ["subscription-status"],
     enabled: isLoaded && !!isSignedIn,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
-      return fetchWithAuth(`${BASE}/api/subscription/status`, token);
+      return fetchWithAuth(`${BASE}/api/subscription/status`, token, { signal });
     },
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -82,6 +84,7 @@ export function useSubscriptionStatus() {
 
 export function useCreateSubscription() {
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { 
       planType: "starter" | "creator" | "infinity", 
@@ -94,6 +97,9 @@ export function useCreateSubscription() {
         method: "POST",
         body: JSON.stringify(params),
       });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     },
   });
 }

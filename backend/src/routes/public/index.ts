@@ -9,7 +9,10 @@ const router = Router();
 router.get("/top-creators", async (req, res) => {
   const cacheKey = "public:top-creators";
   const cached = await getCache<any[]>(cacheKey);
-  if (cached) return res.json(cached);
+  if (cached) {
+    res.json(cached);
+    return;
+  }
 
   try {
     const topCreators = await db.select({
@@ -22,8 +25,8 @@ router.get("/top-creators", async (req, res) => {
     .orderBy(desc(sql`COALESCE(${usersTable.totalGenerations}, 0)`))
     .limit(10);
 
-    const anonymized = topCreators.map(c => ({
-      name: (c.firstName || "Creator").substring(0, 3) + "***",
+    const anonymized = topCreators.map((c, i) => ({
+      name: c.firstName ? c.firstName : `GrowthPro #${Math.floor(Math.random() * 900) + 100}`,
       totalGenerations: c.totalGenerations || 0,
       planTier: c.planTier || "FREE",
       createdAt: c.createdAt

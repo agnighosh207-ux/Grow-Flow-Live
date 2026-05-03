@@ -1,10 +1,11 @@
 import { pgTable, text, timestamp, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { usersTable } from "./users";
 
 export const eventTypeEnum = pgEnum("security_event_type", ["RATE_LIMIT", "SUSPICIOUS_SPEED", "AUTH_FAILURE", "SYSTEM_BAN", "API_REQUEST", "ADMIN_IMPERSONATION_START", "ADMIN_IMPERSONATION_END"]);
 
 export const securityLogsTable = pgTable("security_logs", {
   id: text("id").primaryKey(),
-  userId: text("user_id"), // Nullable for anonymous/unauth logs
+  userId: text("user_id").references(() => usersTable.id, { onDelete: "no action" }), // Forensics preserved
   eventType: eventTypeEnum("event_type").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),

@@ -31,19 +31,7 @@ export interface GenerateContentOptions {
   zodSchema?: z.ZodSchema<any>;
 }
 
-// In-Memory Burst Tracker (Fallback)
-const burstTracker = new Map<string, number[]>();
-
-const cleanupInterval = setInterval(() => {
-  const now = Date.now();
-  for (const [userId, history] of burstTracker.entries()) {
-    const validHistory = history.filter(ts => (now - ts) < 10000);
-    if (validHistory.length === 0) burstTracker.delete(userId);
-    else burstTracker.set(userId, validHistory);
-  }
-}, 60000);
-
-cleanupInterval.unref();
+// No longer needed as we use guardian.ts Redis rate limiting
 
 /**
  * Robust JSON extraction from AI string
@@ -122,37 +110,14 @@ export const generateContent = async ({
   zodSchema,
 }: GenerateContentOptions) => {
   
-  if (userId !== "anonymous") {
-    const now = Date.now();
-    const useRedis = !!process.env.REDIS_URL && redis;
-    let burstCount = 0;
-
-    if (useRedis) {
-      const key = `burst:${userId}`;
-      const member = crypto.randomUUID();
-      await redis!.zadd(key, now, member);
-      await redis!.zremrangebyscore(key, 0, now - 10000);
-      burstCount = await redis!.zcard(key);
-      await redis!.expire(key, 15); // Cleanup insurance
-    } else {
-      let history = burstTracker.get(userId) || [];
-      history = history.filter(ts => (now - ts) < 10000);
-      history.push(now);
-      burstTracker.set(userId, history);
-      burstCount = history.length;
-    }
-    
-    if (burstCount > 5) { 
-       logger.error(`[SECURITY] AI Request Burst Blocked for User: ${userId}`);
-       throw new Error("BURST_LIMIT_EXCEEDED");
-    }
-  }
+  // Guardian middleware handles rate limiting
 
   let isInfinity = userPlan.toUpperCase() === "INFINITY";
   const usage = monthlyGenerationsUsed || 0;
   
   if (isInfinity) {
     if (usage >= 10000) {
+      // Non-blocking economy throttle for ultra-high usage
       await new Promise(resolve => setTimeout(resolve, 5000));
     } else if (usage >= 8000) {
       isInfinity = false; // Economic fallback
@@ -254,7 +219,7 @@ export const generateContent = async ({
             max_tokens: maxTokens,
             response_format: zodSchema ? { type: "json_object" } : undefined,
           },
-          { timeout: 15000 } // --- FIX: Reduced timeout from 60s to 15s (High 4 fix) ---
+          { timeout: 8000 } // --- FIX: Reduced timeout to 8s for faster failover ---
         );
 
         const content = response.choices[0]?.message?.content || "";

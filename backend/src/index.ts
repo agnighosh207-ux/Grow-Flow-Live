@@ -6,10 +6,9 @@ import http from "node:http";
 
 // ─── 1. Load .env BEFORE any application code ────────────────────────────────
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../");
-const envFiles = [path.join(rootDir, ".env"), path.join(rootDir, ".env.example")];
-const loadedEnv = envFiles.find((file) => fs.existsSync(file));
-if (loadedEnv) {
-  dotenv.config({ path: loadedEnv });
+const envFile = path.join(rootDir, ".env");
+if (fs.existsSync(envFile)) {
+  dotenv.config({ path: envFile });
 }
 
 // ─── 2. Process-level crash handlers ─────────────────────────────────────────

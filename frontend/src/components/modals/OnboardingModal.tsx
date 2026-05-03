@@ -67,9 +67,10 @@ export function OnboardingModal() {
     if (!isDone) {
       const timer = setTimeout(() => {
         setIsOpen(true);
-      }, 1500);
+      }, 15000);
       return () => clearTimeout(timer);
     }
+    return () => {};
   }, []);
 
   const handleComplete = () => {

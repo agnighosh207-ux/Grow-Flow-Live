@@ -71,6 +71,7 @@ export default function CreatorProfilePage() {
       setResult(data);
       const firstFormat = Object.keys(data)[0];
       if (firstFormat) setActiveTab(firstFormat);
+      toast({ title: "Brand Suite Synthesized", description: "Your cross-platform identity is ready." });
     } catch (err) {
       toast({ variant: "destructive", title: "Generation failed" });
     } finally {
@@ -91,7 +92,9 @@ export default function CreatorProfilePage() {
       if (e.code === "Space") {
         e.preventDefault();
         const sentences = (result[activeTab]?.script || "").split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
-        setPracticeIndex(prev => (prev + 1) % sentences.length);
+        if (sentences.length > 0) {
+          setPracticeIndex(prev => (prev + 1) % sentences.length);
+        }
       }
     };
     window.addEventListener("keydown", handleKey);
@@ -99,22 +102,22 @@ export default function CreatorProfilePage() {
   }, [practiceMode, result, activeTab]);
 
   return (
-    <PageWrapper maxWidth="xl" className="space-y-12 pb-32">
+    <PageWrapper maxWidth="2xl" className="pb-32">
       <PageHeader 
-        icon={<Fingerprint/>} 
+        icon={<Fingerprint className="w-8 h-8" />} 
         iconBg="bg-indigo-500/10" 
         iconColor="text-indigo-400" 
         title="Bio Optimizer" 
-        subtitle="First impressions matter. Make it count."
-        badge="Starter"
+        subtitle="First impressions are algorithmic destiny. Engineer yours for maximum retention."
+        badge="Pro Feature"
         action={
           <Button onClick={saveToProfile} variant="outline" className="h-12 px-6 border-white/10 bg-white/5 text-white font-black text-sm rounded-xl hover:bg-white/10 shadow-xl transition-all hidden md:flex">
-             <Save className="mr-2 h-5 w-5 text-purple-500" /> Save All Assets
+             <Save className="mr-2 h-5 w-5 text-purple-500" /> Archive Suite
           </Button>
         }
       />
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 items-start mt-12">
         {/* Left Panel: Persona Config */}
         <div className="xl:col-span-4 space-y-8">
           <Card className="bg-white/[0.03] border-white/10 backdrop-blur-[100px] shadow-2xl rounded-[3rem] overflow-hidden">
@@ -131,7 +134,7 @@ export default function CreatorProfilePage() {
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder="e.g. Elena Vance"
-                  className="bg-white/[0.02] border-white/10 h-14 rounded-2xl text-base md:text-lg font-bold focus:ring-purple-500/50"
+                  className="bg-white/[0.02] border-white/10 h-16 rounded-2xl text-lg font-bold focus:ring-purple-500/50"
                 />
               </div>
 
@@ -208,7 +211,7 @@ export default function CreatorProfilePage() {
               </div>
 
                <Button 
-                 className="w-full h-16 md:h-20 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-lg md:text-2xl font-black rounded-3xl shadow-2xl shadow-cyan-600/30 transition-all active:scale-95 group"
+                 className="w-full h-16 md:h-20 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-lg md:text-2xl font-black rounded-3xl shadow-2xl shadow-indigo-600/30 transition-all active:scale-95 group"
                  onClick={generateProfile}
                  disabled={generating || !formData.name}
                >
@@ -412,7 +415,7 @@ export default function CreatorProfilePage() {
                    </Tabs>
 
                    <div className="flex justify-center pt-10">
-                      <Button onClick={saveToProfile} className="h-20 px-16 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black text-2xl rounded-3xl shadow-2xl shadow-purple-600/30 hover:scale-105 transition-all active:scale-95">
+                      <Button onClick={saveToProfile} className="h-20 px-16 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black text-2xl rounded-3xl shadow-2xl shadow-indigo-600/30 hover:scale-105 transition-all active:scale-95">
                          <Save className="mr-3 h-8 w-8" /> ARCHIVE FULL BRAND SUITE
                       </Button>
                    </div>

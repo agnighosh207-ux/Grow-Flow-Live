@@ -611,7 +611,6 @@ export default function ContentPack() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
     </PageWrapper>
   );
 }
