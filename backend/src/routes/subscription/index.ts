@@ -527,6 +527,43 @@ router.get("/validate-coupon", requireAuth, async (req: AuthenticatedRequest, re
   res.json({ success: true, discountPercent: coupon.discountPercent });
 });
 
+router.post("/apply-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const { code } = req.body as { code?: string };
+  if (!code || typeof code !== 'string') {
+    res.status(400).json({ error: "Invalid coupon code" });
+    return;
+  }
+  
+  const VALID_COUPONS: Record<string, { credits: number; days: number; description: string }> = {
+    "LAUNCH50": { credits: 50, days: 0, description: "Launch special: 50 bonus credits" },
+    "FRIEND15": { credits: 0, days: 15, description: "Friend referral: 15 Infinity days" },
+    "BETA100": { credits: 100, days: 0, description: "Beta tester reward: 100 credits" },
+  };
+  
+  const coupon = VALID_COUPONS[code.trim().toUpperCase()];
+  if (!coupon) {
+    res.status(400).json({ error: "Invalid or expired coupon code" });
+    return;
+  }
+  
+  const [user] = await db.select({ couponCode: usersTable.couponCode }).from(usersTable).where(eq(usersTable.id, req.userId));
+  if (user?.couponCode) {
+    res.status(400).json({ error: "You have already used a coupon code" });
+    return;
+  }
+  
+  const updates: any = { couponCode: code.trim().toUpperCase() };
+  if (coupon.credits > 0) updates.generationsRemaining = sql`${usersTable.generationsRemaining} + ${coupon.credits}`;
+  if (coupon.days > 0) {
+    const base = new Date();
+    updates.trialEndsAt = new Date(base.getTime() + coupon.days * 24 * 60 * 60 * 1000);
+    updates.subscriptionStatus = "trial";
+  }
+  
+  await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId));
+  res.json({ success: true, message: coupon.description });
+});
+
 
 
 router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
