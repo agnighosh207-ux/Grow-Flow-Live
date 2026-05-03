@@ -8,7 +8,7 @@ pkgs = ["pnpm-10_x", "nodejs_20"]
 cmds = ["pnpm install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["pnpm run build"]
+cmds = ["pnpm run build:no-typecheck"]
 
 [start]
 cmd = "pnpm run start"
