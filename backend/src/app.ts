@@ -75,10 +75,11 @@ app.use((req, res, next) => {
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
 // ─── 4. CORS ─────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .filter(Boolean)
-  .map(o => o.trim());
+const defaultOrigins = ["https://growflowai.space", "https://www.growflowai.space"];
+const allowedOrigins = [
+  ...defaultOrigins,
+  ...(process.env.ALLOWED_ORIGINS || "").split(",").filter(Boolean).map(o => o.trim())
+];
 
 app.use(
   cors({
