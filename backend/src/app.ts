@@ -19,8 +19,7 @@ import { validateAIConfig } from "./services/ai-engine";
 
 validateAIConfig();
 
-export let isShuttingDown = false;
-export function setShuttingDown(val: boolean) { isShuttingDown = val; }
+import { isShuttingDown } from "./lib/state.js";
 
 const app: Express = express();
 

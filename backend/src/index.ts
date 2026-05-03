@@ -33,20 +33,28 @@ console.log("[BOOT] DATABASE_URL set:", !!process.env.DATABASE_URL);
 import app from "./app.js";
 import { initSentry } from "./sentry.js";
 
+import { setShuttingDown } from "./lib/state.js";
+
 initSentry();
 
 // ─── 5. Create HTTP server with raw-level health check ───────────────────────
-// The raw handler ensures /api/health responds INSTANTLY without going through
-// any Express middleware (Clerk, CORS, helmet, etc.) which could hang.
 const server = http.createServer((req, res) => {
-  // Raw health check — bypasses ALL Express middleware
   if (req.url === "/api/health" || req.url === "/healthz" || req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ status: "ok", uptime: process.uptime() }));
     return;
   }
-  // Forward everything else to Express
-  app(req, res);
+
+  // Defensive check for ESM/CJS interop issues with default exports
+  const requestListener = (app as any).default || app;
+  
+  if (typeof requestListener === "function") {
+    requestListener(req, res);
+  } else {
+    console.error("[CRITICAL] Express 'app' is not a function! Check build/exports.");
+    res.writeHead(500);
+    res.end("Internal Server Error: Application misconfiguration");
+  }
 });
 
 server.listen(PORT, "0.0.0.0", () => {
@@ -60,30 +68,27 @@ server.on("error", (err: any) => {
 
 // ─── 6. Graceful Shutdown Handler ──────────────────────────────────────────
 const shutdown = async (signal: string) => {
-  const { logger } = await import("./lib/logger.js");
-  const { setShuttingDown } = await import("./app.js");
-
-  logger.info(`[SHUTDOWN] Received ${signal}. Starting graceful shutdown...`);
+  console.log(`[SHUTDOWN] Received ${signal}. Starting graceful shutdown...`);
   setShuttingDown(true);
 
   const timeout = setTimeout(() => {
-    logger.error("[SHUTDOWN] Forced shutdown after 10s timeout.");
+    console.error("[SHUTDOWN] Forced shutdown after 10s timeout.");
     process.exit(1);
   }, 10000);
 
   server.close(async () => {
-    logger.info("[SHUTDOWN] HTTP server closed.");
+    console.log("[SHUTDOWN] HTTP server closed.");
     try {
-      const { db } = await import("@workspace/db");
-      if ((db as any).$client?.end) {
-        await (db as any).$client.end();
-        logger.info("[SHUTDOWN] Database connection pool closed.");
+      const { pool } = await import("@workspace/db");
+      if (pool && typeof pool.end === "function") {
+        await pool.end();
+        console.log("[SHUTDOWN] Database connection pool closed.");
       }
     } catch (err) {
-      logger.error({ err }, "[SHUTDOWN] Error closing database connection");
+      console.error("[SHUTDOWN] Error closing database connection:", err);
     }
     clearTimeout(timeout);
-    logger.info("[SHUTDOWN] Cleanup complete. Exiting.");
+    console.log("[SHUTDOWN] Cleanup complete. Exiting.");
     process.exit(0);
   });
 };
