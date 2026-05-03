@@ -27,7 +27,9 @@ export const pool = new Pool({
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
   // Supabase Pooler (6543) requires SSL.
-  ssl: isProduction ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DATABASE_URL?.includes(":6543") || process.env.DATABASE_URL?.includes("supabase")
+    ? { rejectUnauthorized: false }
+    : (isProduction ? { rejectUnauthorized: false } : false),
 });
 export const db = drizzle(pool, { schema });
 
