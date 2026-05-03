@@ -17,7 +17,7 @@ const PLATFORM_CONTEXT: Record<string, string> = {
   General: "Universal social media caption. Engaging, clear, conversation-starting. Focus on the emotional payoff for the reader.",
 };
 
-router.post("/caption/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 

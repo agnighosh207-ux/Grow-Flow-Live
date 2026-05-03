@@ -44,10 +44,10 @@ const nichePainPoints: Record<string, string> = {
 const IDEAS_CACHE = new Map<string, { data: any, timestamp: number }>();
 const IDEAS_TTL = 15 * 60 * 1000; // 15 minutes
 
-// ─── /ideas/generate — 100% PERPLEXITY SEARCH ROUTE ──────────────────────
+// ─── /generate — 100% PERPLEXITY SEARCH ROUTE ──────────────────────
 // Perplexity sonar searches the live web AND structures JSON in ONE call.
 // Groq is NOT involved here. JSON output enforced via prompt instructions.
-router.post("/ideas/generate", requireAuth, requirePlanOrTrial("ideas"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/generate", requireAuth, requirePlanOrTrial("ideas"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 

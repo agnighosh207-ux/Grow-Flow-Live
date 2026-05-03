@@ -10,7 +10,7 @@ const router: IRouter = Router();
 
 import { requireAuth } from "../../middlewares/planMiddleware";
 
-router.post("/support/message", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/message", requireAuth, async (req: any, res): Promise<void> => {
   const { subject, message } = req.body;
 
   if (!subject || typeof subject !== "string" || subject.trim().length < 3) {

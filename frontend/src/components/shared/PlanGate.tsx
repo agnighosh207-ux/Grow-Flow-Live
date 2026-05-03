@@ -6,6 +6,7 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useUser } from "@clerk/react";
 import { motion } from "framer-motion";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
+import { api } from "@/lib/api-client";
 
 const PLAN_LEVEL: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3 };
 
@@ -46,17 +47,9 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
   const useOneTrial = useCallback(async () => {
     if (!toolKey) return;
     try {
-      const res = await fetch("/api/trial/use", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ toolKey }),
-      });
-      if (!res.ok) {
-        console.error("[PlanGate] Failed to consume trial:", res.status);
-      }
+      await api.post("/trial/use", { toolKey });
     } catch (err) {
-      console.error("[PlanGate] Network error consuming trial:", err);
+      console.error("[PlanGate] Error consuming trial:", err);
     }
   }, [toolKey]);
 
@@ -112,8 +105,6 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
 
   const planLabel = requiredPlan === "infinity" ? "Infinity" : requiredPlan === "creator" ? "Creator" : "Starter";
 
-
-
   return (
     <>
       <UpgradeModal
@@ -124,7 +115,6 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
         message="This feature can boost your content performance. Unlock with Infinity."
         targetPlan={requiredPlan}
       />
-
 
       <div className="relative min-h-[60vh] rounded-2xl overflow-hidden">
         <div

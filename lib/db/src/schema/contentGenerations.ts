@@ -11,6 +11,7 @@ export const contentGenerationsTable = pgTable("content_generations", {
   tone: text("tone").notNull(),
   platform: text("platform"),
   content: jsonb("content").notNull(),
+  source: text("source"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (table) => ({

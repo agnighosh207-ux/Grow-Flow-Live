@@ -1,0 +1,82 @@
+import { Router } from "express";
+import { requireAuth } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { z } from "zod";
+import { generateContent, extractJson } from "../../services/ai-engine";
+
+const router = Router();
+
+const AB_TEST_SCHEMA = z.object({
+  idea: z.string().min(10).max(3000),
+  platform: z.string(),
+  niche: z.string(),
+  audienceA: z.string().min(3).max(200),
+  audienceB: z.string().min(3).max(200),
+  tone: z.string()
+});
+
+router.post("/generate", requireAuth, enforceGenerationLimit, async (req, res) => {
+  try {
+    const { idea, platform, niche, audienceA, audienceB, tone } = AB_TEST_SCHEMA.parse(req.body);
+
+    const systemPrompt = `You are an expert A/B content tester. Create two distinct content versions for the same topic, each optimized for a different audience segment. Version A and Version B must feel genuinely different — different hooks, different angles, different psychological triggers. Then predict which will perform better and why.
+
+Return only JSON in this exact format:
+{
+  "versionA": {
+    "audienceTarget": "string",
+    "hook": "string",
+    "content": "string",
+    "psychologicalTrigger": "string",
+    "predictedStrength": "string"
+  },
+  "versionB": {
+    "audienceTarget": "string",
+    "hook": "string",
+    "content": "string",
+    "psychologicalTrigger": "string",
+    "predictedStrength": "string"
+  },
+  "prediction": {
+    "winner": "A" | "B" | "too_close",
+    "confidence": number,
+    "reasoning": "string",
+    "keyDifference": "string"
+  },
+  "hybridVersion": {
+    "hook": "string",
+    "note": "string"
+  }
+}`;
+
+    const userPrompt = `Topic/Idea: ${idea}
+Platform: ${platform}
+Niche: ${niche}
+Tone: ${tone}
+
+Audience A: ${audienceA}
+Audience B: ${audienceB}
+
+Generate the A/B test content.`;
+
+    const response = await generateContent({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      userPlan: "FREE",
+      maxTokens: 2000
+    });
+ 
+    const result = extractJson(response.choices[0]?.message?.content || "{}");
+    if (!result) throw new Error("Failed to parse A/B test result");
+ 
+    res.json(result);
+
+  } catch (error) {
+    console.error("A/B Test Error:", error);
+    res.status(500).json({ error: "Failed to generate A/B test" });
+  }
+});
+
+export default router;

@@ -7,7 +7,7 @@ const router: IRouter = Router();
 
 import { requireAuth } from "../../middlewares/planMiddleware";
 
-router.get("/settings", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/", requireAuth, async (req: any, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
 
   res.json({
@@ -20,7 +20,7 @@ router.get("/settings", requireAuth, async (req: any, res): Promise<void> => {
   });
 });
 
-router.patch("/settings/notifications", requireAuth, async (req: any, res): Promise<void> => {
+router.patch("/notifications", requireAuth, async (req: any, res): Promise<void> => {
   const { emailNotifications, productUpdates, weeklyDigest, marketingEmails } = req.body;
 
   const updates: Record<string, boolean> = {};
@@ -37,7 +37,7 @@ router.patch("/settings/notifications", requireAuth, async (req: any, res): Prom
   res.json({ success: true });
 });
 
-router.get("/settings/preferences", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/preferences", requireAuth, async (req: any, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
 
   res.json({
@@ -48,7 +48,7 @@ router.get("/settings/preferences", requireAuth, async (req: any, res): Promise<
   });
 });
 
-router.patch("/settings/preferences", requireAuth, async (req: any, res): Promise<void> => {
+router.patch("/preferences", requireAuth, async (req: any, res): Promise<void> => {
   const { niche, tonePreference, platformPreference, languagePreference } = req.body;
 
   const updates: Record<string, string | null> = {};
@@ -69,7 +69,7 @@ router.patch("/settings/preferences", requireAuth, async (req: any, res): Promis
 
 
 
-router.delete("/settings/account", requireAuth, async (req: any, res): Promise<void> => {
+router.delete("/account", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const userId = req.userId;
     await db.transaction(async (tx) => {

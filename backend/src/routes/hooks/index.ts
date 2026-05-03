@@ -3,7 +3,7 @@ import { GenerateHooksBody, GenerateHooksResponse } from "@workspace/api-zod";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
-import { generateContent } from "../../services/ai-engine";
+import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
 
@@ -52,7 +52,7 @@ const HOOK_PATTERNS = [
   },
 ];
 
-router.post("/hooks/generate", requireAuth, requirePlanOrTrial("hooks"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/generate", requireAuth, requirePlanOrTrial("hooks"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
@@ -87,7 +87,7 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
 
   try {
     if (isAborted) return;
-    const rawContentObj = await generateContent({
+    const response = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -99,16 +99,17 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
     });
 
     if (isAborted) return;
-    const rawContent = rawContentObj.choices[0]?.message?.content ?? '{"hooks": []}';
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    const content = response.choices[0]?.message?.content || "";
+    const parsed = extractJson(content);
     
     let hooks: string[] = [];
-    try {
-      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
-      hooks = Array.isArray(parsed.hooks) ? parsed.hooks : (Array.isArray(parsed) ? parsed : []);
-    } catch {
+    if (parsed && Array.isArray(parsed.hooks)) {
+      hooks = parsed.hooks;
+    } else if (Array.isArray(parsed)) {
+      hooks = parsed;
+    } else {
       // Emergency fallback: try to extract lines
-      hooks = rawContent.split("\n").filter(l => l.trim().length > 10).slice(0, 10);
+      hooks = content.split("\n").filter(l => l.trim().length > 10).slice(0, 10);
     }
 
     // Auto-save to history

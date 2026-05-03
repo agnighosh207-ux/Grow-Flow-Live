@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -168,6 +168,33 @@ export default function TrendEngine() {
   const [, navigate] = useLocation();
   const { getToken } = useAuth();
 
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [alertsSummary, setAlertsSummary] = useState("");
+
+  async function fetchAlerts() {
+    setAlertsLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/trend-alerts/latest", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts(data.trends || []);
+        setAlertsSummary(data.weekSummary || "");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAlertsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
   async function fetchTrends() {
     setLoading(true);
     try {
@@ -205,7 +232,99 @@ export default function TrendEngine() {
   }
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-12 pb-24">
+      {/* Premium Weekly Trend Alerts */}
+      <section className="relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[3rem] blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200" />
+        <div className="relative p-10 rounded-[3rem] bg-zinc-950/40 backdrop-blur-3xl border border-white/5 shadow-2xl overflow-hidden">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indigo-500/5 to-transparent pointer-events-none" />
+          
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-6">
+            <div className="flex items-center gap-6">
+               <div className="p-5 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-[1.5rem] shadow-[0_0_30px_rgba(79,70,229,0.3)] transform rotate-3">
+                 <Flame className="w-8 h-8" />
+               </div>
+               <div>
+                 <h2 className="text-4xl font-black text-white tracking-tighter">Weekly Intelligence Brief</h2>
+                 <p className="text-indigo-400 font-bold tracking-widest text-xs uppercase mt-1">Niche-Specific Trend Analysis</p>
+               </div>
+            </div>
+            <div className="flex items-center gap-3 bg-black/40 p-2 rounded-2xl border border-white/5">
+              <Button 
+                variant="ghost" 
+                onClick={fetchAlerts} 
+                disabled={alertsLoading} 
+                className="rounded-xl h-12 px-6 text-indigo-300 font-black tracking-widest text-xs hover:bg-indigo-500/10 transition-all"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${alertsLoading ? 'animate-spin' : ''}`} /> RELOAD REPORT
+              </Button>
+            </div>
+          </div>
+
+          {alertsSummary && (
+            <div className="mb-12 p-8 rounded-[2rem] bg-indigo-500/5 border-l-4 border-indigo-500/50 italic">
+               <p className="text-indigo-100/80 text-xl font-medium leading-relaxed">"{alertsSummary}"</p>
+            </div>
+          )}
+
+          {alertsLoading && alerts.length === 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+               {[1,2,3].map(i => <div key={i} className="h-[400px] rounded-[2.5rem] bg-white/5 animate-pulse" />)}
+            </div>
+          ) : alerts.length > 0 ? (
+            <div className="flex gap-8 overflow-x-auto pb-10 snap-x scrollbar-hide px-2">
+               {alerts.map((a: any, i: number) => (
+                 <motion.div 
+                   key={i} 
+                   whileHover={{ y: -10 }}
+                   className="min-w-[380px] max-w-[380px] shrink-0 snap-center p-10 rounded-[3rem] bg-zinc-900/50 border border-white/5 hover:border-indigo-500/40 hover:shadow-[0_20px_80px_rgba(79,70,229,0.15)] transition-all flex flex-col group/card"
+                 >
+                   <div className="flex justify-between items-center mb-8">
+                     <div className="px-4 py-1.5 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-500/20">{a.type}</div>
+                     <span className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">{a.platform}</span>
+                   </div>
+
+                   <h3 className="text-2xl font-black text-white leading-tight mb-8 group-hover/card:text-indigo-400 transition-colors italic">
+                    {a.description}
+                   </h3>
+
+                   <div className="mb-8 space-y-4">
+                      <div className="flex justify-between items-end">
+                         <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Growth Potential</span>
+                         <span className={`text-xl font-black ${a.opportunityScore >= 80 ? 'text-emerald-400' : a.opportunityScore >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{a.opportunityScore}%</span>
+                      </div>
+                      <div className="h-2.5 bg-black/60 rounded-full overflow-hidden p-0.5 border border-white/5">
+                        <motion.div 
+                          initial={{ width: 0 }} 
+                          animate={{ width: `${a.opportunityScore}%` }} 
+                          className={`h-full rounded-full ${a.opportunityScore >= 80 ? 'bg-gradient-to-r from-emerald-600 to-emerald-400' : a.opportunityScore >= 60 ? 'bg-gradient-to-r from-amber-600 to-amber-400' : 'bg-red-500'}`} 
+                        />
+                      </div>
+                   </div>
+
+                   <div className="flex-1 p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 mb-8 relative group/idea">
+                      <div className="absolute -top-3 left-6 px-3 py-1 bg-zinc-950 border border-indigo-500/20 rounded-lg text-[10px] font-black text-indigo-400 uppercase tracking-widest">Actionable Path</div>
+                      <p className="text-indigo-100 font-bold leading-relaxed">{a.actionableIdea}</p>
+                   </div>
+
+                   <Button 
+                    onClick={() => handleUseIdea(a.actionableIdea)} 
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl h-14 shadow-xl shadow-indigo-500/20 group-hover/card:scale-105 transition-transform"
+                   >
+                    EXECUTE STRATEGY <Zap className="w-4 h-4 ml-2" />
+                   </Button>
+                 </motion.div>
+               ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-black/40 rounded-[2.5rem] border border-dashed border-white/10">
+               <TrendingUp className="w-16 h-16 text-white/10 mx-auto mb-4" />
+               <p className="text-white/30 font-black uppercase tracking-widest italic text-xl">No Intelligence Found for {niche}</p>
+            </div>
+          )}
+        </div>
+      </section>
+
       <div>
         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">
           <TrendingUp className="w-7 h-7 lg:w-9 lg:h-9 text-red-400" />

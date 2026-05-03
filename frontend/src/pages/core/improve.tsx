@@ -1,337 +1,440 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
-import { useImproveCompetitorContent } from "@workspace/api-client-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy, Check, Swords, TrendingUp, Megaphone, DollarSign, Link2, Lightbulb } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, Sparkles, TrendingUp, TrendingDown, Target, Brain, Copy, RefreshCw, Layers, Plus, Trash2, ArrowRight, ShieldAlert, Zap, Quote, ChevronRight, BarChart3, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { ImproveCompetitorContentResult } from "@workspace/api-client-react";
-import { LanguageSelector } from "@/components/shared/LanguageSelector";
-import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api-client";
+import { useLocation } from "wouter";
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast({ title: "Copied to clipboard!" });
-    setTimeout(() => setCopied(false), 2000);
-  };
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
 
-  return (
-    <button
-      onClick={handleCopy}
-      className={`shrink-0 p-2 rounded-lg transition-all duration-200
-        ${copied
-          ? "bg-emerald-500/15 text-emerald-400"
-          : "bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/70"
-        }`}
-    >
-      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-    </button>
-  );
-}
-
-function ResultCard({
-  title,
-  icon: Icon,
-  content,
-  accentColor,
-  delay,
-}: {
-  title: string;
-  icon: any;
-  content: string;
-  accentColor: string;
-  delay: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="rounded-2xl border border-white/8 overflow-hidden"
-      style={{
-        background: "linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.01) 100%)",
-        backdropFilter: "blur(12px)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-      }}
-    >
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/6">
-        <div className="flex items-center gap-2.5">
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${accentColor}`}>
-            <Icon className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-sm font-semibold text-white/80">{title}</span>
-        </div>
-        <CopyButton text={content} />
-      </div>
-      <div className="px-5 py-4">
-        <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
-      </div>
-    </motion.div>
-  );
-}
-
-function MonetizationList({ title, icon: Icon, items, accentColor }: { title: string; icon: any; items: string[]; accentColor: string }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 mb-3">
-        <div className={`w-6 h-6 rounded-md flex items-center justify-center ${accentColor}`}>
-          <Icon className="w-3 h-3" />
-        </div>
-        <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">{title}</span>
-      </div>
-      <div className="space-y-2">
-        {items.map((item, i) => (
-          <div key={i} className="flex items-start gap-2.5 group">
-            <span className="w-5 h-5 rounded-full bg-white/5 border border-white/8 flex items-center justify-center text-[10px] font-semibold text-white/30 shrink-0 mt-0.5">
-              {i + 1}
-            </span>
-            <p className="text-white/65 text-sm leading-relaxed flex-1">{item}</p>
-            <button
-              onClick={() => navigator.clipboard.writeText(item)}
-              className="opacity-0 group-hover:opacity-100 shrink-0 p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-white/30 hover:text-white/60 transition-all"
-            >
-              <Copy className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ImproveCompetitorInner() {
+export default function CompetitorIntelPage() {
+  const [activeTab, setActiveTab] = useState("single");
   const [content, setContent] = useState("");
-  const [result, setResult] = useState<ImproveCompetitorContentResult | null>(null);
+  const [niche, setNiche] = useState("");
+  const [platform, setPlatform] = useState("Instagram");
+  const [goal, setGoal] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  // Batch states
+  const [batchItems, setBatchItems] = useState([{ content: "", label: "Competitor 1" }]);
+  const [batchAnalyzing, setBatchAnalyzing] = useState(false);
+  const [batchResults, setBatchResults] = useState<any[]>([]);
+
   const { toast } = useToast();
-  const { useOneTrial } = useTrialAction();
-  const [, navigate] = useLocation();
-  const [language, setLanguage] = useState("English");
-  const { data: sub } = useSubscriptionStatus();
-  const isFreeUser = !sub?.planType || sub.planType === "free";
+  const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
-      if (data.languagePreference) setLanguage(data.languagePreference);
-    }).catch(() => {});
-  }, []);
-
-  const improveMutation = useImproveCompetitorContent({
-    mutation: {
-      onSuccess: (data) => {
-        setResult(data);
-        useOneTrial();
-      },
-      onError: (err: any) => {
-        if (err?.status === 402) {
-          toast({ variant: "destructive", title: "Upgrade Required", description: "You've used your free tries. Unlock full power to continue." });
-          navigate("/pricing");
-        } else {
-          toast({ variant: "destructive", title: "Failed to improve content. Please try again." });
-        }
-      },
-    },
-  });
-
-  const handleSubmit = () => {
-    if (content.trim().length < 50) {
-      toast({ variant: "destructive", title: "Paste at least 50 characters of competitor content." });
+  const analyzeCompetitor = async () => {
+    if (!content || content.length < 100) {
+      toast({ variant: "destructive", title: "Content too short", description: "Paste at least 100 characters for a deep analysis." });
       return;
     }
-    improveMutation.mutate({ data: { competitorContent: content.trim(), language } as any });
+    setAnalyzing(true);
+    try {
+      const { data } = await api.post("/improve-competitor/analyze", {
+        competitorContent: content,
+        yourNiche: niche,
+        platform,
+        yourGoal: goal
+      });
+      setResult(data);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Analysis failed", description: err.response?.data?.message || "Something went wrong." });
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
-  const isLoading = improveMutation.isPending;
+  const addBatchItem = () => {
+    if (batchItems.length >= 3) return;
+    setBatchItems([...batchItems, { content: "", label: `Competitor ${batchItems.length + 1}` }]);
+  };
+
+  const removeBatchItem = (index: number) => {
+    setBatchItems(batchItems.filter((_, i) => i !== index));
+  };
+
+  const updateBatchItem = (index: number, key: string, value: string) => {
+    const newItems = [...batchItems];
+    (newItems[index] as any)[key] = value;
+    setBatchItems(newItems);
+  };
+
+  const analyzeBatch = async () => {
+    const validItems = batchItems.filter(i => i.content.length > 50);
+    if (validItems.length < 2) {
+      toast({ variant: "destructive", title: "Add more items", description: "Compare at least 2 competitors for meaningful insights." });
+      return;
+    }
+    setBatchAnalyzing(true);
+    try {
+      const { data } = await api.post("/improve-competitor/batch", {
+        items: validItems, niche, platform
+      });
+      setBatchResults(data);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Batch analysis failed", description: err.response?.data?.message || "Check your plan tier." });
+    } finally {
+      setBatchAnalyzing(false);
+    }
+  };
+
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copied to clipboard" });
+  };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-16">
-      <div>
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-1.5 flex items-center gap-3">
-          <Swords className="w-7 h-7 text-teal-400" />
-          Improve Competitor Content
-        </h1>
-        <p className="text-white/50 text-sm">Paste any competitor content and get a stronger version, a sharper hook, a fresh angle — plus specific ways to monetize it.</p>
-      </div>
-
-      <div
-        className="rounded-2xl border border-white/8 p-5 md:p-6 space-y-4"
-        style={{
-          background: "linear-gradient(135deg, rgba(168,85,247,0.07) 0%, rgba(255,255,255,0.02) 100%)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="space-y-1.5">
-          <label className="text-white/70 text-sm font-medium">Competitor Content</label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Paste a competitor's post, caption, tweet thread, LinkedIn article, or any content you want to outperform..."
-            rows={8}
-            className="w-full rounded-xl bg-black/20 border border-white/10 text-white placeholder:text-white/25 text-sm px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500/40 transition-all leading-relaxed"
-          />
-          <p className="text-white/25 text-xs">{content.length} characters</p>
+    <div className="min-h-screen bg-transparent p-4 md:p-8 space-y-12 max-w-[1600px] mx-auto pb-32">
+      {/* Header Section */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-white/5 pb-10">
+        <div className="space-y-4">
+          <div className="flex items-center gap-5">
+            <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-2xl shadow-emerald-500/20 transform -rotate-6">
+              <Target className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-white via-white to-white/30 bg-clip-text text-transparent">
+                Competitor Intelligence
+              </h1>
+              <p className="text-emerald-400/80 text-xl font-bold italic">
+                Analyze any content. Build something better.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <LanguageSelector
-          value={language}
-          onChange={setLanguage}
-          isFreeUser={isFreeUser}
-          label="Output Language"
-          onUpgradeRequired={() => toast({ title: "🔒 Premium Languages", description: "Upgrade for regional language output!", variant: "destructive" })}
-        />
-
-        <Button
-          onClick={handleSubmit}
-          disabled={isLoading || content.trim().length < 50}
-          className="w-full sm:w-auto h-11 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-semibold shadow-lg shadow-teal-900/40 rounded-xl px-8"
-        >
-          {isLoading
-            ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Analyzing...</>
-            : <><Swords className="w-4 h-4 mr-2" /> Improve This Content</>
-          }
-        </Button>
-      </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-white/5 p-1.5 rounded-3xl border border-white/10 backdrop-blur-3xl shadow-2xl">
+          <TabsList className="bg-transparent h-14">
+            <TabsTrigger value="single" className="rounded-2xl px-10 h-11 font-black text-sm uppercase tracking-widest transition-all data-[state=active]:bg-emerald-500 data-[state=active]:text-black">
+              Single Scan
+            </TabsTrigger>
+            <TabsTrigger value="batch" className="rounded-2xl px-10 h-11 font-black text-sm uppercase tracking-widest transition-all data-[state=active]:bg-emerald-500 data-[state=active]:text-black">
+              Batch War Room
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </header>
 
       <AnimatePresence mode="wait">
-        {isLoading && (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="space-y-4"
-          >
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-36 rounded-2xl bg-white/3 border border-white/5 animate-pulse"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              />
-            ))}
-            <div className="h-64 rounded-2xl bg-white/2 border border-white/4 animate-pulse" style={{ animationDelay: "0.3s" }} />
-          </motion.div>
-        )}
+        <TabsContent value="single" className="mt-0 space-y-12">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 items-start">
+            {/* Input Panel */}
+            <div className="xl:col-span-5 space-y-8">
+              <Card className="bg-white/[0.03] border-white/10 backdrop-blur-3xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                <CardHeader className="bg-white/[0.02] border-b border-white/5 p-8">
+                  <CardTitle className="text-2xl font-black flex items-center gap-3">
+                    <Zap className="h-6 w-6 text-emerald-400" />
+                    Target Intelligence
+                  </CardTitle>
+                  <CardDescription className="text-base font-medium">Paste the content you want to outclass.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 space-y-8">
+                  <div className="space-y-3">
+                    <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex justify-between">
+                      Raw Intelligence
+                      <span className="text-emerald-500/50">{content.length} chars</span>
+                    </label>
+                    <Textarea 
+                      placeholder="Paste the competitor's caption, script, or post here..."
+                      className="min-h-[350px] bg-white/[0.02] border-white/10 rounded-2xl text-lg p-6 focus-visible:ring-emerald-500/50 leading-relaxed resize-none transition-all focus:bg-white/[0.04]"
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                    />
+                  </div>
 
-        {!isLoading && result && (
-          <motion.div
-            key="results"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-5"
-          >
-            <p className="text-white/30 text-xs font-medium uppercase tracking-wider">
-              Output — 3 improvements + monetization strategy
-            </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Theater of War</label>
+                      <Select value={platform} onValueChange={setPlatform}>
+                        <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-950 border-white/10 text-white">
+                          <SelectItem value="Instagram">Instagram</SelectItem>
+                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                          <SelectItem value="Twitter">Twitter (X)</SelectItem>
+                          <SelectItem value="YouTube">YouTube</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Your Domain</label>
+                      <Input 
+                        placeholder="e.g. SaaS Growth" 
+                        value={niche} 
+                        onChange={(e) => setNiche(e.target.value)}
+                        className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold"
+                      />
+                    </div>
+                  </div>
 
-            <div className="space-y-4">
-              <ResultCard
-                title="Improved Version"
-                icon={TrendingUp}
-                content={result.improvedVersion}
-                accentColor="bg-cyan-500/15 text-cyan-400"
-                delay={0}
-              />
-              <ResultCard
-                title="Stronger Hook"
-                icon={Swords}
-                content={result.strongerHook}
-                accentColor="bg-orange-500/15 text-orange-400"
-                delay={0.08}
-              />
-              <ResultCard
-                title="Fresh Angle"
-                icon={Lightbulb}
-                content={result.newAngle}
-                accentColor="bg-cyan-500/15 text-cyan-400"
-                delay={0.16}
-              />
+                  <div className="space-y-3">
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Strategic Objective</label>
+                    <Input 
+                      placeholder="What outcome do you want to beat them at?" 
+                      value={goal} 
+                      onChange={(e) => setGoal(e.target.value)}
+                      className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold"
+                    />
+                  </div>
+
+                  <Button 
+                    className="w-full h-20 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-2xl font-black rounded-3xl shadow-2xl shadow-emerald-600/30 group transition-all"
+                    onClick={analyzeCompetitor}
+                    disabled={analyzing || !content}
+                  >
+                    {analyzing ? <RefreshCw className="mr-3 h-7 w-7 animate-spin" /> : <ShieldAlert className="mr-3 h-7 w-7 group-hover:rotate-12 transition-transform" />}
+                    {analyzing ? "DECODING STRATEGY..." : "ANALYZE & OUTPERFORM"}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.24 }}
-              className="rounded-2xl border border-emerald-500/15 overflow-hidden"
-              style={{
-                background: "linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(5,150,105,0.03) 100%)",
-                backdropFilter: "blur(12px)",
-              }}
-            >
-              <div className="px-5 py-4 border-b border-emerald-500/10 flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-white/85">Monetization Suggestions</h3>
-                  <p className="text-[11px] text-white/35">Specific ways to earn from this type of content</p>
-                </div>
+            {/* Results Panel */}
+            <div className="xl:col-span-7 h-full">
+              <AnimatePresence mode="wait">
+                {result ? (
+                  <motion.div 
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-10"
+                  >
+                    <div className="p-8 rounded-[3rem] bg-gradient-to-r from-emerald-500 to-teal-600 shadow-2xl shadow-emerald-500/20 relative overflow-hidden group min-h-[160px] flex flex-col justify-center">
+                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+                      <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                         <Target className="h-64 w-64 text-white" />
+                      </div>
+                      <div className="relative space-y-3">
+                         <Badge className="bg-white/20 text-white border-none px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em] mb-2">The Opportunity</Badge>
+                         <h3 className="text-3xl font-black text-white leading-tight max-w-2xl">{result.yourOpportunity}</h3>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="bg-white/[0.03] border-white/10 rounded-3xl border-l-4 border-l-emerald-500">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="text-base font-black uppercase tracking-widest flex items-center gap-3 text-emerald-400">
+                             <TrendingUp className="h-5 w-5" /> Force Multipliers
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {result.competitorStrengths.map((s: string, i: number) => (
+                            <div key={i} className="flex gap-4 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-sm font-medium text-emerald-100/70 leading-relaxed">
+                               <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                               {s}
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-white/[0.03] border-white/10 rounded-3xl border-l-4 border-l-rose-500">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="text-base font-black uppercase tracking-widest flex items-center gap-3 text-rose-500">
+                             <TrendingDown className="h-5 w-5" /> Structural Gaps
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {result.competitorWeaknesses.map((w: string, i: number) => (
+                            <div key={i} className="flex gap-4 p-3 rounded-xl bg-rose-500/5 border border-rose-500/10 text-sm font-medium text-rose-100/70 leading-relaxed">
+                               <Trash2 className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
+                               {w}
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="space-y-6">
+                       <div className="flex items-center gap-4">
+                          <Brain className="h-6 w-6 text-emerald-500" />
+                          <h3 className="text-xl font-black uppercase tracking-widest text-white/80">Psychological Architecture</h3>
+                       </div>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {result.psychologicalTriggers.map((t: any, i: number) => (
+                            <div key={i} className="p-5 rounded-3xl bg-white/[0.04] border border-white/5 hover:border-emerald-500/30 transition-all group cursor-default h-full flex flex-col justify-between">
+                               <span className="text-sm font-black text-emerald-400 group-hover:scale-105 transition-transform block mb-2">{t.trigger}</span>
+                               <p className="text-[11px] text-muted-foreground leading-relaxed italic">"{t.howTheyUsedIt}"</p>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+
+                    <Card className="bg-zinc-950 border-white/10 rounded-[3rem] shadow-[0_0_50px_rgba(16,185,129,0.1)] overflow-hidden relative group">
+                       <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+                       <div className="p-10 space-y-10 relative">
+                          <div className="flex justify-between items-start">
+                             <div className="space-y-2">
+                                <Badge className="bg-emerald-500 text-black font-black uppercase tracking-widest text-[10px] px-3">Priority One</Badge>
+                                <h3 className="text-4xl font-black text-white">Your Superior Version</h3>
+                             </div>
+                             <div className="flex gap-3">
+                                <Button size="icon" variant="ghost" className="h-12 w-12 rounded-2xl bg-white/5 hover:bg-white/10 text-emerald-400" onClick={() => copyText(result.superiorVersion.body)}>
+                                   <Copy className="h-5 w-5" />
+                                </Button>
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-10">
+                            <div className="p-8 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 space-y-4">
+                               <span className="text-xs font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full">The Viral Hook</span>
+                               <p className="text-3xl font-black leading-tight text-white">{result.superiorVersion.hook}</p>
+                            </div>
+                            
+                            <div className="space-y-4 px-4">
+                               <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">The Narrative Structure</span>
+                               <p className="text-xl leading-relaxed text-white/80 whitespace-pre-wrap">{result.superiorVersion.body}</p>
+                            </div>
+
+                            <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 space-y-4">
+                               <span className="text-xs font-black uppercase tracking-widest text-emerald-500">Direct Call to Action</span>
+                               <p className="text-2xl font-black italic text-emerald-400">"{result.superiorVersion.cta}"</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
+                             <div className="flex items-start gap-4">
+                                <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500"><Sparkles className="h-5 w-5" /></div>
+                                <div>
+                                   <span className="text-xs font-black uppercase text-amber-500 block mb-1">Strategic Advantage</span>
+                                   <p className="text-sm text-muted-foreground leading-relaxed">{result.superiorVersion.whyItsBetter}</p>
+                                </div>
+                             </div>
+                             <div className="flex items-start gap-4">
+                                <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-500"><Zap className="h-5 w-5" /></div>
+                                <div>
+                                   <span className="text-xs font-black uppercase text-cyan-500 block mb-1">Unfair Differentiator</span>
+                                   <p className="text-sm text-muted-foreground leading-relaxed">{result.keyDifferentiator}</p>
+                                </div>
+                             </div>
+                          </div>
+
+                          <Button 
+                            className="w-full h-16 bg-white text-black font-black text-xl rounded-2xl shadow-2xl hover:scale-[1.02] transition-all"
+                            onClick={() => setLocation(`/generate?hook=${encodeURIComponent(result.superiorVersion.hook)}`)}
+                          >
+                             Deploy Full Campaign <ChevronRight className="ml-2 h-6 w-6" />
+                          </Button>
+                       </div>
+                    </Card>
+                  </motion.div>
+                ) : (
+                   <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="h-full min-h-[600px] flex flex-col items-center justify-center text-center space-y-8"
+                   >
+                      <div className="relative">
+                         <div className="absolute inset-0 bg-emerald-500/20 blur-[100px] rounded-full" />
+                         <div className="p-12 rounded-[3.5rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl relative">
+                            <BarChart3 className="h-32 w-32 text-white/10 animate-pulse" />
+                         </div>
+                      </div>
+                      <div className="space-y-3 max-w-sm">
+                         <h3 className="text-3xl font-black text-white/40">War Room Ready</h3>
+                         <p className="text-muted-foreground font-medium">Paste the competitor intelligence on the left to begin the structural analysis.</p>
+                      </div>
+                   </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="batch" className="mt-0 space-y-12">
+           <div className="max-w-6xl mx-auto space-y-12">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 {batchItems.map((item, i) => (
+                    <Card key={i} className="bg-white/[0.03] border-white/10 rounded-[2.5rem] overflow-hidden group hover:border-emerald-500/30 transition-all">
+                       <CardHeader className="bg-white/[0.02] border-b border-white/5 p-6 flex flex-row justify-between items-center">
+                          <Input 
+                            value={item.label} 
+                            onChange={(e) => updateBatchItem(i, "label", e.target.value)}
+                            className="h-10 bg-transparent border-none p-0 text-lg font-black focus-visible:ring-0 text-emerald-400"
+                          />
+                          <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" onClick={() => removeBatchItem(i)}>
+                             <Trash2 className="h-5 w-5" />
+                          </Button>
+                       </CardHeader>
+                       <CardContent className="p-6">
+                          <Textarea 
+                            placeholder="Paste content piece here..." 
+                            className="min-h-[250px] bg-white/[0.02] border-white/10 rounded-2xl text-sm leading-relaxed p-5 resize-none focus-visible:ring-emerald-500/30"
+                            value={item.content}
+                            onChange={(e) => updateBatchItem(i, "content", e.target.value)}
+                          />
+                       </CardContent>
+                    </Card>
+                 ))}
+                 {batchItems.length < 3 && (
+                    <button 
+                      className="border-2 border-dashed border-white/10 rounded-[2.5rem] h-full min-h-[350px] flex flex-col items-center justify-center gap-5 hover:border-emerald-500/30 transition-all text-muted-foreground hover:text-white group bg-white/[0.01] hover:bg-white/[0.03]"
+                      onClick={addBatchItem}
+                    >
+                       <div className="p-5 rounded-3xl bg-white/5 group-hover:scale-110 transition-transform">
+                          <Plus className="h-10 w-10" />
+                       </div>
+                       <span className="font-black uppercase tracking-widest text-sm">Add Competitor Unit</span>
+                    </button>
+                 )}
               </div>
 
-              <div className="px-5 py-5 space-y-6">
-                <MonetizationList
-                  title="CTA Ideas"
-                  icon={Megaphone}
-                  items={result.monetization.ctaIdeas}
-                  accentColor="bg-cyan-500/15 text-cyan-400"
-                />
-                <div className="border-t border-white/5 pt-5">
-                  <MonetizationList
-                    title="Affiliate Suggestions"
-                    icon={Link2}
-                    items={result.monetization.affiliateSuggestions}
-                    accentColor="bg-blue-500/15 text-blue-400"
-                  />
-                </div>
-                <div className="border-t border-white/5 pt-5">
-                  <MonetizationList
-                    title="How to Earn"
-                    icon={DollarSign}
-                    items={result.monetization.howToEarn}
-                    accentColor="bg-emerald-500/15 text-emerald-400"
-                  />
-                </div>
+              <div className="flex justify-center pt-6">
+                 <Button 
+                   className="h-24 px-20 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 font-black text-2xl rounded-3xl shadow-2xl shadow-emerald-600/40"
+                   onClick={analyzeBatch}
+                   disabled={batchAnalyzing || batchItems.length < 2}
+                 >
+                    {batchAnalyzing ? <RefreshCw className="mr-4 h-8 w-8 animate-spin" /> : <Layers className="mr-4 h-8 w-8" />}
+                    {batchAnalyzing ? "COMPILING WAR ROOM DATA..." : "INITIATE BATCH COMPARE"}
+                 </Button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
 
-        {!isLoading && !result && (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16 space-y-3"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center mx-auto">
-              <Swords className="w-7 h-7 text-teal-400/60" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-white/45 text-sm font-medium">Paste competitor content above</p>
-              <p className="text-white/25 text-xs max-w-sm mx-auto">We'll rewrite it into something better, sharper, and more monetizable.</p>
-            </div>
-          </motion.div>
-        )}
+              {batchResults.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                   {batchResults.map((r, i) => (
+                      <Card key={i} className="bg-white/[0.03] border-white/10 rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-500" style={{ animationDelay: `${i * 100}ms` }}>
+                         <CardHeader className="bg-emerald-500/10 border-b border-emerald-500/20 p-6">
+                            <CardTitle className="text-xl font-black text-emerald-400">{r.label}</CardTitle>
+                         </CardHeader>
+                         <CardContent className="p-8 space-y-8">
+                            <div className="space-y-3">
+                               <span className="text-xs font-black uppercase text-emerald-500 tracking-widest">Strengths</span>
+                               <p className="text-sm text-muted-foreground leading-relaxed">{r.analysis.strengths}</p>
+                            </div>
+                            <div className="space-y-3 pt-4 border-t border-white/5">
+                               <span className="text-xs font-black uppercase text-rose-500 tracking-widest">Weaknesses</span>
+                               <p className="text-sm text-muted-foreground leading-relaxed">{r.analysis.weaknesses}</p>
+                            </div>
+                            <div className="p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 relative group">
+                               <div className="absolute top-0 right-0 p-4 opacity-5">
+                                  <Sparkles className="h-10 w-10" />
+                               </div>
+                               <span className="text-[10px] font-black uppercase text-indigo-400 block mb-2 tracking-widest">Superior Hook</span>
+                               <p className="text-base font-black italic text-white leading-tight">"{r.analysis.superior_hook}"</p>
+                            </div>
+                         </CardContent>
+                      </Card>
+                   ))}
+                </div>
+              )}
+           </div>
+        </TabsContent>
       </AnimatePresence>
     </div>
-  );
-}
-
-export default function ImproveCompetitorContent() {
-  return (
-    <PlanGate
-      requiredPlan="starter"
-      featureName="Improve Competitor Content"
-      toolKey="improve_competitor"
-      freeTrials={3}
-      description="Paste any competitor content and get a stronger rewrite, a better hook, a fresh angle, and actionable monetization ideas."
-    >
-      <ImproveCompetitorInner />
-    </PlanGate>
   );
 }

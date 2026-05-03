@@ -34,7 +34,7 @@ const requireAdmin = async (req: any, res: any, next: any) => {
   }
 };
 
-router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
+router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
     const safeQuery = async <T>(promise: Promise<T>, fallback: T, label: string): Promise<T> => {
       try {
@@ -148,7 +148,7 @@ router.get("/admin/stats", requireAuth, requireAdmin, async (req: any, res: any)
   }
 });
 
-router.patch("/admin/modify-user", requireAuth, requireAdmin, async (req: any, res: any): Promise<void> => {
+router.patch("/modify-user", requireAuth, requireAdmin, async (req: any, res: any): Promise<void> => {
   try {
     const { targetUserId, newPlan } = req.body;
     if (!targetUserId || !newPlan) {
@@ -193,7 +193,7 @@ router.patch("/admin/modify-user", requireAuth, requireAdmin, async (req: any, r
   }
 });
 
-router.post("/admin/impersonate", requireAuth, requireAdmin, async (req: any, res: any): Promise<void> => {
+router.post("/impersonate", requireAuth, requireAdmin, async (req: any, res: any): Promise<void> => {
   try {
     const { targetUserId, reason = "manual_troubleshooting", duration = 3600 } = req.body;
     
@@ -239,7 +239,7 @@ router.post("/admin/impersonate", requireAuth, requireAdmin, async (req: any, re
 
 
 
-router.post("/admin/announcement", requireAuth, requireAdmin, async (req: any, res: any) => {
+router.post("/announcement", requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
     const { message, isActive, theme } = req.body;
     
@@ -256,7 +256,7 @@ router.post("/admin/announcement", requireAuth, requireAdmin, async (req: any, r
   }
 });
 
-router.delete("/admin/announcement/:id", requireAuth, requireAdmin, async (req: any, res: any) => {
+router.delete("/announcement/:id", requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
     await db.delete(globalAnnouncementsTable).where(eq(globalAnnouncementsTable.id, req.params.id));
     res.json({ success: true });
@@ -265,7 +265,7 @@ router.delete("/admin/announcement/:id", requireAuth, requireAdmin, async (req: 
   }
 });
 
-router.patch("/admin/settings/maintenance", requireAuth, requireAdmin, async (req: any, res: any): Promise<void> => {
+router.patch("/settings/maintenance", requireAuth, requireAdmin, async (req: any, res: any): Promise<void> => {
   try {
     const { maintenanceMode } = req.body;
     

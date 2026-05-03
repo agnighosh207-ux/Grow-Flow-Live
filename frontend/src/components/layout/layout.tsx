@@ -34,6 +34,12 @@ import {
   Flame,
   Package2,
   MessageSquare,
+  PenTool,
+  Brain,
+  BarChart2,
+  RefreshCw,
+  GitBranch,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -72,7 +78,19 @@ function ImpersonationBanner() {
   );
 }
 
-const NAV_GROUPS = [
+interface NavItemDef {
+  path: string;
+  label: string;
+  icon: any;
+  pro?: boolean;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItemDef[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
     label: "Create",
     items: [
@@ -80,16 +98,22 @@ const NAV_GROUPS = [
       { path: "/ideas", label: "Idea Generator", icon: Lightbulb },
       { path: "/trends", label: "Trend Engine", icon: TrendingUp },
       { path: "/hooks", label: "Viral Hooks", icon: MessageSquareQuote },
-      { path: "/improve", label: "Improve Competitor", icon: Swords },
-      { path: "/bio", label: "Bio Generator", icon: User },
+      { path: "/improve", label: "Competitor Intel", icon: Swords },
+      { path: "/hashtags", label: "Hashtag Intel", icon: Flame },
+      { path: "/bio", label: "Profile Suite", icon: User },
+      { path: "/repurpose", label: "Content Repurposer", icon: RefreshCw },
       { path: "/caption", label: "Caption Enhancer", icon: Wand2 },
-      { path: "/pack", label: "Content Pack", icon: Package2 },
+      { path: "/ghostwriter", label: "AI Ghostwriter", icon: PenTool },
+      { path: "/predictor", label: "Performance Predictor", icon: BarChart2 },
+      { path: "/ab-test", label: "A/B Duel", icon: GitBranch },
+      { path: "/hook-scorer", label: "Hook Radar", icon: Target },
     ],
   },
   {
-    label: "Plan",
+    label: "Strategy",
     items: [
       { path: "/daily", label: "Daily Growth Plan", icon: Flame },
+      { path: "/coach", label: "AI Content Coach", icon: Brain },
       { path: "/strategy", label: "7-Day Strategy", icon: CalendarDays },
       { path: "/calendar", label: "Content Calendar", icon: Calendar, pro: true },
       { path: "/insights", label: "Analytics", icon: BarChart3, pro: true },
@@ -98,6 +122,7 @@ const NAV_GROUPS = [
   {
     label: "Library",
     items: [
+      { path: "/vault", label: "Swipe Vault", icon: Flame },
       { path: "/saved", label: "Saved", icon: Heart },
       { path: "/history", label: "History", icon: History },
     ],

@@ -21,7 +21,7 @@ function getSuggestedImprovement(consistencyScore: number): string {
   }
 }
 
-router.get("/stats/weekly", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/weekly", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const now = new Date();
     const weekStart = new Date(now);

@@ -101,6 +101,7 @@ app.use(express.urlencoded({ extended: true }));
 const clerkMw = clerkMiddleware();
 app.use((req: any, res: any, next: any) => {
   if (!req.path.startsWith("/api/")) return next();
+  if (req.path.startsWith("/api/subscription/webhook")) return next();
   
   const timer = setTimeout(() => {
     logger.error("[CRITICAL] Clerk middleware timed out after 15s. Rejecting request for security.");
@@ -116,21 +117,24 @@ app.use((req: any, res: any, next: any) => {
 app.use(authSyncMiddleware);
 app.use(guardianMiddleware);
 
-// ─── 7. Security logging (After Auth Sync to capture userId) ────────────────
+// ─── 7. Security logging (Only log failures to avoid DB saturation) ─────────
 app.use((req: any, res, next) => {
   if (req.path.startsWith("/api/") && req.path !== "/api/health") {
     res.on("finish", async () => {
-      try {
-        await db.insert(securityLogsTable).values({
-          id: crypto.randomUUID(),
-          userId: (req as any).userId || null,
-          eventType: "API_REQUEST",
-          ipAddress: req.ip || "unknown",
-          userAgent: req.get("User-Agent") || "unknown",
-          metadata: { method: req.method, path: req.path, statusCode: res.statusCode }
-        });
-      } catch (err) {
-        logger.error({ err, path: req.path }, "FAILED_TO_WRITE_SECURITY_LOG");
+      // Only log non-2xx responses (auth failures, errors, rate limits) to avoid DB saturation
+      if (res.statusCode >= 400) {
+        try {
+          await db.insert(securityLogsTable).values({
+            id: crypto.randomUUID(),
+            userId: (req as any).userId || null,
+            eventType: res.statusCode === 401 || res.statusCode === 403 ? "AUTH_FAILURE" : "API_REQUEST",
+            ipAddress: req.ip || "unknown",
+            userAgent: req.get("User-Agent") || "unknown",
+            metadata: { method: req.method, path: req.path, statusCode: res.statusCode }
+          });
+        } catch (err) {
+          logger.error({ err, path: req.path }, "FAILED_TO_WRITE_SECURITY_LOG");
+        }
       }
     });
   }

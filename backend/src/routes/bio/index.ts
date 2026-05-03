@@ -1,131 +1,73 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
-import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
-import { generateContent } from "../../services/ai-engine";
-import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
-import crypto from "crypto";
+import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
-const PLATFORM_RULES: Record<string, { charLimit: number; style: string; goal: string }> = {
-  Instagram: {
-    charLimit: 150,
-    style: "Punchy, emoji-friendly, personality-driven, ends with a micro-CTA or link prompt",
-    goal: "Make visitors instantly understand who you are, what you do, and why to follow",
-  },
-  Twitter: {
-    charLimit: 160,
-    style: "Witty, credential-forward, uses '|' or '·' as separators, no fluffy adjectives",
-    goal: "Signal expertise and personality in one scan — makes people click Follow immediately",
-  },
-  LinkedIn: {
-    charLimit: 220,
-    style: "Results-focused, uses power verbs, quantified proof when possible, professional tone",
-    goal: "Position as a credible expert — hiring managers and clients should want to connect",
-  },
-  YouTube: {
-    charLimit: 1000,
-    style: "Keyword-rich for discovery, tells what the channel does and who it's for, includes posting schedule",
-    goal: "Convert visitors to subscribers by showing exactly what content they'll get and why to subscribe now",
-  },
-};
+router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const { name, niche, mainTopic, achievement, targetAudience, tone, language, formats } = req.body;
 
-router.post("/bio/generate", requireAuth, requirePlanOrTrial("bio"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  let isAborted = false;
-  req.on('close', () => { isAborted = true; });
+  if (!name || !formats || formats.length === 0) {
+    res.status(400).json({ error: "Name and at least one format are required" });
+    return;
+  }
 
-  const {
-    platform = "Instagram",
-    niche = "Content Creator",
-    role = "",
-    expertise = "",
-    tone = "Professional",
-    cta = "",
-    achievements = "",
-    language = "English"
-  } = req.body;
+  if (formats.length > 6) {
+    res.status(400).json({ error: "Maximum 6 formats allowed at once" });
+    return;
+  }
 
-  const sanitize = (val: any) => String(val || "").substring(0, 300);
-  const sRole = sanitize(role);
-  const sNiche = sanitize(niche);
-  const sExpertise = sanitize(expertise);
-  const sCta = sanitize(cta);
-  const sAchievements = sanitize(achievements);
+  const systemPrompt = `You are a personal branding copywriter who has written bios for creators with 1M+ followers. Each platform has different character limits and audience expectations. Write bios that are specific, credible, and make the reader immediately understand who this person is and why they should follow. Return ONLY valid JSON.
+  
+  PLATFORM LIMITS:
+  - Instagram: 150 chars
+  - Twitter: 160 chars
+  - LinkedIn: 220 chars
+  - YouTube: 1000 chars
+  - TikTok: 80 chars
+  - link-in-bio: 200 chars`;
+  
+  const userPrompt = `
+  NAME: ${name}
+  NICHE: ${niche || "General"}
+  TOPIC: ${mainTopic}
+  ACHIEVEMENT: ${achievement}
+  TARGET AUDIENCE: ${targetAudience}
+  TONE: ${tone || "Professional"}
+  LANGUAGE: ${language || "English"}
+  FORMATS REQUESTED: ${formats.join(", ")}
 
-  const platformInfo = PLATFORM_RULES[platform as string] || PLATFORM_RULES["Instagram"];
-
-  const systemPrompt = `Act as an elite Social Media Strategist and Copywriter. Generate 3 DISTINCT, HIGH-CONVERTING bio variations for ${platform}.
-CRITICAL RULES:
-1. EXTREMELY HIGH QUALITY.
-2. Use modern aesthetic emojis at the BEGINNING of each line.
-3. Use physical line breaks (\\n). 
-4. TOTAL character count MUST be UNDER ${platformInfo.charLimit} characters.
-5. VIBE: ${platformInfo.style}.`;
-
-  const userPrompt = `Generate 3 distinct bio variations for ${platform}.
-User Details:
-Role: ${sRole || sNiche}
-Niche: ${sNiche}
-Expertise: ${sExpertise || "Top-tier strategies"}
-Tone: ${tone}
-CTA: ${sCta || "Click below 👇"}
-Achievements: ${sAchievements}
-
-Return ONLY a JSON object: {"platform": "${platform}", "variations": [{"label": "string", "bio": "string", "strategy": "string"}], "proTip": "string"}`;
+  Return JSON where each requested format is a key:
+  {
+    "instagram": { "bio": "string", "charCount": number, "tip": "string" },
+    "twitter": { "bio": "string", "charCount": number, "tip": "string" },
+    "linkedin": { "bio": "string", "charCount": number, "tip": "string" },
+    "youtube": { "bio": "string", "charCount": number, "tip": "string" },
+    "tiktok": { "bio": "string", "charCount": number, "tip": "string" },
+    "linkinbio": { "headline": "string", "subheadline": "string", "cta": "string" },
+    "brandStatement": { "statement": "string", "oneLiner": "string" },
+    "elevator30sec": { "script": "string", "wordCount": number },
+    "elevator60sec": { "script": "string", "wordCount": number }
+  }
+  `;
 
   try {
-    if (isAborted) return;
-    const rawContentObj = await generateContent({
+    const response = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      userPlan: req.user?.planType || "free",
+      userPlan: "FREE",
       userId: req.userId,
-      language,
       maxTokens: 2000,
     });
 
-    if (isAborted) return;
-    const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
-    let parsed;
-    try {
-      const match = raw.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(match ? match[0] : raw);
-    } catch {
-      throw new Error("Failed to parse bio response.");
-    }
-
-    if (parsed.variations) {
-      parsed.variations = parsed.variations.map((v: any) => ({
-        ...v,
-        charCount: v.bio?.length ?? 0,
-      }));
-    }
-
-    // Auto-save to history
-    try {
-      await db.insert(contentGenerationsTable).values({
-        userId: req.userId,
-        idea: `Bio: ${platform} - ${sNiche}`,
-        contentType: "Bio",
-        tone: tone,
-        content: parsed,
-      });
-    } catch (e) { /* non-critical */ }
-
+    const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
-
-    db.insert(featureUsageLogsTable).values({
-      id: crypto.randomUUID(),
-      userId: req.userId,
-      feature: "bio"
-    }).catch(() => {});
-  } catch (err: any) {
-    if (isAborted) return;
-    console.error("Bio generate error:", err);
-    res.status(503).json({ error: "AI temporarily unavailable." });
+  } catch (err) {
+    console.error("BIO GENERATE ERROR:", err);
+    res.status(503).json({ error: "Profile generation service unavailable." });
   }
 });
 

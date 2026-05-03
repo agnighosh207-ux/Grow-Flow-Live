@@ -5,7 +5,7 @@ import { eq, desc } from "drizzle-orm";
 const router: IRouter = Router();
 
 // Public route to get active announcement
-router.get("/announcements/active", async (req: any, res: any) => {
+router.get("/active", async (req: any, res: any) => {
   try {
     const activeList = await db
       .select()

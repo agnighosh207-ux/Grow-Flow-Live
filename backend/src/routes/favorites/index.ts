@@ -1,22 +1,11 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
 import { db, favoritesTable, contentGenerationsTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
+import { requireAuth } from "../../middlewares/planMiddleware";
 
 const router: IRouter = Router();
 
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  req.userId = userId;
-  next();
-};
-
-router.get("/favorites", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/", requireAuth, async (req: any, res): Promise<void> => {
   const rows = await db
     .select()
     .from(favoritesTable)
@@ -24,7 +13,7 @@ router.get("/favorites", requireAuth, async (req: any, res): Promise<void> => {
   res.json({ ids: rows.map(r => r.generationId) });
 });
 
-router.get("/favorites/content", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/content", requireAuth, async (req: any, res): Promise<void> => {
   const favRows = await db
     .select()
     .from(favoritesTable)
@@ -52,7 +41,7 @@ router.get("/favorites/content", requireAuth, async (req: any, res): Promise<voi
   res.json({ items: sorted });
 });
 
-router.post("/favorites/:id", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/:id", requireAuth, async (req: any, res): Promise<void> => {
   const generationId = parseInt(req.params.id, 10);
   if (isNaN(generationId)) {
     res.status(400).json({ error: "Invalid generation ID" });
@@ -67,7 +56,7 @@ router.post("/favorites/:id", requireAuth, async (req: any, res): Promise<void> 
   res.json({ success: true, saved: true });
 });
 
-router.delete("/favorites/:id", requireAuth, async (req: any, res): Promise<void> => {
+router.delete("/:id", requireAuth, async (req: any, res): Promise<void> => {
   const generationId = parseInt(req.params.id, 10);
   if (isNaN(generationId)) {
     res.status(400).json({ error: "Invalid generation ID" });

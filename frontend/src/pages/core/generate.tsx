@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Loader2, Copy, RefreshCw, Check, Sparkles, Linkedin, Twitter, X,
   Download, Hash, Zap, MessageCircle, Film, ChevronDown, ChevronUp, Crown, Heart,
-  TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2
+  TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2, AlertCircle, Lightbulb
 } from "lucide-react";
 import { SiInstagram, SiYoutube } from "react-icons/si";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,6 +28,7 @@ import { FeedbackModal, checkShouldShowRating, checkShouldShowFeedback, incremen
 import { useAuth } from "@clerk/react";
 import { WeeklyReportCard } from "@/components/shared/WeeklyReportCard";
 import { SUPPORTED_LANGUAGES } from "@/lib/languages";
+import { api } from "@/lib/api-client";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 
 // ─── Constants ───
@@ -775,6 +776,10 @@ export default function Generate() {
   const [savedPrefs, setSavedPrefs] = useState<{ niche: string | null; tonePreference: string | null; platformPreference: string | null } | null>(null);
   const prefsLoadedRef = useRef(false);
   const [showPostGenUpsell, setShowPostGenUpsell] = useState(false);
+
+  const [hookScore, setHookScore] = useState<any>(null);
+  const [isScoringHook, setIsScoringHook] = useState(false);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const { data: sub, refetch: refetchSub } = useSubscriptionStatus();
   const [, navigate] = useLocation();
@@ -852,6 +857,29 @@ export default function Generate() {
         } catch {}
       },
       onError: (error: any) => {
+        if (error?.status === 403) {
+          const errCode = error?.data?.error;
+          if (errCode === "EMAIL_NOT_VERIFIED") {
+            toast({
+              variant: "destructive",
+              title: "Please verify your email",
+              description: "Check your inbox and click the verification link, then try again.",
+            });
+          } else if (errCode === "ACCESS_DENIED") {
+            toast({
+              variant: "destructive",
+              title: "Account suspended",
+              description: error?.data?.message || "Contact support at growflowai.space/support",
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Access denied",
+              description: error?.data?.message || "Something went wrong. Please refresh and try again.",
+            });
+          }
+          return;
+        }
         if (error?.status === 402 || error?.data?.error === "upgrade_required") {
           const plan = error?.data?.plan;
           const reason = plan === "trial" ? "expired" : "limit";
@@ -994,6 +1022,38 @@ export default function Generate() {
       language: "English",
     }
   });
+
+  const currentIdea = form.watch("idea");
+  const currentNiche = form.watch("niche");
+
+  useEffect(() => {
+    if (!currentIdea || currentIdea.length <= 20) {
+      setHookScore(null);
+      return;
+    }
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+    debounceTimer.current = setTimeout(async () => {
+      setIsScoringHook(true);
+      try {
+        const { data } = await api.post("/hook-scorer/score", {
+          hook: currentIdea,
+          platform: "Instagram",
+          niche: currentNiche || "General"
+        });
+        setHookScore(data);
+      } catch (e) {
+        console.error("Hook score failed", e);
+      } finally {
+        setIsScoringHook(false);
+      }
+    }, 1200);
+
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [currentIdea, currentNiche]);
 
   // Load language from preferences API instead of localStorage
   useEffect(() => {
@@ -1276,8 +1336,88 @@ export default function Generate() {
                                <Activity className="w-3.5 h-3.5 text-cyan-500/50" />
                                Trending
                             </div>
+                            {isScoringHook && (
+                               <div className="absolute top-6 right-6 flex items-center gap-2 text-xs font-bold text-white/40">
+                                 <Loader2 className="w-4 h-4 animate-spin" /> Scoring...
+                               </div>
+                            )}
                           </div>
                         </FormControl>
+                        <AnimatePresence mode="wait">
+                          {hookScore && currentIdea && currentIdea.length > 20 && !isScoringHook && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                              className="mt-6 overflow-hidden rounded-[2.5rem] bg-zinc-900/80 border border-white/5 backdrop-blur-3xl shadow-2xl"
+                            >
+                              <div className="p-8 space-y-6">
+                                <div className="flex items-center justify-between">
+                                   <div className="flex items-center gap-6">
+                                      <div className={`relative group`}>
+                                         <div className={`absolute -inset-1 rounded-2xl blur opacity-30 group-hover:opacity-50 transition ${
+                                           hookScore.grade === 'S' ? 'bg-amber-500' :
+                                           hookScore.grade === 'A' ? 'bg-emerald-500' :
+                                           hookScore.grade === 'B' ? 'bg-cyan-500' :
+                                           'bg-amber-400'
+                                         }`} />
+                                         <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center font-black text-3xl italic shadow-2xl ${
+                                           hookScore.grade === 'S' ? 'bg-amber-500 text-black' :
+                                           hookScore.grade === 'A' ? 'bg-emerald-500 text-black' :
+                                           hookScore.grade === 'B' ? 'bg-cyan-500 text-black' :
+                                           'bg-zinc-800 text-white'
+                                         }`}>
+                                           {hookScore.grade}
+                                         </div>
+                                      </div>
+                                      <div>
+                                         <div className="flex items-center gap-3">
+                                            <span className="text-3xl font-black text-white tracking-tighter">{hookScore.score}</span>
+                                            <span className="text-zinc-500 font-bold text-sm">/ 100</span>
+                                         </div>
+                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{hookScore.hookType}</p>
+                                      </div>
+                                   </div>
+                                   
+                                   <div className="flex gap-2">
+                                      {hookScore.patternMatches?.map((m: string) => (
+                                         <span key={m} className="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-500/20">{m}</span>
+                                      ))}
+                                   </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                   {hookScore.mainIssue && (
+                                      <div className="p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 flex gap-4 items-start group/issue hover:bg-amber-500/10 transition-colors">
+                                         <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                         <div className="space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-500/50">Intelligence Insight</p>
+                                            <p className="text-sm font-bold text-amber-200/80 leading-relaxed">{hookScore.mainIssue}</p>
+                                         </div>
+                                      </div>
+                                   )}
+                                   {hookScore.quickFix && (
+                                      <button 
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(hookScore.quickFix);
+                                          toast({ title: "Optimized hook copied!" });
+                                        }}
+                                        className="p-6 rounded-[2rem] bg-cyan-500/5 border border-cyan-500/10 flex gap-4 items-start text-left group/fix hover:bg-cyan-500/10 transition-all active:scale-95"
+                                      >
+                                         <Sparkles className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5 group-hover/fix:scale-125 transition-transform" />
+                                         <div className="space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-cyan-400/50">Suggested Optimization</p>
+                                            <p className="text-sm font-bold text-cyan-100 italic leading-relaxed">"{hookScore.quickFix}"</p>
+                                            <p className="text-[9px] font-black text-cyan-400/30 uppercase mt-2">Click to copy</p>
+                                         </div>
+                                      </button>
+                                   )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                         <FormMessage />
                       </FormItem>
                     )}

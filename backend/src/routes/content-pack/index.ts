@@ -8,7 +8,7 @@ import { fetchLiveContext } from "../../services/perplexity-search";
 
 const router: IRouter = Router();
 
-router.post("/content/pack/enhance", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/enhance", requireAuth, async (req: any, res): Promise<void> => {
   const { idea } = req.body;
   if (!idea?.trim()) { res.status(400).json({ error: "Idea is required" }); return; }
   const sanitizedIdea = String(idea).substring(0, 500);
@@ -32,7 +32,7 @@ Raw Idea: "${sanitizedIdea}"`;
   }
 });
 
-router.post("/content/pack", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
@@ -139,7 +139,7 @@ JSON Structure:
   }
 });
 
-router.post("/content/pack/save", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/save", requireAuth, async (req: any, res): Promise<void> => {
   const { idea, tone, contentType, result } = req.body;
   if (!idea || !result) {
     res.status(400).json({ error: "Missing required data to save pack" });
@@ -151,6 +151,8 @@ router.post("/content/pack/save", requireAuth, async (req: any, res): Promise<vo
       idea,
       tone: tone || "Professional",
       contentType: contentType || "Pack",
+      platform: "Pack", // Unified platform for packs
+      source: "content-pack",
       content: result,
     });
     res.json({ success: true });

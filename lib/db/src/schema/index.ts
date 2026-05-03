@@ -34,3 +34,5 @@ export * from './securityLogs';
 export * from './payments';
 export * from './featureUsageLogs';
 export * from './impersonationSessions';
+export * from "./vaultItems";
+export * from "./hashtagCollections";

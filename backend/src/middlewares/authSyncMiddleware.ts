@@ -74,9 +74,14 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
 
     // --- FIX: Remove x-impersonate-user check from fast-cache path to prevent bypass ---
     if (cached && Date.now() - cached.timestamp < 60000 && !req.headers["x-impersonate-user"]) {
-      req.userId = uid;
-      req.user = cached.user;
-      return next();
+      // Force refresh if this is an admin email but the cache doesn't know it yet
+      if (isAdminEmail && !cached.user.isAdmin) {
+        syncCache.delete(uid);
+      } else {
+        req.userId = uid;
+        req.user = cached.user;
+        return next();
+      }
     }
     
     req.userId = uid;
@@ -92,7 +97,12 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     await db.transaction(async (tx) => {
       if (!user) {
         const emailForNewUser = emailFromSession;
-        const isEmailVerified = auth.sessionClaims?.email_verified === true;
+        // Allow through if:
+        // 1. Clerk explicitly marks email as verified (email+password signups that clicked the link)
+        // 2. email_verified is undefined (OAuth users - Google/GitHub - Clerk guarantees these are verified)
+        // 3. This is the admin email
+        const emailVerifiedClaim = auth.sessionClaims?.email_verified;
+        const isEmailVerified = emailVerifiedClaim === true || emailVerifiedClaim === undefined;
 
         if (!isEmailVerified && !isAdminEmail) {
           throw new Error("EMAIL_NOT_VERIFIED");
@@ -136,9 +146,15 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         const intervals = Math.floor(elapsed / msIn30Days);
         const currentCycleStart = new Date(anchorDate.getTime() + intervals * msIn30Days);
         
-        if (!user.lastCreditReset || new Date(user.lastCreditReset).getTime() < currentCycleStart.getTime()) {
-          const planTier = (user.planTier as string) || (user.planType ? user.planType.toUpperCase() : "FREE");
+        if (!user.lastCreditReset || new Date(user.lastCreditReset).getTime() < currentCycleStart.getTime() || (isAdminEmail && user.planTier !== "INFINITY")) {
+          let planTier = (user.planTier as string) || (user.planType ? user.planType.toUpperCase() : "FREE");
           
+          if (isAdminEmail) {
+            planTier = "INFINITY";
+            updateData.planTier = "INFINITY";
+            updateData.planType = "infinity";
+          }
+
           updateData.generationsRemaining = TIER_CREDITS[planTier] || 5;
           updateData.lastCreditReset = currentCycleStart;
           if (planTier !== "FREE" && user.planType === "free") {

@@ -52,10 +52,14 @@ const DailyActionMode = React.lazy(() => import("@/pages/core/daily"));
 const ContentPack = React.lazy(() => import("@/pages/generators/pack"));
 const AdminDashboard = React.lazy(() => import("@/pages/settings/admin"));
 const ReferralsPage = React.lazy(() => import("@/pages/settings/referrals"));
-
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
-}
+const ContentCoach = React.lazy(() => import("@/pages/core/coach"));
+const SwipeVault = React.lazy(() => import("@/pages/core/vault"));
+const Ghostwriter = React.lazy(() => import("@/pages/generators/ghostwriter"));
+const Predictor = React.lazy(() => import("@/pages/generators/predictor"));
+const Hashtags = React.lazy(() => import("@/pages/generators/hashtags"));
+const Repurpose = React.lazy(() => import("@/pages/generators/repurpose"));
+const ABTest = React.lazy(() => import("@/pages/generators/ab-test"));
+const HookScorer = React.lazy(() => import("@/pages/generators/hook-scorer"));
 
 const SuspenseFallback = () => (
   <div className="w-full max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -107,8 +111,6 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 }
 
 export function ClerkProviderWithRoutes() {
-  const [location, setLocation] = useLocation();
-
   useEffect(() => {
     document.documentElement.classList.add("dark");
   }, []);
@@ -125,7 +127,7 @@ export function ClerkProviderWithRoutes() {
         },
         variables: {
           colorPrimary: '#8b5cf6',
-          colorBackground: '#0b0416', // Darker to contrast
+          colorBackground: '#0b0416',
           colorInputBackground: 'rgba(255, 255, 255, 0.05)',
           colorInputText: '#ffffff',
           colorText: '#ffffff',
@@ -144,21 +146,12 @@ export function ClerkProviderWithRoutes() {
           formButtonPrimary: '!bg-cyan-600 hover:!bg-cyan-500 !text-white font-semibold shadow-[0_0_15px_rgba(139,92,246,0.4)] transition-all ease-out hover:scale-[1.02]',
           formFieldInput: '!bg-white/5 !border !border-white/10 !text-white focus:!border-cyan-500 rounded-xl transition-colors',
           formFieldLabel: '!text-teal-100 font-medium',
-          dividerLine: '!bg-white/10',
-          dividerText: '!text-white/40',
-          formFieldErrorText: '!text-red-300 font-medium',
-          formFieldSuccessText: '!text-emerald-400 font-medium',
-          formFieldInfoText: '!text-cyan-300 font-medium',
-          alertText: '!text-red-200',
           socialButtonsBlockButton: '!bg-white/5 !border !border-white/10 !text-white hover:!bg-white/10 transition-colors',
           socialButtonsBlockButtonText: '!text-white',
           footerActionText: '!text-white/60',
           footerActionLink: '!text-cyan-400 hover:!text-cyan-300',
           identityPreviewText: '!text-white',
           identityPreviewEditButton: '!text-cyan-400',
-          otpCodeFieldInput: '!bg-cyan-900/40 !border-2 !border-cyan-500/50 !text-white !text-2xl !font-bold !rounded-xl focus:!border-cyan-400 focus:!shadow-[0_0_0_3px_rgba(139,92,246,0.25)] !w-11 !h-12',
-          otpCodeField: '!gap-2',
-          formResendCodeLink: '!text-cyan-400 hover:!text-cyan-300',
         }
       }}
     >
@@ -187,17 +180,22 @@ export function ClerkProviderWithRoutes() {
             <Route path="/calendar"><ProtectedRoute component={ContentCalendar} /></Route>
             <Route path="/insights"><ProtectedRoute component={Insights} /></Route>
             <Route path="/pricing"><Pricing /></Route>
-            <Route path="/support">
-              <React.Suspense fallback={<SuspenseFallback />}>
-                <Support />
-              </React.Suspense>
-            </Route>
+            <Route path="/support"><Support /></Route>
             <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
             <Route path="/saved"><ProtectedRoute component={Saved} /></Route>
             <Route path="/referrals"><ProtectedRoute component={ReferralsPage} /></Route>
             <Route path="/privacy"><Privacy /></Route>
             <Route path="/terms"><Terms /></Route>
             <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
+            
+            <Route path="/coach"><ProtectedRoute component={ContentCoach} /></Route>
+            <Route path="/vault"><ProtectedRoute component={SwipeVault} /></Route>
+            <Route path="/ghostwriter"><ProtectedRoute component={Ghostwriter} /></Route>
+            <Route path="/predictor"><ProtectedRoute component={Predictor} /></Route>
+            <Route path="/hashtags"><ProtectedRoute component={Hashtags} /></Route>
+            <Route path="/repurpose"><ProtectedRoute component={Repurpose} /></Route>
+            <Route path="/ab-test"><ProtectedRoute component={ABTest} /></Route>
+            <Route path="/hook-scorer"><ProtectedRoute component={HookScorer} /></Route>
             
             <Route component={NotFound} />
           </Switch>

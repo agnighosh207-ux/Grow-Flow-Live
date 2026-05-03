@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, boolean, jsonb, integer, pgEnum } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const userPlanEnum = pgEnum("user_plan", ["FREE", "STARTER", "CREATOR", "INFINITY"]);
 
@@ -46,7 +47,20 @@ export const usersTable = pgTable("users", {
   couponCode: text("coupon_code"),
   paymentFailedAt: timestamp("payment_failed_at", { withTimezone: true }),
   streakRewardLastGrantedAt: timestamp("streak_reward_last_granted_at", { withTimezone: true }),
+  voiceProfile: jsonb("voice_profile").$type<{
+    sentenceStyle: string;
+    vocabularyLevel: string;
+    toneFingerprint: string;
+    signaturePatterns: string[];
+    openingStyle: string;
+    closingStyle: string;
+    uniqueTraits: string[];
+  }>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    generationsRemainingCheck: sql`CHECK (generations_remaining >= 0)`,
+  };
 });
 
 export type User = typeof usersTable.$inferSelect;

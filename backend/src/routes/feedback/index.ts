@@ -32,7 +32,7 @@ const requireOwner = (req: any, res: any, next: any) => {
   next();
 };
 
-router.post("/feedback", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/", requireAuth, async (req: any, res): Promise<void> => {
   const { rating, comment, trigger, page } = req.body;
 
   if (!rating || typeof rating !== "number" || rating < 1 || rating > 5) {
@@ -83,7 +83,7 @@ router.post("/feedback", requireAuth, async (req: any, res): Promise<void> => {
   res.json({ success: true });
 });
 
-router.get("/feedback", requireAuth, requireOwner, async (_req: any, res): Promise<void> => {
+router.get("/", requireAuth, requireOwner, async (_req: any, res): Promise<void> => {
   const rows = await db
     .select()
     .from(betaFeedbackTable)

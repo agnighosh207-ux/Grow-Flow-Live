@@ -5,6 +5,8 @@ import {
   RefreshCw, Copy, Check, Sparkles, CalendarDays, Trophy
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api-client";
+import { useLocation } from "wouter";
 
 interface DailyPlan {
   id: number;
@@ -22,7 +24,7 @@ interface DailyResponse {
   completedToday: boolean;
 }
 
-import { useAuth } from "@clerk/react";
+
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -108,18 +110,13 @@ export default function DailyActionMode() {
   const [completing, setCompleting] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
 
-  const { getToken } = useAuth();
+
 
   const fetchToday = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
-      const res = await fetch("/api/daily/today", { 
-        headers: token ? { "Authorization": `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new Error("Failed to load");
-      const json = await res.json();
-      setData(json);
+      const { data } = await api.get("/daily/today");
+      setData(data);
       setJustCompleted(false);
     } catch (err: any) {
       toast({ title: "Couldn't load today's plan", description: "Try refreshing", variant: "destructive" });
@@ -134,16 +131,7 @@ export default function DailyActionMode() {
     if (!data?.plan || data.completedToday) return;
     setCompleting(true);
     try {
-      const token = await getToken();
-      const res = await fetch("/api/daily/complete", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
-      });
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
+      const { data: json } = await api.patch("/daily/today/complete");
       setData(prev => prev ? { ...prev, streak: json.streak, completedToday: true } : prev);
       setJustCompleted(true);
       toast({ title: `🔥 ${json.streak}-day streak!`, description: "Amazing! You posted today's content. Keep the momentum going!" });

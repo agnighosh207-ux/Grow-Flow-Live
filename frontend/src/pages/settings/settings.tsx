@@ -714,8 +714,8 @@ export default function SettingsPage() {
                 },
                 {
                   key: "weeklyDigest" as const,
-                  label: "Weekly Content Digest",
-                  desc: "Every Monday, a quick note on how your content's doing and a nudge to keep the momentum going.",
+                  label: "Weekly Trend Digest Emails",
+                  desc: "Receive a weekly email with curated content trends and audio patterns specific to your niche.",
                   icon: Mail,
                   iconColor: "text-emerald-400",
                 },

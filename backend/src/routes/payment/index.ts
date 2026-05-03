@@ -20,7 +20,7 @@ function getRazorpayClient() {
   return new Razorpay({ key_id: keyId as string, key_secret: keySecret as string });
 }
 
-router.post("/payment/tip/create", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/tip/create", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { amount } = req.body; // 4900 or 9900
     if (![4900, 9900].includes(amount)) {
@@ -46,7 +46,7 @@ router.post("/payment/tip/create", requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-router.post("/payment/tip/verify", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/tip/verify", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     

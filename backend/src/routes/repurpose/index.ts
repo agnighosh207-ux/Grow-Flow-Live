@@ -1,69 +1,70 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
-import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent, extractJson } from "../../services/ai-engine";
-import { db, featureUsageLogsTable } from "@workspace/db";
-import crypto from "crypto";
 
 const router: IRouter = Router();
 
-router.post("/repurpose", requireAuth, requirePlanOrTrial("content"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  let isAborted = false;
-  req.on('close', () => { isAborted = true; });
+router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const { sourceContent, sourceFormat, targetFormats, tone, niche, language } = req.body;
 
-  const { content, targetFormat, language = "English" } = req.body;
-
-  if (!content || !targetFormat) {
-    res.status(400).json({ error: "Missing content or targetFormat" });
+  if (!sourceContent || sourceContent.length < 50) {
+    res.status(400).json({ error: "Source content must be at least 50 characters" });
     return;
   }
 
-  const sanitizedContent = String(content).substring(0, 4000); // Larger limit for repurposing
+  if (!Array.isArray(targetFormats) || targetFormats.length === 0 || targetFormats.length > 4) {
+    res.status(400).json({ error: "Select between 1 and 4 target formats" });
+    return;
+  }
 
-  const systemPrompt = `You are a master content repurposer. Adapt the content into a ${targetFormat}.
-Maintain core message and value. Format specifically for the platform.`;
+  const sanitizedContent = sourceContent.substring(0, 3000);
 
-  const userPrompt = `Repurpose this content into a ${targetFormat}:
-"${sanitizedContent}"
+  const systemPrompt = `You are a master content repurposer. Transform content from one format to another while preserving the core insight, adapting tone and structure for each platform's unique algorithm and audience behavior. Do not just summarize — fully transform the content into native-feeling platform content. Return ONLY valid JSON.`;
+  
+  const userPrompt = `
+  SOURCE FORMAT: ${sourceFormat}
+  TARGET FORMATS: ${targetFormats.join(", ")}
+  TONE: ${tone || "Professional"}
+  NICHE: ${niche || "General"}
+  LANGUAGE: ${language || "English"}
 
-Return ONLY a JSON object: {"repurposedContent": "string"}`;
+  SOURCE CONTENT:
+  ${sanitizedContent}
+
+  Return JSON:
+  {
+    "repurposed": {
+      "${targetFormats[0]}": {
+        "content": "string",
+        "platform": "string",
+        "wordCount": number,
+        "adaptationNote": "string"
+      },
+      ... // same for other formats
+    },
+    "coreInsight": "string",
+    "repurposeStrategy": "string"
+  }
+  `;
 
   try {
-    if (isAborted) return;
-    const rawContentObj = await generateContent({
+    const isPaid = req.user?.planType !== "free";
+    const response = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      userPlan: req.user?.planType || "free",
+      userPlan: isPaid ? "INFINITY" : "FREE", 
       userId: req.userId,
-      language,
-      maxTokens: 3000,
+      maxTokens: 2500,
     });
 
-    if (isAborted) return;
-    const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
-    let parsed = extractJson(rawContent);
-
-    if (!parsed || !parsed.repurposedContent) {
-       // Try to use raw content if it's just a string
-       const result = typeof parsed === 'string' ? parsed : (parsed?.repurposedContent || rawContent);
-       res.json({ result: result.replace(/^["']|["']$/g, '') });
-       return;
-    }
-
-    res.json({ result: parsed.repurposedContent });
-
-    db.insert(featureUsageLogsTable).values({
-      id: crypto.randomUUID(),
-      userId: req.userId,
-      feature: "repurpose"
-    }).catch(() => {});
-  } catch (err: any) {
-    if (isAborted) return;
+    const parsed = extractJson(response.choices[0]?.message?.content || "{}");
+    res.json(parsed);
+  } catch (err) {
     console.error("REPURPOSE ERROR:", err);
-    res.status(503).json({ error: "Failed to repurpose content." });
+    res.status(503).json({ error: "Repurposing failed. Please try again." });
   }
 });
 

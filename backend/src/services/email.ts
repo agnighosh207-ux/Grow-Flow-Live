@@ -201,3 +201,52 @@ export async function sendStreakRewardEmail(email: string, streak: number, rewar
     logger.error({ email, error: String(error) }, "Email send failure");
   }
 }
+
+export async function sendWeeklyTrendDigest(email: string, niche: string, trends: any[], weekSummary: string) {
+  if (!resend) return;
+  try {
+    let trendsHtml = trends.map(t => `
+      <div style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="background-color: rgba(0, 242, 255, 0.1); color: #00F2FF; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${t.type}</span>
+          <span style="font-size: 12px; color: #94a3b8;">${t.platform}</span>
+        </div>
+        <p style="margin: 0 0 12px 0; font-size: 14px; font-weight: 500; color: #ffffff;">${t.description}</p>
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: #94a3b8;">
+            <span>Opportunity Score</span>
+            <span style="font-weight: bold; color: ${t.opportunityScore >= 80 ? '#10b981' : t.opportunityScore >= 60 ? '#f59e0b' : '#ef4444'}">${t.opportunityScore}/100</span>
+          </div>
+          <div style="height: 4px; background-color: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+            <div style="height: 100%; width: ${t.opportunityScore}%; background-color: ${t.opportunityScore >= 80 ? '#10b981' : t.opportunityScore >= 60 ? '#f59e0b' : '#ef4444'};"></div>
+          </div>
+        </div>
+        <div style="background-color: rgba(0, 242, 255, 0.05); border-left: 3px solid #00F2FF; padding: 12px; border-radius: 0 4px 4px 0;">
+          <p style="margin: 0; font-size: 12px; font-weight: bold; color: #00F2FF;">💡 Actionable Idea</p>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: #cbd5e1;">${t.actionableIdea}</p>
+        </div>
+      </div>
+    `).join('');
+
+    const html = emailLayout(
+      `🔥 Your Weekly ${niche} Trend Report`,
+      `
+        <p style="font-size: 15px; color: #cbd5e1; margin-bottom: 24px;">${weekSummary}</p>
+        <h3 style="color: #ffffff; font-size: 18px; margin-bottom: 16px;">Top Opportunities This Week:</h3>
+        ${trendsHtml}
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="https://growflowai.space/trends" class="btn">Explore in GrowFlow</a>
+        </div>
+      `
+    );
+
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `🔥 Your Weekly GrowFlow Trend Report`,
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Trend digest email send failure");
+  }
+}

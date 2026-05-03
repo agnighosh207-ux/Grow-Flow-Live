@@ -145,7 +145,7 @@ export default function ContentPack() {
     setSaving(true);
     try {
       const token = await getToken();
-      const res = await fetch("/api/content/pack/save", {
+      const res = await fetch("/api/content-pack/save", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -168,7 +168,7 @@ export default function ContentPack() {
     setEnhancing(true);
     try {
       const token = await getToken();
-      const res = await fetch("/api/content/pack/enhance", {
+      const res = await fetch("/api/content-pack/enhance", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -202,7 +202,7 @@ export default function ContentPack() {
     setResult(null);
     try {
       const token = await getToken();
-      const res = await fetch("/api/content/pack", {
+      const res = await fetch("/api/content-pack/generate", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

@@ -6,7 +6,7 @@ import crypto from "crypto";
 import { DailyResponseSchema } from "@workspace/api-zod";
 import { requireAuth } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
-import { generateContent } from "../../services/ai-engine";
+import { generateContent, extractJson } from "../../services/ai-engine";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
@@ -70,16 +70,15 @@ Return ONLY valid JSON with this exact structure:
   });
 
   const content = completion.choices[0]?.message?.content || "{}";
-  const match = content.match(/\{[\s\S]*\}/);
-  const parsed = JSON.parse(match ? match[0] : content);
+  const parsed = extractJson(content);
   return {
-    idea: parsed.idea || "Share 3 lessons from your biggest failure this year",
-    hook: parsed.hook || "I failed publicly and it was the best thing that ever happened to me.",
-    cta: parsed.cta || "Comment 'LESSON' and I'll share the full story with you.",
+    idea: parsed?.idea || "Share 3 lessons from your biggest failure this year",
+    hook: parsed?.hook || "I failed publicly and it was the best thing that ever happened to me.",
+    cta: parsed?.cta || "Comment 'LESSON' and I'll share the full story with you.",
   };
 }
 
-router.get("/daily/today", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/today", requireAuth, async (req: any, res): Promise<void> => {
   const today = getTodayDate();
   const userId = req.userId;
 
@@ -126,7 +125,7 @@ router.get("/daily/today", requireAuth, async (req: any, res): Promise<void> => 
   });
 });
 
-router.patch("/daily/today/complete", requireAuth, async (req: any, res): Promise<void> => {
+router.patch("/today/complete", requireAuth, async (req: any, res): Promise<void> => {
   const today = getTodayDate();
   const userId = req.userId;
 
@@ -196,7 +195,7 @@ router.patch("/daily/today/complete", requireAuth, async (req: any, res): Promis
   res.json({ streak: newStreak, completedToday: true });
 });
 
-router.get("/daily/streak", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/streak", requireAuth, async (req: any, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
   if (!user) { res.json({ streak: 0, lastStreakDate: null }); return; }
   const streak = computeCurrentStreak(user);

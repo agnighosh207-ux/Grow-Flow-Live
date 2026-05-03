@@ -8,7 +8,11 @@ export const contentCalendarTable = pgTable("content_calendar", {
   idea: text("idea").notNull(),
   platform: text("platform").notNull(),
   contentType: text("content_type").notNull(),
-  status: text("status").notNull().default("planned"),
+  status: text("status").notNull().default("planned"), // planned, draft, scheduled, published
+  generationId: text("generation_id"), // FK or reference to contentGenerations
+  notes: text("notes"),
+  scheduledTime: text("scheduled_time"), // e.g., "9:00 AM"
+  color: text("color"), // for UI color coding
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

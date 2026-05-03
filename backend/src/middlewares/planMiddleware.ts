@@ -8,6 +8,9 @@ import { ensureReferralCode } from "../utils/referral";
 export const FREE_TRIALS_PER_TOOL = 3;
 
 export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if ((req as any).userId) {
+    return next();
+  }
   const auth = getAuth(req);
   const userId = auth?.sessionClaims?.userId || auth?.userId;
   if (!userId) {
@@ -78,6 +81,14 @@ export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string
   bio: { name: "Bio Generator", requiredPlan: "STARTER" },
   content: { name: "Content Generator", requiredPlan: "STARTER" },
   caption: { name: "Caption Enhancer", requiredPlan: "STARTER" },
+  coach: { name: "AI Content Coach", requiredPlan: "CREATOR" },
+  vault: { name: "Swipe Vault", requiredPlan: "STARTER" },
+  ghostwriter: { name: "AI Ghostwriter", requiredPlan: "CREATOR" },
+  predictor: { name: "Performance Predictor", requiredPlan: "STARTER" },
+  calendar: { name: "Content Calendar", requiredPlan: "STARTER" },
+  hashtags: { name: "Hashtag Generator", requiredPlan: "STARTER" },
+  competitor: { name: "Competitor Analysis", requiredPlan: "STARTER" },
+  repurpose: { name: "Content Repurposing", requiredPlan: "STARTER" },
 };
 
 export function requirePlanOrTrial(toolKey: string) {

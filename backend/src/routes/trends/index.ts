@@ -55,7 +55,7 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 // ─── /trends/generate — 100% PERPLEXITY SEARCH ROUTE ──────────────────────
 // Perplexity sonar searches the live web AND structures JSON in ONE call.
 // Groq is NOT involved here. JSON output enforced via prompt instructions.
-router.post("/trends/generate", requireAuth, requirePlanOrTrial("trends"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/generate", requireAuth, requirePlanOrTrial("trends"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
@@ -177,81 +177,6 @@ JSON schema:
     if (isAborted) return;
     console.error("TRENDS GEN ERROR:", err);
     res.status(500).json({ error: "Generation failed. Please try again." });
-  }
-});
-
-// ─── /content/analyze — HYBRID ROUTE (Groq via fallback engine) ───────────
-// This does NOT need live web search. Uses Groq for analysis.
-router.post("/content/analyze", requireAuth, requirePlanOrTrial("content_analyze"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  const { idea, contentType = "Educational", niche = "General", platforms } = req.body as {
-    idea: string;
-    contentType?: string;
-    niche?: string;
-    platforms?: Record<string, string>;
-  };
-
-  if (!idea || idea.trim().length < 2) {
-    res.status(400).json({ error: "Please provide a valid idea to analyze." });
-    return;
-  }
-
-  const sanitizedIdea = String(idea).substring(0, 500);
-  const sanitizedNiche = String(niche).substring(0, 50);
-
-  const contentSample = platforms
-    ? Object.values(platforms).filter(Boolean).slice(0, 2).join("\n\n---\n\n").slice(0, 800)
-    : "";
-
-  const systemPrompt = `You are a viral content analyst. Provide surgical analysis explaining why a piece of content will perform.
-Grounded in: Live Trending Psychological Triggers, Platform Algorithm Signals, Hook Science, and Niche Audience Psychology.`;
-
-  const userPrompt = `Analyze this content for performance potential:
-IDEA: "${sanitizedIdea}"
-CONTENT TYPE: ${contentType}
-NICHE: ${sanitizedNiche}
-${contentSample ? `\nSAMPLE CONTENT:\n${contentSample}` : ""}
-
-Return ONLY valid JSON:
-{
-  "viralityScore": number,
-  "hookStrength": number,
-  "engagementPotential": number,
-  "shareability": number,
-  "emotionalTrigger": "string",
-  "curiosityGap": "string",
-  "targetAudienceReaction": "string",
-  "improvementTip": "string"
-}`;
-
-  try {
-    const completion = await generateContent({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      userPlan: req.user?.planType || "free",
-      userId: req.userId,
-      maxTokens: 1200,
-    });
-
-    const raw = completion.choices[0]?.message?.content?.trim() ?? "{}";
-    const analysis = extractJson(raw);
-
-    if (!analysis) {
-      res.status(500).json({ error: "Failed to parse content analysis" });
-      return;
-    }
-
-    res.json(analysis);
-
-    db.insert(featureUsageLogsTable).values({
-      id: crypto.randomUUID(),
-      userId: req.userId,
-      feature: "content_analyze"
-    }).catch(() => {});
-  } catch (err) {
-    console.error("ANALYZE ERROR:", err);
-    res.status(500).json({ error: "Failed to analyze content" });
   }
 });
 

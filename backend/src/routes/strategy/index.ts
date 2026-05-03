@@ -28,7 +28,7 @@ const nicheGoalContext: Record<string, string> = {
   General: "value-first content, personal brand clarity, niche authority building, audience relationship deepening",
 };
 
-router.post("/strategy/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 

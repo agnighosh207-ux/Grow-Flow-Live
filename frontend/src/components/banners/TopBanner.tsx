@@ -8,7 +8,7 @@ export function TopBanner() {
   const { data } = useQuery({
     queryKey: ["activeAnnouncements"],
     queryFn: async () => {
-      const res = await fetch("/api/announcements/active");
+      const res = await fetch("/api/announcement/active");
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
     },

@@ -1,0 +1,602 @@
+import React, { useState, useEffect } from "react";
+import { Hash, Sparkles, Filter, ShieldAlert, CheckCircle2, Copy, Save, Trash2, LayoutGrid, Search, AlertCircle, RefreshCw, Smartphone, Globe, Zap, ChevronRight } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api-client";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+export default function HashtagsPage() {
+  const [activeTab, setActiveTab] = useState("generate");
+  const [topic, setTopic] = useState("");
+  const [niche, setNiche] = useState("");
+  const [platform, setPlatform] = useState("Instagram");
+  const [strategy, setStrategy] = useState("mixed");
+  const [language, setLanguage] = useState("English");
+  const [generating, setGenerating] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const [analyzeText, setAnalyzeText] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+
+  const [collections, setCollections] = useState<any[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [collectionName, setCollectionName] = useState("");
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (activeTab === "collections") fetchCollections();
+  }, [activeTab]);
+
+  const fetchCollections = async () => {
+    setLoadingCollections(true);
+    try {
+      const { data } = await api.get("/hashtags/collections");
+      setCollections(data);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Failed to load collections" });
+    } finally {
+      setLoadingCollections(false);
+    }
+  };
+
+  const generateHashtags = async () => {
+    if (!topic) return;
+    setGenerating(true);
+    try {
+      const { data } = await api.post("/hashtags/generate", {
+        topic, niche, platform, language, strategy
+      });
+      setResult(data);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Generation failed" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const analyzeHashtags = async () => {
+    if (!analyzeText) return;
+    setAnalyzing(true);
+    try {
+      const { data } = await api.post("/hashtags/analyze", {
+        hashtags: analyzeText, platform, niche
+      });
+      setAnalysisResult(data);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Analysis failed" });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const saveCollection = async () => {
+    if (!collectionName || !result) return;
+    try {
+      const tags = [...result.primary, ...result.secondary].map(t => t.tag);
+      await api.post("/hashtags/save-collection", {
+        name: collectionName, platform, tags
+      });
+      setSaveDialogOpen(false);
+      setCollectionName("");
+      toast({ title: "Collection saved!" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Failed to save collection" });
+    }
+  };
+
+  const deleteCollection = async (id: string) => {
+    try {
+      await api.delete(`/hashtags/collections/${id}`);
+      setCollections(prev => prev.filter(c => c.id !== id));
+      toast({ title: "Collection deleted" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Failed to delete" });
+    }
+  };
+
+  const copyTags = (tags: string) => {
+    navigator.clipboard.writeText(tags);
+    toast({ title: "Copied!", description: "Hashtags copied to clipboard." });
+  };
+
+  const getCompColor = (level: string) => {
+    if (level === "low") return "bg-emerald-500/20 text-emerald-400 border-emerald-500/20";
+    if (level === "medium") return "bg-amber-500/20 text-amber-400 border-amber-500/20";
+    return "bg-rose-500/20 text-rose-400 border-rose-500/20";
+  };
+
+  return (
+    <div className="min-h-screen bg-transparent p-4 md:p-8 max-w-[1500px] mx-auto pb-32">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/5 pb-10">
+        <div className="space-y-4">
+          <div className="flex items-center gap-6">
+            <div className="p-4 rounded-[2rem] bg-gradient-to-br from-indigo-500 to-purple-600 shadow-2xl shadow-indigo-500/30 transform rotate-3">
+              <Hash className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-5xl font-black tracking-tighter bg-gradient-to-r from-white via-white to-white/40 bg-clip-text text-transparent">
+                Hashtag Intelligence
+              </h1>
+              <p className="text-indigo-400/80 text-xl font-bold tracking-wide">
+                Strategy-driven discovery for the algorithm era.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white/5 p-1.5 rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-2xl">
+          <TabsList className="bg-transparent h-14">
+            <TabsTrigger value="generate" className="rounded-2xl px-10 h-11 font-black text-sm uppercase tracking-widest data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all">
+              Generate
+            </TabsTrigger>
+            <TabsTrigger value="analyze" className="rounded-2xl px-10 h-11 font-black text-sm uppercase tracking-widest data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all">
+              Audit
+            </TabsTrigger>
+            <TabsTrigger value="collections" className="rounded-2xl px-10 h-11 font-black text-sm uppercase tracking-widest data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all">
+              Library
+            </TabsTrigger>
+          </TabsList>
+        </div>
+      </header>
+
+      <AnimatePresence mode="wait">
+        <TabsContent value="generate" className="mt-0">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 items-start">
+            {/* Input Config */}
+            <div className="xl:col-span-4 space-y-8">
+              <Card className="bg-white/[0.03] border-white/10 backdrop-blur-3xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+                <CardHeader className="bg-white/[0.02] border-b border-white/5 p-8">
+                  <CardTitle className="text-2xl font-black flex items-center gap-3">
+                    <Filter className="h-6 w-6 text-indigo-400" />
+                    Global Filters
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 space-y-8">
+                  <div className="space-y-3">
+                    <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Strategic Topic</label>
+                    <Input 
+                      placeholder="e.g. Minimalist Productivity for CEOs" 
+                      value={topic} 
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="bg-white/[0.02] border-white/10 h-14 rounded-2xl text-lg font-bold focus:ring-indigo-500/50"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Target Niche</label>
+                      <Select value={niche} onValueChange={setNiche}>
+                        <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                          <SelectValue placeholder="Select Niche" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-950 border-white/10 text-white">
+                          <SelectItem value="Fitness">Fitness</SelectItem>
+                          <SelectItem value="Finance">Finance</SelectItem>
+                          <SelectItem value="Tech">Tech</SelectItem>
+                          <SelectItem value="Business">Business</SelectItem>
+                          <SelectItem value="Motivation">Motivation</SelectItem>
+                          <SelectItem value="Lifestyle">Lifestyle</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Algorithm</label>
+                      <Select value={platform} onValueChange={setPlatform}>
+                        <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-950 border-white/10 text-white">
+                          <SelectItem value="Instagram">Instagram</SelectItem>
+                          <SelectItem value="Twitter">Twitter (X)</SelectItem>
+                          <SelectItem value="YouTube">YouTube</SelectItem>
+                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Growth Strategy</label>
+                    <Select value={strategy} onValueChange={setStrategy}>
+                      <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-950 border-white/10 text-white">
+                        <SelectItem value="growth">Growth (Community Tags)</SelectItem>
+                        <SelectItem value="reach">Reach (Exposure Focused)</SelectItem>
+                        <SelectItem value="niche">Niche (Laser Targeted)</SelectItem>
+                        <SelectItem value="mixed">Mixed (Balanced Set)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="pt-4">
+                    <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex gap-4">
+                       <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
+                       <p className="text-xs text-amber-200/60 leading-relaxed font-medium">For maximum impact on Instagram, use a mix of broad (reach) and specific (growth) tags. Avoid using the same set every time.</p>
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full h-20 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-2xl font-black rounded-3xl shadow-2xl shadow-indigo-600/30 group transition-all"
+                    onClick={generateHashtags}
+                    disabled={generating || !topic}
+                  >
+                    {generating ? <RefreshCw className="mr-3 h-7 w-7 animate-spin" /> : <Sparkles className="mr-3 h-7 w-7 group-hover:scale-125 transition-transform" />}
+                    {generating ? "STRATEGIZING..." : "GENERATE INTELLIGENCE"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Results Grid */}
+            <div className="xl:col-span-8">
+              <AnimatePresence mode="wait">
+                {result ? (
+                  <motion.div 
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-10"
+                  >
+                    <Card className="bg-white/[0.03] border-white/10 rounded-[3rem] border-l-8 border-l-indigo-600 overflow-hidden shadow-2xl">
+                      <CardContent className="p-10 flex gap-8 items-start">
+                        <div className="p-5 rounded-3xl bg-indigo-500/10 border border-indigo-500/20">
+                           <ShieldAlert className="h-10 w-10 text-indigo-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-500 mb-2">The Strategic Narrative</h4>
+                          <p className="text-2xl font-bold text-white leading-tight">{result.strategyNote}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                           <Zap className="h-5 w-5 text-indigo-400" />
+                           <h3 className="text-base font-black uppercase tracking-widest text-white/80">Primary Growth Units</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          {result.primary.map((tag: any) => (
+                            <TooltipProvider key={tag.tag}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge className={`px-5 py-3 rounded-2xl border text-base font-bold flex items-center gap-3 transition-all cursor-default hover:scale-105 ${getCompColor(tag.competitionLevel)}`}>
+                                    #{tag.tag}
+                                    <span className="text-[9px] font-black uppercase opacity-50 px-2 py-0.5 rounded-full bg-black/20">{tag.category}</span>
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-zinc-950 border-white/10 text-white p-3 rounded-xl shadow-2xl">
+                                  <div className="space-y-1">
+                                     <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Volume</p>
+                                     <p className="text-lg font-bold">{tag.estimatedPosts}</p>
+                                     <div className="flex justify-between items-center gap-8 mt-2">
+                                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Relevance</span>
+                                        <span className="text-[10px] font-black text-indigo-400">{tag.relevanceScore}%</span>
+                                     </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                           <Globe className="h-5 w-5 text-muted-foreground" />
+                           <h3 className="text-base font-black uppercase tracking-widest text-muted-foreground">Secondary Context Tags</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          {result.secondary.map((tag: any) => (
+                            <Badge key={tag.tag} variant="outline" className="px-5 py-3 rounded-2xl border-white/5 bg-white/[0.02] text-white/40 font-bold text-base hover:bg-white/5 hover:text-white/60 transition-all cursor-default">
+                              #{tag.tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 border-t border-white/5">
+                      <div className="space-y-4">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-rose-500 flex items-center gap-2">
+                           <AlertCircle className="h-4 w-4" /> Blacklisted / Avoid
+                        </h3>
+                        <div className="grid grid-cols-1 gap-3">
+                          {result.avoid.map((a: any) => (
+                            <div key={a.tag} className="flex gap-4 p-4 rounded-3xl bg-rose-500/5 border border-rose-500/10 items-center">
+                              <Trash2 className="h-5 w-5 text-rose-500 shrink-0" />
+                              <div>
+                                <p className="text-sm font-black text-rose-400">#{a.tag}</p>
+                                <p className="text-[11px] text-muted-foreground font-medium">{a.reason}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                           <Smartphone className="h-4 w-4" /> Algorithm Insight
+                        </h3>
+                        <div className="p-6 rounded-[2.5rem] bg-white/[0.03] border border-white/10 flex gap-6 items-center group overflow-hidden relative">
+                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-150 transition-transform duration-700">
+                             <Smartphone className="h-20 w-20" />
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed italic font-medium relative">"{result.platformNote}"</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-6 pt-10">
+                      <Button className="flex-1 h-20 bg-white text-black font-black text-2xl rounded-3xl hover:scale-[1.02] transition-all shadow-2xl" onClick={() => copyTags(result.copyableSet)}>
+                        <Copy className="mr-3 h-7 w-7" /> COPY INTELLIGENCE SET
+                      </Button>
+                      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="flex-1 h-20 border-white/10 bg-white/5 font-black text-2xl rounded-3xl hover:bg-white/10 transition-all">
+                            <Save className="mr-3 h-7 w-7" /> SAVE TO LIBRARY
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-zinc-950 border-white/10 text-white rounded-[2rem] p-8 max-w-lg">
+                          <DialogHeader className="space-y-3">
+                            <DialogTitle className="text-3xl font-black italic">Archive Collection</DialogTitle>
+                            <CardDescription className="text-base">Save this growth pack to your private library for reuse.</CardDescription>
+                          </DialogHeader>
+                          <div className="py-8 space-y-6">
+                            <div className="space-y-2">
+                               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Collection Label</label>
+                               <Input 
+                                placeholder="e.g. Q2 Growth Strategy" 
+                                value={collectionName} 
+                                onChange={(e) => setCollectionName(e.target.value)}
+                                className="bg-white/5 border-white/10 h-14 rounded-2xl text-lg font-bold"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                               <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400 font-black text-xs">{result.primary.length + result.secondary.length}</div>
+                               <p className="text-xs font-bold text-indigo-200/70 uppercase tracking-widest">Total units to be archived</p>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button onClick={saveCollection} className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 font-black text-lg rounded-2xl">CONFIRM ARCHIVE</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="h-full min-h-[600px] flex flex-col items-center justify-center text-center space-y-10"
+                  >
+                    <div className="relative">
+                       <div className="absolute inset-0 bg-indigo-500/20 blur-[120px] rounded-full" />
+                       <div className="p-16 rounded-[4rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl relative animate-in zoom-in duration-1000">
+                          <Hash className="h-32 w-32 text-white/5 animate-pulse" />
+                       </div>
+                    </div>
+                    <div className="space-y-4 max-w-sm">
+                       <h3 className="text-3xl font-black text-white/40 italic">Global Discovery Off-line</h3>
+                       <p className="text-muted-foreground font-medium text-lg leading-relaxed">Input your target topic and niche on the left to initiate hashtag intelligence gathering.</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analyze" className="mt-0">
+          <div className="max-w-4xl mx-auto space-y-12">
+            <Card className="bg-white/[0.03] border-white/10 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-2xl">
+              <CardHeader className="bg-white/[0.02] border-b border-white/5 p-10">
+                <CardTitle className="text-3xl font-black flex items-center gap-4">
+                   <ShieldAlert className="h-8 w-8 text-indigo-500" />
+                   Hashtag Audit
+                </CardTitle>
+                <CardDescription className="text-lg">Audit your current sets against the latest algorithm benchmarks.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-10 space-y-10">
+                <div className="space-y-4">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Raw Hashtag Stream</label>
+                   <Textarea 
+                    placeholder="Paste your current hashtags here... (e.g. #growth #marketing #business)"
+                    className="min-h-[180px] bg-white/[0.02] border-white/10 rounded-3xl text-xl p-8 leading-relaxed resize-none focus:ring-indigo-500/50 transition-all"
+                    value={analyzeText}
+                    onChange={(e) => setAnalyzeText(e.target.value)}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Platform Engine</label>
+                      <Select value={platform} onValueChange={setPlatform}>
+                        <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-950 border-white/10 text-white">
+                          <SelectItem value="Instagram">Instagram</SelectItem>
+                          <SelectItem value="Twitter">Twitter (X)</SelectItem>
+                          <SelectItem value="YouTube">YouTube</SelectItem>
+                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                        </SelectContent>
+                      </Select>
+                   </div>
+                   <div className="space-y-3">
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Contextual Niche</label>
+                      <Select value={niche} onValueChange={setNiche}>
+                        <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                          <SelectValue placeholder="Niche" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-950 border-white/10 text-white">
+                          <SelectItem value="Fitness">Fitness</SelectItem>
+                          <SelectItem value="Finance">Finance</SelectItem>
+                          <SelectItem value="Tech">Tech</SelectItem>
+                          <SelectItem value="Business">Business</SelectItem>
+                        </SelectContent>
+                      </Select>
+                   </div>
+                </div>
+
+                <Button 
+                  className="w-full h-20 bg-indigo-600 hover:bg-indigo-500 font-black text-2xl rounded-3xl shadow-2xl transition-all group"
+                  onClick={analyzeHashtags}
+                  disabled={analyzing || !analyzeText}
+                >
+                  {analyzing ? <RefreshCw className="mr-4 h-8 w-8 animate-spin" /> : <Search className="mr-4 h-8 w-8 group-hover:scale-125 transition-transform" />}
+                  {analyzing ? "AUDITING..." : "EXECUTE PERFORMANCE AUDIT"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <AnimatePresence>
+              {analysisResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-12"
+                >
+                  <div className="flex items-center justify-between bg-white/[0.03] p-10 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-700">
+                       <CheckCircle2 className="h-32 w-32" />
+                    </div>
+                    <div className="flex items-center gap-10">
+                      <div className={`w-32 h-32 rounded-[2.5rem] flex items-center justify-center text-7xl font-black shadow-2xl transition-all group-hover:scale-105 ${
+                        analysisResult.grade === "A" ? "bg-emerald-500 text-black" :
+                        analysisResult.grade === "B" ? "bg-emerald-500/20 text-emerald-500 border-2 border-emerald-500/50" :
+                        analysisResult.grade === "C" ? "bg-amber-500/20 text-amber-500 border-2 border-amber-500/50" :
+                        "bg-rose-500/20 text-rose-500 border-2 border-rose-500/50"
+                      }`}>
+                        {analysisResult.grade}
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-4xl font-black italic">Quality Benchmark</h4>
+                        <p className="text-xl text-muted-foreground font-medium max-w-xl leading-relaxed">{analysisResult.gradeReason}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-6">
+                      <h4 className="text-sm font-black uppercase tracking-[0.3em] text-rose-500 flex items-center gap-3">
+                         <ShieldAlert className="h-5 w-5" /> Efficiency Leaks
+                      </h4>
+                      <div className="space-y-4">
+                        {analysisResult.issues.map((issue: any, i: number) => (
+                          <div key={i} className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex gap-6 items-start hover:bg-white/5 transition-all group">
+                            <div className={`p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 ${issue.severity === "high" ? "animate-pulse" : ""}`}>
+                               <AlertCircle className={`h-6 w-6 ${issue.severity === "high" ? "text-rose-500" : "text-amber-500"}`} />
+                            </div>
+                            <div className="space-y-1">
+                               <p className="text-lg font-black text-white">#{issue.tag}</p>
+                               <p className="text-sm text-muted-foreground font-medium">{issue.issue}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-6">
+                      <h4 className="text-sm font-black uppercase tracking-[0.3em] text-indigo-400 flex items-center gap-3">
+                         <Zap className="h-5 w-5" /> Strategic Optimizations
+                      </h4>
+                      <div className="space-y-4">
+                        {analysisResult.recommendations.map((rec: string, i: number) => (
+                          <div key={i} className="flex gap-5 items-start p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/10 hover:bg-indigo-500/10 transition-all">
+                            <CheckCircle2 className="h-6 w-6 text-indigo-400 mt-0.5 shrink-0" />
+                            <p className="text-base text-muted-foreground font-medium leading-relaxed italic">"{rec}"</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Card className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border-white/10 rounded-[4rem] overflow-hidden shadow-2xl relative">
+                    <div className="absolute top-0 right-0 p-10 opacity-5">
+                       <Sparkles className="h-48 w-48" />
+                    </div>
+                    <CardHeader className="p-12 pb-6">
+                      <CardTitle className="text-3xl font-black italic">Optimized Hash-Stream</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-12 pt-0 space-y-10">
+                      <p className="text-2xl text-indigo-100 font-bold leading-relaxed tracking-tight selection:bg-indigo-500/30">
+                        {analysisResult.improvedSet}
+                      </p>
+                      <Button className="w-full h-20 bg-white text-black font-black text-2xl rounded-3xl shadow-2xl hover:scale-[1.02] transition-all" onClick={() => copyTags(analysisResult.improvedSet)}>
+                        <Copy className="mr-4 h-7 w-7" /> COPY OPTIMIZED STREAM
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="collections" className="mt-0 space-y-12">
+           {loadingCollections ? (
+             <div className="flex justify-center py-40"><RefreshCw className="h-12 w-12 animate-spin text-white/10" /></div>
+           ) : collections.length === 0 ? (
+             <div className="text-center py-40 opacity-20 space-y-8 flex flex-col items-center">
+               <div className="p-12 rounded-[4rem] bg-white/5 border border-white/5">
+                  <LayoutGrid className="h-32 w-32 mx-auto" />
+               </div>
+               <h3 className="text-4xl font-black italic">Library Empty</h3>
+             </div>
+           ) : (
+             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+               {collections.map(col => (
+                 <Card key={col.id} className="bg-white/[0.03] border-white/10 rounded-[2.5rem] group hover:border-indigo-500/30 transition-all overflow-hidden flex flex-col">
+                   <CardHeader className="flex flex-row justify-between items-start p-8 pb-4">
+                     <div>
+                       <CardTitle className="text-2xl font-black text-white group-hover:text-indigo-400 transition-colors">{col.name}</CardTitle>
+                       <CardDescription className="text-xs uppercase font-black tracking-widest text-muted-foreground mt-1">{col.platform}</CardDescription>
+                     </div>
+                     <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" onClick={() => deleteCollection(col.id)}>
+                       <Trash2 className="h-5 w-5" />
+                     </Button>
+                   </CardHeader>
+                   <CardContent className="p-8 pt-0 space-y-8 flex-1 flex flex-col justify-between">
+                     <div className="flex flex-wrap gap-2">
+                       {col.tags.slice(0, 10).map((t: string) => (
+                         <span key={t} className="text-[11px] font-bold text-white/30 group-hover:text-white/50 transition-colors">#{t}</span>
+                       ))}
+                       {col.tags.length > 10 && <span className="text-[11px] font-black text-indigo-500/40">+{col.tags.length - 10} MORE</span>}
+                     </div>
+                     <Button variant="secondary" className="w-full h-14 rounded-2xl bg-white/5 border-white/5 hover:bg-indigo-600 hover:text-white transition-all font-black uppercase tracking-widest text-sm" onClick={() => copyTags(col.tags.join(" "))}>
+                        <Copy className="mr-2 h-5 w-5" /> Copy Pack
+                     </Button>
+                   </CardContent>
+                 </Card>
+               ))}
+             </div>
+           )}
+        </TabsContent>
+      </AnimatePresence>
+      </Tabs>
+    </div>
+  );
+}

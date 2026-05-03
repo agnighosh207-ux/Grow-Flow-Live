@@ -38,6 +38,16 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
   const planType = (user.planType || "free") as "free" | "starter" | "creator" | "infinity";
   const generationsRemaining = user.generationsRemaining ?? 0;
 
+  if (user.isAdmin) {
+    return {
+      plan: "active" as const, planType: "infinity",
+      canGenerate: true,
+      trialDaysLeft: null, generationLimit: 999,
+      monthlyGenerationsUsed: monthlyGenerations,
+      totalGenerationsUsed: totalGenerations,
+    };
+  }
+
   if (user.subscriptionStatus === "active") {
     if (planType === "starter") {
       return {
@@ -133,7 +143,7 @@ function getMonthlyWindowStart(user: any): Date {
   return new Date(subStart.getTime() + cycleNumber * msIn30Days);
 }
 
-router.get("/subscription/status", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const user = await getOrCreateUser(req.userId);
 
   const [genCount] = await db
@@ -207,7 +217,7 @@ const PLAN_CONFIG = {
   }
 };
 
-router.post("/subscription/create", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const user = await getOrCreateUser(req.userId);
     const { planType, couponCode, billingPeriod, currency = "INR" } = req.body as {
@@ -278,7 +288,7 @@ router.post("/subscription/create", requireAuth, async (req: AuthenticatedReques
   }
 });
 
-router.post("/subscription/verify", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, planType, couponCode } = req.body;
 
   if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
@@ -337,6 +347,8 @@ router.post("/subscription/verify", requireAuth, async (req: AuthenticatedReques
 
   const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const planTierStr = effectivePlan.toUpperCase();
+  const creditsToAdd = TIER_CREDITS[planTierStr] || 20;
+
   await db.update(usersTable)
     .set({ 
       subscriptionStatus: "active", 
@@ -344,7 +356,7 @@ router.post("/subscription/verify", requireAuth, async (req: AuthenticatedReques
       planTier: planTierStr as any,
       trialStartDate: new Date(),
       trialEndsAt: trialEndsAt,
-      generationsRemaining: TIER_CREDITS[planTierStr] || 20,
+      generationsRemaining: sql`${usersTable.generationsRemaining} + ${creditsToAdd}`,
       couponCode: couponCode || (currentUser as any).couponCode || null
     } as any)
     .where(eq(usersTable.id, req.userId));
@@ -375,7 +387,7 @@ router.post("/subscription/verify", requireAuth, async (req: AuthenticatedReques
   });
 });
 
-router.post("/subscription/cancel", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const razorpay = getRazorpay();
   const user = await getOrCreateUser(req.userId);
 
@@ -399,7 +411,7 @@ router.post("/subscription/cancel", requireAuth, async (req: AuthenticatedReques
   res.json({ success: true, message: "Subscription will end at period close." });
 });
 
-router.post("/subscription/retry", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post("/retry", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const razorpay = getRazorpay();
   const user = await getOrCreateUser(req.userId);
 
@@ -425,7 +437,7 @@ router.post("/subscription/retry", requireAuth, async (req: AuthenticatedRequest
   res.json({ success: true, planType: "free" });
 });
 
-router.get("/subscription/validate-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.get("/validate-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { code } = req.query as { code?: string };
   if (!code) {
     res.status(400).json({ error: "No code provided" });
@@ -447,63 +459,9 @@ router.get("/subscription/validate-coupon", requireAuth, async (req: Authenticat
   res.json({ success: true, discountPercent: coupon.discountPercent });
 });
 
-router.get("/trial/status", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    if (!user) {
-      res.json({ ideas: 0, strategy: 0, hooks: 0, limit: 0, isPaid: false });
-      return;
-    }
-    res.json({
-      ideas: 0,
-      strategy: 0,
-      hooks: 0,
-      limit: user.generationsRemaining,
-      isPaid: isPaidOrTrial(user),
-    });
-  } catch {
-    res.status(500).json({ error: "Failed to fetch trial status." });
-  }
-});
 
-router.post("/trial/use", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const { toolKey } = req.body as { toolKey?: string };
-  if (!toolKey || !["ideas", "strategy", "hooks"].includes(toolKey)) {
-    res.status(400).json({ error: "Invalid tool key." });
-    return;
-  }
-  try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    if (!user) { res.status(404).json({ error: "User not found." }); return; }
 
-    if (isPaidOrTrial(user)) {
-      res.json({ used: FREE_TRIALS_PER_TOOL, limit: FREE_TRIALS_PER_TOOL, isPaid: true });
-      return;
-    }
-
-    const newCount = await consumeToolTrial(req.userId, toolKey);
-    const [updatedUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    res.json({ used: 0, limit: updatedUser?.generationsRemaining ?? 0, isPaid: false });
-  } catch {
-    res.status(500).json({ error: "Failed to record trial usage." });
-  }
-});
-
-router.post("/user/login", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try {
-    const { deviceId, email } = req.body as { deviceId?: string; email?: string };
-    const updates: any = { lastLoginAt: new Date() };
-    if (deviceId) updates.deviceId = deviceId;
-    if (email) updates.email = email;
-
-    await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId));
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ error: "Failed to update login info." });
-  }
-});
-
-router.post("/subscription/webhook", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!webhookSecret) {
     logger.error("[CRITICAL] RAZORPAY_WEBHOOK_SECRET is missing. Rejecting all webhooks for security.");

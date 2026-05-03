@@ -8,7 +8,7 @@ const router: IRouter = Router();
 
 import { requireAuth } from "../middlewares/planMiddleware";
 
-router.post("/auth/complete-onboarding", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/complete-onboarding", requireAuth, async (req: any, res): Promise<void> => {
   const { referralCode } = req.body as { referralCode?: string };
 
   // Always proceed with completing onboarding, referral is optional

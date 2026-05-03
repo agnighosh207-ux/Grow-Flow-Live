@@ -20,7 +20,7 @@ import {
 } from "@workspace/api-zod";
 // Note: zod is NOT a direct dependency of backend — use manual validation instead
 import { generateContent, extractJson } from "../../services/ai-engine";
-import { requireAuth, getOrCreateUser } from "../../middlewares/planMiddleware";
+import { requireAuth, getOrCreateUser, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
 import { sendCreditWarningEmail } from "../../services/email";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
@@ -218,7 +218,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
   }
 }
 
-router.post("/content/generate", requireAuth, enforceGenerationLimit, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.post("/generate", requireAuth, enforceGenerationLimit, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
   // Manual validation (zod is not a direct backend dependency)
@@ -372,7 +372,7 @@ router.post("/content/generate", requireAuth, enforceGenerationLimit, async (req
   }
 });
 
-router.post("/content/variations", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/variations", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
   // Manual validation (zod is not a direct backend dependency)
   const { idea, contentType, tone, platform, language: bodyLanguage2 } = req.body || {};
   const validContentTypes2 = ['Educational', 'Story', 'Viral'];
@@ -540,7 +540,7 @@ Return ONLY this JSON:
   }
 });
 
-router.get("/content/history", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/history", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const parsed = GetContentHistoryQueryParams.safeParse(req.query);
     const rawLimit = parsed.success ? (parsed.data.limit ?? 50) : 50;
@@ -587,7 +587,7 @@ router.get("/content/history", requireAuth, async (req: any, res): Promise<void>
   }
 });
 
-router.get("/content/history/:id", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/history/:id", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const parsed = GetHistoryItemParams.safeParse(req.params);
     if (!parsed.success) {
@@ -625,7 +625,7 @@ router.get("/content/history/:id", requireAuth, async (req: any, res): Promise<v
   }
 });
 
-router.delete("/content/history/:id", requireAuth, async (req: any, res): Promise<void> => {
+router.delete("/history/:id", requireAuth, async (req: any, res): Promise<void> => {
   const parsed = DeleteHistoryItemParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid ID" });
@@ -645,7 +645,7 @@ router.delete("/content/history/:id", requireAuth, async (req: any, res): Promis
   res.json({ success: true });
 });
 
-router.post("/content/history/:id/restore", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/history/:id/restore", requireAuth, async (req: any, res): Promise<void> => {
   const parsed = GetHistoryItemParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid ID" });
@@ -665,7 +665,7 @@ router.post("/content/history/:id/restore", requireAuth, async (req: any, res): 
   res.json({ success: true });
 });
 
-router.get("/content/stats", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.get("/stats", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const weekStart = new Date(now);
@@ -719,6 +719,79 @@ router.get("/content/stats", requireAuth, async (req: AuthenticatedRequest, res:
     platformBreakdown: breakdown as any
   };
   res.json(statsResponse);
+});
+
+router.post("/analyze", requireAuth, requirePlanOrTrial("content_analyze"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const { idea, contentType = "Educational", niche = "General", platforms } = req.body as {
+    idea: string;
+    contentType?: string;
+    niche?: string;
+    platforms?: Record<string, string>;
+  };
+
+  if (!idea || idea.trim().length < 2) {
+    res.status(400).json({ error: "Please provide a valid idea to analyze." });
+    return;
+  }
+
+  const sanitizedIdea = String(idea).substring(0, 500);
+  const sanitizedNiche = String(niche).substring(0, 50);
+
+  const contentSample = platforms
+    ? Object.values(platforms).filter(Boolean).slice(0, 2).join("\n\n---\n\n").slice(0, 800)
+    : "";
+
+  const systemPrompt = `You are a viral content analyst. Provide surgical analysis explaining why a piece of content will perform.
+Grounded in: Live Trending Psychological Triggers, Platform Algorithm Signals, Hook Science, and Niche Audience Psychology.`;
+
+  const userPrompt = `Analyze this content for performance potential:
+IDEA: "${sanitizedIdea}"
+CONTENT TYPE: ${contentType}
+NICHE: ${sanitizedNiche}
+${contentSample ? `\nSAMPLE CONTENT:\n${contentSample}` : ""}
+
+Return ONLY valid JSON:
+{
+  "viralityScore": number,
+  "hookStrength": number,
+  "engagementPotential": number,
+  "shareability": number,
+  "emotionalTrigger": "string",
+  "curiosityGap": "string",
+  "targetAudienceReaction": "string",
+  "improvementTip": "string"
+}`;
+
+  try {
+    const completion = await generateContent({
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      maxTokens: 1200,
+    });
+
+    const raw = completion.choices[0]?.message?.content?.trim() ?? "{}";
+    const analysis = extractJson(raw);
+
+    if (!analysis) {
+      res.status(500).json({ error: "Failed to parse content analysis" });
+      return;
+    }
+
+    res.json(analysis);
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.userId,
+      feature: "content_analyze"
+    }).catch(() => {});
+  } catch (err) {
+    console.error("ANALYZE ERROR:", err);
+    res.status(500).json({ error: "Failed to analyze content" });
+  }
 });
 
 export default router;
