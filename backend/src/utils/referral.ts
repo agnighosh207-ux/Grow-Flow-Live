@@ -30,8 +30,15 @@ export async function ensureReferralCode(userId: string): Promise<string> {
       .where(eq(usersTable.id, userId));
     return retryUser?.referralCode || code;
   } catch (err) {
-    console.error(`[Referral] Failed to ensure code for ${userId}:`, err);
-    // Return a temporary local code or null to prevent infinite recursion
+    console.error(`[Referral] Failed to save code for ${userId}:`, err);
+    // Re-fetch in case another concurrent request already saved a code
+    try {
+      const [retryFetch] = await db.select({ referralCode: usersTable.referralCode })
+        .from(usersTable).where(eq(usersTable.id, userId));
+      if (retryFetch?.referralCode) return retryFetch.referralCode;
+    } catch { /* ignore */ }
+    // Only return temp code as absolute last resort — log as critical
+    console.error(`[CRITICAL] Could not persist referral code for user ${userId}. User will see inconsistent codes.`);
     return code;
   }
 }
