@@ -43,9 +43,7 @@ initSentry();
 // Railway requirement: Must listen on 0.0.0.0 and process.env.PORT
 console.log("[BOOT] Initializing HTTP server...");
 
-// Fallback to 8080 if PORT is missing or invalid (0)
-const RAW_PORT = process.env.PORT;
-const PORT = (Number(RAW_PORT) && Number(RAW_PORT) > 0) ? Number(RAW_PORT) : 3000;
+// Initialization continues using PORT defined in Step 3
 
 const server = http.createServer((req, res) => {
   // Direct raw-level health check (Absolute Priority)
