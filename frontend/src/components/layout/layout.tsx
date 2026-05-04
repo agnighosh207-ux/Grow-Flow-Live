@@ -409,7 +409,7 @@ function SidebarContent({
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-6" data-lenis-prevent>
         <StreakBanner streak={streak} completedToday={!!streakData?.completedToday} />
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
@@ -567,11 +567,11 @@ export function Layout({ children }: { children: ReactNode }) {
   const isPro = !!(sub && sub.planType === "infinity" && ["active", "trial", "pending", "past_due"].includes(sub.plan));
 
   return (
-    <div className="min-h-screen text-foreground relative overflow-hidden">
+    <div className="min-h-screen text-foreground relative selection:bg-cyan-500/30">
       {/* God-Tier Global Graphics */}
       <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
       <aside
-        className="hidden md:flex flex-col fixed inset-y-0 left-0 z-50 w-64 xl:w-72 border-r border-white/[0.06]"
+        className="hidden md:flex flex-col fixed inset-y-0 left-0 z-[60] w-64 xl:w-72 border-r border-white/[0.06]"
         style={{ background: "rgba(8,3,22,0.6)", backdropFilter: "blur(24px)" }}
       >
         <SidebarContent
