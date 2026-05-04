@@ -221,8 +221,12 @@ export default function TrendEngine() {
       const data = await res.json();
       setTrends(data.trends ?? []);
       setLastNiche(niche);
-    } catch (err) {
-      toast({ title: "Error", description: "Failed to load trending ideas. Try again.", variant: "destructive" });
+    } catch (err: any) {
+      toast({ 
+        title: "Error", 
+        description: err.message || "Failed to load trending ideas. Try again.", 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }

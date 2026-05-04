@@ -110,7 +110,7 @@ export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string
   vault: { name: "Swipe Vault", requiredPlan: "STARTER" },
 
   // ── CREATOR TIER (₹449/mo) ── Analytics + power tools ─────────────────
-  trends: { name: "Trend Engine", requiredPlan: "CREATOR" },
+  trends: { name: "Trend Engine", requiredPlan: "STARTER" },
   content_analyze: { name: "Content Performance Analyzer", requiredPlan: "CREATOR" },
   hashtags: { name: "Hashtag Intelligence", requiredPlan: "CREATOR" },
   competitor: { name: "Competitor Intelligence", requiredPlan: "CREATOR" },
