@@ -57,22 +57,15 @@ const startServer = () => {
         return;
       }
 
-      // 2. ROOT CHECK
-      if (url === "/") {
-        res.writeHead(200, { "Content-Type": "text/plain" });
-        res.end("GrowFlow AI is Online");
-        return;
-      }
-
-      // 3. LOG REQUESTS FOR DEBUGGING
+      // 2. LOG REQUESTS FOR DEBUGGING (Essential for monitoring)
       console.log(`[REQ] ${req.method} ${url}`);
 
-      // 4. DELEGATE TO EXPRESS
+      // 3. DELEGATE TO EXPRESS (Full Application)
       if (typeof requestListener === "function") {
         requestListener(req, res);
       } else {
         res.writeHead(500);
-        res.end("Build Error");
+        res.end("Build Error: App function missing");
       }
     });
 
