@@ -24,11 +24,10 @@ process.on("unhandledRejection", (reason) => {
 });
 
 // ─── 3. Boot diagnostics ─────────────────────────────────────────────────────
-const PORT = Number(process.env.PORT) || 3000;
 // We use direct console for early boot diagnostics before logger is imported
 console.log("[BOOT] Starting GrowFlow AI Server...");
 console.log("[BOOT] Node:", process.version, "| CWD:", process.cwd());
-console.log("[BOOT] PORT:", PORT, "| NODE_ENV:", process.env.NODE_ENV);
+console.log("[BOOT] NODE_ENV:", process.env.NODE_ENV);
 console.log("[BOOT] DATABASE_URL set:", !!process.env.DATABASE_URL);
 
 // ─── 4. Import the Express app AFTER diagnostics ────────────────────────────
@@ -41,71 +40,60 @@ initSentry();
 
 // ─── 5. Start Server ────────────────────────────────────────────────────────
 // Railway requirement: Must listen on 0.0.0.0 and process.env.PORT
-console.log("[BOOT] Initializing HTTP server...");
+// Containers standard: Default to 8080 if PORT is missing
+const FINAL_PORT = Number(process.env.PORT) || 8080;
 
-// Initialization continues using PORT defined in Step 3
-
-const server = http.createServer((req, res) => {
-  // Direct raw-level health check (Absolute Priority)
-  const url = req.url || "";
-  if (url === "/api/health" || url === "/healthz" || url === "/health" || url === "/" || url === "/health-check") {
-    res.writeHead(200, { "Content-Type": "application/json", "X-App-Status": "Ready" });
-    res.end(JSON.stringify({ 
-      status: "ok", 
-      uptime: process.uptime(), 
-      railway: true,
-      timestamp: new Date().toISOString()
-    }));
-    return;
-  }
-
-  // Delegate to Express app
+const startServer = async () => {
   try {
+    console.log(`[BOOT] Initializing GrowFlow AI on port ${FINAL_PORT}...`);
+    
+    // Defensive ESM interop for the Express app
     const requestListener = (app as any).default || app;
-    if (typeof requestListener === "function") {
-      requestListener(req, res);
-    } else {
-      console.error("[CRITICAL] Express 'app' is not a function!");
-      res.writeHead(500);
-      res.end("Internal Server Error: Application misconfiguration");
+    
+    if (typeof requestListener !== "function") {
+      throw new Error("Express 'app' is not a validated function. Build configuration mismatch.");
     }
+
+    // Use standard app.listen for better Railway/Container compatibility
+    const server = requestListener.listen(FINAL_PORT, "0.0.0.0", () => {
+      console.log("-----------------------------------------");
+      console.log(`[BOOT] ✅ GrowFlow AI is LIVE`);
+      console.log(`[BOOT] Internal: http://localhost:${FINAL_PORT}`);
+      console.log(`[BOOT] External: 0.0.0.0:${FINAL_PORT} (Railway Proxy)`);
+      console.log(`[BOOT] Node: ${process.version}`);
+      console.log("-----------------------------------------");
+    });
+
+    server.on("error", (err: any) => {
+      console.error("[CRITICAL] Server failed to start:", err);
+      process.exit(1);
+    });
+
+    // Graceful Shutdown
+    const shutdown = async (signal: string) => {
+      console.log(`[SHUTDOWN] Received ${signal}.`);
+      setShuttingDown(true);
+      
+      const forceExit = setTimeout(() => process.exit(1), 10000);
+      
+      server.close(async () => {
+        try {
+          const { pool } = await import("@workspace/db");
+          if (pool && typeof pool.end === "function") await pool.end();
+        } catch (err) {}
+        clearTimeout(forceExit);
+        process.exit(0);
+      });
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
+
   } catch (err: any) {
-    console.error("[CRITICAL] Request handling error:", err.message);
-    res.writeHead(500);
-    res.end("Internal Server Error");
-  }
-});
-
-server.on("error", (err: any) => {
-  console.error("[CRITICAL] Server socket error:", err);
-  process.exit(1);
-});
-
-console.log(`[BOOT] Attempting to listen on 0.0.0.0:${PORT}...`);
-
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[BOOT] ✅ GrowFlow AI is LIVE`);
-  console.log(`[BOOT] Address: 0.0.0.0:${PORT}`);
-  console.log(`[BOOT] Node Version: ${process.version}`);
-});
-
-// ─── 6. Graceful Shutdown Handler ──────────────────────────────────────────
-const shutdown = async (signal: string) => {
-  console.log(`[SHUTDOWN] Received ${signal}.`);
-  setShuttingDown(true);
-
-  const timeout = setTimeout(() => {
+    console.error("[CRITICAL] Fatal boot error:", err.message);
     process.exit(1);
-  }, 10000);
-
-  server.close(async () => {
-    try {
-      const { pool } = await import("@workspace/db");
-      if (pool && typeof pool.end === "function") await pool.end();
-    } catch (err) {}
-    process.exit(0);
-  });
+  }
 };
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+// Fire it up
+startServer();
