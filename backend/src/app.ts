@@ -31,18 +31,7 @@ app.get("/api/health", (_req, res) => {
 // ─── 2. Standard middleware ──────────────────────────────────────────────────
 app.set("trust proxy", 1);
 app.use(helmet({ 
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*.clerk.accounts.dev", "clerk.growflowai.space", "checkout.razorpay.com"],
-      connectSrc: ["'self'", "*.clerk.accounts.dev", "clerk.growflowai.space", "api.razorpay.com", "v1.generate.growflowai.space"],
-      imgSrc: ["'self'", "data:", "blob:", "*.clerk.com", "images.unsplash.com", "checkout.razorpay.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com"],
-      fontSrc: ["'self'", "fonts.gstatic.com"],
-      frameSrc: ["'self'", "checkout.razorpay.com"],
-      upgradeInsecureRequests: [],
-    },
-  },
+  contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 app.use(compression());
