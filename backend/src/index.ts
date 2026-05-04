@@ -40,32 +40,51 @@ initSentry();
 
 // ─── 5. Start Server ────────────────────────────────────────────────────────
 // Railway requirement: Must listen on 0.0.0.0 and process.env.PORT
-// Containers standard: Default to 8080 if PORT is missing
 const FINAL_PORT = Number(process.env.PORT) || 8080;
 
-const startServer = async () => {
+const startServer = () => {
   try {
-    console.log(`[BOOT] Initializing GrowFlow AI on port ${FINAL_PORT}...`);
-    
-    // Defensive ESM interop for the Express app
     const requestListener = (app as any).default || app;
     
-    if (typeof requestListener !== "function") {
-      throw new Error("Express 'app' is not a validated function. Build configuration mismatch.");
-    }
+    const server = http.createServer((req, res) => {
+      const url = req.url || "";
+      
+      // 1. RAW HEALTH CHECK (Bypasses Express entirely)
+      if (url === "/api/health" || url === "/healthz" || url === "/health" || url === "/ping") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "alive", timestamp: Date.now() }));
+        return;
+      }
 
-    // Use standard app.listen for better Railway/Container compatibility
-    const server = requestListener.listen(FINAL_PORT, "0.0.0.0", () => {
-      console.log("-----------------------------------------");
+      // 2. RAW ROOT CHECK (For Railway root verification)
+      if (url === "/") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("GrowFlow AI Production Server is Active");
+        return;
+      }
+
+      // 3. LOG ALL OTHER REQUESTS
+      console.log(`[REQ] ${req.method} ${url} | IP: ${req.socket.remoteAddress}`);
+
+      // 4. DELEGATE TO EXPRESS
+      if (typeof requestListener === "function") {
+        requestListener(req, res);
+      } else {
+        res.writeHead(500);
+        res.end("Internal Server Error: Application Build Mismatch");
+      }
+    });
+
+    server.listen(FINAL_PORT, "0.0.0.0", () => {
+      console.log("=========================================");
       console.log(`[BOOT] ✅ GrowFlow AI is LIVE`);
-      console.log(`[BOOT] Internal: http://localhost:${FINAL_PORT}`);
-      console.log(`[BOOT] External: 0.0.0.0:${FINAL_PORT} (Railway Proxy)`);
-      console.log(`[BOOT] Node: ${process.version}`);
-      console.log("-----------------------------------------");
+      console.log(`[BOOT] Port: ${FINAL_PORT}`);
+      console.log(`[BOOT] Health Check: http://0.0.0.0:${FINAL_PORT}/api/health`);
+      console.log("=========================================");
     });
 
     server.on("error", (err: any) => {
-      console.error("[CRITICAL] Server failed to start:", err);
+      console.error("[CRITICAL] Server Socket Error:", err);
       process.exit(1);
     });
 
@@ -73,17 +92,14 @@ const startServer = async () => {
     const shutdown = async (signal: string) => {
       console.log(`[SHUTDOWN] Received ${signal}.`);
       setShuttingDown(true);
-      
-      const forceExit = setTimeout(() => process.exit(1), 10000);
-      
       server.close(async () => {
         try {
           const { pool } = await import("@workspace/db");
           if (pool && typeof pool.end === "function") await pool.end();
         } catch (err) {}
-        clearTimeout(forceExit);
         process.exit(0);
       });
+      setTimeout(() => process.exit(1), 10000);
     };
 
     process.on("SIGTERM", () => shutdown("SIGTERM"));
@@ -95,5 +111,4 @@ const startServer = async () => {
   }
 };
 
-// Fire it up
 startServer();
