@@ -7,17 +7,21 @@ import { AppErrorBoundary } from "@/components/errors/AppErrorBoundary";
 import { ClerkProviderWithRoutes } from "./AppRoutes";
 import { basePath } from "@/components/auth/AuthPages";
 
+import { ReactLenis } from "lenis/react";
+
 function App() {
   return (
-    <TooltipProvider>
-      <AppErrorBoundary>
-        <WouterRouter base={basePath}>
-          <ClerkProviderWithRoutes />
-        </WouterRouter>
-        <MaintenanceOverlay />
-      </AppErrorBoundary>
-      <Toaster />
-    </TooltipProvider>
+    <ReactLenis root>
+      <TooltipProvider>
+        <AppErrorBoundary>
+          <WouterRouter base={basePath}>
+            <ClerkProviderWithRoutes />
+          </WouterRouter>
+          <MaintenanceOverlay />
+        </AppErrorBoundary>
+        <Toaster />
+      </TooltipProvider>
+    </ReactLenis>
   );
 }
 
