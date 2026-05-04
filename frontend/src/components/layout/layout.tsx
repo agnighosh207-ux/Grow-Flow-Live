@@ -597,15 +597,15 @@ export function Layout({ children }: { children: ReactNode }) {
       <ImpersonationBanner />
       <NotificationBanner />
       
-      <div className="flex-1 flex min-h-0 relative">
+      <div className="flex-1 flex min-h-0 relative h-full">
         {/* Desktop Layout */}
-        <div className="hidden md:flex flex-1 min-h-0">
-          <ResizablePanelGroup direction="horizontal">
+        <div className="hidden md:flex flex-1 h-full min-h-0">
+          <ResizablePanelGroup direction="horizontal" autoSaveId="growflow-main-layout" className="h-full">
             <ResizablePanel
               defaultSize={20}
               minSize={15}
-              maxSize={25}
-              className="bg-[#080316]/60 backdrop-blur-3xl border-r border-white/[0.06] flex flex-col z-30"
+              maxSize={30}
+              className="bg-[#080316]/60 backdrop-blur-3xl border-r border-white/[0.06] flex flex-col z-30 h-full"
             >
               <SidebarContent
                 user={user}
@@ -618,26 +618,28 @@ export function Layout({ children }: { children: ReactNode }) {
             
             <ResizableHandle withHandle className="bg-white/[0.05] hover:bg-cyan-500/20 transition-colors z-40" />
             
-            <ResizablePanel defaultSize={80} className="flex flex-col min-h-0">
-              <TopBanner />
-              <FoundersBanner />
-              
-              <main className="flex-1 overflow-y-auto relative custom-scrollbar">
-                <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={location}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="relative z-10 p-6 md:p-8 pb-24"
-                  >
-                    <ReferralRewardNotifier />
-                    {children}
-                  </motion.div>
-                </AnimatePresence>
-              </main>
+            <ResizablePanel defaultSize={80} className="flex flex-col min-h-0 h-full min-w-0">
+              <div className="flex flex-col h-full overflow-hidden">
+                <TopBanner />
+                <FoundersBanner />
+                
+                <main className="flex-1 overflow-y-auto relative custom-scrollbar h-full">
+                  <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={location}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="relative z-10 p-6 md:p-8 pb-24"
+                    >
+                      <ReferralRewardNotifier />
+                      {children}
+                    </motion.div>
+                  </AnimatePresence>
+                </main>
+              </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
