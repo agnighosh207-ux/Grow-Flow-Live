@@ -593,7 +593,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const isPro = !!(sub && sub.planType === "infinity" && ["active", "trial", "pending", "past_due"].includes(sub.plan));
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#050110] selection:bg-cyan-500/30">
+    <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-[#050110] selection:bg-cyan-500/30">
       <ImpersonationBanner />
       <NotificationBanner />
       
@@ -632,7 +632,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="relative z-10 p-6 md:p-8 pb-24"
+                      className="pb-32 relative overflow-x-hidden min-h-screen"
                     >
                       <ReferralRewardNotifier />
                       {children}
@@ -669,7 +669,7 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto relative pb-24 custom-scrollbar">
+          <main className="flex-1 overflow-y-auto relative pb-32 custom-scrollbar">
             <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
             <TopBanner />
             <FoundersBanner />
@@ -688,7 +688,7 @@ export function Layout({ children }: { children: ReactNode }) {
             </AnimatePresence>
           </main>
 
-          <nav className="fixed bottom-0 inset-x-0 border-t border-white/[0.06] flex justify-around p-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] z-50 bg-[#080316]/98 backdrop-blur-xl">
+          <nav className="fixed bottom-0 inset-x-0 border-t border-white/[0.08] flex justify-around items-center p-2 pb-[calc(env(safe-area-inset-bottom)+1rem)] z-[100] bg-[#080316]/95 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
             {BOTTOM_NAV.map((item) => {
                if (item.path === "menu") {
                  return (

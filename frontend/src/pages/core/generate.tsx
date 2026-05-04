@@ -1375,7 +1375,7 @@ export default function Generate() {
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="pb-24 relative overflow-x-hidden min-h-screen"
+      className="pb-32 relative overflow-x-hidden min-h-screen"
     >
       <FeatureGuideBanner 
         toolKey="generate" 

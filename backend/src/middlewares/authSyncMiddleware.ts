@@ -50,9 +50,32 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     const isAdminEmail = emailToCheck && adminEmailFromEnv && emailToCheck.toLowerCase() === adminEmailFromEnv.toLowerCase();
 
     // 3. Admin Auto-Unban & Escalation
-    if (isAdminEmail && user?.isBanned) {
-      await db.update(usersTable).set({ isBanned: false, violationCount: 0 }).where(eq(usersTable.id, uid));
-      if (user) user.isBanned = false;
+    if (isAdminEmail) {
+      if (!user?.isAdmin || user?.isBanned) {
+        logger.info({ userId: uid }, "[AUTH] Escalating user to Admin based on email match");
+        await db.update(usersTable).set({ 
+          isAdmin: true, 
+          isBanned: false, 
+          violationCount: 0,
+          planTier: "INFINITY",
+          planType: "infinity",
+          subscriptionStatus: "active",
+          generationsRemaining: 999999
+        }).where(eq(usersTable.id, uid));
+        
+        // Invalidate cache to force reload on next request
+        syncCache.delete(uid);
+        
+        // If user object exists in memory, update it
+        if (user) {
+          user.isAdmin = true;
+          user.isBanned = false;
+          user.planTier = "INFINITY";
+          user.planType = "infinity";
+          user.subscriptionStatus = "active";
+          user.generationsRemaining = 999999;
+        }
+      }
     }
 
     // 4. Ban Check
@@ -101,11 +124,20 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       } else {
         // UPDATE EXISTING (Credit Reset or Admin Escalation)
         const updateData: any = { lastLoginAt: now, isFirstLogin: false };
+        const needsCreditReset = !user.lastCreditReset || (now.getTime() - new Date(user.lastCreditReset).getTime() > 24 * 60 * 60 * 1000 * 30);
+
         if (isAdminEmail) {
           updateData.isAdmin = true;
           updateData.planTier = "INFINITY";
           updateData.generationsRemaining = 999999;
           updateData.subscriptionStatus = "active";
+        } else if (needsCreditReset) {
+          // Reset credits based on plan tier
+          const tier = user.planTier || "FREE";
+          const resetCredits = TIER_CREDITS[tier] || 10;
+          updateData.generationsRemaining = resetCredits;
+          updateData.lastCreditReset = now;
+          logger.info({ userId: uid, tier, resetCredits }, "[AUTH] Resetting monthly credits");
         }
 
         const [updatedUser] = await tx.update(usersTable).set(updateData).where(eq(usersTable.id, uid)).returning();

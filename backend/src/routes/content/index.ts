@@ -526,6 +526,7 @@ Return ONLY this JSON:
     }
   } catch (err: any) {
     logger.error({ err: String(err) }, "Variations generation error");
+    await refundGenerationCredit(req.userId, user?.planTier);
     res.status(503).json({ error: "AI is temporarily unavailable. Please try again in a moment." });
     return;
   }
@@ -817,6 +818,7 @@ Return ONLY valid JSON:
     }).catch(() => {});
   } catch (err) {
     console.error("ANALYZE ERROR:", err);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(500).json({ error: "Failed to analyze content" });
   }
 });
