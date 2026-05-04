@@ -79,8 +79,8 @@ export function useSubscriptionStatus() {
       if (!token) throw new Error("Not authenticated");
       return fetchWithAuth(`${BASE}/api/subscription/status`, token, { signal });
     },
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 10 * 1000, // Reduced from 2m to 10s for production accuracy
+    refetchOnWindowFocus: true,
     retry: 3,
     retryDelay: 1000,
   });

@@ -33,8 +33,8 @@ Raw Idea: "${sanitizedIdea}"`;
 });
 
 router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  let isAborted = false;
-  req.on('close', () => { isAborted = true; });
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
 
   const { idea, tone = "Professional", contentType = "Educational", language = "English", niche = "General" } = req.body;
 
@@ -48,7 +48,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
   try {
     // 1. Fetch live web data for RAG (Retrieval Augmented Generation)
     const liveContext = await fetchLiveContext(sanitizedNiche, sanitizedIdea);
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
     if (!user) { res.status(404).json({ error: "User not found" }); return; }
@@ -120,9 +120,10 @@ JSON Structure:
       userId: req.userId,
       language,
       maxTokens: isPro ? 4000 : 2500,
+      signal: abortController.signal
     });
 
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
 
     const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
     let parsed = extractJson(raw);
@@ -133,7 +134,7 @@ JSON Structure:
 
     res.json({ ...parsed, isPro, isCreator });
   } catch (err: any) {
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
     console.error("Content pack error:", err);
     await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "AI temporarily unavailable." });

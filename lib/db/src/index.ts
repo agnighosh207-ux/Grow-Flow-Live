@@ -6,7 +6,11 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../");
+// Correctly resolve root in both TS (source) and JS (bundled)
+const currentFileUrl = fileURLToPath(import.meta.url);
+const isDist = currentFileUrl.includes(path.sep + 'dist' + path.sep) || currentFileUrl.includes('/dist/');
+const rootDir = path.resolve(path.dirname(currentFileUrl), isDist ? "../../../" : "../../");
+
 const envFiles = [path.join(rootDir, ".env"), path.join(rootDir, ".env.example")];
 const loadedEnv = envFiles.find((file) => fs.existsSync(file));
 if (loadedEnv) {

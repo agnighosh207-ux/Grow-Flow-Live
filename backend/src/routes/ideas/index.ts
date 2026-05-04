@@ -48,8 +48,8 @@ const IDEAS_TTL = 15 * 60 * 1000; // 15 minutes
 // Perplexity sonar searches the live web AND structures JSON in ONE call.
 // Groq is NOT involved here. JSON output enforced via prompt instructions.
 router.post("/generate", requireAuth, requirePlanOrTrial("ideas"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  let isAborted = false;
-  req.on('close', () => { isAborted = true; });
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
 
   const { niche = "General", goal = "grow my audience", language = "English" } = req.body;
   const sanitizedNiche = String(niche).substring(0, 50);
@@ -101,7 +101,7 @@ Return ONLY a JSON object.`;
 }`;
 
   try {
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
 
     let ideas: any[] = [];
     try {
@@ -112,13 +112,17 @@ Return ONLY a JSON object.`;
           { role: "user", content: userPrompt }
         ],
         max_tokens: 2500,
+      }, {
+        // @ts-ignore
+        signal: abortController.signal
       });
       
-      if (isAborted) return;
+      if (abortController.signal.aborted) return;
       const content = completion.choices[0]?.message?.content || "{}";
       const parsed = extractJson(content);
       ideas = parsed && Array.isArray(parsed.ideas) ? parsed.ideas : [];
     } catch (err: any) {
+      if (abortController.signal.aborted) return;
       console.warn("IDEAS DIRECT PERPLEXITY FAIL, FALLING BACK TO ENGINE:", err.message);
       const fallback = await generateContent({
         messages: [
@@ -129,7 +133,9 @@ Return ONLY a JSON object.`;
         userId: req.userId,
         language,
         maxTokens: 2500,
+        signal: abortController.signal
       });
+      if (abortController.signal.aborted) return;
       const content = fallback.choices[0]?.message?.content || "{}";
       const parsed = extractJson(content);
       ideas = parsed && Array.isArray(parsed.ideas) ? parsed.ideas : [];
@@ -168,7 +174,7 @@ Return ONLY a JSON object.`;
       feature: "ideas"
     }).catch(() => {});
   } catch (err: any) {
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
     console.error("IDEAS GEN ERROR:", err);
     // --- H-20 FIX: Refund credit if ideas generation fails completely ---
     await refundGenerationCredit(req.userId, req.user?.planTier);

@@ -6,7 +6,9 @@ import http from "node:http";
 
 // ─── 1. Load .env BEFORE any application code ────────────────────────────────
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../");
-const envFile = path.join(rootDir, ".env");
+// Use process.env.ROOT_DIR if available (for container environments)
+const baseDir = process.env.ROOT_DIR || rootDir;
+const envFile = path.join(baseDir, ".env");
 if (fs.existsSync(envFile)) {
   dotenv.config({ path: envFile });
 }
@@ -58,7 +60,10 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`[BOOT] ✅ Server listening on 0.0.0.0:${PORT}`);
+  const address = server.address();
+  const bind = typeof address === "string" ? address : address ? `${address.address}:${address.port}` : PORT;
+  console.log(`[BOOT] ✅ Server listening on ${bind}`);
+  console.log(`[BOOT] Health check available at: http://localhost:${PORT}/api/health`);
 });
 
 server.on("error", (err: any) => {
