@@ -1028,6 +1028,7 @@ export default function Generate() {
             description: "The AI is currently experiencing high load. Would you like to retry?",
             action: (
               <ToastAction altText="Retry" onClick={() => {
+                if (generateMutation.isPending) return;
                 setRetryCount(prev => prev + 1);
                 if (lastSubmittedValues.current) {
                   generateMutation.mutate(lastSubmittedValues.current);
@@ -1331,7 +1332,7 @@ export default function Generate() {
     toast({ title: "Downloaded!" });
   }
 
-  const isLoading = generateMutation.isPending;
+  const isLoading = generateMutation.isPending || variationMutation.isPending;
   const platforms: Platform[] = ["instagram", "youtube", "twitter", "linkedin"];
 
   const isLimited = sub && !sub.canGenerate;

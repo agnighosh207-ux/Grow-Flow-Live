@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 const NICHES = [
@@ -168,6 +169,7 @@ export default function TrendEngine() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
 
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
@@ -232,6 +234,7 @@ export default function TrendEngine() {
       });
     } finally {
       setLoading(false);
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     }
   }
 

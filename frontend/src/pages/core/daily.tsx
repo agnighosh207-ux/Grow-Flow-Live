@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti';
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,7 @@ export default function DailyActionMode() {
   const [reward, setReward] = useState<{ credits: number; message: string } | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const queryClient = useQueryClient();
 
 
 
@@ -155,6 +157,8 @@ export default function DailyActionMode() {
       toast({ title: "Couldn't mark as posted", variant: "destructive" });
     } finally {
       setCompleting(false);
+      queryClient.invalidateQueries({ queryKey: ["daily-streak"] });
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     }
   };
 

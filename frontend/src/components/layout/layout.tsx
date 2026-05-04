@@ -655,7 +655,7 @@ export function Layout({ children }: { children: ReactNode }) {
                     <Menu className="w-6 h-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-80 bg-[#080316] border-r border-white/10">
+                <SheetContent side="left" className="p-0 w-80 bg-[#080316] border-r border-white/10 flex flex-col h-full">
                   <SidebarContent
                     user={user}
                     location={location}
