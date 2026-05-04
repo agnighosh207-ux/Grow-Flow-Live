@@ -41,70 +41,70 @@ initSentry();
 
 // ─── 5. Start Server ────────────────────────────────────────────────────────
 // Railway requirement: Must listen on 0.0.0.0 and process.env.PORT
-const server = http.createServer();
+console.log("[BOOT] Initializing HTTP server...");
 
-const startServer = () => {
+// Fallback to 8080 if PORT is missing or invalid (0)
+const RAW_PORT = process.env.PORT;
+const PORT = (Number(RAW_PORT) && Number(RAW_PORT) > 0) ? Number(RAW_PORT) : 3000;
+
+const server = http.createServer((req, res) => {
+  // Direct raw-level health check (Absolute Priority)
+  const url = req.url || "";
+  if (url === "/api/health" || url === "/healthz" || url === "/health" || url === "/" || url === "/health-check") {
+    res.writeHead(200, { "Content-Type": "application/json", "X-App-Status": "Ready" });
+    res.end(JSON.stringify({ 
+      status: "ok", 
+      uptime: process.uptime(), 
+      railway: true,
+      timestamp: new Date().toISOString()
+    }));
+    return;
+  }
+
+  // Delegate to Express app
   try {
     const requestListener = (app as any).default || app;
-    
-    server.on("request", (req, res) => {
-      // Direct raw-level health check for Railway/Load Balancers
-      if (req.url === "/api/health" || req.url === "/healthz" || req.url === "/health" || req.url === "/") {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ status: "ok", uptime: process.uptime(), railway: true }));
-        return;
-      }
-      
-      if (typeof requestListener === "function") {
-        requestListener(req, res);
-      } else {
-        console.error("[CRITICAL] Express 'app' is not a function! Build mismatch.");
-        res.writeHead(500);
-        res.end("Internal Server Error: Application misconfiguration");
-      }
-    });
-
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`[BOOT] ✅ GrowFlow AI is LIVE`);
-      console.log(`[BOOT] Listening on: 0.0.0.0:${PORT}`);
-      console.log(`[BOOT] Health Check: http://0.0.0.0:${PORT}/api/health`);
-    });
-  } catch (err) {
-    console.error("[CRITICAL] Failed to start HTTP server:", err);
-    process.exit(1);
+    if (typeof requestListener === "function") {
+      requestListener(req, res);
+    } else {
+      console.error("[CRITICAL] Express 'app' is not a function!");
+      res.writeHead(500);
+      res.end("Internal Server Error: Application misconfiguration");
+    }
+  } catch (err: any) {
+    console.error("[CRITICAL] Request handling error:", err.message);
+    res.writeHead(500);
+    res.end("Internal Server Error");
   }
-};
-
-startServer();
+});
 
 server.on("error", (err: any) => {
-  console.error("[CRITICAL] Server failed to start:", err);
+  console.error("[CRITICAL] Server socket error:", err);
   process.exit(1);
+});
+
+console.log(`[BOOT] Attempting to listen on 0.0.0.0:${PORT}...`);
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`[BOOT] ✅ GrowFlow AI is LIVE`);
+  console.log(`[BOOT] Address: 0.0.0.0:${PORT}`);
+  console.log(`[BOOT] Node Version: ${process.version}`);
 });
 
 // ─── 6. Graceful Shutdown Handler ──────────────────────────────────────────
 const shutdown = async (signal: string) => {
-  console.log(`[SHUTDOWN] Received ${signal}. Starting graceful shutdown...`);
+  console.log(`[SHUTDOWN] Received ${signal}.`);
   setShuttingDown(true);
 
   const timeout = setTimeout(() => {
-    console.error("[SHUTDOWN] Forced shutdown after 10s timeout.");
     process.exit(1);
   }, 10000);
 
   server.close(async () => {
-    console.log("[SHUTDOWN] HTTP server closed.");
     try {
       const { pool } = await import("@workspace/db");
-      if (pool && typeof pool.end === "function") {
-        await pool.end();
-        console.log("[SHUTDOWN] Database connection pool closed.");
-      }
-    } catch (err) {
-      console.error("[SHUTDOWN] Error closing database connection:", err);
-    }
-    clearTimeout(timeout);
-    console.log("[SHUTDOWN] Cleanup complete. Exiting.");
+      if (pool && typeof pool.end === "function") await pool.end();
+    } catch (err) {}
     process.exit(0);
   });
 };
