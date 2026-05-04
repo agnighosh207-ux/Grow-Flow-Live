@@ -172,7 +172,8 @@ export const generateContent = async ({
 
   let lastError: any = null;
   let attemptCount = 0;
-  const MAX_PROVIDER_ATTEMPTS = 3; // --- FIX: Limit total fallbacks to prevent latency cascade (High 4 fix) ---
+  const MAX_PROVIDER_ATTEMPTS = 5;
+  const TIMEOUT_MS = 30000;
 
   for (const provider of providers) {
     if (!provider.apiKey) continue;
@@ -223,7 +224,7 @@ export const generateContent = async ({
             response_format: zodSchema ? { type: "json_object" } : undefined,
           },
           { 
-            timeout: 12000, // Increased to 12s to support complex 70B models during peak load
+            timeout: TIMEOUT_MS, 
             // @ts-ignore
             signal // --- H-21 FIX: Pass AbortSignal to OpenAI client ---
           }

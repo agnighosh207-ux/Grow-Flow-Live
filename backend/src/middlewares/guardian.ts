@@ -18,7 +18,7 @@ const getQuotaForTier = (tier: string) => {
     case "CREATOR": return 30; // 30 / hour
     case "STARTER": return 10; // 10 / hour
     case "FREE":
-    default: return 50; // 50 / hour (Allow for normal dashboard browsing)
+    default: return 100; // 100 / hour (Allow for normal dashboard browsing)
   }
 };
 
@@ -98,7 +98,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
 
   return res.status(429).json({
     error: "api_rate_limit",
-    message: `Tier capacity reached. ${quota} requests allowed per ${windowMs === 3600000 ? 'hour' : '24 hours'}. Please slow down or upgrade.`,
+    message: "System Busy: High Demand. Please try again in a few minutes or upgrade to unlock priority lanes."
   });
 };
 

@@ -55,6 +55,9 @@ export default function CompetitorIntelPage() {
         yourGoal: goal
       });
       setResult(data);
+      // --- P-3 FIX: Invalidate cache to sync credit counter ---
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err: any) {
       toast({ variant: "destructive", title: "Analysis failed", description: err.response?.data?.message || "Something went wrong." });
     } finally {

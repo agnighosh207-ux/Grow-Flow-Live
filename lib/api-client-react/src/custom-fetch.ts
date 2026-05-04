@@ -374,6 +374,15 @@ export async function customFetch<T = unknown>(
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
+    
+    if (response.status === 402 && typeof window !== "undefined") {
+      const msg = (errorData as any)?.message || (errorData as any)?.error || response.statusText;
+      window.dispatchEvent(new CustomEvent('plan-limit-reached', { detail: { message: msg } }));
+    } else if (typeof window !== "undefined") {
+      const msg = (errorData as any)?.message || (errorData as any)?.error || response.statusText;
+      window.dispatchEvent(new CustomEvent('api-error', { detail: { message: msg, status: response.status } }));
+    }
+    
     throw new ApiError(response, errorData, requestInfo);
   }
 

@@ -21,7 +21,7 @@ export const enforceGenerationLimit = async (req: any, res: any, next: any) => {
   }
 
   // 1. Bypass check (Atomic check not required for bypass flags)
-  if (req.user.subscriptionStatus === 'active' && req.user.planTier === 'INFINITY') {
+  if (req.user.isAdmin || (req.user.subscriptionStatus === 'active' && req.user.planTier === 'INFINITY')) {
     return next();
   }
 

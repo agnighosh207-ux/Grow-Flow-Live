@@ -45,7 +45,7 @@ export async function getOrCreateUser(userId: string, email?: string) {
           id: userId, 
           email: email ?? null, 
           lastLoginAt: new Date(),
-          generationsRemaining: 5,
+          generationsRemaining: 10,
           lastCreditReset: new Date(),
           planTier: "FREE",
           planType: "free",
@@ -91,7 +91,7 @@ export const PLAN_RANKS: Record<string, number> = {
 };
 
 export const TIER_CREDITS: Record<string, number> = {
-  FREE: 5,
+  FREE: 10,
   STARTER: 25,
   CREATOR: 150,
   INFINITY: 999999,
@@ -146,7 +146,7 @@ export function requirePlanOrTrial(toolKey: string) {
       const userLevel = PLAN_RANKS[planTier as keyof typeof PLAN_RANKS] || 0;
       const isAdmin = user.isAdmin === true;
 
-      if (isAdmin || userLevel >= requiredLevel) {
+      if (isAdmin || (userLevel >= requiredLevel)) {
         return next();
       }
 

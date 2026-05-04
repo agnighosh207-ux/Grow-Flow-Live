@@ -50,6 +50,7 @@ import { useReferralInfo } from "@/hooks/useReferral";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/layout/Logo";
 import { MoreHorizontal } from "lucide-react";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 
 function ImpersonationBanner() {
@@ -409,7 +410,7 @@ function SidebarContent({
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-1 space-y-6" data-lenis-prevent>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-1 space-y-6" data-lenis-prevent>
         <StreakBanner streak={streak} completedToday={!!streakData?.completedToday} />
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
@@ -540,13 +541,16 @@ function SidebarContent({
 }
 
 export function Layout({ children }: { children: ReactNode }) {
-  const [location] = useLocation();
-  const { signOut } = useClerk();
   const { user } = useUser();
+  const { signOut } = useClerk();
+  const [location] = useLocation();
   const { data: sub } = useSubscriptionStatus();
-  const [showFeedback, setShowFeedback] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [feedbackTrigger, setFeedbackTrigger] = useState("manual");
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackTrigger, setFeedbackTrigger] = useState<string>("manual");
+  
+  const { toast } = useToast();
+  const { getToken } = useAuth();
   const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -561,156 +565,166 @@ export function Layout({ children }: { children: ReactNode }) {
       if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
     };
   }, [user]);
-
-
+  
+  useEffect(() => {
+    const handlePlanLimit = (e: any) => {
+      toast({
+        variant: "destructive",
+        title: "Upgrade Required",
+        description: e.detail.message || "You've reached your plan limit. Upgrade to continue.",
+      });
+    };
+    const handleApiError = (e: any) => {
+      if (e.detail.status === 401) return; // Silent for unauthorized (usually handled by Clerk)
+      toast({
+        variant: "destructive",
+        title: "Request Failed",
+        description: e.detail.message || "An unexpected error occurred.",
+      });
+    };
+    window.addEventListener('plan-limit-reached', handlePlanLimit);
+    window.addEventListener('api-error', handleApiError);
+    return () => {
+      window.removeEventListener('plan-limit-reached', handlePlanLimit);
+      window.removeEventListener('api-error', handleApiError);
+    };
+  }, [toast]);
 
   const isPro = !!(sub && sub.planType === "infinity" && ["active", "trial", "pending", "past_due"].includes(sub.plan));
 
   return (
-    <div className="min-h-screen text-foreground relative selection:bg-cyan-500/30">
-      {/* God-Tier Global Graphics */}
-      <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
-      <aside
-        className="hidden md:flex flex-col fixed inset-y-0 left-0 z-[60] w-64 xl:w-72 border-r border-white/[0.06]"
-        style={{ background: "rgba(8,3,22,0.6)", backdropFilter: "blur(24px)" }}
-      >
-        <SidebarContent
-          isPro={isPro}
-          sub={sub}
-          user={user}
-          signOut={signOut}
-          location={location}
-        />
-      </aside>
-
-      <header
-        className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/[0.06] sticky top-0 z-50"
-        style={{ background: "rgba(10,4,28,0.92)", backdropFilter: "blur(20px)" }}
-      >
-        <div className="flex items-center justify-center w-full">
-          <Logo size="sm" />
-        </div>
-      </header>
-
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent
-          side="left"
-          className="w-[280px] p-0 flex flex-col border-r border-white/[0.06]"
-          style={{ background: "rgba(8,3,22,0.98)", backdropFilter: "blur(24px)" }}
-        >
-          <SidebarContent
-            isPro={isPro}
-            sub={sub}
-            user={user}
-            signOut={signOut}
-            location={location}
-            onClick={() => setIsSheetOpen(false)}
-          />
-        </SheetContent>
-      </Sheet>
-
-      <main className="md:pl-64 xl:pl-72 min-h-screen flex flex-col">
-        <TopBanner />
-        <ImpersonationBanner />
-        <div className="flex-1 w-full px-4 md:px-6 py-4 md:py-8 pb-28 md:pb-10 max-w-screen-2xl mx-auto">
-          <NotificationBanner />
-          <FoundersBanner />
-          <ReferralRewardNotifier />
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="w-full"
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#050110] selection:bg-cyan-500/30">
+      <ImpersonationBanner />
+      <NotificationBanner />
+      
+      <div className="flex-1 flex min-h-0 relative">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex flex-1 min-h-0">
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel
+              defaultSize={20}
+              minSize={15}
+              maxSize={25}
+              className="bg-[#080316]/60 backdrop-blur-3xl border-r border-white/[0.06] flex flex-col z-30"
             >
-              {children}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-        <footer className="w-full px-4 md:px-8 xl:px-12 pb-6 md:pb-8">
-          <div className="border-t border-white/[0.04] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <Logo size="sm" showText={false} />
-            <div className="flex items-center gap-4 text-[11px] text-white/25">
-              <Link href="/privacy">
-                <span className="hover:text-white/50 transition-colors cursor-pointer">Privacy</span>
-              </Link>
-              <span>·</span>
-              <Link href="/terms">
-                <span className="hover:text-white/50 transition-colors cursor-pointer">Terms</span>
-              </Link>
-              <span>·</span>
-              <Link href="/support">
-                <span className="hover:text-white/50 transition-colors cursor-pointer">Support</span>
-              </Link>
-            </div>
-            <span className="text-[11px] text-white/20">© 2026 GrowFlow AI</span>
-          </div>
-        </footer>
-      </main>
-
-      <nav
-        className="md:hidden fixed bottom-0 inset-x-0 border-t border-white/[0.06] flex justify-around p-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] z-50"
-        style={{ background: "rgba(10,4,28,0.96)", backdropFilter: "blur(20px)" }}
-      >
-        {BOTTOM_NAV.map(({ path, label, icon: Icon }) => {
-          if (path === "menu") {
-            return (
-              <span
-                key={path}
-                onClick={() => setIsSheetOpen(true)}
-                className="flex flex-col items-center gap-0.5 p-2 rounded-lg min-w-[3.5rem] relative text-white/35 group cursor-pointer"
-              >
-                <Icon className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
-                <span className="text-[9px] font-medium">{label}</span>
-              </span>
-            );
-          }
-          
-          const isActive = location === path;
-          return (
-            <Link key={path} href={path}>
-              <span
-                className={`group flex flex-col items-center gap-0.5 p-2 rounded-lg min-w-[3.5rem] relative cursor-pointer
-                  ${isActive ? "text-cyan-400" : "text-white/35"}
-                `}
-              >
-
-                <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
-                <span className="text-[9px] font-medium">{label}</span>
-                {isActive && (
+              <SidebarContent
+                user={user}
+                location={location}
+                sub={sub}
+                isPro={isPro}
+                signOut={signOut}
+              />
+            </ResizablePanel>
+            
+            <ResizableHandle withHandle className="bg-white/[0.05] hover:bg-cyan-500/20 transition-colors z-40" />
+            
+            <ResizablePanel defaultSize={80} className="flex flex-col min-h-0">
+              <TopBanner />
+              <FoundersBanner />
+              
+              <main className="flex-1 overflow-y-auto relative custom-scrollbar">
+                <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
+                <AnimatePresence mode="wait">
                   <motion.div
-                    layoutId="mobileNavIndicator"
-                    className="absolute -bottom-1 w-1 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_#00F2FF]"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    key={location}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="relative z-10 p-6 md:p-8 pb-24"
+                  >
+                    <ReferralRewardNotifier />
+                    {children}
+                  </motion.div>
+                </AnimatePresence>
+              </main>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden flex flex-1 flex-col min-h-0 overflow-x-hidden">
+          <header className="h-16 border-b border-white/[0.06] bg-[#080316]/95 backdrop-blur-2xl flex items-center justify-between px-6 z-[60] sticky top-0">
+            <Logo size="sm" />
+            <div className="flex items-center gap-3">
+               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-white/70">
+                    <Menu className="w-6 h-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-80 bg-[#080316] border-r border-white/10">
+                  <SidebarContent
+                    user={user}
+                    location={location}
+                    sub={sub}
+                    isPro={isPro}
+                    signOut={signOut}
+                    onClick={() => setIsSheetOpen(false)}
                   />
-                )}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-y-auto relative pb-24 custom-scrollbar">
+            <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
+            <TopBanner />
+            <FoundersBanner />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="relative z-10 p-4"
+              >
+                <ReferralRewardNotifier />
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+
+          <nav className="fixed bottom-0 inset-x-0 border-t border-white/[0.06] flex justify-around p-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] z-50 bg-[#080316]/98 backdrop-blur-xl">
+            {BOTTOM_NAV.map((item) => {
+               if (item.path === "menu") {
+                 return (
+                   <button key="menu" onClick={() => setIsSheetOpen(true)} className="flex flex-col items-center gap-1 p-2 text-white/40">
+                     <Menu className="w-5 h-5" />
+                     <span className="text-[9px] font-bold uppercase">Menu</span>
+                   </button>
+                 );
+               }
+               const isActive = location === item.path;
+               const Icon = item.icon;
+               return (
+                 <Link key={item.path} href={item.path}>
+                   <a className={`flex flex-col items-center gap-1 p-2 transition-all ${isActive ? "text-cyan-400" : "text-white/40"}`}>
+                     <Icon className="w-5 h-5" />
+                     <span className="text-[9px] font-bold uppercase tracking-tighter">{item.label}</span>
+                   </a>
+                 </Link>
+               );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} trigger={feedbackTrigger} />
       <NotificationPermissionModal />
       <ReferralPopup />
 
-
+      {/* Global Feedback Trigger */}
       {user && (
-        <>
-          <button
-            onClick={() => { setFeedbackTrigger("manual"); setShowFeedback(true); }}
-            className="fixed bottom-20 md:bottom-6 right-4 z-40 flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-white/50 hover:text-white/80 hover:border-cyan-500/40 hover:bg-cyan-500/10 transition-all text-xs font-medium"
-            style={{ background: "rgba(10,4,28,0.85)", backdropFilter: "blur(12px)" }}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            Share Feedback
-          </button>
-          <FeedbackModal
-            open={showFeedback}
-            onClose={() => setShowFeedback(false)}
-            trigger={feedbackTrigger}
-          />
-        </>
+        <button
+          onClick={() => { setFeedbackTrigger("manual"); setShowFeedback(true); }}
+          className="fixed bottom-6 right-6 z-40 hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 text-white/50 hover:text-white/80 hover:border-cyan-500/40 hover:bg-cyan-500/10 transition-all text-xs font-bold shadow-2xl"
+          style={{ background: "rgba(10,4,28,0.85)", backdropFilter: "blur(12px)" }}
+        >
+          <MessageSquare className="w-4 h-4 text-cyan-400" />
+          Feedback
+        </button>
       )}
     </div>
   );

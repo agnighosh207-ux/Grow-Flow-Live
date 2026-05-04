@@ -244,6 +244,9 @@ export default function ContentPack() {
       const data = JSON.parse(text);
       setResult(data);
       setActiveTab("blueprint");
+      // --- P-3 FIX: Invalidate cache to sync credit counter ---
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
     } finally {

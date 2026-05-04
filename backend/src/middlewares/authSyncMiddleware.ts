@@ -89,7 +89,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
           lastLoginAt: now,
           planTier: isAdminEmail ? "INFINITY" : "FREE",
           planType: isAdminEmail ? "infinity" : "free",
-          generationsRemaining: isAdminEmail ? 999999 : 5,
+          generationsRemaining: isAdminEmail ? 999999 : 10,
           lastCreditReset: now,
           isAdmin: Boolean(isAdminEmail)
         }).returning();

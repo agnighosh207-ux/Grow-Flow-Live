@@ -99,6 +99,9 @@ function IdeasGeneratorInner() {
       const data = await res.json();
       setIdeas(data.ideas ?? []);
       useOneTrial();
+      // --- P-3 FIX: Invalidate cache to sync credit counter ---
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch {
       toast({ variant: "destructive", title: "Generation failed", description: "Please try again." });
     } finally {

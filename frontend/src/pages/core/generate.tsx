@@ -1019,7 +1019,7 @@ export default function Generate() {
         setGenerationBlockedMsg(null);
         const isOffline = typeof window !== "undefined" && !window.navigator.onLine;
         const errorMsg = (error?.message || error?.data?.message || "").toLowerCase();
-        const is5xx = (error?.status ?? 0) >= 500 || errorMsg.includes("503") || errorMsg.includes("ai temporarily unavailable") || errorMsg.includes("network");
+        const is5xx = (error?.status ?? 0) >= 500 || error?.status === 429 || errorMsg.includes("503") || errorMsg.includes("ai temporarily unavailable") || errorMsg.includes("network");
 
         if (is5xx && retryCount < 3) {
           toast({
@@ -1473,15 +1473,15 @@ export default function Generate() {
                             <Textarea
                               {...field}
                               placeholder="e.g. 5 ways AI is replacing junior developers — and what to do about it..."
-                              className="min-h-[120px] md:min-h-[180px] p-6 md:p-8 rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
+                              className="min-h-[140px] md:min-h-[180px] p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
                             />
-                            <div className="absolute bottom-6 right-6 flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/5 text-[10px] text-white/20 font-black uppercase tracking-widest border border-white/5">
-                               <Activity className="w-3.5 h-3.5 text-cyan-500/50" />
+                            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl bg-white/5 text-[9px] md:text-[10px] text-white/20 font-black uppercase tracking-widest border border-white/5">
+                               <Activity className="w-3 md:w-3.5 h-3 md:h-3.5 text-cyan-500/50" />
                                Trending
                             </div>
                             {isScoringHook && (
-                               <div className="absolute top-6 right-6 flex items-center gap-2 text-xs font-bold text-white/40">
-                                 <Loader2 className="w-4 h-4 animate-spin" /> Scoring...
+                               <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 text-[10px] md:text-xs font-bold text-white/40">
+                                 <Loader2 className="w-3.5 md:w-4 h-3.5 md:h-4 animate-spin" /> Scoring...
                                </div>
                             )}
                           </div>
@@ -1492,11 +1492,11 @@ export default function Generate() {
                               initial={{ opacity: 0, scale: 0.95, y: -10 }}
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                              className="mt-6 overflow-hidden rounded-[2.5rem] bg-zinc-900/80 border border-white/5 backdrop-blur-3xl shadow-2xl"
+                              className="mt-6 overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] bg-zinc-900/80 border border-white/5 backdrop-blur-3xl shadow-2xl"
                             >
-                              <div className="p-8 space-y-6">
-                                <div className="flex items-center justify-between">
-                                   <div className="flex items-center gap-6">
+                              <div className="p-5 md:p-8 space-y-5 md:space-y-6">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                   <div className="flex items-center gap-4 md:gap-6">
                                       <div className={`relative group`}>
                                          <div className={`absolute -inset-1 rounded-2xl blur opacity-30 group-hover:opacity-50 transition ${
                                            hookScore.grade === 'S' ? 'bg-amber-500' :
@@ -1504,7 +1504,7 @@ export default function Generate() {
                                            hookScore.grade === 'B' ? 'bg-cyan-500' :
                                            'bg-amber-400'
                                          }`} />
-                                         <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center font-black text-3xl italic shadow-2xl ${
+                                         <div className={`relative w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center font-black text-2xl md:text-3xl italic shadow-2xl ${
                                            hookScore.grade === 'S' ? 'bg-amber-500 text-black' :
                                            hookScore.grade === 'A' ? 'bg-emerald-500 text-black' :
                                            hookScore.grade === 'B' ? 'bg-cyan-500 text-black' :
@@ -1514,28 +1514,28 @@ export default function Generate() {
                                          </div>
                                       </div>
                                       <div>
-                                         <div className="flex items-center gap-3">
-                                            <span className="text-3xl font-black text-white tracking-tighter">{hookScore.score}</span>
-                                            <span className="text-zinc-500 font-bold text-sm">/ 100</span>
+                                         <div className="flex items-center gap-2 md:gap-3">
+                                            <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">{hookScore.score}</span>
+                                            <span className="text-zinc-500 font-bold text-xs md:text-sm">/ 100</span>
                                          </div>
-                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{hookScore.hookType}</p>
+                                         <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{hookScore.hookType}</p>
                                       </div>
                                    </div>
                                    
-                                   <div className="flex gap-2">
+                                   <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
                                       {hookScore.patternMatches?.map((m: string) => (
-                                         <span key={m} className="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-500/20">{m}</span>
+                                         <span key={m} className="px-2 md:px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-[9px] md:text-[10px] font-black uppercase tracking-wider border border-emerald-500/20">{m}</span>
                                       ))}
                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                                    {hookScore.mainIssue && (
-                                      <div className="p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 flex gap-4 items-start group/issue hover:bg-amber-500/10 transition-colors">
-                                         <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-500/50">Intelligence Insight</p>
-                                            <p className="text-sm font-bold text-amber-200/80 leading-relaxed">{hookScore.mainIssue}</p>
+                                      <div className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-amber-500/5 border border-amber-500/10 flex gap-3 md:gap-4 items-start group/issue hover:bg-amber-500/10 transition-colors">
+                                         <AlertCircle className="w-4 md:w-5 h-4 md:h-5 text-amber-500 shrink-0 mt-0.5" />
+                                         <div className="space-y-0.5 md:space-y-1">
+                                            <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-amber-500/50">Intelligence Insight</p>
+                                            <p className="text-xs md:text-sm font-bold text-amber-200/80 leading-relaxed">{hookScore.mainIssue}</p>
                                          </div>
                                       </div>
                                    )}
@@ -1546,13 +1546,13 @@ export default function Generate() {
                                           navigator.clipboard.writeText(hookScore.quickFix);
                                           toast({ title: "Optimized hook copied!" });
                                         }}
-                                        className="p-6 rounded-[2rem] bg-cyan-500/5 border border-cyan-500/10 flex gap-4 items-start text-left group/fix hover:bg-cyan-500/10 transition-all active:scale-95"
+                                        className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-cyan-500/5 border border-cyan-500/10 flex gap-3 md:gap-4 items-start text-left group/fix hover:bg-cyan-500/10 transition-all active:scale-95"
                                       >
-                                         <Sparkles className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5 group-hover/fix:scale-125 transition-transform" />
-                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-cyan-400/50">Suggested Optimization</p>
-                                            <p className="text-sm font-bold text-cyan-100 italic leading-relaxed">"{hookScore.quickFix}"</p>
-                                            <p className="text-[9px] font-black text-cyan-400/30 uppercase mt-2">Click to copy</p>
+                                         <Sparkles className="w-4 md:w-5 h-4 md:h-5 text-cyan-400 shrink-0 mt-0.5 group-hover/fix:scale-125 transition-transform" />
+                                         <div className="space-y-0.5 md:space-y-1">
+                                            <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-cyan-400/50">Suggested Optimization</p>
+                                            <p className="text-xs md:text-sm font-bold text-cyan-100 italic leading-relaxed">"{hookScore.quickFix}"</p>
+                                            <p className="text-[8px] md:text-[9px] font-black text-cyan-400/30 uppercase mt-1 md:mt-2">Click to copy</p>
                                          </div>
                                       </button>
                                    )}
@@ -1566,8 +1566,8 @@ export default function Generate() {
                     )}
                   />
 
-                  <div className="space-y-8">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
+                  <div className="space-y-8 md:space-y-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-2">
                       <FormField
                         control={form.control}
                         name="niche"
@@ -1576,7 +1576,7 @@ export default function Generate() {
                             <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Niche</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-12 rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
                                   <SelectValue placeholder="Niche" />
                                 </SelectTrigger>
                               </FormControl>
@@ -1595,7 +1595,7 @@ export default function Generate() {
                             <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Style</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-12 rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
                                   <SelectValue placeholder="Style" />
                                 </SelectTrigger>
                               </FormControl>
@@ -1614,7 +1614,7 @@ export default function Generate() {
                             <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Tone</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-12 rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
                                   <SelectValue placeholder="Tone" />
                                 </SelectTrigger>
                               </FormControl>
