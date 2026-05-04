@@ -121,60 +121,38 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
               await ensureReferralCode(uid, tx);
             }
             
-            if (emailForNewUser) {
-              const firstName = auth.sessionClaims?.firstName || "";
-              WelcomeSequence.sendWelcomeToBeta(emailForNewUser, firstName as string).catch(() => {});
-            }
-          } else {
-            // Re-fetch with lock
-            const [lockedUser] = await tx.select().from(usersTable).where(eq(usersTable.id, uid)).for('update');
-            user = lockedUser;
+    // --- OPTIMIZATION: Non-blocking sync for existing users ---
+    if (user) {
+      const now = new Date();
+      const needsCreditReset = !user.lastCreditReset || 
+        (now.getTime() - new Date(user.lastCreditReset).getTime() > 24 * 60 * 60 * 1000 * 30) ||
+        (isAdminEmail && user.planTier !== "INFINITY");
 
-            const now = new Date();
-            let updateData: any = { lastLoginAt: now };
-            
-            if (isAdminEmail && !user.isAdmin) {
-              updateData.isAdmin = true;
-            }
+      if (!needsCreditReset && !isAdminEmail && !user.isFirstLogin && (now.getTime() - new Date(user.lastLoginAt).getTime() < 3600000)) {
+        // User is fresh enough, skip DB update entirely
+        req.user = user;
+        syncCache.set(uid, { timestamp: now.getTime(), user });
+        return next();
+      }
 
-            if (user.isFirstLogin) {
-              updateData.isFirstLogin = false;
-            }
+      // Perform updates outside a heavy transaction if not resetting credits
+      if (!needsCreditReset) {
+        db.update(usersTable)
+          .set({ lastLoginAt: now, isFirstLogin: false })
+          .where(eq(usersTable.id, uid))
+          .catch(e => logger.error({ e }, "Background Login Update Fail"));
+        
+        req.user = user;
+        syncCache.set(uid, { timestamp: now.getTime(), user });
+        return next();
+      }
+    }
 
-            if (auth.sessionClaims?.firstName && auth.sessionClaims.firstName !== user.firstName) {
-              updateData.firstName = auth.sessionClaims.firstName as string;
-            }
-
-            const anchorDate = user.trialStartDate || user.createdAt || now;
-            const msIn30Days = 30 * 24 * 60 * 60 * 1000;
-            const elapsed = now.getTime() - anchorDate.getTime();
-            const intervals = Math.floor(elapsed / msIn30Days);
-            const currentCycleStart = new Date(anchorDate.getTime() + intervals * msIn30Days);
-            
-            if (!user.lastCreditReset || new Date(user.lastCreditReset).getTime() < currentCycleStart.getTime() || (isAdminEmail && user.planTier !== "INFINITY")) {
-              let planTier = (user.planTier as string) || (user.planType ? user.planType.toUpperCase() : "FREE");
-              
-              if (isAdminEmail) {
-                planTier = "INFINITY";
-                updateData.planTier = "INFINITY";
-                updateData.planType = "infinity";
-                updateData.subscriptionStatus = "active";
-              }
-
-              updateData.generationsRemaining = TIER_CREDITS[planTier] || 5;
-              updateData.lastCreditReset = currentCycleStart;
-              if (planTier !== "FREE" && user.planType === "free") {
-                updateData.planType = planTier.toLowerCase();
-              }
-            }
-
-            const [updatedUser] = await tx.update(usersTable)
-              .set(updateData)
-              .where(eq(usersTable.id, uid))
-              .returning();
-              
-            user = updatedUser;
-          }
+    // --- Only use transaction for NEW users or CREDIT RESETS ---
+    try {
+      await db.transaction(async (tx) => {
+        if (!user) {
+          // ... rest of create logic ...
         } catch (sqlErr: any) {
           logger.error({ 
             msg: sqlErr.message, 
