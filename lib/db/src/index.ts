@@ -8,10 +8,10 @@ import * as schema from "./schema";
 
 // Correctly resolve root in both TS (source) and JS (bundled)
 const currentFileUrl = fileURLToPath(import.meta.url);
-const isDist = currentFileUrl.includes(path.sep + 'dist' + path.sep) || currentFileUrl.includes('/dist/');
-// In source: lib/db/src/index.ts (3 levels)
-// In dist: lib/db/dist/index.mjs (3 levels)
-const rootDir = path.resolve(path.dirname(currentFileUrl), "../../../");
+const isSource = currentFileUrl.endsWith('.ts');
+// In source: lib/db/src/index.ts (3 levels: src -> db -> lib -> root)
+// In dist bundle: backend/dist/index.mjs (2 levels: dist -> backend -> root)
+const rootDir = path.resolve(path.dirname(currentFileUrl), isSource ? "../../../" : "../../");
 
 const envFiles = [path.join(rootDir, ".env"), path.join(rootDir, ".env.example")];
 const loadedEnv = envFiles.find((file) => fs.existsSync(file));

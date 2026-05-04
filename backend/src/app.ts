@@ -217,7 +217,7 @@ app.use("/api", router);
 if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA") {
   // In the monorepo, frontend is a sibling to backend. 
   // dist/index.mjs is in backend/dist/
-  const frontendPath = path.resolve(__dirname, "../../../frontend/dist/public");
+  const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
   
   // Static assets (hashed files) can be cached for a long time
   app.use(express.static(frontendPath, {

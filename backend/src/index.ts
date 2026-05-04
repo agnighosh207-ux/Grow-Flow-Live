@@ -61,9 +61,12 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   const address = server.address();
-  const bind = typeof address === "string" ? address : address ? `${address.address}:${address.port}` : PORT;
-  console.log(`[BOOT] ✅ Server listening on ${bind}`);
-  console.log(`[BOOT] Health check available at: http://localhost:${PORT}/api/health`);
+  const bindAddress = typeof address === "string" ? address : address?.address;
+  const bindPort = typeof address === "string" ? null : address?.port;
+  
+  console.log(`[BOOT] ✅ Server is UP and listening on ${bindAddress}:${bindPort || PORT}`);
+  console.log(`[BOOT] Registered IP: 0.0.0.0 (Publicly accessible)`);
+  console.log(`[BOOT] Health check available at: /api/health`);
 });
 
 server.on("error", (err: any) => {

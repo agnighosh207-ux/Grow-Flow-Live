@@ -4,7 +4,14 @@ import pino from "pino";
 const logger = pino();
 const redisUrl = process.env.REDIS_URL;
 
-export const redis = redisUrl ? new Redis(redisUrl) : null;
+export const redis = redisUrl ? new Redis(redisUrl, {
+  maxRetriesPerRequest: 3,
+  connectTimeout: 5000,
+  retryStrategy(times) {
+    if (times > 3) return null; // Stop retrying after 3 attempts
+    return Math.min(times * 100, 1000);
+  }
+}) : null;
 
 if (redis) {
   redis.on("error", (err) => logger.error({ err: err.message }, "[REDIS] Connection error — Redis operations will fail gracefully"));
