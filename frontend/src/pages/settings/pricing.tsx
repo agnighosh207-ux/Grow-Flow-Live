@@ -401,7 +401,7 @@ export default function PricingPage() {
 
                 <div className="space-y-2.5 flex-1 mb-6">
                   {[
-                    "20 content generations / month",
+                    "25 content generations / month",
                     "1 Regeneration per topic",
                     "All 4 platforms unlocked",
                     "English + 1 Premium Language",
@@ -487,10 +487,11 @@ export default function PricingPage() {
 
                 <div className="space-y-2.5 flex-1 mb-4">
                   {[
-                    "100 content generations / month",
+                    "150 content generations / month",
                     "3 Regenerations per topic",
                     "Multi-Variation (3 outputs per gen)",
                     "Viral Score™ enabled",
+                    "Trend Engine (Live Insights)",
                     "All 4 platforms",
                     "Hooks, CTAs & hashtags",
                     "Idea Generator + 7-Day Strategy",
