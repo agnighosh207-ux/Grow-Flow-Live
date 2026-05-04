@@ -223,7 +223,7 @@ export const generateContent = async ({
             response_format: zodSchema ? { type: "json_object" } : undefined,
           },
           { 
-            timeout: 8000,
+            timeout: 12000, // Increased to 12s to support complex 70B models during peak load
             // @ts-ignore
             signal // --- H-21 FIX: Pass AbortSignal to OpenAI client ---
           }

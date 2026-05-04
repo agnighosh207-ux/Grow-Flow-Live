@@ -39,35 +39,43 @@ import { setShuttingDown } from "./lib/state.js";
 
 initSentry();
 
-// ─── 5. Create HTTP server with raw-level health check ───────────────────────
-const server = http.createServer((req, res) => {
-  if (req.url === "/api/health" || req.url === "/healthz" || req.url === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", uptime: process.uptime() }));
-    return;
-  }
+// ─── 5. Start Server ────────────────────────────────────────────────────────
+// Railway requirement: Must listen on 0.0.0.0 and process.env.PORT
+const server = http.createServer();
 
-  // Defensive check for ESM/CJS interop issues with default exports
-  const requestListener = (app as any).default || app;
-  
-  if (typeof requestListener === "function") {
-    requestListener(req, res);
-  } else {
-    console.error("[CRITICAL] Express 'app' is not a function! Check build/exports.");
-    res.writeHead(500);
-    res.end("Internal Server Error: Application misconfiguration");
-  }
-});
+const startServer = () => {
+  try {
+    const requestListener = (app as any).default || app;
+    
+    server.on("request", (req, res) => {
+      // Direct raw-level health check for Railway/Load Balancers
+      if (req.url === "/api/health" || req.url === "/healthz" || req.url === "/health" || req.url === "/") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "ok", uptime: process.uptime(), railway: true }));
+        return;
+      }
+      
+      if (typeof requestListener === "function") {
+        requestListener(req, res);
+      } else {
+        console.error("[CRITICAL] Express 'app' is not a function! Build mismatch.");
+        res.writeHead(500);
+        res.end("Internal Server Error: Application misconfiguration");
+      }
+    });
 
-server.listen(PORT, "0.0.0.0", () => {
-  const address = server.address();
-  const bindAddress = typeof address === "string" ? address : address?.address;
-  const bindPort = typeof address === "string" ? null : address?.port;
-  
-  console.log(`[BOOT] ✅ Server is UP and listening on ${bindAddress}:${bindPort || PORT}`);
-  console.log(`[BOOT] Registered IP: 0.0.0.0 (Publicly accessible)`);
-  console.log(`[BOOT] Health check available at: /api/health`);
-});
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`[BOOT] ✅ GrowFlow AI is LIVE`);
+      console.log(`[BOOT] Listening on: 0.0.0.0:${PORT}`);
+      console.log(`[BOOT] Health Check: http://0.0.0.0:${PORT}/api/health`);
+    });
+  } catch (err) {
+    console.error("[CRITICAL] Failed to start HTTP server:", err);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 server.on("error", (err: any) => {
   console.error("[CRITICAL] Server failed to start:", err);

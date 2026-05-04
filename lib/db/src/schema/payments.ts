@@ -5,7 +5,7 @@ export const paymentStatusEnum = pgEnum("payment_status", ["pending", "captured"
 
 export const paymentsTable = pgTable("payments", {
   id: text("id").primaryKey(), // Razorpay Payment ID
-  userId: text("user_id").references(() => usersTable.id, { onDelete: "cascade" }).notNull(),
+  userId: text("user_id").references(() => usersTable.id, { onDelete: "set null" }), // Preservation of financial history for audits
   subscriptionId: text("subscription_id"),
   amount: integer("amount").notNull(), // in paise
   currency: text("currency").notNull().default("INR"),

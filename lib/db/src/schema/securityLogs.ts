@@ -5,7 +5,7 @@ export const eventTypeEnum = pgEnum("security_event_type", ["RATE_LIMIT", "SUSPI
 
 export const securityLogsTable = pgTable("security_logs", {
   id: text("id").primaryKey(),
-  userId: text("user_id").references(() => usersTable.id, { onDelete: "no action" }), // Forensics preserved
+  userId: text("user_id").references(() => usersTable.id, { onDelete: "set null" }), // Forensics preserved even after account deletion
   eventType: eventTypeEnum("event_type").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),

@@ -11,4 +11,4 @@ cmds = ["pnpm install --frozen-lockfile"]
 cmds = ["pnpm run build:no-typecheck"]
 
 [start]
-cmd = "pnpm run start"
+cmd = "node --enable-source-maps ./backend/dist/index.mjs"
