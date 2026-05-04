@@ -911,8 +911,8 @@ export default function Generate() {
   const isCreatorUser = sub && sub.planType === "creator" && paidStatuses.includes(sub.plan);
   const isInfinityUser = sub && sub.planType === "infinity" && paidStatuses.includes(sub.plan);
   
-  const generationsUsed = isFreeUser ? (sub?.generationsUsed ?? 0) : (sub?.monthlyGenerationsUsed ?? 0);
-  const generationLimit = sub?.generationLimit ?? 3;
+  const generationsUsed = sub?.monthlyGenerationsUsed ?? 0;
+  const generationLimit = sub?.generationLimit ?? (isFreeUser ? 10 : 25);
   
   // Triggers
   const showMidLimitWarning = isFreeUser && !warningDismissed && generationsUsed === 2 && sub?.canGenerate;
@@ -1450,9 +1450,9 @@ export default function Generate() {
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-1.5 rounded-[48px] bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 shadow-2xl relative"
+            className="p-1.5 rounded-[48px] bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 shadow-2xl relative overflow-visible"
           >
-            <div className="bg-[#0c0d12]/90 backdrop-blur-3xl rounded-[44px] p-8 space-y-10">
+            <div className="bg-[#0c0d12]/90 backdrop-blur-3xl rounded-[44px] p-8 space-y-10 overflow-visible">
               <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-600 border border-cyan-400/30 shadow-lg shadow-cyan-600/20">
                  <Sparkles className="w-3.5 h-3.5 text-white" />
                  <span className="text-[10px] font-black text-white uppercase tracking-widest">Growth Engine Active</span>
@@ -1581,7 +1581,7 @@ export default function Generate() {
                                   <SelectValue placeholder="Niche" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent className="glass-panel-premium border-white/10">
+                              <SelectContent className="glass-panel-premium border-white/10 z-[100]">
                                 {NICHES.map(n => <SelectItem key={n} value={n} className="text-white/80 font-bold">{n}</SelectItem>)}
                               </SelectContent>
                             </Select>
@@ -1600,7 +1600,7 @@ export default function Generate() {
                                   <SelectValue placeholder="Style" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent className="glass-panel-premium border-white/10">
+                              <SelectContent className="glass-panel-premium border-white/10 z-[100]">
                                 {["Educational", "Story", "Viral"].map(t => <SelectItem key={t} value={t} className="text-white/80 font-bold">{t}</SelectItem>)}
                               </SelectContent>
                             </Select>
@@ -1619,7 +1619,7 @@ export default function Generate() {
                                   <SelectValue placeholder="Tone" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent className="glass-panel-premium border-white/10">
+                              <SelectContent className="glass-panel-premium border-white/10 z-[100]">
                                 {["Casual", "Professional", "Aggressive"].map(t => <SelectItem key={t} value={t} className="text-white/80 font-bold">{t}</SelectItem>)}
                               </SelectContent>
                             </Select>

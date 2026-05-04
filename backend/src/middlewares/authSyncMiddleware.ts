@@ -132,12 +132,12 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
           updateData.generationsRemaining = 999999;
           updateData.subscriptionStatus = "active";
         } else if (needsCreditReset) {
-          // Reset credits based on plan tier
+          // Reset credits based on plan tier — use Math.max to avoid draining bonus credits
           const tier = user.planTier || "FREE";
           const resetCredits = TIER_CREDITS[tier] || 10;
-          updateData.generationsRemaining = resetCredits;
+          updateData.generationsRemaining = Math.max(user.generationsRemaining || 0, resetCredits);
           updateData.lastCreditReset = now;
-          logger.info({ userId: uid, tier, resetCredits }, "[AUTH] Resetting monthly credits");
+          logger.info({ userId: uid, tier, resetCredits, final: updateData.generationsRemaining }, "[AUTH] Monthly credits refreshed");
         }
 
         const [updatedUser] = await tx.update(usersTable).set(updateData).where(eq(usersTable.id, uid)).returning();

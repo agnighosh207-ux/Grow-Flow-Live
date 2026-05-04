@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
@@ -66,6 +66,7 @@ Return JSON:
     res.json(parsed);
   } catch (err: any) {
     console.error("PREDICTOR ANALYZE ERROR:", err);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Predictor service unavailable. Please try again." });
   }
 });

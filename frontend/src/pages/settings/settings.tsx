@@ -464,7 +464,7 @@ export default function SettingsPage() {
                 <p className="text-emerald-300/60 text-xs mt-0.5">Unlimited generations active</p>
               )}
               {sub?.plan === "free" && (
-                <p className="text-white/40 text-xs mt-0.5">{sub.generationsUsed}/5 free generations used</p>
+                <p className="text-white/40 text-xs mt-0.5">{sub.monthlyGenerationsUsed}/{sub.generationLimit} free generations used</p>
               )}
             </div>
             {(sub?.plan === "free" || sub?.plan === "blocked" || sub?.plan === "trial") && (

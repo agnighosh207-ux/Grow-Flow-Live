@@ -41,7 +41,8 @@ import {
   GitBranch,
   Target,
   ArrowRight,
-  AlertTriangle
+  AlertTriangle,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -445,6 +446,24 @@ function SidebarContent({
             </div>
           </div>
         ))}
+
+        {sub?.isAdmin && (
+          <div>
+            <p className="text-[11px] font-semibold text-cyan-400 uppercase tracking-widest mb-1.5 border-l-2 border-cyan-500/50 pl-2 ml-3">
+              Admin Control
+            </p>
+            <div className="space-y-0.5">
+              <NavItem
+                path="/admin"
+                label="Admin Dashboard"
+                icon={Shield}
+                isPro={true}
+                isActive={location === "/admin"}
+                onClick={onClick}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {sub && (sub.plan === "free" || sub.plan === "blocked") && (!sub.planType || sub.planType === "free") && (
@@ -701,13 +720,11 @@ export function Layout({ children }: { children: ReactNode }) {
                const isActive = location === item.path;
                const Icon = item.icon;
                return (
-                 <Link key={item.path} href={item.path}>
-                   <a className={`flex flex-col items-center gap-1 p-2 transition-all ${isActive ? "text-cyan-400" : "text-white/40"}`}>
-                     <Icon className="w-5 h-5" />
-                     <span className="text-[9px] font-bold uppercase tracking-tighter">{item.label}</span>
-                   </a>
-                 </Link>
-               );
+                  <Link key={item.path} href={item.path} className={`flex flex-col items-center gap-1 p-2 transition-all ${isActive ? "text-cyan-400" : "text-white/40"}`}>
+                    <Icon className="w-5 h-5" />
+                    <span className="text-[9px] font-bold uppercase tracking-tighter">{item.label}</span>
+                  </Link>
+                );
             })}
           </nav>
         </div>

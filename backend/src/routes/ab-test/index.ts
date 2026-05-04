@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { z } from "zod";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
@@ -15,7 +15,7 @@ const AB_TEST_SCHEMA = z.object({
   tone: z.string()
 });
 
-router.post("/generate", requireAuth, enforceGenerationLimit, async (req, res) => {
+router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, res) => {
   try {
     const { idea, platform, niche, audienceA, audienceB, tone } = AB_TEST_SCHEMA.parse(req.body);
 
@@ -75,6 +75,7 @@ Generate the A/B test content.`;
 
   } catch (error) {
     console.error("A/B Test Error:", error);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(500).json({ error: "Failed to generate A/B test" });
   }
 });

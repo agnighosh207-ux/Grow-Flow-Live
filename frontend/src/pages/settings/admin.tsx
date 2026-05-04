@@ -98,9 +98,15 @@ export default function AdminDashboard() {
     return () => clearTimeout(timer);
   }, [userSearchQuery]);
 
+  const ADMIN_EMAIL = "agnighosh207@gmail.com";
+
   useEffect(() => {
     if (!isLoaded || isSubPending) return;
-    if (!user || (subData && !subData.isAdmin)) {
+    
+    const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
+    const isAdminEmail = userEmail === ADMIN_EMAIL.toLowerCase();
+
+    if (!user || (!subData?.isAdmin && !isAdminEmail)) {
       setLocation("/");
     }
   }, [isLoaded, user, subData, isSubPending, setLocation]);

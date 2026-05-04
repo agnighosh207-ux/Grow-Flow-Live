@@ -54,6 +54,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hashtags"), enforceGen
     res.json(parsed);
   } catch (err) {
     console.error("HASHTAG GENERATE ERROR:", err);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Hashtag service unavailable." });
   }
 });
@@ -97,6 +98,7 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
   } catch (err) {
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Audit service unavailable." });
   }
 });

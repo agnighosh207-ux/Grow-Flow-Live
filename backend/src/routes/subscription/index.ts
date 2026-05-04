@@ -18,16 +18,22 @@ const router: IRouter = Router();
 
 function getRazorpay() {
   const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
-  const keyId = isProd ? process.env.RAZORPAY_LIVE_KEY_ID : process.env.RAZORPAY_TEST_KEY_ID;
-  const fallbackKeyId = process.env.RAZORPAY_KEY_ID; 
   
-  const finalKeyId = keyId || fallbackKeyId;
-  const finalKeySecret = isProd 
+  // Try to find the most appropriate key
+  const keyId = isProd 
+    ? (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID)
+    : (process.env.RAZORPAY_TEST_KEY_ID || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_LIVE_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID);
+    
+  const keySecret = isProd 
     ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
-    : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET);
+    : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_LIVE_KEY_SECRET);
 
-  if (!finalKeyId || !finalKeySecret) return null;
-  return new Razorpay({ key_id: finalKeyId, key_secret: finalKeySecret });
+  if (!keyId || !keySecret || keyId.includes("...") || keySecret.includes("...")) {
+    logger.error({ keyId: !!keyId, keySecret: !!keySecret }, "[Razorpay] Missing or invalid API keys");
+    return null;
+  }
+  
+  return new Razorpay({ key_id: keyId, key_secret: keySecret });
 }
 
 // requireAuth and getOrCreateUser are now centralized in planMiddleware.ts (Flaw 20 & 21 fix)
@@ -61,6 +67,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
       canGenerate: true,
       trialDaysLeft: null, generationLimit: 999,
       monthlyGenerationsUsed: monthlyGenerations,
+      generationsRemaining: 9999,
       totalGenerationsUsed: totalGenerations,
     };
   }
@@ -72,6 +79,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
         canGenerate: generationsRemaining > 0,
         trialDaysLeft: null, generationLimit: 25,
         monthlyGenerationsUsed: Math.max(0, 25 - generationsRemaining),
+        generationsRemaining: generationsRemaining,
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -81,6 +89,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
         canGenerate: generationsRemaining > 0,
         trialDaysLeft: null, generationLimit: 150,
         monthlyGenerationsUsed: Math.max(0, 150 - generationsRemaining),
+        generationsRemaining: generationsRemaining,
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -94,6 +103,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
         canGenerate: true, // Unlimited
         trialDaysLeft: daysLeft, generationLimit: 500, // Soft display limit — actual DB limit is 9999
         monthlyGenerationsUsed: monthlyGenerations,
+        generationsRemaining: 9999,
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -111,6 +121,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
       canGenerate: planType === "infinity" ? true : generationsRemaining > 0,
       trialDaysLeft: daysLeft, generationLimit: limit,
       monthlyGenerationsUsed: Math.max(0, limit - generationsRemaining),
+      generationsRemaining: generationsRemaining,
       totalGenerationsUsed: totalGenerations,
     };
   }
@@ -125,6 +136,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
       canGenerate: generationsRemaining > 0,
       trialDaysLeft: null, generationLimit: limit,
       monthlyGenerationsUsed: limit - generationsRemaining,
+      generationsRemaining: generationsRemaining,
       totalGenerationsUsed: totalGenerations,
     };
   }
@@ -138,17 +150,20 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
       canGenerate: generationsRemaining > 0,
       trialDaysLeft: null, generationLimit: limit,
       monthlyGenerationsUsed: limit - generationsRemaining,
+      generationsRemaining: generationsRemaining,
       totalGenerationsUsed: totalGenerations,
     };
   }
 
   // Fallback to free (genuinely free users, or fully canceled/blocked users)
-  // Use actual DB credits — don't force-zero any tier
+  const freeLimit = TIER_CREDITS.FREE;
   return {
     plan: "free" as const, planType: "free" as const,
     canGenerate: generationsRemaining > 0,
-    trialDaysLeft: null, generationLimit: 5,
-    monthlyGenerationsUsed: 5 - Math.min(generationsRemaining, 5),
+    trialDaysLeft: null, 
+    generationLimit: freeLimit,
+    monthlyGenerationsUsed: Math.max(0, freeLimit - generationsRemaining),
+    generationsRemaining: generationsRemaining,
     totalGenerationsUsed: totalGenerations,
   };
 }
@@ -253,6 +268,8 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       billingPeriod?: "monthly" | "quarterly" | "half-yearly" | "yearly";
       currency?: "INR" | "USD";
     };
+
+    logger.info({ userId: req.userId, planType, billingPeriod, currency }, "[SUBSCRIPTION] Create request received");
     
     if (!planType) {
       res.status(400).json({ error: "planType is required" });
@@ -282,8 +299,8 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       120 
     );
 
-    // Prevent overwriting active subscriptions to avoid orphaned payments
-    if (user.razorpaySubscriptionId && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trial")) {
+    // Prevent overwriting active paid subscriptions to avoid orphaned payments
+    if (user.razorpaySubscriptionId && user.subscriptionStatus === "active") {
       res.status(400).json({ 
         error: "subscription_active", 
         message: "You already have an active subscription. Please manage it in Settings." 
@@ -304,6 +321,7 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
 
     res.json({
       subscriptionId: subscription.id,
+      keyId: (getRazorpay() as any)?.key_id,
       planName: `GrowFlow AI ${effectivePlan.toUpperCase()}`,
       planType: effectivePlan,
       billingPeriod: billing,

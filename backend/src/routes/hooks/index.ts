@@ -133,6 +133,7 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
   } catch (err: any) {
     if (isAborted) return;
     console.error("HOOK GEN ERROR:", err);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "AI temporarily unavailable. Please try again." });
   }
 });

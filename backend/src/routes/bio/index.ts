@@ -67,6 +67,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
     res.json(parsed);
   } catch (err) {
     console.error("BIO GENERATE ERROR:", err);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Profile generation service unavailable." });
   }
 });
