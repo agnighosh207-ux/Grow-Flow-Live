@@ -8,7 +8,7 @@ import { fetchLiveContext } from "../../services/perplexity-search";
 
 const router: IRouter = Router();
 
-router.post("/enhance", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/enhance", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { idea } = req.body;
   if (!idea?.trim()) { res.status(400).json({ error: "Idea is required" }); return; }
   const sanitizedIdea = String(idea).substring(0, 500);

@@ -126,73 +126,74 @@ router.get("/today", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 router.patch("/today/complete", requireAuth, async (req: any, res): Promise<void> => {
-  const today = getTodayDate();
-  const userId = req.userId;
+  try {
+    const today = getTodayDate();
+    const userId = req.userId;
 
-  const [plan] = await db.select().from(dailyPlansTable)
-    .where(and(eq(dailyPlansTable.userId, userId), eq(dailyPlansTable.date, today)));
+    // Find today's daily plan for this user
+    const [plan] = await db.select().from(dailyPlansTable)
+      .where(and(eq(dailyPlansTable.userId, userId), eq(dailyPlansTable.date, today)));
 
-  if (!plan) { res.status(404).json({ error: "No plan for today" }); return; }
-  if (plan.completedAt) { 
-    const [u] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    res.json({ streak: computeCurrentStreak(u), alreadyCompleted: true }); 
-    return; 
-  }
+    if (!plan) { res.status(404).json({ error: "No daily plan for today" }); return; }
+    if (plan.completedAt) { 
+      const [u] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+      res.json({ success: true, streak: computeCurrentStreak(u), alreadyCompleted: true }); 
+      return; 
+    }
 
-  await db.update(dailyPlansTable).set({ completedAt: new Date() })
-    .where(and(eq(dailyPlansTable.userId, userId), eq(dailyPlansTable.date, today)));
+    // Mark completed
+    await db.update(dailyPlansTable).set({ completedAt: new Date() })
+      .where(and(eq(dailyPlansTable.userId, userId), eq(dailyPlansTable.date, today)));
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  const yesterday = getYesterdayDate();
+    // Increment streak
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
-  let newStreak: number;
-  if (!user.lastStreakDate) {
-    newStreak = 1;
-  } else if (user.lastStreakDate === yesterday) {
-    newStreak = (user.currentStreak || 0) + 1;
-  } else if (user.lastStreakDate === today) {
-    newStreak = user.currentStreak || 1;
-  } else {
-    newStreak = 1;
-  }
+    const yesterday = getYesterdayDate();
+    let newStreak: number;
+    if (!user.lastStreakDate) {
+      newStreak = 1;
+    } else if (user.lastStreakDate === yesterday) {
+      newStreak = (user.currentStreak || 0) + 1;
+    } else if (user.lastStreakDate === today) {
+      newStreak = user.currentStreak || 1;
+    } else {
+      newStreak = 1;
+    }
 
-  // Streak Milestone Rewards
-  const oldStreak = user.currentStreak || 0;
-  if (newStreak > oldStreak) {
-    const rewards: Record<number, number> = { 3: 1, 7: 3, 30: 10 };
-    const rewardCredits = rewards[newStreak];
-    
-    const canGrantReward = !user.streakRewardLastGrantedAt || 
-      new Date(user.streakRewardLastGrantedAt).toISOString().slice(0, 10) !== today;
+    const updates: any = { currentStreak: newStreak, lastStreakDate: today };
+    let reward: { credits: number; message: string } | null = null;
 
-    if (rewardCredits && canGrantReward) {
-      await db.update(usersTable)
-        .set({ 
-          generationsRemaining: sql`${usersTable.generationsRemaining} + ${rewardCredits}`,
-          streakRewardLastGrantedAt: new Date()
-        })
-        .where(eq(usersTable.id, userId));
-      
-      if (newStreak === 7 || newStreak === 30) {
-        if (user.email) {
-          import("../../services/email").then(({ sendStreakRewardEmail }) => {
-            sendStreakRewardEmail(user.email!, newStreak, rewardCredits);
-          });
-        }
+    // Milestone Reward Logic
+    if (newStreak > (user.currentStreak || 0)) {
+      if (newStreak === 3) {
+        updates.generationsRemaining = sql`${usersTable.generationsRemaining} + 1`;
+        reward = { credits: 1, message: "🔥 3-day streak! +1 bonus generation" };
+      } else if (newStreak === 7) {
+        updates.generationsRemaining = sql`${usersTable.generationsRemaining} + 3`;
+        reward = { credits: 3, message: "⚡ 7-day streak! +3 bonus generations" };
+      } else if (newStreak === 30) {
+        updates.generationsRemaining = sql`${usersTable.generationsRemaining} + 10`;
+        reward = { credits: 10, message: "👑 30-day streak! +10 bonus generations — You're a legend!" };
+      } else if (newStreak === 100) {
+        updates.generationsRemaining = sql`${usersTable.generationsRemaining} + 50`;
+        reward = { credits: 50, message: "🏆 100-day streak! +50 bonus generations — Hall of Fame!" };
       }
     }
+
+    await db.update(usersTable).set(updates).where(eq(usersTable.id, userId));
+
+    db.insert(featureUsageLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: userId,
+      feature: "daily_complete"
+    }).catch(() => {});
+
+    res.json({ success: true, newStreak, reward });
+  } catch (err) {
+    console.error("Daily completion error:", err);
+    res.status(500).json({ error: "Failed to complete daily plan" });
   }
-
-  await db.update(usersTable).set({ currentStreak: newStreak, lastStreakDate: today })
-    .where(eq(usersTable.id, userId));
-
-  db.insert(featureUsageLogsTable).values({
-    id: crypto.randomUUID(),
-    userId: userId,
-    feature: "daily"
-  }).catch(() => {});
-
-  res.json({ streak: newStreak, completedToday: true });
 });
 
 router.get("/streak", requireAuth, async (req: any, res): Promise<void> => {

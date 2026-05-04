@@ -132,7 +132,11 @@ export default function ContentPack() {
   const [language, setLanguage] = useState("English");
 
   useEffect(() => {
-    fetch("/api/settings/preferences").then(r => r.json()).then(data => {
+    fetch("/api/settings/preferences").then(async (r) => {
+      if (!r.ok) return {};
+      const text = await r.text();
+      return text ? JSON.parse(text) : {};
+    }).then(data => {
       if (data.languagePreference) setLanguage(data.languagePreference);
     }).catch(() => {});
   }, []);
@@ -181,7 +185,8 @@ export default function ContentPack() {
         body: JSON.stringify({ idea })
       });
       if (res.ok) {
-        const data = await res.json();
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
         if (data.enhancedIdea) setIdea(data.enhancedIdea);
         toast({ title: "Idea Enhanced!", description: "Applied expert copywriting.", variant: "default" });
       }
@@ -215,14 +220,28 @@ export default function ContentPack() {
         body: JSON.stringify({ idea, tone, contentType, language }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        if (res.status === 402) {
-          toast({ title: "Upgrade required", description: err.message, variant: "destructive" });
-          return;
+        const errText = await res.text();
+        let errorMessage = "Generation failed";
+        if (errText) {
+          try {
+            const errData = JSON.parse(errText);
+            if (res.status === 402) {
+              toast({ title: "Upgrade required", description: errData.message, variant: "destructive" });
+              return;
+            }
+            errorMessage = errData.error || errorMessage;
+          } catch (e) {
+            errorMessage = errText || errorMessage;
+          }
         }
-        throw new Error(err.error || "Generation failed");
+        throw new Error(errorMessage);
       }
-      const data = await res.json();
+      
+      const text = await res.text();
+      if (!text) {
+        throw new Error("Server returned an empty response.");
+      }
+      const data = JSON.parse(text);
       setResult(data);
       setActiveTab("blueprint");
     } catch (err: any) {

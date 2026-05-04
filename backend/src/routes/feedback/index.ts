@@ -3,21 +3,13 @@ import { getAuth } from "@clerk/express";
 import { db, betaFeedbackTable, usersTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 import { Resend } from "resend";
+import { requireAuth } from "../../middlewares/planMiddleware";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY || "");
+}
 
 const router: IRouter = Router();
-
-const requireAuth = (req: any, res: any, next: any) => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId || auth?.userId;
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  req.userId = userId;
-  next();
-};
 
 const requireOwner = (req: any, res: any, next: any) => {
   const ownerUserId = process.env.OWNER_USER_ID;
@@ -63,7 +55,7 @@ router.post("/", requireAuth, async (req: any, res): Promise<void> => {
     const userEmail = user?.email || req.userId;
     
     // You can only send FROM onboarding@resend.dev until your domain is verified in Resend.
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "Grow Flow AI <onboarding@resend.dev>",
       to: "growflowhelp@gmail.com",
       subject: `New Feedback Received on ${page.trim()}`,

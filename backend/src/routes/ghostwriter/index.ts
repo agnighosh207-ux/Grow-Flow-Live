@@ -1,14 +1,16 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, usersTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
+router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const userId = req.userId;
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
 
   try {
     const generations = await db.select()
@@ -25,6 +27,7 @@ router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), as
     });
 
     if (samples.length < 5) {
+      await refundGenerationCredit(userId, req.user?.planTier); // Refund as we didn't use AI yet but middleware decremented
       res.status(400).json({ 
         error: "not_enough_content", 
         message: "Generate at least 5 pieces of content first to train your voice model." 
@@ -57,10 +60,13 @@ Return JSON:
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      userPlan: "FREE",
+      userPlan: req.user?.planType || "FREE",
       userId,
       maxTokens: 1000,
+      signal: abortController.signal,
     });
+
+    if (abortController.signal.aborted) return;
 
     const content = response.choices[0]?.message?.content || "{}";
     const parsed = extractJson(content);
@@ -79,7 +85,9 @@ Return JSON:
 
     res.json(parsed);
   } catch (err: any) {
+    if (abortController.signal.aborted) return;
     console.error("GHOSTWRITER ANALYZE ERROR:", err);
+    await refundGenerationCredit(userId, req.user?.planTier);
     res.status(503).json({ error: "Voice analysis unavailable. Please try again." });
   }
 });
@@ -87,8 +95,11 @@ Return JSON:
 router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { topic, platform, length, useVoice } = req.body;
   const userId = req.userId;
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
 
   if (!topic || !platform) {
+    await refundGenerationCredit(userId, req.user?.planTier);
     res.status(400).json({ error: "Topic and platform are required" });
     return;
   }
@@ -111,10 +122,13 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
         { role: "system", content: systemPrompt },
         { role: "user", content: `Write a ${length || "medium"} post about: ${topic}` }
       ],
-      userPlan: "FREE",
+      userPlan: req.user?.planType || "FREE",
       userId,
       maxTokens,
+      signal: abortController.signal,
     });
+
+    if (abortController.signal.aborted) return;
 
     const rawContent = response.choices[0]?.message?.content || "{}";
     const parsed = extractJson(rawContent);
@@ -140,7 +154,9 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
       voiceMatchScore: score
     });
   } catch (err: any) {
+    if (abortController.signal.aborted) return;
     console.error("GHOSTWRITER WRITE ERROR:", err);
+    await refundGenerationCredit(userId, req.user?.planTier);
     res.status(503).json({ error: "Ghostwriting service unavailable. Please try again." });
   }
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, BarChart3, CalendarDays, Lightbulb, TrendingUp } from "lucide-react";
 
@@ -37,6 +37,7 @@ function markShown(userId: string) {
 
 export function WeeklyReportCard() {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [stats, setStats] = useState<WeeklyStats | null>(null);
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -52,25 +53,31 @@ export function WeeklyReportCard() {
     let cancelled = false;
     setLoading(true);
 
-    fetch("/api/stats/weekly", {
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json();
-      })
-      .then((data: WeeklyStats) => {
+    const fetchStats = async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/stats/weekly", {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+          },
+        });
+        
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        
         if (!cancelled) {
           setStats(data);
           setVisible(true);
           setLoading(false);
           markShown(user.id);
         }
-      })
-      .catch(() => {
+      } catch (err) {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    fetchStats();
 
     return () => {
       cancelled = true;

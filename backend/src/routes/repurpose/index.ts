@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
@@ -64,6 +64,8 @@ router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Pro
     res.json(parsed);
   } catch (err) {
     console.error("REPURPOSE ERROR:", err);
+    // --- H-19 FIX: Refund credit if repurposing fails ---
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Repurposing failed. Please try again." });
   }
 });

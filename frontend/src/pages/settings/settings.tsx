@@ -600,71 +600,82 @@ export default function SettingsPage() {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
-                  <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Total Friends Referred</p>
-                  <div className="flex items-center justify-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-cyan-400" />
-                    <p className="text-white font-bold text-lg">{referral.successfulReferrals}</p>
-                  </div>
+                   <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Total Friends Referred</p>
+                   <div className="flex items-center justify-center gap-1.5">
+                     <Users className="w-3.5 h-3.5 text-cyan-400" />
+                     <p className="text-white font-bold text-lg">{referral.successfulReferrals}</p>
+                   </div>
                 </div>
                 <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
-                  <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Current Expiry Date</p>
-                  <div className="flex items-center justify-center gap-1.5">
-                    <Crown className="w-3.5 h-3.5 text-cyan-400" />
-                    <p className="text-white font-bold text-sm">
-                      {sub?.trialDaysLeft ? `${sub.trialDaysLeft} Days Left` : "N/A"}
-                    </p>
+                   <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Current Expiry Date</p>
+                   <div className="flex items-center justify-center gap-1.5">
+                     <Crown className="w-3.5 h-3.5 text-cyan-400" />
+                     <p className="text-white font-bold text-sm">
+                       {sub?.trialEndsAt ? format(new Date(sub.trialEndsAt), "MMM d, yyyy") : (sub?.trialDaysLeft ? `${sub.trialDaysLeft} Days Left` : "N/A")}
+                     </p>
+                   </div>
+                </div>
+              </div>
+
+              {referral.referralCode === "ERROR" ? (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-4 h-4 text-red-400" />
+                    <p className="text-red-400 text-xs font-bold uppercase tracking-widest">Protocol Linking Failure</p>
                   </div>
+                  <Button size="sm" onClick={() => window.location.reload()} className="h-7 px-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[10px] font-black uppercase">Retry</Button>
                 </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  const message = encodeURIComponent(
-                    `Hey, I found this tool GrowFlow AI that turns 1 idea into multiple content posts instantly.\n\nTry it here: ${referral.shareableLink}\n\nYou also get bonus access if you join.`
-                  );
-                  window.open(`https://wa.me/?text=${message}`, "_blank");
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-opacity hover:opacity-90"
-                style={{
-                  background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
-                  boxShadow: "0 4px 20px rgba(37,211,102,0.18)",
-                }}
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.528 5.845L0 24l6.336-1.508A11.956 11.956 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.488-5.19-1.345l-.37-.22-3.803.906.92-3.717-.241-.382A9.955 9.955 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-                Invite on WhatsApp
-              </button>
-
-              <div className="space-y-2">
-                <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Your Referral Code</p>
-                <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-cyan-500/15 px-4 py-3">
-                  <span className="flex-1 text-cyan-300 font-mono font-bold text-base tracking-widest">{referral.referralCode}</span>
+              ) : (
+                <>
                   <button
-                    onClick={() => copyToClipboard(referral.referralCode, "code")}
-                    className="text-white/30 hover:text-cyan-300 transition-colors p-1 rounded-lg hover:bg-cyan-500/10"
+                    onClick={() => {
+                      const message = encodeURIComponent(
+                        `Hey, I found this tool GrowFlow AI that turns 1 idea into multiple content posts instantly.\n\nTry it here: ${referral.shareableLink}\n\nYou also get bonus access if you join.`
+                      );
+                      window.open(`https://wa.me/?text=${message}`, "_blank");
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-opacity hover:opacity-90"
+                    style={{
+                      background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
+                      boxShadow: "0 4px 20px rgba(37,211,102,0.18)",
+                    }}
                   >
-                    {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.528 5.845L0 24l6.336-1.508A11.956 11.956 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.488-5.19-1.345l-.37-.22-3.803.906.92-3.717-.241-.382A9.955 9.955 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                    Invite on WhatsApp
                   </button>
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Shareable Link</p>
-                <div className="flex items-center gap-2 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
-                  <span className="flex-1 text-white/50 text-xs truncate font-mono">{referral.shareableLink}</span>
-                  <button
-                    onClick={() => copyToClipboard(referral.shareableLink, "link")}
-                    className="text-white/30 hover:text-cyan-300 transition-colors p-1 rounded-lg hover:bg-cyan-500/10 shrink-0"
-                  >
-                    {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Your Referral Code</p>
+                    <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-cyan-500/15 px-4 py-3">
+                      <span className="flex-1 text-cyan-300 font-mono font-bold text-base tracking-widest">{referral.referralCode}</span>
+                      <button
+                        onClick={() => copyToClipboard(referral.referralCode, "code")}
+                        className="text-white/30 hover:text-cyan-300 transition-colors p-1 rounded-lg hover:bg-cyan-500/10"
+                      >
+                        {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Shareable Link</p>
+                    <div className="flex items-center gap-2 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
+                      <span className="flex-1 text-white/50 text-xs truncate font-mono">{referral.shareableLink}</span>
+                      <button
+                        onClick={() => copyToClipboard(referral.shareableLink, "link")}
+                        className="text-white/30 hover:text-cyan-300 transition-colors p-1 rounded-lg hover:bg-cyan-500/10 shrink-0"
+                      >
+                        {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           ) : (
-            <div className="space-y-3">
-              <div className="h-16 rounded-xl bg-white/3 animate-pulse" />
-              <div className="h-12 rounded-xl bg-white/3 animate-pulse" />
-              <div className="h-12 rounded-xl bg-white/3 animate-pulse" />
+            <div className="flex flex-col items-center justify-center py-10 space-y-3">
+              <Loader2 className="w-6 h-6 text-cyan-500 animate-spin" />
+              <p className="text-white/20 text-[10px] font-black uppercase tracking-widest">Re-Establishing Secure Link...</p>
             </div>
           )}
         </div>

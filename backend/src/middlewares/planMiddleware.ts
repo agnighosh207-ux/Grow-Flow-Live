@@ -4,6 +4,7 @@ import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../types";
 import { getAuth } from "@clerk/express";
 import { ensureReferralCode } from "../utils/referral";
+import { logger } from "../lib/logger";
 
 export const FREE_TRIALS_PER_TOOL = 5;
 
@@ -34,31 +35,44 @@ export const requireActivePlan = (req: AuthenticatedRequest, res: Response, next
 };
 
 export async function getOrCreateUser(userId: string, email?: string) {
-  let [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  if (!user) {
-    [user] = await db.insert(usersTable)
-      .values({ 
-        id: userId, 
-        email: email ?? null, 
-        lastLoginAt: new Date(),
-        generationsRemaining: 5,
-        lastCreditReset: new Date(),
-        planTier: "FREE",
-        planType: "free",
-        isBetaUser: false,
-        isAdmin: email ? email === process.env.ADMIN_EMAIL : false,
-      })
-      .returning();
-  }
-  if (!user.referralCode) {
-    try {
-      const code = await ensureReferralCode(userId);
-      user.referralCode = code;
-    } catch (err) {
-      console.error("Failed to ensure referral code in getOrCreateUser:", err);
+  try {
+    let [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    
+    if (!user) {
+      logger.info({ userId, email }, "[AUTH] Creating new user record");
+      [user] = await db.insert(usersTable)
+        .values({ 
+          id: userId, 
+          email: email ?? null, 
+          lastLoginAt: new Date(),
+          generationsRemaining: 5,
+          lastCreditReset: new Date(),
+          planTier: "FREE",
+          planType: "free",
+          isBetaUser: false,
+          isAdmin: email ? email === process.env.ADMIN_EMAIL : false,
+        })
+        .returning();
     }
+    
+    if (!user.referralCode) {
+      try {
+        const code = await ensureReferralCode(userId);
+        user.referralCode = code;
+      } catch (err: any) {
+        logger.error({ err: err.message, userId }, "Failed to ensure referral code in getOrCreateUser");
+      }
+    }
+    return user;
+  } catch (e: any) {
+    logger.error({ 
+      msg: e.message, 
+      code: e.code, 
+      detail: e.detail, 
+      userId 
+    }, "[GET_OR_CREATE_USER_CRASH]");
+    throw e;
   }
-  return user;
 }
 
 export function isPaidOrTrial(user: any): boolean {

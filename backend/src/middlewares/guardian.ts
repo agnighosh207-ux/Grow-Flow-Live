@@ -3,7 +3,7 @@ import RedisStore from "rate-limit-redis";
 import { extractJson } from "../services/ai-engine";
 import { db, contentGenerationsTable, usersTable, securityLogsTable } from "@workspace/db";
 import { redis } from "../lib/redis";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { getAuth } from "@clerk/express";
 import crypto from "crypto";
@@ -24,7 +24,7 @@ const getQuotaForTier = (tier: string) => {
 
 const handleRateLimitReached = async (req: any, res: any) => {
   const userId = req.rateLimitUser?.id;
-  const tier = req.rateLimitUser?.planType || "FREE";
+  const tier = req.rateLimitUser?.planTier || "FREE";
   const quota = getQuotaForTier(tier);
   const windowMs = tier.toUpperCase() === "FREE" ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
   
@@ -73,9 +73,21 @@ const handleRateLimitReached = async (req: any, res: any) => {
     });
   }
 
-  await db.update(usersTable)
-    .set(updateData)
-    .where(eq(usersTable.id, userId as string));
+  // --- H-15 FIX: Use atomic UPDATE with returning to prevent race conditions in strike calculation ---
+  const [updatedUser] = await db.update(usersTable)
+    .set({
+      violationCount: sql`${usersTable.violationCount} + 1`,
+      isBanned: isBanned,
+      securityFlags: updateData.securityFlags || undefined
+    })
+    .where(eq(usersTable.id, userId as string))
+    .returning({ violationCount: usersTable.violationCount });
+
+  if (updatedUser && updatedUser.violationCount >= 5 && !isBanned) {
+    // Catch-all in case multiple requests hit exactly at the threshold
+    await db.update(usersTable).set({ isBanned: true }).where(eq(usersTable.id, userId as string));
+    isBanned = true;
+  }
 
   if (isBanned) {
     return res.status(403).json({
@@ -93,7 +105,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
 const createLimiter = (windowMs: number, prefix: string) => {
   return rateLimit({
     windowMs,
-    max: (req: any) => getQuotaForTier(req.rateLimitUser?.planType || "FREE"),
+    max: (req: any) => getQuotaForTier(req.rateLimitUser?.planTier || "FREE"),
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req: any) => req.rateLimitUser?.id || req.ip || "unknown",
@@ -145,17 +157,22 @@ export const guardianMiddleware = async (req: any, res: any, next: any) => {
     // Attach user to req so the limiter max() and handler() can use it
     req.rateLimitUser = user;
 
-    const tier = (user?.planType as string) || "FREE";
+    const tier = (user?.planTier as string) || "FREE";
     const isAdmin = user?.email === process.env.ADMIN_EMAIL || user?.isAdmin;
 
     if (isAdmin) {
       return next();
     }
 
-    if (tier.toUpperCase() === "FREE") {
-      return freeLimiter(req, res, next);
-    } else {
-      return paidLimiter(req, res, next);
+    try {
+      if (tier.toUpperCase() === "FREE") {
+        return freeLimiter(req, res, next);
+      } else {
+        return paidLimiter(req, res, next);
+      }
+    } catch (rlErr) {
+      logger.error({ err: rlErr }, "Guardian Limiter Failure — Skipping rate limit check");
+      return next();
     }
 
   } catch (err) {

@@ -40,4 +40,42 @@ router.get("/top-creators", async (req, res) => {
   }
 });
 
+router.get("/creator/:code", async (req, res) => {
+  const { code } = req.params;
+  if (!code) { res.status(400).json({ error: "Code required" }); return; }
+
+  try {
+    const [user] = await db.select({
+      firstName: usersTable.firstName,
+      email: usersTable.email,
+      planTier: usersTable.planTier,
+      totalGenerations: usersTable.totalGenerations,
+      currentStreak: usersTable.currentStreak,
+      createdAt: usersTable.createdAt,
+      niche: (usersTable as any).onboardingNiche
+    })
+    .from(usersTable)
+    .where(sql`${usersTable.referralCode} = ${code}`);
+
+    if (!user) {
+      res.status(404).json({ error: "Creator not found" });
+      return;
+    }
+
+    const displayName = user.firstName || (user.email ? user.email.split('@')[0] : "Creator");
+
+    res.json({
+      firstName: displayName,
+      planTier: user.planTier || "FREE",
+      totalGenerations: user.totalGenerations || 0,
+      currentStreak: user.currentStreak || 0,
+      createdAt: user.createdAt,
+      niche: (user as any).niche || "Content Creator"
+    });
+  } catch (err) {
+    logger.error({ err, code }, "Failed to fetch creator profile");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

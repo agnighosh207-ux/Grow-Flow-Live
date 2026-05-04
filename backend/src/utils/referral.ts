@@ -6,16 +6,27 @@ export function generateReferralCode(): string {
   return crypto.randomBytes(4).toString("hex").toUpperCase();
 }
 
-export async function ensureReferralCode(userId: string): Promise<string> {
-  const [user] = await db.select({ referralCode: usersTable.referralCode })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-
-  if (user?.referralCode) return user.referralCode;
-
-  const code = generateReferralCode();
+/**
+ * Ensures a user has a referral code.
+ * Implements aggressive error logging to catch database constraint failures.
+ */
+export async function ensureReferralCode(userId: string, tx?: any): Promise<string> {
+  const client = tx || db;
   try {
-    const [updated] = await db.update(usersTable)
+    // 1. Check for existing code
+    const [user] = await client.select({ referralCode: usersTable.referralCode })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+
+    if (user?.referralCode) {
+      return user.referralCode;
+    }
+
+    // 2. Generate and attempt to persist a new code
+    const code = generateReferralCode();
+    console.log(`[REFERRAL_DEBUG] Generating new code ${code} for user ${userId}`);
+
+    const [updated] = await client.update(usersTable)
       .set({ referralCode: code })
       .where(and(
         eq(usersTable.id, userId),
@@ -23,53 +34,78 @@ export async function ensureReferralCode(userId: string): Promise<string> {
       ))
       .returning({ referralCode: usersTable.referralCode });
     
-    if (updated?.referralCode) return updated.referralCode;
-    
-    const [retryUser] = await db.select({ referralCode: usersTable.referralCode })
+    if (updated?.referralCode) {
+      console.log(`[REFERRAL_DEBUG] Successfully persisted code ${code} for user ${userId}`);
+      return updated.referralCode;
+    }
+
+    // 3. If update failed (e.g. concurrent request already set it), re-fetch
+    console.warn(`[REFERRAL_DEBUG] Update returned no result for ${userId}, performing re-fetch.`);
+    const [retryUser] = await client.select({ referralCode: usersTable.referralCode })
       .from(usersTable)
       .where(eq(usersTable.id, userId));
-    return retryUser?.referralCode || code;
+    
+    if (retryUser?.referralCode) {
+      return retryUser.referralCode;
+    }
+
+    throw new Error("Persist failed: No code returned after update or retry.");
+
   } catch (err) {
-    console.error(`[Referral] Failed to save code for ${userId}:`, err);
-    // Re-fetch in case another concurrent request already saved a code
+    console.error(`[REFERRAL_CRITICAL_FAILURE] Error in ensureReferralCode for user ${userId}:`, err);
+    
+    // Attempt one last emergency fetch
     try {
-      const [retryFetch] = await db.select({ referralCode: usersTable.referralCode })
+      const [finalFetch] = await client.select({ referralCode: usersTable.referralCode })
         .from(usersTable).where(eq(usersTable.id, userId));
-      if (retryFetch?.referralCode) return retryFetch.referralCode;
-    } catch { /* ignore */ }
-    // Only return temp code as absolute last resort — log as critical
-    console.error(`[CRITICAL] Could not persist referral code for user ${userId}. User will see inconsistent codes.`);
-    return code;
+      if (finalFetch?.referralCode) return finalFetch.referralCode;
+    } catch (e) {
+      console.error(`[REFERRAL_CRITICAL_FAILURE] Emergency fetch also failed for ${userId}`, e);
+    }
+
+    // Return a temporary code to prevent UI crash, but log it as a desync event
+    const tempCode = `ERR-${generateReferralCode()}`;
+    console.error(`[REFERRAL_DESYNC] Returning temporary code ${tempCode} for user ${userId}. THIS WILL NOT BE PERSISTED.`);
+    return tempCode;
   }
 }
 
 export async function grantReferralReward(referredUserId: string): Promise<void> {
-  const [referredUser] = await db.select({
-    referralUsedCode: usersTable.referralUsedCode,
-    trialEndsAt: usersTable.trialEndsAt,
-    subscriptionStatus: usersTable.subscriptionStatus,
-  }).from(usersTable).where(eq(usersTable.id, referredUserId));
+  try {
+    const [referredUser] = await db.select({
+      referralUsedCode: usersTable.referralUsedCode,
+      trialEndsAt: usersTable.trialEndsAt,
+      subscriptionStatus: usersTable.subscriptionStatus,
+    }).from(usersTable).where(eq(usersTable.id, referredUserId));
 
-  if (!referredUser?.referralUsedCode) return;
+    if (!referredUser?.referralUsedCode) {
+      console.log(`[REFERRAL_REWARD] User ${referredUserId} did not use a referral code. Skipping reward.`);
+      return;
+    }
 
-  const [referrerUser] = await db.select({ 
-    id: usersTable.id, 
-    trialEndsAt: usersTable.trialEndsAt,
-    subscriptionStatus: usersTable.subscriptionStatus
-  })
-    .from(usersTable)
-    .where(eq(usersTable.referralCode, referredUser.referralUsedCode));
+    const [referrerUser] = await db.select({ 
+      id: usersTable.id, 
+      trialEndsAt: usersTable.trialEndsAt,
+      subscriptionStatus: usersTable.subscriptionStatus
+    })
+      .from(usersTable)
+      .where(eq(usersTable.referralCode, referredUser.referralUsedCode));
 
-  if (!referrerUser) return;
-  if (referrerUser.id === referredUserId) return;
+    if (!referrerUser) {
+      console.warn(`[REFERRAL_REWARD] Referrer with code ${referredUser.referralUsedCode} not found for user ${referredUserId}`);
+      return;
+    }
 
-  const referralId = crypto.randomUUID();
-  const fifteenDays = 15 * 24 * 60 * 60 * 1000;
-  const now = new Date();
+    if (referrerUser.id === referredUserId) {
+      console.error(`[REFERRAL_REWARD] Potential fraud: Self-referral detected for ${referredUserId}`);
+      return;
+    }
 
-  await db.transaction(async (tx) => {
-    try {
-      // Update the existing pending referral to mark it as rewarded
+    const fifteenDays = 15 * 24 * 60 * 60 * 1000;
+    const now = new Date();
+
+    await db.transaction(async (tx) => {
+      // Mark referral as rewarded
       const [updatedReferral] = await tx.update(referralsTable)
         .set({ rewardGranted: true })
         .where(and(
@@ -79,8 +115,7 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
         .returning({ id: referralsTable.id });
 
       if (!updatedReferral) {
-        // Either already rewarded or no pending referral exists — both are fine
-        console.log(`[Referral] No pending referral to reward for: ${referredUserId}`);
+        console.log(`[REFERRAL_REWARD] No pending referral found or already rewarded for ${referredUserId}`);
         return;
       }
 
@@ -91,7 +126,7 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
         ? referrerUser.trialEndsAt
         : now;
 
-      // Referred user reward
+      // Apply rewards
       if (referredUser.subscriptionStatus === "active") {
         await tx.update(usersTable)
           .set({ generationsRemaining: sql`${usersTable.generationsRemaining} + 10` })
@@ -102,7 +137,6 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
           .where(eq(usersTable.id, referredUserId));
       }
 
-      // Referrer user reward
       if (referrerUser.subscriptionStatus === "active") {
         await tx.update(usersTable)
           .set({ generationsRemaining: sql`${usersTable.generationsRemaining} + 20` })
@@ -112,10 +146,10 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
           .set({ trialEndsAt: new Date(referrerTrialBase.getTime() + fifteenDays) })
           .where(eq(usersTable.id, referrerUser.id));
       }
-    } catch (err) {
-      console.error("Transactional grantReferralReward error:", err);
-      // Drizzle handles rollback on error in transaction callback
-      throw err;
-    }
-  });
+      console.log(`[REFERRAL_REWARD] Successfully granted rewards for referral: ${referrerUser.id} -> ${referredUserId}`);
+    });
+  } catch (err) {
+    console.error("[REFERRAL_REWARD_ERROR] Failed to grant referral reward:", err);
+    throw err;
+  }
 }

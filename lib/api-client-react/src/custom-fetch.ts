@@ -358,6 +358,16 @@ export async function customFetch<T = unknown>(
     }
   }
 
+  // Inject impersonation headers if a session is active (Admin only)
+  if (typeof sessionStorage !== "undefined") {
+    const sessionId = sessionStorage.getItem("impersonation_session_id");
+    const impersonatedUserId = sessionStorage.getItem("impersonated_user_id");
+    if (sessionId && impersonatedUserId) {
+      headers.set("x-impersonate-user", impersonatedUserId);
+      headers.set("x-impersonation-session", sessionId);
+    }
+  }
+
   const requestInfo = { method, url: resolveUrl(input) };
 
   const response = await fetch(input, { ...init, method, headers });

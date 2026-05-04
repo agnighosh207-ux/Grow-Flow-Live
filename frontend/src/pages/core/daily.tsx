@@ -2,13 +2,15 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame, Lightbulb, Zap, Target, CheckCircle2,
-  RefreshCw, Copy, Check, Sparkles, CalendarDays, Trophy
+  RefreshCw, Copy, Check, Sparkles, CalendarDays, Trophy, X
 } from "lucide-react";
+import confetti from 'canvas-confetti';
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { Button } from "@/components/ui/button";
 
 interface DailyPlan {
   id: number;
@@ -109,8 +111,10 @@ export default function DailyActionMode() {
   const { toast } = useToast();
   const [data, setData] = useState<DailyResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
+  const [reward, setReward] = useState<{ credits: number; message: string } | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
 
 
@@ -134,15 +138,95 @@ export default function DailyActionMode() {
     setCompleting(true);
     try {
       const { data: json } = await api.patch("/daily/today/complete");
-      setData(prev => prev ? { ...prev, streak: json.streak, completedToday: true } : prev);
+      setData(prev => prev ? { ...prev, streak: json.newStreak, completedToday: true } : prev);
       setJustCompleted(true);
-      toast({ title: `🔥 ${json.streak}-day streak!`, description: "Amazing! You posted today's content. Keep the momentum going!" });
-    } catch {
+      
+      if (json.reward) {
+        setReward(json.reward);
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#06b6d4', '#10b981', '#f59e0b'] });
+      } else {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.7 } });
+      }
+      
+      setShowCelebration(true);
+      toast({ title: `🔥 ${json.newStreak}-day streak!`, description: "Amazing! You posted today's content. Keep the momentum going!" });
+    } catch (err: any) {
+      console.error("Completion error:", err);
       toast({ title: "Couldn't mark as posted", variant: "destructive" });
     } finally {
       setCompleting(false);
     }
   };
+
+  const CelebrationOverlay = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-6"
+    >
+      <motion.div
+        initial={{ scale: 0.8, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        className="relative max-w-md w-full bg-zinc-900 border border-white/10 rounded-[40px] p-10 text-center shadow-2xl overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent opacity-50" />
+        
+        <button 
+          onClick={() => setShowCelebration(false)}
+          className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="relative z-10 space-y-6">
+          <motion.div
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 10, -10, 0]
+            }}
+            transition={{ duration: 0.5, repeat: 1 }}
+            className="w-24 h-24 bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl flex items-center justify-center text-5xl mx-auto shadow-xl shadow-orange-500/20"
+          >
+            🔥
+          </motion.div>
+
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black text-white italic tracking-tight">
+              Day {data?.streak} Complete!
+            </h2>
+            <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px]">
+              Streak Momentum Building
+            </p>
+          </div>
+
+          {reward && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="p-6 rounded-3xl bg-cyan-500/10 border border-cyan-500/20 space-y-3"
+            >
+              <p className="text-lg font-black text-white leading-tight">
+                {reward.message}
+              </p>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-black uppercase tracking-widest border border-cyan-500/30">
+                <Sparkles className="w-3.5 h-3.5" />
+                +{reward.credits} Credits Added!
+              </div>
+            </motion.div>
+          )}
+
+          <Button 
+            onClick={() => setShowCelebration(false)}
+            className="w-full h-14 rounded-2xl bg-white text-black font-black hover:bg-zinc-200 transition-all active:scale-95"
+          >
+            Continue Growth →
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
 
   if (loading) {
     return (
@@ -162,6 +246,10 @@ export default function DailyActionMode() {
 
   return (
     <PageWrapper maxWidth="sm" className="py-6 space-y-5">
+        <AnimatePresence>
+          {showCelebration && <CelebrationOverlay />}
+        </AnimatePresence>
+
         <PageHeader 
           icon={<Flame/>} 
           iconBg="bg-orange-500/10" 

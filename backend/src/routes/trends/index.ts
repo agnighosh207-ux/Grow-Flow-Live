@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
@@ -66,8 +66,8 @@ setInterval(() => {
 // Perplexity sonar searches the live web AND structures JSON in ONE call.
 // Groq is NOT involved here. JSON output enforced via prompt instructions.
 router.post("/generate", requireAuth, requirePlanOrTrial("trends"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  let isAborted = false;
-  req.on('close', () => { isAborted = true; });
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
 
   const { niche = "General", language = "English" } = req.body as { niche?: string; language?: string };
   const sanitizedNiche = String(niche).substring(0, 50);
@@ -117,7 +117,7 @@ JSON schema:
 }`;
 
   try {
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
 
     let trends: any[] = [];
     try {
@@ -128,13 +128,17 @@ JSON schema:
           { role: "user", content: userPrompt },
         ],
         max_tokens: 2000,
+      }, {
+        // @ts-ignore
+        signal: abortController.signal
       });
 
-      if (isAborted) return;
+      if (abortController.signal.aborted) return;
       const raw = completion.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
       const parsed = extractJson(raw);
       trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
     } catch (err: any) {
+      if (abortController.signal.aborted) return;
       console.warn("TRENDS DIRECT PERPLEXITY FAIL, FALLING BACK TO ENGINE:", err.message);
       const fallback = await generateContent({
         messages: [
@@ -145,6 +149,7 @@ JSON schema:
         userId: req.userId,
         language,
         maxTokens: 2000,
+        signal: abortController.signal
       });
       const raw = fallback.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
       const parsed = extractJson(raw);
@@ -184,8 +189,10 @@ JSON schema:
       feature: "trends"
     }).catch(() => {});
   } catch (err: any) {
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
     console.error("TRENDS GEN ERROR:", err);
+    // --- H-19 FIX: Refund credit if trends generation fails ---
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(500).json({ error: "Generation failed. Please try again." });
   }
 });

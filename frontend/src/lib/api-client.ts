@@ -25,11 +25,15 @@ async function internalFetch(url: string, options: RequestInit = {}) {
     if (!response.ok) {
       let errorMessage = "An unexpected error occurred.";
       let errorData: any = {};
-      try {
-        errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
-      } catch (e) {
-        errorMessage = response.statusText || errorMessage;
+      
+      const errorText = await response.text();
+      if (errorText) {
+        try {
+          errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
       }
       
       if (response.status === 402) {
@@ -62,7 +66,17 @@ async function internalFetch(url: string, options: RequestInit = {}) {
       throw error;
     }
     
-    return { data: await response.json() };
+    const text = await response.text();
+    if (!text) {
+      return { data: {} as any };
+    }
+    
+    try {
+      return { data: JSON.parse(text) };
+    } catch (e) {
+      console.error("Failed to parse JSON response:", text);
+      throw new Error("Invalid server response format.");
+    }
   } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {

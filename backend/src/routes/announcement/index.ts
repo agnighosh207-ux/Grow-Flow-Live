@@ -2,21 +2,32 @@ import { Router, type IRouter } from "express";
 import { db, globalAnnouncementsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 
-const router: IRouter = Router();
+let announcementCache: { data: any; timestamp: number } | null = null;
+const CACHE_TTL = 60 * 1000; // 1 minute
+
+const router = Router();
 
 // Public route to get active announcement
 router.get("/active", async (req: any, res: any) => {
   try {
+    const now = Date.now();
+    if (announcementCache && now - announcementCache.timestamp < CACHE_TTL) {
+      res.json(announcementCache.data);
+      return;
+    }
+
     const activeList = await db
       .select()
       .from(globalAnnouncementsTable)
       .where(eq(globalAnnouncementsTable.isActive, true))
       .orderBy(desc(globalAnnouncementsTable.createdAt));
 
-    res.json({ announcements: activeList });
+    const response = { announcements: activeList };
+    announcementCache = { data: response, timestamp: now };
+    res.json(response);
   } catch (error) {
-    console.error("Failed to fetch announcement:", error);
-    res.status(500).json({ error: "Failed to fetch announcement" });
+    // Return empty on error — don't crash the page
+    res.json({ announcements: [] });
   }
 });
 

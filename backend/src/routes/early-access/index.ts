@@ -6,7 +6,7 @@ const router: IRouter = Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-router.post("/early-access/register", async (req: any, res): Promise<void> => {
+router.post("/register", async (req: any, res): Promise<void> => {
   const { email, source = "pricing" } = req.body ?? {};
 
   if (!email || typeof email !== "string" || !EMAIL_RE.test(email.trim())) {

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { db, contentCalendarTable, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
 import { generateContent } from "../../services/ai-engine";
@@ -29,8 +29,8 @@ const nicheGoalContext: Record<string, string> = {
 };
 
 router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  let isAborted = false;
-  req.on('close', () => { isAborted = true; });
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
 
   const { niche = "General", goal = "grow my audience and establish authority", duration = 7, language = "English", improvementFocus = "all" } = req.body;
   const sanitizedNiche = String(niche).substring(0, 50);
@@ -42,7 +42,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
   try {
     // 1. Fetch live web data for RAG (Retrieval Augmented Generation)
     const liveContext = await fetchLiveContext(sanitizedNiche as string, sanitizedGoal as string);
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
 
     let systemPrompt = `You are a senior content strategist. Create a ${duration}-day growth arc strategy for ${sanitizedNiche}.
 CONTEXT: ${goalContext}
@@ -80,9 +80,10 @@ Return ONLY a JSON object:
       userId: req.userId,
       language,
       maxTokens: duration === 30 ? 8000 : 5000,
+      signal: abortController.signal, // --- H-21 FIX: Pass AbortSignal ---
     });
 
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
 
     const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
@@ -91,6 +92,7 @@ Return ONLY a JSON object:
     try {
       parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
     } catch {
+      await refundGenerationCredit(req.userId, req.user?.planTier); // --- H-19 FIX: Refund on parse failure ---
       res.status(503).json({ error: "Failed to parse strategy" });
       return;
     }
@@ -133,8 +135,10 @@ Return ONLY a JSON object:
       feature: "strategy"
     }).catch(() => {});
   } catch (err: any) {
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
     console.error("STRATEGY GEN ERROR:", err);
+    // --- H-19 FIX: Refund credit if strategy generation fails ---
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Failed to generate strategy." });
   }
 });

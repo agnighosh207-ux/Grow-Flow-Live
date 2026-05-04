@@ -34,9 +34,12 @@ window.fetch = async (...args) => {
   if (response.status === 503) {
     const cloned = response.clone();
     try {
-      const data = await cloned.json();
-      if (data?.error?.includes("Maintenance")) {
-        window.dispatchEvent(new Event("maintenance-mode"));
+      const text = await cloned.text();
+      if (text) {
+        const data = JSON.parse(text);
+        if (data?.error?.includes("Maintenance")) {
+          window.dispatchEvent(new Event("maintenance-mode"));
+        }
       }
     } catch {}
   }

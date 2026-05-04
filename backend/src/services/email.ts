@@ -250,3 +250,73 @@ export async function sendWeeklyTrendDigest(email: string, niche: string, trends
     logger.error({ email, error: String(error) }, "Trend digest email send failure");
   }
 }
+export async function sendReengagementEmail(email: string, daysSinceLastGeneration: number) {
+  if (!resend) return;
+  try {
+    const niches = ["Fitness", "Finance", "Motivation", "Tech", "Business"];
+    const randomNiche = niches[Math.floor(Math.random() * niches.length)];
+    const ideas: Record<string, string> = {
+      "Fitness": "5 mistakes that are killing your progress (and how to fix them today)",
+      "Finance": "The hidden 'tax' on your savings that nobody talks about",
+      "Motivation": "Why your 'discipline' is failing you — and the 1 habit you actually need",
+      "Tech": "3 tools that save me 10+ hours a week in 2026",
+      "Business": "The exact strategy I used to find my first 100 customers with $0 ad spend"
+    };
+
+    const html = emailLayout(
+      `You haven't posted in ${daysSinceLastGeneration} days — here's a quick win 🚀`,
+      `
+        <p>Your audience misses you! Consistency is the secret sauce to growth, and we want to help you get back on track.</p>
+        <div style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.2); border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <p style="text-transform: uppercase; font-size: 10px; font-weight: 900; color: #00F2FF; margin-bottom: 8px;">Viral Idea for ${randomNiche}</p>
+          <p style="font-size: 16px; font-weight: bold; color: #ffffff; margin: 0;">"${ideas[randomNiche]}"</p>
+        </div>
+        <p>Ready to turn this idea into a full campaign? Our AI is waiting for you.</p>
+        <div style="text-align: center;"><a href="https://growflowai.space/generate" class="btn">Generate This Now →</a></div>
+        <p style="font-size: 11px; color: #475569; margin-top: 40px; text-align: center;">
+          Don't want these emails? <a href="https://growflowai.space/settings" style="color: #475569;">Unsubscribe in settings</a>
+        </p>
+      `
+    );
+
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `You haven't posted in ${daysSinceLastGeneration} days — here's a quick win 🚀`,
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Re-engagement email failure");
+  }
+}
+
+export async function sendReactivationEmail(email: string) {
+  if (!resend) return;
+  try {
+    const html = emailLayout(
+      "You have 5 free content generations waiting for you",
+      `
+        <p>You joined GrowFlow AI a week ago, but you haven't used your free credits yet! Here's what you're missing out on:</p>
+        <ul style="color: #cbd5e1; padding-left: 20px;">
+          <li style="margin-bottom: 10px;"><strong>One-Click Campaigns:</strong> Transform one idea into content for Instagram, Twitter, LinkedIn, and YouTube simultaneously.</li>
+          <li style="margin-bottom: 10px;"><strong>Viral Scoring:</strong> Our AI predicts which hooks will perform best before you even post.</li>
+          <li style="margin-bottom: 10px;"><strong>Smart Strategy:</strong> Personalized growth plans tailored to your specific niche and goals.</li>
+        </ul>
+        <p>Stop overthinking your content and start creating.</p>
+        <div style="text-align: center;"><a href="https://growflowai.space/generate" class="btn">Use My Free Credits →</a></div>
+        <p style="font-size: 11px; color: #475569; margin-top: 40px; text-align: center;">
+          Don't want these emails? <a href="https://growflowai.space/settings" style="color: #475569;">Unsubscribe in settings</a>
+        </p>
+      `
+    );
+
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "You have 5 free content generations waiting for you",
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Reactivation email failure");
+  }
+}

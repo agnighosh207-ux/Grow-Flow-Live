@@ -35,18 +35,20 @@ async function fetchWithAuth(url: string, token: string, options?: RequestInit &
   const contentType = res.headers.get("content-type");
   const isJson = contentType && contentType.includes("application/json");
 
+  const text = await res.text();
+  const hasContent = text && text.trim().length > 0;
+
   if (!res.ok) {
     let errorMessage = `HTTP ${res.status}`;
-    if (isJson) {
-      try {
-        const errData = await res.json();
-        errorMessage = errData.error || errData.message || errorMessage;
-      } catch (e: any) {
-        errorMessage = `Failed to parse error: ${e.message}`;
-      }
-    } else {
-      const text = await res.text();
-      if (text && text.length < 150 && !text.startsWith("<")) {
+    if (hasContent) {
+      if (isJson) {
+        try {
+          const errData = JSON.parse(text);
+          errorMessage = errData.error || errData.message || errorMessage;
+        } catch (e: any) {
+          errorMessage = text.substring(0, 100);
+        }
+      } else if (text.length < 150 && !text.startsWith("<")) {
         errorMessage = text;
       } else {
         errorMessage = `Server Error (${res.status})`;
@@ -56,11 +58,14 @@ async function fetchWithAuth(url: string, token: string, options?: RequestInit &
   }
 
   if (isJson) {
-    return res.json().catch((err) => {
+    if (!hasContent) return {} as any;
+    try {
+      return JSON.parse(text);
+    } catch (err: any) {
       throw new Error(`JSON_PARSE_ERROR: ${err.message}`);
-    });
+    }
   }
-  return res.text();
+  return text;
 }
 
 export function useSubscriptionStatus() {

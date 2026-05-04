@@ -29,6 +29,7 @@ export interface GenerateContentOptions {
   maxTokens?: number;
   language?: string;
   zodSchema?: z.ZodSchema<any>;
+  signal?: AbortSignal; // --- H-21 FIX: Support request cancellation ---
 }
 
 // No longer needed as we use guardian.ts Redis rate limiting
@@ -107,6 +108,7 @@ export const generateContent = async ({
   monthlyGenerationsUsed = 0,
   language = "English",
   zodSchema,
+  signal, // --- H-21 FIX: Accept AbortSignal ---
 }: GenerateContentOptions) => {
   
   // Guardian middleware handles rate limiting
@@ -182,6 +184,8 @@ export const generateContent = async ({
     // Each provider gets up to 2 attempts if JSON parsing fails
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
+        if (signal?.aborted) throw new Error("ABORTED"); // --- H-21 FIX: Check signal early ---
+
         const langInstruction = LANGUAGE_INSTRUCTIONS[language as keyof typeof LANGUAGE_INSTRUCTIONS] || "";
         // --- FIX: Prevent Context-Window Overflow ---
         // Truncate any overly large message payload to prevent API draining/crashing
@@ -218,7 +222,11 @@ export const generateContent = async ({
             max_tokens: maxTokens,
             response_format: zodSchema ? { type: "json_object" } : undefined,
           },
-          { timeout: 8000 } // --- FIX: Reduced timeout to 8s for faster failover ---
+          { 
+            timeout: 8000,
+            // @ts-ignore
+            signal // --- H-21 FIX: Pass AbortSignal to OpenAI client ---
+          }
         );
 
         const content = response.choices[0]?.message?.content || "";
@@ -237,6 +245,7 @@ export const generateContent = async ({
 
         return response;
       } catch (err: any) {
+        if (err.name === 'AbortError' || err.message === 'ABORTED') throw err; // --- H-21 FIX: Propagate aborts ---
         lastError = err;
         logger.warn(`[AI-ENGINE] ${provider.name} attempt ${attempt + 1} failed: ${err.message}`);
         

@@ -242,11 +242,40 @@ if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCT
   });
 }
 
-// ─── 12. Error handler ──────────────────────────────────────────────────────
+// ─── DEBUG ──────────────────────────────────────────────────────────────────
+app.get("/api/debug-db", (req: any, res, next) => {
+  if (!req.user?.isAdmin) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  next();
+}, async (req, res) => {
+  try {
+    const { db, usersTable } = await import("@workspace/db");
+    const { sql } = await import("drizzle-orm");
+    const countResult = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
+    res.json({ success: true, count: countResult[0].count });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── 12. Error handler (RECOVERY MODE: Exposing errors) ──────────────────────
 app.use((err: any, req: any, res: any, _next: any) => {
-  logger.error({ err }, "Unhandled application error");
+  const isDev = process.env.NODE_ENV === "development";
+  const errorDetails = {
+    error: "Internal Server Error",
+    message: err.message || "Unknown error",
+    path: req.path,
+    method: req.method,
+    stack: isDev ? err.stack : undefined, // ONLY expose stack in dev
+    timestamp: new Date().toISOString()
+  };
+
+  logger.error(errorDetails, "SYSTEMIC_FAILURE_DETECTED");
+
   if (!res.headersSent) {
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json(errorDetails);
   }
 });
 

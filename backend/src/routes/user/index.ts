@@ -9,10 +9,9 @@ const router: IRouter = Router();
 
 router.post("/login", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { deviceId, email } = req.body as { deviceId?: string; email?: string };
+    const { deviceId } = req.body as { deviceId?: string };
     const updates: any = { lastLoginAt: new Date() };
-    if (deviceId) updates.deviceId = deviceId;
-    if (email) updates.email = email;
+    if (deviceId) updates.deviceId = String(deviceId).substring(0, 100);
 
     await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId));
     res.json({ success: true });

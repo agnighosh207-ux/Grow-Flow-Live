@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, usageLogsTable, contentGenerationsTable, referralsTable, systemSettingsTable, globalAnnouncementsTable, featureUsageLogsTable, impersonationSessionsTable, securityLogsTable } from "@workspace/db";
-import { isNotNull, desc, sql, eq } from "drizzle-orm";
+import { isNotNull, desc, sql, eq, ilike, count } from "drizzle-orm";
 import crypto from "crypto";
-import { requireAuth } from "../../middlewares/planMiddleware";
+import { requireAuth, TIER_CREDITS } from "../../middlewares/planMiddleware";
 import { logger } from "../../lib/logger";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 
@@ -57,18 +57,20 @@ router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
       generationsDataList,
       settingsResult,
       activeAnnouncements,
-      featureUsageData
+      featureUsageData,
+      couponStats
     ] = await Promise.all([
       safeQuery(db.select({ count: sql<string>`count(*)` }).from(usersTable), [{ count: "0" }], "totalUsers"),
       safeQuery(db.select({ count: sql<string>`count(*)` }).from(usersTable).where(isNotNull(usersTable.email)), [{ count: "0" }], "totalEmails"),
       safeQuery(db.select({ count: sql<string>`count(*)` }).from(contentGenerationsTable), [{ count: "0" }], "totalGenerations"),
-      safeQuery(db.select({
-        id: usersTable.id,
-        email: usersTable.email,
-        planType: usersTable.planType,
-        subscriptionStatus: usersTable.subscriptionStatus,
-        createdAt: usersTable.createdAt
-      }).from(usersTable).orderBy(desc(usersTable.createdAt)).limit(100), [], "recentUsers"),
+      safeQuery(db.execute(sql`
+        SELECT u.id, u.email, u.plan_type, u.subscription_status, u.created_at, COUNT(cg.id)::int as generations_count
+        FROM users u
+        LEFT JOIN content_generations cg ON u.id = cg.user_id
+        GROUP BY u.id
+        ORDER BY u.created_at DESC
+        LIMIT 100
+      `), { rows: [] } as any, "recentUsers"),
       safeQuery(db.select({
         plan: usersTable.planType,
         totalAmount: sql<number>`SUM(${usersTable.subscriptionAmount})`
@@ -112,7 +114,14 @@ router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
       })
       .from(featureUsageLogsTable)
       .where(sql`${featureUsageLogsTable.createdAt} >= NOW() - INTERVAL '30 days'`)
-      .groupBy(featureUsageLogsTable.feature), [], "featureUsageData")
+      .groupBy(featureUsageLogsTable.feature), [], "featureUsageData"),
+      safeQuery(db.select({
+        code: usersTable.couponCode,
+        count: count()
+      })
+      .from(usersTable)
+      .where(isNotNull(usersTable.couponCode))
+      .groupBy(usersTable.couponCode), [], "couponStats")
     ]);
 
     const languageData = languageStats.length > 0 
@@ -132,14 +141,15 @@ router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
       totalUsers: Number(totalUsersResult[0]?.count) || 0,
       totalEmails: Number(totalEmailsResult[0]?.count) || 0,
       totalGenerations: Number(totalGenerationsResult[0]?.count) || 0,
-      recentUsers: recentUsers,
+      recentUsers: (recentUsers as any).rows || [],
       dauData: dauDataList || [],
       generationsData: generationsDataList || [],
       languageData,
       revenueData,
       topReferrers: (topReferrers as any).rows || [],
       activeAnnouncements,
-      featureUsageData: featureUsageData.map((f: any) => ({ feature: f.feature, count: Number(f.count) }))
+      featureUsageData: featureUsageData.map((f: any) => ({ feature: f.feature, count: Number(f.count) })),
+      couponStats: couponStats || []
     });
 
   } catch (err: any) {
@@ -150,36 +160,19 @@ router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
 
 router.patch("/modify-user", requireAuth, requireAdmin, async (req: any, res: any): Promise<void> => {
   try {
-    const { targetUserId, newPlan } = req.body;
-    if (!targetUserId || !newPlan) {
+    const { targetUserId, newPlan, newTier, newStatus } = req.body;
+    if (!targetUserId || !newPlan || !newTier) {
       res.status(400).json({ error: "Missing required fields" });
       return;
     }
 
-    let generationsLimit = 5;
-    let newStatus = "active";
-    let newTier = "FREE";
-
-    if (newPlan === "starter") {
-      generationsLimit = 20;
-      newTier = "STARTER";
-    } else if (newPlan === "creator") {
-      generationsLimit = 100;
-      newTier = "CREATOR";
-    } else if (newPlan === "infinity") {
-      generationsLimit = 9999;
-      newTier = "INFINITY";
-    } else if (newPlan === "free") {
-      generationsLimit = 5;
-      newStatus = "free";
-      newTier = "FREE";
-    }
+    const generationsLimit = TIER_CREDITS[newTier as keyof typeof TIER_CREDITS] || 5;
 
     await db.update(usersTable)
       .set({
         planType: newPlan,
         planTier: newTier as any,
-        subscriptionStatus: newStatus,
+        subscriptionStatus: newStatus || 'active',
         generationsRemaining: generationsLimit,
         lastCreditReset: new Date() // --- H-5 FIX: Reset credit cycle to now ---
       })
@@ -228,6 +221,7 @@ router.post("/impersonate", requireAuth, requireAdmin, async (req: any, res: any
       userId: req.userId,
       eventType: "ADMIN_IMPERSONATION_START",
       ipAddress: req.ip,
+      userAgent: req.get("User-Agent") || "unknown",
       metadata: { targetUserId, sessionId, reason, duration }
     }).catch(err => logger.error({ err }, "Failed to log impersonation"));
 
@@ -289,6 +283,219 @@ router.patch("/settings/maintenance", requireAuth, requireAdmin, async (req: any
   } catch (err: any) {
     logger.error({ err }, "Maintenance toggle error");
     res.status(500).json({ error: "Failed to fully toggle maintenance settings" });
+  }
+});
+
+// 1. Search users by email or ID
+router.get("/users/search", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const q = req.query.q as string;
+    if (!q || q.length < 2) {
+      return res.status(400).json({ error: "Query must be at least 2 characters" });
+    }
+
+    const results = await db
+      .select()
+      .from(usersTable)
+      .where(sql`${usersTable.email} ILIKE ${`%${q}%`} OR ${usersTable.id} = ${q}`)
+      .limit(20);
+
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: "Search failed" });
+  }
+});
+
+// 2. Get full user details
+router.get("/users/:id", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.params.id));
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const [genStats] = await db.select({ count: count() }).from(contentGenerationsTable).where(eq(contentGenerationsTable.userId, user.id));
+    const [referralStats] = await db.select({ count: count() }).from(referralsTable).where(eq(referralsTable.referrerUserId, user.id));
+
+    res.json({
+      ...user,
+      totalGenerationsCount: Number(genStats?.count || 0),
+      referralsCount: Number(referralStats?.count || 0)
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch user details" });
+  }
+});
+
+// 3. Grant bonus credits
+router.post("/users/:id/grant-credits", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const credits = Number(req.body.credits);
+    if (isNaN(credits) || credits < 1 || credits > 1000) {
+      return res.status(400).json({ error: "Credits must be between 1 and 1000" });
+    }
+
+    const [updated] = await db.update(usersTable)
+      .set({ generationsRemaining: sql`${usersTable.generationsRemaining} + ${credits}` })
+      .where(eq(usersTable.id, req.params.id))
+      .returning({ newBalance: usersTable.generationsRemaining });
+
+    invalidateAuthCache(req.params.id);
+    res.json({ success: true, newBalance: updated?.newBalance });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to grant credits" });
+  }
+});
+
+// 4. Ban a user
+router.post("/users/:id/ban", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { reason } = req.body;
+    await db.update(usersTable)
+      .set({ isBanned: true }) // banReason column does not exist in schema
+      .where(eq(usersTable.id, req.params.id));
+
+    await db.insert(securityLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: req.params.id,
+      eventType: "SYSTEM_BAN", // Use system ban event
+      ipAddress: req.ip,
+      userAgent: req.get("User-Agent") || "unknown",
+      metadata: { reason, bannedBy: req.userId }
+    });
+
+    invalidateAuthCache(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to ban user" });
+  }
+});
+
+// 5. Unban a user
+router.post("/users/:id/unban", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    await db.update(usersTable)
+      .set({ isBanned: false })
+      .where(eq(usersTable.id, req.params.id));
+
+    invalidateAuthCache(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to unban user" });
+  }
+});
+
+// 6. Reset credits
+router.post("/users/:id/reset-credits", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const [user] = await db.select({ planTier: usersTable.planTier }).from(usersTable).where(eq(usersTable.id, req.params.id));
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const tier = user.planTier || "FREE";
+    const defaultCredits = TIER_CREDITS[tier] || 5;
+
+    const [updated] = await db.update(usersTable)
+      .set({ generationsRemaining: defaultCredits, lastCreditReset: new Date() })
+      .where(eq(usersTable.id, req.params.id))
+      .returning({ newBalance: usersTable.generationsRemaining });
+
+    invalidateAuthCache(req.params.id);
+    res.json({ success: true, newBalance: updated?.newBalance });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to reset credits" });
+  }
+});
+
+// 7. Revenue breakdown
+router.get("/revenue/breakdown", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const subs = await db.select({
+      planType: usersTable.planType,
+      billingCycle: usersTable.billingPeriod,
+      status: usersTable.subscriptionStatus,
+      amount: usersTable.subscriptionAmount,
+    }).from(usersTable).where(isNotNull(usersTable.subscriptionStatus));
+
+    let mrr = 0;
+    const byPlan: any = {};
+    let totalActive = 0;
+    let totalCancelled = 0;
+
+    subs.forEach(s => {
+      if (s.status === 'active') {
+        totalActive++;
+        const amt = Number(s.amount || 0) / 100; // in INR
+        const monthlyAmt = s.billingCycle === 'yearly' ? amt / 12 : amt;
+        mrr += monthlyAmt;
+
+        const key = `${s.planType}_${s.billingCycle}`;
+        if (!byPlan[key]) byPlan[key] = { count: 0, mrr: 0 };
+        byPlan[key].count++;
+        byPlan[key].mrr += monthlyAmt;
+      } else if (s.status === 'canceled') {
+        totalCancelled++;
+      }
+    });
+
+    const churnRate = totalActive + totalCancelled > 0 ? (totalCancelled / (totalActive + totalCancelled)) * 100 : 0;
+
+    res.json({
+      mrr: Math.round(mrr),
+      arr: Math.round(mrr * 12),
+      byPlan,
+      churnRate: Number(churnRate.toFixed(2)),
+      activeSubscribers: totalActive,
+      cancelledSubscribers: totalCancelled
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch revenue breakdown" });
+  }
+});
+
+router.patch("/announcement/:id", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { isActive } = req.body;
+    await db.update(globalAnnouncementsTable)
+      .set({ isActive: Boolean(isActive) })
+      .where(eq(globalAnnouncementsTable.id, req.params.id));
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update announcement" });
+  }
+});
+
+router.get("/system/status", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const providers = [
+      { name: "Groq", env: "GROQ_API_KEY", model: "llama-3.1-8b-instant" },
+      { name: "Together AI", env: "TOGETHER_AI_API_KEY", model: "llama-2-70b-chat" },
+      { name: "Cerebras", env: "CEREBRAS_API_KEY", model: "llama3-70b" },
+      { name: "SambaNova", env: "SAMBANOVA_API_KEY", model: "llama-3.1-405b" },
+      { name: "Gemini", env: "GEMINI_API_KEY", model: "gemini-1.5-flash" },
+      { name: "Perplexity", env: "PERPLEXITY_AI_API", model: "llama-3.1-sonar-small-128k-online" }
+    ].map(p => ({
+      name: p.name,
+      configured: !!process.env[p.env],
+      model: p.model
+    }));
+
+    res.json({
+      providers,
+      nodeVersion: process.version,
+      uptime: process.uptime(),
+      memoryUsageMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024)
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch system status" });
+  }
+});
+
+router.post("/trigger-reengagement", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { runReengagementLogic } = await import("../../scripts/reengagement-cron");
+    const result = await runReengagementLogic();
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    logger.error({ err }, "Manual re-engagement trigger failed");
+    res.status(500).json({ error: err.message || "Failed to trigger re-engagement" });
   }
 });
 

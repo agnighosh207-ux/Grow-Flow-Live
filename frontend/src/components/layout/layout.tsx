@@ -40,7 +40,8 @@ import {
   RefreshCw,
   GitBranch,
   Target,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -55,25 +56,29 @@ function ImpersonationBanner() {
   const [impersonatedUser, setImpersonatedUser] = useState<string | null>(null);
   
   useEffect(() => {
-    setImpersonatedUser(localStorage.getItem("impersonated_user_id"));
+    // Check for session-based impersonation
+    setImpersonatedUser(sessionStorage.getItem("impersonated_user_id"));
   }, []);
 
   if (!impersonatedUser) return null;
 
+  const endSession = () => {
+    sessionStorage.removeItem("impersonation_session_id");
+    sessionStorage.removeItem("impersonated_user_id");
+    window.location.href = "/settings/admin";
+  };
+
   return (
-    <div className="bg-red-500/20 border-b border-red-500/30 text-red-200 text-xs font-semibold py-2 px-4 flex justify-between items-center z-50 relative">
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-        Viewing as: {impersonatedUser}
-      </div>
+    <div className="bg-red-500 text-white text-center py-2 text-sm font-bold sticky top-0 z-[100] flex items-center justify-center gap-4">
+      <span className="flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4 animate-pulse" />
+        IMPERSONATION MODE — Viewing as {impersonatedUser}
+      </span>
       <button 
-        onClick={() => {
-          localStorage.removeItem("impersonated_user_id");
-          window.location.reload();
-        }}
-        className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded border border-white/10 transition-colors"
+        onClick={endSession}
+        className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded border border-white/40 transition-colors text-[10px] uppercase tracking-wider"
       >
-        Stop Impersonating
+        End Session
       </button>
     </div>
   );

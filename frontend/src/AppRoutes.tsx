@@ -60,6 +60,7 @@ const Hashtags = React.lazy(() => import("@/pages/generators/hashtags"));
 const Repurpose = React.lazy(() => import("@/pages/generators/repurpose"));
 const ABTest = React.lazy(() => import("@/pages/generators/ab-test"));
 const HookScorer = React.lazy(() => import("@/pages/generators/hook-scorer"));
+const CreatorProfile = React.lazy(() => import("@/pages/public/CreatorProfile"));
 import { OnboardingModal } from "@/components/modals/OnboardingModal";
 
 const SuspenseFallback = () => (
@@ -200,6 +201,7 @@ export function ClerkProviderWithRoutes() {
             <Route path="/repurpose"><ProtectedRoute component={Repurpose} /></Route>
             <Route path="/ab-test"><ProtectedRoute component={ABTest} /></Route>
             <Route path="/hook-scorer"><ProtectedRoute component={HookScorer} /></Route>
+            <Route path="/creator/:code" component={CreatorProfile} />
             
             <Route component={NotFound} />
           </Switch>

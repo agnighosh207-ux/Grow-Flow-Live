@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
@@ -18,8 +18,8 @@ const PLATFORM_CONTEXT: Record<string, string> = {
 };
 
 router.post("/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  let isAborted = false;
-  req.on('close', () => { isAborted = true; });
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
 
   const {
     originalCaption,
@@ -57,7 +57,7 @@ Return ONLY this JSON: {
 }`;
 
   try {
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
     const rawContentObj = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
@@ -67,15 +67,17 @@ Return ONLY this JSON: {
       userId: req.userId,
       language,
       maxTokens: 2500,
+      signal: abortController.signal, // --- H-21 FIX: Pass AbortSignal ---
     });
 
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
     const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
     let parsed;
     try {
       const match = raw.match(/\{[\s\S]*\}/);
       parsed = JSON.parse(match ? match[0] : raw);
     } catch {
+      await refundGenerationCredit(req.userId, req.user?.planTier); // --- H-19 FIX: Refund on parse failure ---
       throw new Error("Failed to parse caption response.");
     }
     // Auto-save to history
@@ -97,8 +99,10 @@ Return ONLY this JSON: {
       feature: "caption"
     }).catch(() => {});
   } catch (err: any) {
-    if (isAborted) return;
+    if (abortController.signal.aborted) return;
     console.error("Caption enhance error:", err);
+    // --- H-19 FIX: Refund credit if caption enhancement fails ---
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "AI temporarily unavailable." });
   }
 });

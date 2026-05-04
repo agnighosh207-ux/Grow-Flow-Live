@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
@@ -170,6 +170,8 @@ Return ONLY a JSON object.`;
   } catch (err: any) {
     if (isAborted) return;
     console.error("IDEAS GEN ERROR:", err);
+    // --- H-20 FIX: Refund credit if ideas generation fails completely ---
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "AI temporarily unavailable. Please try again." });
   }
 });

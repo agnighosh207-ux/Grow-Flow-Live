@@ -1,12 +1,11 @@
 import { Layout } from "@/components/layout/layout";
-import { Users, Copy, CheckCircle2, Gift, Link as LinkIcon, DollarSign, Target, GiftIcon } from "lucide-react";
+import { Users, Copy, CheckCircle2, Gift, Link as LinkIcon, DollarSign, Target, GiftIcon, ArrowRight, Share2, UserPlus, CheckCircle, RefreshCcw, Sparkles, GitBranch, BarChart3, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useReferralInfo } from "@/hooks/useReferral";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Share2, UserPlus, CheckCircle } from "lucide-react";
 
 export default function ReferralsPage() {
   const { data: referral, isLoading } = useReferralInfo();
@@ -25,15 +24,25 @@ export default function ReferralsPage() {
     }
   };
 
+  const handleShareCreatorCard = () => {
+    if (referral?.referralCode) {
+      const url = `https://growflowai.space/creator/${referral.referralCode}`;
+      navigator.clipboard.writeText(url);
+      toast({ title: "Creator Card URL copied!", description: "Share this link to show off your profile!" });
+    }
+  };
+
   if (isLoading) {
     return (
-      <Layout>
-        <div className="flex h-64 items-center justify-center">
-          <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </Layout>
+      <div className="flex h-96 flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-white/40 text-xs animate-pulse uppercase tracking-widest font-bold">Synchronizing Referral Protocol...</p>
+      </div>
     );
   }
+
+  // Handle case where API failed or returned an error code
+  const isErrorCode = referral?.referralCode === "ERROR" || !referral?.referralCode || referral.referralCode === "---";
 
   const referralCount = referral?.successfulReferrals || 0;
   const rewardsEarned = referral?.totalBonusDays || 0;
@@ -43,162 +52,274 @@ export default function ReferralsPage() {
   const progressPercent = Math.min(100, Math.round((referralCount / target) * 100));
 
   return (
-    <div className="w-full space-y-8 font-sans">
-        
-        {/* Header Block */}
-        <div className="flex flex-col items-start text-left">
-          <h1 className="text-3xl font-bold flex items-center gap-3 mb-2 text-white">
-            <GiftIcon className="text-teal-400 w-8 h-8" />
-            Refer & Earn
-          </h1>
-          <p className="text-white/60">
-            {isPaidUser 
-              ? "Invite your network and get 20 bonus generations added to your account for every successful referral." 
-              : "Invite your network and unlock 15 days of free unlimited access to the Infinity Plan."}
-          </p>
+    <div className="max-w-6xl mx-auto space-y-12 pb-24">
+        {/* Header Block: High-Fidelity Hero Section */}
+        <div className="relative overflow-hidden rounded-3xl glass-panel-premium p-10 md:p-16 shadow-2xl group">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none group-hover:bg-cyan-500/20 transition-all duration-1000" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -ml-20 -mb-20 pointer-events-none group-hover:bg-indigo-500/20 transition-all duration-1000" />
+          
+          <div className="relative z-10 text-center md:text-left">
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }} 
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-black uppercase text-[10px] tracking-[0.3em] mb-6 shadow-glow"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              GrowFlow Engine v2.0
+            </motion.div>
+            
+            <h1 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight leading-[1.1] glow-text-intense">
+              Accelerate Your <br className="hidden md:block" /> 
+              <span className="gradient-text-cyan">
+                Creator Ecosystem.
+              </span>
+            </h1>
+            <p className="text-lg md:text-xl text-white/50 max-w-2xl leading-relaxed font-medium">
+              {isPaidUser 
+                ? "Scale your content production effortlessly. Every successful referral fuels your account with 20 premium generations. No limits, pure velocity." 
+                : "Join the elite circle. Refer just 1 friend and unlock 15 days of unlimited Infinity Plan access. Experience the future of content, on us."}
+            </p>
+          </div>
         </div>
 
-        {/* Main Action Row - 2 Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        {/* Bento-Style Action & Stats Dashboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           
-          {/* Referral Link Card */}
+          {/* Main Action Hub - Span 3 */}
           <motion.div 
-            initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} 
-            className="h-full bg-slate-900/50 p-8 rounded-xl border border-white/10 flex flex-col justify-center text-center items-center"
+            initial={{ opacity: 0, scale: 0.98 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            className="lg:col-span-3 bento-card p-8 md:p-10 flex flex-col justify-between shadow-2xl"
           >
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
-              <div className="flex-1 flex items-center justify-between bg-black/40 border border-white/10 rounded-xl p-4 md:p-5 relative group overflow-hidden">
-                <span className="text-xl md:text-2xl font-mono font-bold text-white tracking-tight truncate pr-4">
-                  {referral?.referralCode || "---"}
-                </span>
-                <span className="hidden sm:block text-[9px] font-black uppercase tracking-widest text-white/20 group-hover:text-cyan-400/40 transition-colors">Your Code</span>
-              </div>
-              <Button 
-                onClick={handleCopyLink}
-                className={`h-auto py-4 px-8 font-black text-xs uppercase tracking-widest rounded-xl transition-all duration-300 w-full md:w-auto ${
-                  copied 
-                    ? "bg-emerald-500 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.4)]" 
-                    : "bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-900/20"
-                }`}
-              >
-                {copied ? "Copied!" : "Copy Link"}
-              </Button>
-            </div>
-            <p className="text-xs text-white/40 mt-4 leading-relaxed">
-              When your friends sign up using your link, they'll be securely tracked under your account ID.
-            </p>
-          </motion.div>
-
-          {/* Stats Card */}
-          <motion.div 
-            initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.1}} 
-            className="h-full bg-slate-900/50 p-8 rounded-xl border border-white/10 flex flex-col justify-center relative overflow-hidden"
-          >
-            <div className="flex flex-col sm:flex-row gap-6 h-full items-center justify-between w-full z-10 transition-opacity duration-300">
-              <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <h3 className="text-teal-400 font-semibold mb-3 uppercase tracking-[0.1em] text-[10px] h-4 flex items-center justify-center whitespace-nowrap">Invites Sent</h3>
-                <p className="text-3xl font-black text-white">{referral?.totalReferrals || 0}</p>
+            <div className="space-y-8">
+              <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                <div>
+                  <h3 className="text-white font-bold text-xl tracking-tight">Referral Headquarters</h3>
+                  <p className="text-white/30 text-xs mt-1">Your unique gateway to rewards.</p>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-glow">
+                  <GitBranch className="w-6 h-6" />
+                </div>
               </div>
               
-              <div className="w-px h-12 bg-white/10 hidden sm:block" />
-
-              <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <h3 className="text-teal-400 font-semibold mb-3 uppercase tracking-[0.1em] text-[10px] h-4 flex items-center justify-center whitespace-nowrap">Conversions</h3>
-                <p className="text-3xl font-black text-white">{referralCount}</p>
-              </div>
-
-              <div className="w-px h-12 bg-white/10 hidden sm:block" />
-
-              <div className="flex-1 flex flex-col items-center justify-center text-center">
-                <h3 className="text-teal-400 font-semibold mb-3 uppercase tracking-[0.1em] text-[10px] h-4 flex items-center justify-center whitespace-nowrap">Total Reward</h3>
-                <p className="text-3xl font-black text-white">
-                  {isPaidUser ? (referral?.totalBonusCredits || 0) : (referral?.totalBonusDays || 0)}
-                  <span className="text-xs font-medium text-white/40 ml-1.5 uppercase tracking-tighter">
-                    {isPaidUser ? "Credits" : "Days"}
+              <div className="space-y-4">
+                <div className={`group w-full bg-black/60 border ${isErrorCode ? 'border-red-500/40' : 'border-white/10'} rounded-2xl p-6 md:p-8 font-mono text-2xl md:text-3xl font-black tracking-tighter text-center transition-all duration-300 hover:border-cyan-500/40 shadow-inner`}>
+                  <span className={isErrorCode ? 'text-red-400/50 italic animate-pulse' : 'text-white'}>
+                    {isErrorCode ? "SYNC_INTERRUPTED_RETRY" : referral?.referralCode}
                   </span>
-                </p>
+                  {!isErrorCode && (
+                    <div className="mt-2 text-[10px] text-white/20 uppercase tracking-[0.4em] font-black group-hover:text-cyan-400/40 transition-colors">
+                      Personal Access Key
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {isErrorCode ? (
+                    <Button 
+                      onClick={() => window.location.reload()}
+                      className="w-full h-16 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/20 font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg"
+                    >
+                      <RefreshCcw className="w-5 h-5 mr-3 animate-spin-slow" /> Force Protocol Reset
+                    </Button>
+                  ) : (
+                    <>
+                      <Button 
+                        onClick={handleCopyLink}
+                        className={`h-16 font-black text-sm uppercase tracking-widest rounded-2xl transition-all duration-500 shadow-2xl relative overflow-hidden group ${
+                          copied 
+                            ? "bg-emerald-500 text-slate-950" 
+                            : "bg-cyan-600 hover:bg-cyan-500 text-white"
+                        }`}
+                      >
+                        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                        <div className="relative z-10 flex items-center justify-center">
+                          {copied ? <CheckCircle2 className="w-5 h-5 mr-3" /> : <Copy className="w-5 h-5 mr-3" />}
+                          {copied ? "Engine Linked" : "Deploy Link"}
+                        </div>
+                      </Button>
+                      <Button 
+                        onClick={handleShareCreatorCard}
+                        variant="outline"
+                        className="h-16 bg-white/5 hover:bg-white/10 text-white border-white/10 font-black text-sm uppercase tracking-widest rounded-2xl transition-all shine-effect"
+                      >
+                        <Share2 className="w-5 h-5 mr-3 text-cyan-400" /> Showcase Card
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-10 p-4 rounded-xl bg-black/40 border border-white/5 text-[11px] text-white/30 italic text-center leading-relaxed">
+              {isErrorCode 
+                ? "Automatic link generation failed. Our diagnostic engine is on standby — please retry."
+                : "Tracking Protocol: Referral data is captured via deterministic fingerprinting. Rewards are distributed instantly upon verified account activation."
+              }
+            </div>
+          </motion.div>
+
+          {/* Performance Dashboard - Span 2 */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }} 
+            animate={{ opacity: 1, x: 0 }} 
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-2 bento-card p-10 flex flex-col justify-between shadow-2xl relative"
+          >
+            <div className="space-y-10 relative z-10">
+              <h3 className="text-white font-bold text-xl tracking-tight flex items-center justify-between border-b border-white/5 pb-6">
+                Analytics
+                <BarChart3 className="w-5 h-5 text-cyan-400" />
+              </h3>
+              
+              <div className="grid grid-cols-1 gap-8">
+                <div className="group">
+                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 group-hover:text-cyan-400/50 transition-colors">Network Reach</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-5xl font-black text-white leading-none tracking-tighter">
+                      {referral?.totalReferrals || 0}
+                    </p>
+                    <div className="px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-[10px] font-bold border border-blue-500/20">
+                      SENT
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group">
+                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2 group-hover:text-cyan-400/50 transition-colors">Conversion Rate</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-5xl font-black text-white leading-none tracking-tighter">
+                      {referralCount}
+                    </p>
+                    <div className="px-3 py-1 rounded-lg bg-teal-500/10 text-teal-400 text-[10px] font-bold border border-teal-500/20">
+                      ACTIVE
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-8 border-t border-white/10 group">
+                  <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em] mb-3 glow-bloom">Accumulated Yield</p>
+                  <div className="flex items-baseline gap-3">
+                    <p className="text-6xl font-black text-white leading-none tracking-tighter">
+                      {isPaidUser ? (referral?.totalBonusCredits || 0) : (referral?.totalBonusDays || 0)}
+                    </p>
+                    <span className="text-sm font-bold text-white/40 uppercase tracking-[0.2em]">
+                      {isPaidUser ? "Credits" : "Days"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Empty State Overlay */}
             {referralCount === 0 && (
-              <div className="absolute inset-0 z-20 flex items-end justify-center pb-6 pointer-events-none">
-                <p className="text-[13px] text-white/50 px-4 py-2 bg-black/40 rounded-full backdrop-blur-md border border-white/5">
-                  Share your link to see stats!
-                </p>
+              <div className="mt-8 px-6 py-3 bg-cyan-500/5 border border-cyan-500/10 rounded-2xl text-center shimmer">
+                <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Awaiting First Signal</p>
               </div>
             )}
           </motion.div>
-
         </div>
 
-        {/* Goal Progress Section */}
+        {/* Milestone Tracker: Gamified Progress */}
         <motion.div 
-          initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.2}} 
-          className="bg-slate-900/50 border border-white/10 rounded-xl p-8"
+          initial={{ opacity: 0, y: 30 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.2 }} 
+          className="bento-card p-10 md:p-12 shadow-2xl relative overflow-hidden"
         >
-          <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-              <Target className="w-6 h-6 text-teal-400" /> Goal: {isPaidUser ? "20 Bonus Credits" : "15 Days Extended Trial"}
-            </h3>
-            <span className="text-white font-mono text-sm tracking-wider bg-white/5 px-3 py-1 rounded-lg border border-white/10">
-              {referralCount} / {target}
-            </span>
+          <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-30" />
+          
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-10">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 text-cyan-400 font-black uppercase text-[10px] tracking-[0.3em] mb-2">
+                <Target className="w-4 h-4" />
+                Active Mission
+              </div>
+              <h3 className="text-3xl font-black text-white tracking-tight">
+                Current Threshold: <span className="gradient-text-cyan">{target} Referral</span>
+              </h3>
+              <p className="text-white/40 text-sm font-medium">Complete this cycle to trigger an automated reward injection.</p>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-1">Status</p>
+                <p className="text-3xl font-black text-white font-mono leading-none tracking-tighter">{referralCount} <span className="text-white/20">/</span> {target}</p>
+              </div>
+              <div className="h-20 w-20 rounded-2xl bg-cyan-500/5 border border-cyan-500/10 flex items-center justify-center text-3xl font-black text-cyan-400 shadow-glow relative group">
+                <div className="absolute inset-0 bg-cyan-400/10 animate-pulse rounded-2xl" />
+                <span className="relative z-10">{Math.floor(progressPercent)}%</span>
+              </div>
+            </div>
           </div>
-          <div className="h-6 bg-black/40 shadow-inner rounded-full overflow-hidden w-full relative border border-white/5 backdrop-blur-sm">
+          
+          <div className="relative h-6 bg-black/60 rounded-2xl border border-white/5 overflow-hidden p-1 shadow-inner">
             <motion.div 
-              initial={{width: 0}} 
-              animate={{width: `${progressPercent}%`}}
-              transition={{duration: 1, ease: "easeOut"}}
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-teal-500 rounded-full" 
+              initial={{ width: 0 }} 
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 2, ease: "circOut" }}
+              className="absolute inset-y-1 left-1 bg-gradient-to-r from-indigo-600 via-cyan-500 to-teal-400 rounded-xl shadow-[0_0_30px_rgba(6,182,212,0.5)]" 
             />
+            <div className="absolute inset-0 bg-scanlines opacity-10 pointer-events-none" />
           </div>
-          <p className="text-white/40 text-xs mt-3">
-            Re-triggerable reward. Every successful referral grants {isPaidUser ? "20 generations" : "15 days"}.
-          </p>
-        </motion.div>
 
-        {/* How it works scheme */}
-        <motion.div 
-          initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.3}}
-        >
-          <h2 className="text-2xl font-bold mb-6 text-white border-b border-white/10 pb-4">How it Works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-slate-900/50 p-7 rounded-xl border border-white/10 shadow-lg relative overflow-hidden group hover:border-teal-500/30 transition-all duration-300">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/20 transition-colors" />
-              <div className="w-12 h-12 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center mb-6 border border-teal-500/20">
-                <Share2 className="w-6 h-6" />
-              </div>
-              <h4 className="font-bold text-lg mb-2 text-white">1. Share Your Link</h4>
-              <p className="text-white/50 text-sm leading-relaxed">
-                Share your unique link with creator friends, founders, or marketers in your network.
-              </p>
-            </div>
-            
-            <div className="bg-slate-900/50 p-7 rounded-xl border border-white/10 shadow-lg relative overflow-hidden group hover:border-teal-500/30 transition-all duration-300">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-teal-500/20 transition-colors" />
-              <div className="w-12 h-12 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center mb-6 border border-teal-500/20">
-                <UserPlus className="w-6 h-6" />
-              </div>
-              <h4 className="font-bold text-lg mb-2 text-white">2. They Join & Explore</h4>
-              <p className="text-white/50 text-sm leading-relaxed">
-                They sign up using your link and explore the power of GrowFlow AI content generation.
-              </p>
-            </div>
-            
-            <div className="bg-slate-900/50 p-7 rounded-xl border border-emerald-500/10 shadow-lg relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-colors" />
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-6 border border-emerald-500/20">
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex items-center gap-4 p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-cyan-500/20 transition-colors group cursor-default">
+              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
                 <CheckCircle className="w-6 h-6" />
               </div>
-              <h4 className="font-bold text-lg mb-2 text-emerald-400">3. Both Get Rewarded</h4>
-              <p className="text-white/50 text-sm leading-relaxed">
-                You both get rewarded — {isPaidUser ? "20 bonus credits" : "15 days trial extension"}.
-              </p>
+              <div>
+                <p className="text-white font-black text-sm tracking-tight">Cycle Unlocked</p>
+                <p className="text-white/30 text-[9px] uppercase tracking-widest font-black mt-0.5">
+                  {isPaidUser ? "20 Credits" : "15 Extension"}
+                </p>
+              </div>
             </div>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-center gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.03] opacity-40">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white/20">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-white/40 font-bold text-sm tracking-tight">Advanced Tier</p>
+                  <p className="text-white/20 text-[9px] uppercase tracking-widest font-black mt-0.5">Locked</p>
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
-        
+
+        {/* The Referral Loop: Tactical Briefing */}
+        <div className="space-y-10">
+          <div className="flex items-center gap-6">
+            <h2 className="text-3xl font-black text-white whitespace-nowrap tracking-tighter italic">THE RECURSIVE LOOP</h2>
+            <div className="h-px w-full bg-gradient-to-r from-white/10 to-transparent" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { icon: LinkIcon, title: "Propagation", desc: "Deploy your unique signal across high-density creator networks and niche communities.", color: "text-blue-400" },
+              { icon: UserPlus, title: "Onboarding", desc: "Your network integrates with the GrowFlow infrastructure via your secure gateway.", color: "text-cyan-400" },
+              { icon: DollarSign, title: "Validation", desc: "Both accounts receive an immediate resource injection upon protocol verification.", color: "text-teal-400" }
+            ].map((step, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ delay: 0.4 + (i * 0.1) }}
+                className="group relative"
+              >
+                <div className="bento-card p-8 md:p-10 h-full relative z-10 transition-transform duration-500 group-hover:-translate-y-2">
+                  <div className={`w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-8 border border-white/5 group-hover:border-white/20 transition-all duration-500`}>
+                    <step.icon className={`w-8 h-8 ${step.color} transition-transform group-hover:scale-110`} />
+                  </div>
+                  <h4 className="font-black text-white mb-4 text-xl tracking-tight">{i + 1}. {step.title}</h4>
+                  <p className="text-white/40 text-sm leading-relaxed font-medium">{step.desc}</p>
+                </div>
+                <div className="absolute inset-0 bg-cyan-500/5 blur-3xl rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
   )
 }

@@ -38,7 +38,7 @@ function sanitizeInput(text: string, maxLength: number = 500): string {
 
 // requireAuth is now centralized in planMiddleware.ts (Flaw 20 fix)
 
-async function generateContentWithAI(idea: string, contentType: string, tone: string, niche: string = "General", platformPreference: string = "", language: string = "English", userId: string = "anonymous", userPlan: string = "free") {
+async function generateContentWithAI(idea: string, contentType: string, tone: string, niche: string = "General", platformPreference: string = "", language: string = "English", userId: string = "anonymous", userPlan: string = "free", signal?: AbortSignal) {
   const contentTypeInstructions: Record<string, string> = {
     Educational: `FORMAT — Educational/Framework: Teach one transformative concept that changes HOW the audience thinks, not just what they do. Use the "hidden truth" structure: expose what's wrong with common advice → reveal the better mental model → show the exact application. Ground everything in firsthand experience, not recycled theory. Each step must be actionable TODAY.`,
     Story: `FORMAT — Story/Experience: Use the "cinematic drop" structure — open IN the middle of the most dramatic moment (don't set up the scene, DROP into it). Then: what the situation was → the exact mistake made → the turning point → the specific result with real numbers or observable outcomes. The reader should feel like they're watching it happen, not being told about it.`,
@@ -170,49 +170,63 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }`;
 
   try {
-    const rawContentObj = await generateContent({
+    const response = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       userPlan,
       userId,
-      language,
       maxTokens: 4000,
+      signal, // --- H-21 FIX: Pass AbortSignal ---
     });
 
-    const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
-    let parsedContent = extractJson(rawContent);
+    const rawContent = response.choices[0]?.message?.content || "{}";
+    const finalContent = extractJson(rawContent);
 
-    if (!parsedContent) {
-      console.error("JSON Parse Failed. Raw:", rawContent);
-      // Fallback: If it's not JSON, try to wrap the raw text in a basic structure
-      // to at least give the user something.
-      return {
-        instagram: { caption: rawContent.slice(0, 500), hashtags: "" },
-        youtube: { hook: "Content generated but structure was malformed", script: rawContent.slice(0, 1000) },
-        twitter: { tweets: [rawContent.slice(0, 240)] },
-        linkedin: { post: rawContent.slice(0, 1000) },
-        _error: "MALFORMED_JSON_FALLBACK"
-      };
+    if (!finalContent || !finalContent.instagram) {
+      throw new Error("Failed to generate valid content JSON structure");
     }
 
-    // Unbox if the AI used a "content" wrapper
-    if (parsedContent.content && typeof parsedContent.content === 'object' && !parsedContent.instagram) {
-      parsedContent = parsedContent.content;
+    // ─── VIRAL SCORE CALCULATION ──────────────────────────────────────────────
+    // SECOND lightweight call for scoring (Groq llama-3.1-8b-instant)
+    let viralScores = null;
+    try {
+      const scoringPrompt = `Score this social media content 0-100 for viral potential. 
+Consider: hook strength, emotional trigger, clarity, shareability, platform fit.
+Return ONLY JSON: { "instagram": number, "youtube": number, "twitter": number, "linkedin": number, "overall": number }
+
+CONTENT TO SCORE:
+Instagram: ${finalContent.instagram.hook}
+YouTube: ${finalContent.youtube.title}
+Twitter: ${finalContent.twitter.tweets[0] || ""}
+LinkedIn: ${finalContent.linkedin.headline}`;
+
+      // 3-second timeout for the lightweight scoring call
+      const scoringPromise = generateContent({
+        messages: [{ role: "user", content: scoringPrompt }],
+        userPlan: "free", // Forces lightweight model
+        userId,
+        maxTokens: 200,
+        temperature: 0.3,
+        signal, // --- H-21 FIX: Pass AbortSignal ---
+      });
+
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 3000));
+
+      const scoringResult: any = await Promise.race([scoringPromise, timeoutPromise]);
+      const scoreContent = scoringResult.choices[0]?.message?.content || "{}";
+      viralScores = extractJson(scoreContent);
+    } catch (scoreErr) {
+      console.warn("[VIRAL_SCORE] Scoring failed or timed out:", scoreErr instanceof Error ? scoreErr.message : String(scoreErr));
+      viralScores = null;
     }
 
-    // Ensure all required platform keys exist to prevent frontend crashes
-    const finalContent = {
-      instagram: parsedContent.instagram || { hook: "", caption: "", cta: "", hashtags: "", visualBriefs: [] },
-      youtube: parsedContent.youtube || { hook: "", title: "", script: "" },
-      twitter: parsedContent.twitter || { tweets: [] },
-      linkedin: parsedContent.linkedin || { headline: "", post: "", cta: "", hashtags: "", visualBriefs: [] },
-      ...parsedContent
-    };
-
-    return finalContent;
+    return { ...finalContent, viralScores };
   } catch (err: any) {
+    if (err.name === 'AbortError' || err.message === 'ABORTED') {
+      throw err; // Propagate aborts
+    }
     console.error("AI ENGINE CRITICAL FAILURE:", err);
     throw new Error(`AI Engine Failure: ${err?.message || "Unknown error"}`);
   }
@@ -302,7 +316,10 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
   let content: any;
   try {
     if (isAborted) return;
-    content = await generateContentWithAI(idea, contentType, resolvedTone, resolvedNiche, resolvedPlatform, language, req.userId, user?.planType || "free");
+    const abortController = new AbortController();
+    req.on('close', () => abortController.abort());
+
+    content = await generateContentWithAI(idea, contentType, resolvedTone, resolvedNiche, resolvedPlatform, language, req.userId, user?.planType || "free", abortController.signal);
     
     // Add watermark for Free users
     if (status !== "active" && status !== "trial") {

@@ -4,6 +4,7 @@ import { Gift, X, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useReferralInfo, useMarkReferralPopupSeen } from "@/hooks/useReferral";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@clerk/react";
 
 export function ReferralPopup() {
   const [visible, setVisible] = useState(false);
@@ -12,10 +13,12 @@ export function ReferralPopup() {
   const { data: referral, isSuccess } = useReferralInfo();
   const markSeen = useMarkReferralPopupSeen();
   const { toast } = useToast();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (!isSuccess) return;
     if (referral?.hasSeenReferralPopup) return;
+    if (referral?.hasAppliedCode) return;
     const timer = setTimeout(() => setVisible(true), 2500);
     return () => clearTimeout(timer);
   }, [isSuccess, referral?.hasSeenReferralPopup]);
@@ -29,10 +32,14 @@ export function ReferralPopup() {
     if (!code) { dismiss(); return; }
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/complete-onboarding", {
+      const token = await getToken();
+      const res = await fetch("/api/referral/claim", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ referralCode: code }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ code }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);

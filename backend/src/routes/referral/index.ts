@@ -3,17 +3,15 @@ import { eq, and, count, sql, inArray } from "drizzle-orm";
 import { db, usersTable, referralsTable } from "@workspace/db";
 import crypto from "crypto";
 import { requireAuth } from "../../middlewares/planMiddleware";
-import { ensureReferralCode, grantReferralReward } from "../../utils/referral";
+import { ensureReferralCode } from "../../utils/referral";
 
 const router: IRouter = Router();
 
-
-// requireAuth is now centralized in planMiddleware.ts (Flaw 20 fix)
-
-// Referral utility functions moved to backend/src/utils/referral.ts to fix circular dependency risks.
-
 router.get("/test", (req, res) => res.json({ ok: true }));
 
+/**
+ * Applies a referral code to the current user.
+ */
 router.post("/claim", requireAuth, async (req: any, res): Promise<void> => {
   const { code } = req.body as { code?: string };
 
@@ -25,8 +23,9 @@ router.post("/claim", requireAuth, async (req: any, res): Promise<void> => {
   const normalizedCode = code.trim().toUpperCase();
 
   try {
+    console.log(`[REFERRAL_ROUTE] User ${req.userId} attempting to claim code: ${normalizedCode}`);
+    
     await db.transaction(async (tx) => {
-      // 1. Find the referrer
       const [referrer] = await tx.select({ id: usersTable.id })
         .from(usersTable)
         .where(eq(usersTable.referralCode, normalizedCode));
@@ -34,33 +33,32 @@ router.post("/claim", requireAuth, async (req: any, res): Promise<void> => {
       if (!referrer) throw new Error("Invalid referral code");
       if (referrer.id === req.userId) throw new Error("Self-referral not allowed");
 
-      // 2. Check if current user already used a code
       const [currentUser] = await tx.select({ referralUsedCode: usersTable.referralUsedCode })
         .from(usersTable)
         .where(eq(usersTable.id, req.userId))
-        .for("update"); // Lock for update to prevent concurrent race conditions
+        .for("update");
 
       if (currentUser?.referralUsedCode) {
         throw new Error("Referral code already applied");
       }
 
-      // 3. Mark the code as used by current user
       await tx.update(usersTable)
         .set({ referralUsedCode: normalizedCode })
         .where(eq(usersTable.id, req.userId));
 
-      // 4. Log the referral (Pending Reward)
       await tx.insert(referralsTable).values({
         id: crypto.randomUUID(),
         referrerUserId: referrer.id,
         referredUserId: req.userId,
-        rewardGranted: false, // Wait for payment
+        rewardGranted: false,
         rewardSeen: false,
       }).onConflictDoNothing();
     });
 
-    res.json({ success: true, message: "Referral code applied! Your bonus credits will be granted after your first successful subscription." });
+    console.log(`[REFERRAL_ROUTE] User ${req.userId} successfully claimed code: ${normalizedCode}`);
+    res.json({ success: true, message: "Referral code applied! Bonus will be granted after subscription." });
   } catch (err: any) {
+    console.error(`[REFERRAL_ROUTE_ERROR] Claim failed for ${req.userId}:`, err.message);
     res.status(400).json({ error: err.message });
   }
 });
@@ -72,16 +70,26 @@ router.post("/popup-seen", requireAuth, async (req: any, res): Promise<void> => 
       .where(eq(usersTable.id, req.userId));
     res.json({ success: true });
   } catch (err) {
-    console.error("popup-seen error:", err);
-    res.status(500).json({ error: "Failed to update popup status" });
+    console.error("[REFERRAL_ROUTE_ERROR] popup-seen failure:", err);
+    res.status(500).json({ error: "Failed to update status" });
   }
 });
 
+/**
+ * Fetches comprehensive referral information for the user.
+ * Wrapped in strict try/catch to ensure frontend always receives valid JSON.
+ */
 router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
   try {
+    console.log(`[REFERRAL_ROUTE] Fetching info for user ${req.userId}`);
+    
+    // Ensure code exists (aggressive persistence check)
     const code = await ensureReferralCode(req.userId);
 
-    const [userRow] = await db.select({ hasSeenReferralPopup: usersTable.hasSeenReferralPopup })
+    const [userRow] = await db.select({ 
+      hasSeenReferralPopup: usersTable.hasSeenReferralPopup,
+      referralUsedCode: usersTable.referralUsedCode,
+    })
       .from(usersTable)
       .where(eq(usersTable.id, req.userId));
 
@@ -98,8 +106,6 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
 
     const successfulReferrals = Number(referralStats?.successful ?? 0);
     const totalReferrals = Number(referralStats?.total ?? 0);
-    const totalBonusDays = successfulReferrals * 15;
-    const totalBonusCredits = successfulReferrals * 20;
 
     const unseenReferrals = await db.select({ id: referralsTable.id })
       .from(referralsTable)
@@ -111,7 +117,7 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
 
     const hasNewReward = unseenReferrals.length > 0;
 
-    if (hasNewReward && unseenReferrals.length > 0) {
+    if (hasNewReward) {
       const unseenIds = unseenReferrals.map(r => r.id);
       await db.update(referralsTable)
         .set({ rewardSeen: true })
@@ -123,14 +129,28 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
       shareableLink,
       successfulReferrals,
       totalReferrals,
-      totalBonusDays,
-      totalBonusCredits,
+      totalBonusDays: successfulReferrals * 15,
+      totalBonusCredits: successfulReferrals * 20,
       hasNewReward,
       hasSeenReferralPopup: userRow?.hasSeenReferralPopup ?? false,
+      hasAppliedCode: !!userRow?.referralUsedCode,
     });
+
   } catch (err) {
-    console.error("Referral info error:", err);
-    res.status(500).json({ error: "Failed to get referral info" });
+    console.error(`[REFERRAL_ROUTE_CRITICAL] Info endpoint failed for ${req.userId}:`, err);
+    // Provide a valid fallback to prevent frontend "---" or crash
+    res.status(500).json({ 
+      error: "INTERNAL_ERROR",
+      referralCode: "ERROR",
+      shareableLink: "#",
+      successfulReferrals: 0,
+      totalReferrals: 0,
+      totalBonusDays: 0,
+      totalBonusCredits: 0,
+      hasNewReward: false,
+      hasSeenReferralPopup: true, // suppress popup on error
+      hasAppliedCode: false
+    });
   }
 });
 

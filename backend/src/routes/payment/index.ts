@@ -17,6 +17,11 @@ function getRazorpayClient() {
   const keySecret = isProd
     ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
     : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET);
+
+  if (!keyId || !keySecret) {
+    throw new Error("Razorpay keys not configured. Contact support.");
+  }
+
   return new Razorpay({ key_id: keyId as string, key_secret: keySecret as string });
 }
 
@@ -28,7 +33,14 @@ router.post("/tip/create", requireAuth, async (req: AuthenticatedRequest, res: R
       return;
     }
 
-    const client = getRazorpayClient();
+    let client;
+    try {
+      client = getRazorpayClient();
+    } catch (e: any) {
+      res.status(503).json({ error: "PAYMENT_CONFIG_ERROR", message: e.message });
+      return;
+    }
+
     const order = await client.orders.create({
       amount,
       currency: "INR",
