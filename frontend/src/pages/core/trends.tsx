@@ -217,7 +217,10 @@ export default function TrendEngine() {
         navigate("/pricing");
         return;
       }
-      if (!res.ok) throw new Error("Failed to fetch trends");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Failed to fetch trends");
+      }
       const data = await res.json();
       setTrends(data.trends ?? []);
       setLastNiche(niche);

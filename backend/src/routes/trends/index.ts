@@ -139,7 +139,12 @@ JSON schema:
       trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
     } catch (err: any) {
       if (abortController.signal.aborted) return;
-      console.warn("TRENDS DIRECT PERPLEXITY FAIL, FALLING BACK TO ENGINE:", err.message);
+      console.error("TRENDS DIRECT PERPLEXITY FAIL:", {
+        message: err.message,
+        status: err.status,
+        body: err.response?.data
+      });
+      console.warn("FALLING BACK TO ENGINE...");
       const fallback = await generateContent({
         messages: [
           { role: "system", content: systemPrompt },
