@@ -112,9 +112,13 @@
     min-height: 100vh;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    letter-spacing: -0.02em;
-  }
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform, opacity;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+}
 }
 
 /* Glassmorphism Implementation Rule */
@@ -212,13 +216,14 @@
 }
 
 .hyper-hover-card {
-  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1) !important;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1) !important;
+  will-change: transform, box-shadow;
 }
 
 .hyper-hover-card:hover {
-  transform: translateY(-5px) scale(1.02) !important;
-  box-shadow: 0 20px 50px -15px rgba(0, 242, 255, 0.3), inset 0 0 30px rgba(0, 242, 255, 0.1) !important;
-  border-color: rgba(0, 242, 255, 0.5) !important;
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 30px 60px -12px rgba(0, 242, 255, 0.25), inset 0 0 20px rgba(0, 242, 255, 0.05) !important;
+  border-color: rgba(0, 242, 255, 0.4) !important;
 }
 
 .glow-text-intense {

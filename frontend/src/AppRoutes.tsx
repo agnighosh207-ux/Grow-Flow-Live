@@ -82,6 +82,7 @@ const SuspenseFallback = () => (
   </div>
 );
 
+
 function HomeRedirect() {
   return (
     <>
@@ -112,7 +113,23 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
+import { motion, AnimatePresence } from "framer-motion";
+
+const PageTransition = ({ children }: { children: React.ReactNode }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+    className="w-full"
+  >
+    {children}
+  </motion.div>
+);
+
 export function ClerkProviderWithRoutes() {
+  const [location] = useLocation();
+
   useEffect(() => {
     document.documentElement.classList.add("dark");
   }, []);
@@ -128,32 +145,24 @@ export function ClerkProviderWithRoutes() {
           socialButtonsPlacement: "top",
         },
         variables: {
-          colorPrimary: '#8b5cf6',
-          colorBackground: '#0b0416',
-          colorInputBackground: 'rgba(255, 255, 255, 0.05)',
+          colorPrimary: '#00F2FF',
+          colorBackground: '#0B1215',
+          colorInputBackground: 'rgba(0, 242, 255, 0.05)',
           colorInputText: '#ffffff',
           colorText: '#ffffff',
-          colorTextSecondary: '#e9d5ff',
-          colorSuccess: '#4ade80',
-          colorDanger: '#f87171',
-          colorWarning: '#fbbf24',
-          colorTextOnPrimaryBackground: '#ffffff',
-          colorNeutral: '#ffffff',
+          colorTextSecondary: '#94A3B8',
+          colorSuccess: '#00F2FF',
           borderRadius: '12px',
         },
         elements: {
-          card: 'bg-[#100726]/80 backdrop-blur-xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/60',
+          card: 'bg-[#101C20]/80 backdrop-blur-xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/60',
           headerTitle: '!text-white font-bold',
-          headerSubtitle: '!text-teal-100',
-          formButtonPrimary: '!bg-cyan-600 hover:!bg-cyan-500 !text-white font-semibold shadow-[0_0_15px_rgba(139,92,246,0.4)] transition-all ease-out hover:scale-[1.02]',
+          headerSubtitle: '!text-cyan-100',
+          formButtonPrimary: '!bg-cyan-600 hover:!bg-cyan-500 !text-white font-semibold shadow-[0_0_15px_rgba(0,242,255,0.4)] transition-all ease-out hover:scale-[1.02]',
           formFieldInput: '!bg-white/5 !border !border-white/10 !text-white focus:!border-cyan-500 rounded-xl transition-colors',
-          formFieldLabel: '!text-teal-100 font-medium',
+          formFieldLabel: '!text-cyan-100 font-medium',
           socialButtonsBlockButton: '!bg-white/5 !border !border-white/10 !text-white hover:!bg-white/10 transition-colors',
-          socialButtonsBlockButtonText: '!text-white',
-          footerActionText: '!text-white/60',
           footerActionLink: '!text-cyan-400 hover:!text-cyan-300',
-          identityPreviewText: '!text-white',
-          identityPreviewEditButton: '!text-cyan-400',
         }
       }}
     >
@@ -166,45 +175,115 @@ export function ClerkProviderWithRoutes() {
           <OnboardingModal />
         </SignedIn>
         <React.Suspense fallback={<SuspenseFallback />}>
-          <Switch>
-            <Route path="/" component={HomeRedirect} />
-            <Route path="/sign-in/*?" component={SignInPage} />
-            <Route path="/sign-up/*?" component={SignUpPage} />
-            
-            <Route path="/generate"><ProtectedRoute component={Generate} /></Route>
-            <Route path="/ideas"><ProtectedRoute component={IdeasGenerator} /></Route>
-            <Route path="/trends"><ProtectedRoute component={TrendEngine} /></Route>
-            <Route path="/strategy"><ProtectedRoute component={StrategyPlanner} /></Route>
-            <Route path="/history"><ProtectedRoute component={History} /></Route>
-            <Route path="/hooks"><ProtectedRoute component={HooksGenerator} /></Route>
-            <Route path="/improve"><ProtectedRoute component={ImproveCompetitorContent} /></Route>
-            <Route path="/bio"><ProtectedRoute component={BioGenerator} /></Route>
-            <Route path="/caption"><ProtectedRoute component={CaptionEnhancer} /></Route>
-            <Route path="/daily"><ProtectedRoute component={DailyActionMode} /></Route>
-            <Route path="/pack"><ProtectedRoute component={ContentPack} /></Route>
-            <Route path="/calendar"><ProtectedRoute component={ContentCalendar} /></Route>
-            <Route path="/insights"><ProtectedRoute component={Insights} /></Route>
-            <Route path="/pricing"><Pricing /></Route>
-            <Route path="/support"><Support /></Route>
-            <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
-            <Route path="/saved"><ProtectedRoute component={Saved} /></Route>
-            <Route path="/referrals"><ProtectedRoute component={ReferralsPage} /></Route>
-            <Route path="/privacy"><Privacy /></Route>
-            <Route path="/terms"><Terms /></Route>
-            <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
-            
-            <Route path="/coach"><ProtectedRoute component={ContentCoach} /></Route>
-            <Route path="/vault"><ProtectedRoute component={SwipeVault} /></Route>
-            <Route path="/ghostwriter"><ProtectedRoute component={Ghostwriter} /></Route>
-            <Route path="/predictor"><ProtectedRoute component={Predictor} /></Route>
-            <Route path="/hashtags"><ProtectedRoute component={Hashtags} /></Route>
-            <Route path="/repurpose"><ProtectedRoute component={Repurpose} /></Route>
-            <Route path="/ab-test"><ProtectedRoute component={ABTest} /></Route>
-            <Route path="/hook-scorer"><ProtectedRoute component={HookScorer} /></Route>
-            <Route path="/creator/:code" component={CreatorProfile} />
-            
-            <Route component={NotFound} />
-          </Switch>
+          <AnimatePresence mode="wait">
+            <Switch key={location}>
+              <Route path="/">
+                <PageTransition><HomeRedirect /></PageTransition>
+              </Route>
+              <Route path="/sign-in/*?">
+                <PageTransition><SignInPage /></PageTransition>
+              </Route>
+              <Route path="/sign-up/*?">
+                <PageTransition><SignUpPage /></PageTransition>
+              </Route>
+              
+              <Route path="/generate">
+                <PageTransition><ProtectedRoute component={Generate} /></PageTransition>
+              </Route>
+              <Route path="/ideas">
+                <PageTransition><ProtectedRoute component={IdeasGenerator} /></PageTransition>
+              </Route>
+              <Route path="/trends">
+                <PageTransition><ProtectedRoute component={TrendEngine} /></PageTransition>
+              </Route>
+              <Route path="/strategy">
+                <PageTransition><ProtectedRoute component={StrategyPlanner} /></PageTransition>
+              </Route>
+              <Route path="/history">
+                <PageTransition><ProtectedRoute component={History} /></PageTransition>
+              </Route>
+              <Route path="/hooks">
+                <PageTransition><ProtectedRoute component={HooksGenerator} /></PageTransition>
+              </Route>
+              <Route path="/improve">
+                <PageTransition><ProtectedRoute component={ImproveCompetitorContent} /></PageTransition>
+              </Route>
+              <Route path="/bio">
+                <PageTransition><ProtectedRoute component={BioGenerator} /></PageTransition>
+              </Route>
+              <Route path="/caption">
+                <PageTransition><ProtectedRoute component={CaptionEnhancer} /></PageTransition>
+              </Route>
+              <Route path="/daily">
+                <PageTransition><ProtectedRoute component={DailyActionMode} /></PageTransition>
+              </Route>
+              <Route path="/pack">
+                <PageTransition><ProtectedRoute component={ContentPack} /></PageTransition>
+              </Route>
+              <Route path="/calendar">
+                <PageTransition><ProtectedRoute component={ContentCalendar} /></PageTransition>
+              </Route>
+              <Route path="/insights">
+                <PageTransition><ProtectedRoute component={Insights} /></PageTransition>
+              </Route>
+              <Route path="/pricing">
+                <PageTransition><Pricing /></PageTransition>
+              </Route>
+              <Route path="/support">
+                <PageTransition><Support /></PageTransition>
+              </Route>
+              <Route path="/settings">
+                <PageTransition><ProtectedRoute component={SettingsPage} /></PageTransition>
+              </Route>
+              <Route path="/saved">
+                <PageTransition><ProtectedRoute component={Saved} /></PageTransition>
+              </Route>
+              <Route path="/referrals">
+                <PageTransition><ProtectedRoute component={ReferralsPage} /></PageTransition>
+              </Route>
+              <Route path="/privacy">
+                <PageTransition><Privacy /></PageTransition>
+              </Route>
+              <Route path="/terms">
+                <PageTransition><Terms /></PageTransition>
+              </Route>
+              <Route path="/admin">
+                <PageTransition><ProtectedRoute component={AdminDashboard} /></PageTransition>
+              </Route>
+              
+              <Route path="/coach">
+                <PageTransition><ProtectedRoute component={ContentCoach} /></PageTransition>
+              </Route>
+              <Route path="/vault">
+                <PageTransition><ProtectedRoute component={SwipeVault} /></PageTransition>
+              </Route>
+              <Route path="/ghostwriter">
+                <PageTransition><ProtectedRoute component={Ghostwriter} /></PageTransition>
+              </Route>
+              <Route path="/predictor">
+                <PageTransition><ProtectedRoute component={Predictor} /></PageTransition>
+              </Route>
+              <Route path="/hashtags">
+                <PageTransition><ProtectedRoute component={Hashtags} /></PageTransition>
+              </Route>
+              <Route path="/repurpose">
+                <PageTransition><ProtectedRoute component={Repurpose} /></PageTransition>
+              </Route>
+              <Route path="/ab-test">
+                <PageTransition><ProtectedRoute component={ABTest} /></PageTransition>
+              </Route>
+              <Route path="/hook-scorer">
+                <PageTransition><ProtectedRoute component={HookScorer} /></PageTransition>
+              </Route>
+              <Route path="/creator/:code">
+                <PageTransition><CreatorProfile /></PageTransition>
+              </Route>
+              
+              <Route>
+                <PageTransition><NotFound /></PageTransition>
+              </Route>
+            </Switch>
+          </AnimatePresence>
         </React.Suspense>
       </QueryClientProvider>
     </ClerkProvider>

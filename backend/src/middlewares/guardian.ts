@@ -18,7 +18,7 @@ const getQuotaForTier = (tier: string) => {
     case "CREATOR": return 30; // 30 / hour
     case "STARTER": return 10; // 10 / hour
     case "FREE":
-    default: return 5; // 5 / 24 hours
+    default: return 50; // 50 / hour (Allow for normal dashboard browsing)
   }
 };
 
@@ -26,7 +26,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
   const userId = req.rateLimitUser?.id;
   const tier = req.rateLimitUser?.planTier || "FREE";
   const quota = getQuotaForTier(tier);
-  const windowMs = tier.toUpperCase() === "FREE" ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000;
+  const windowMs = 60 * 60 * 1000; // Standard 1 hour window
   
   if (!userId) {
     return res.status(429).json({ error: "api_rate_limit", message: "Rate limit exceeded." });
@@ -51,8 +51,8 @@ const handleRateLimitReached = async (req: any, res: any) => {
 
   const updateData: any = { violationCount: newViolations };
 
-  // Strike 5 = BAN
-  if (newViolations >= 5) {
+  // Strike 100 = BAN (Very high to avoid false positives, only catch bots)
+  if (newViolations >= 100) {
     logger.error({ userId }, "USER FLAG BANNED");
     isBanned = true;
     updateData.isBanned = true;
@@ -83,7 +83,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
     .where(eq(usersTable.id, userId as string))
     .returning({ violationCount: usersTable.violationCount });
 
-  if (updatedUser && updatedUser.violationCount >= 5 && !isBanned) {
+  if (updatedUser && updatedUser.violationCount >= 100 && !isBanned) {
     // Catch-all in case multiple requests hit exactly at the threshold
     await db.update(usersTable).set({ isBanned: true }).where(eq(usersTable.id, userId as string));
     isBanned = true;
@@ -120,8 +120,8 @@ const createLimiter = (windowMs: number, prefix: string) => {
 };
 
 // Initialize globally so they aren't recreated on every request
-const freeLimiter = createLimiter(24 * 60 * 60 * 1000, "free");
-const paidLimiter = createLimiter(60 * 60 * 1000, "paid");
+// Standard 1 hour limiter for everyone
+const guardianLimiter = createLimiter(60 * 60 * 1000, "global");
 
 export const guardianMiddleware = async (req: any, res: any, next: any) => {
   if (!req.path.startsWith("/api/") || req.path.startsWith("/api/health") || req.path.startsWith("/api/subscription/webhook")) {
@@ -165,11 +165,7 @@ export const guardianMiddleware = async (req: any, res: any, next: any) => {
     }
 
     try {
-      if (tier.toUpperCase() === "FREE") {
-        return freeLimiter(req, res, next);
-      } else {
-        return paidLimiter(req, res, next);
-      }
+    return guardianLimiter(req, res, next);
     } catch (rlErr) {
       logger.error({ err: rlErr }, "Guardian Limiter Failure — Skipping rate limit check");
       return next();
