@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useUser } from "@clerk/react";
+import { useLocation } from "wouter";
 import { useRazorpay } from "react-razorpay";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,8 +14,12 @@ type Currency = "INR" | "USD";
 export function PricingTable() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
   const [currency, setCurrency] = useState<Currency>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("pricing_currency") as Currency) || "INR";
+    try {
+      if (typeof window !== "undefined") {
+        return (localStorage.getItem("pricing_currency") as Currency) || "INR";
+      }
+    } catch (e) {
+      console.warn("localStorage access denied");
     }
     return "INR";
   });
@@ -24,10 +29,19 @@ export function PricingTable() {
   const { Razorpay } = useRazorpay();
   const createSub = useCreateSubscription();
   const verifySub = useVerifySubscription();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
-    localStorage.setItem("pricing_currency", currency);
+    try {
+      localStorage.setItem("pricing_currency", currency);
+    } catch (e) {}
   }, [currency]);
+
+  // Bug 28 Fix: Track mount status to prevent confetti/redirect after unmount
+  const [isMounted, setIsMounted] = useState(true);
+  useEffect(() => {
+    return () => setIsMounted(false);
+  }, []);
 
   const getPrice = (planId: string) => {
     if (planId === "free") return currency === "INR" ? "₹0" : "$0";
@@ -75,7 +89,8 @@ export function PricingTable() {
         subscription_id: subscriptionId,
         name: "Grow Flow AI",
         description: `${planName} Plan Subscription`,
-        image: "https://your-logo-url.com/logo.png",
+        // --- FIX: Razorpay Checkout Freeze ---
+        // Removed broken image placeholder to prevent modal load delays.
         handler: async function (res: any) {
           try {
             await verifySub.mutateAsync({
@@ -84,13 +99,15 @@ export function PricingTable() {
               razorpay_signature: res.razorpay_signature,
               planType: effectivePlan
             });
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            
-            alert(`Welcome to ${planName}!\nPayment ID: ${res.razorpay_payment_id}`);
-            
-            setTimeout(() => {
-               window.location.href = "/dashboard";
-            }, 2000);
+
+            if (isMounted) {
+              confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+              alert(`Welcome to ${planName}!\nPayment ID: ${res.razorpay_payment_id}`);
+              
+              setTimeout(() => {
+                if (isMounted) setLocation("/generate");
+              }, 2000);
+            }
           } catch(err) {
             alert("Payment verification failed. Please contact support.");
           }

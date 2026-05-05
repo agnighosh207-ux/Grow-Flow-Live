@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, vaultItemsTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
@@ -35,6 +36,9 @@ router.get("/items", async (req, res): Promise<void> => {
 });
 
 router.post("/remix", requireAuth, requirePlanOrTrial("vault"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
+
   const { vaultItemId, userTopic, userNiche, tone } = req.body;
 
   if (!vaultItemId || !userTopic) {
@@ -77,7 +81,10 @@ Return JSON:
       userPlan: "FREE", // Use Groq llama-3.1-8b-instant as requested
       userId: req.userId,
       maxTokens: 800,
+      signal: abortController.signal,
     });
+
+    if (abortController.signal.aborted) return;
 
     const content = response.choices[0]?.message?.content || "{}";
     const parsed = extractJson(content);
@@ -87,8 +94,11 @@ Return JSON:
     }
 
     res.json(parsed);
+    invalidateAuthCache(req.userId);
   } catch (err: any) {
+    if (abortController.signal.aborted) return;
     console.error("VAULT REMIX ERROR:", err);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Remix service unavailable. Please try again." });
   }
 });

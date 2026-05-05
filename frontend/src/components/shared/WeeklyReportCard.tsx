@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useUser, useAuth } from "@clerk/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, BarChart3, CalendarDays, Lightbulb, TrendingUp } from "lucide-react";
@@ -38,57 +39,39 @@ function markShown(userId: string) {
 export function WeeklyReportCard() {
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
-  const [stats, setStats] = useState<WeeklyStats | null>(null);
   const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
+
+  const { data: stats, isLoading } = useQuery<WeeklyStats>({
+    queryKey: ["weekly-stats"],
+    queryFn: async () => {
+      const token = await getToken();
+      const res = await fetch("/api/stats/weekly", {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch weekly stats");
+      const data = await res.json();
+      return data;
+    },
+    enabled: isLoaded && !!user && shouldShowReport(user.id),
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
+  });
 
   useEffect(() => {
-    if (!isLoaded || !user) return;
-
-    if (!shouldShowReport(user.id)) {
-      setLoading(false);
-      return;
+    if (stats && user && !visible) {
+      setVisible(true);
+      markShown(user.id);
     }
-
-    let cancelled = false;
-    setLoading(true);
-
-    const fetchStats = async () => {
-      try {
-        const token = await getToken();
-        const res = await fetch("/api/stats/weekly", {
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-          },
-        });
-        
-        if (!res.ok) throw new Error("Failed");
-        const data = await res.json();
-        
-        if (!cancelled) {
-          setStats(data);
-          setVisible(true);
-          setLoading(false);
-          markShown(user.id);
-        }
-      } catch (err) {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    fetchStats();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isLoaded, user]);
+  }, [stats, user]);
 
   function handleDismiss() {
     setVisible(false);
   }
 
-  if (!isLoaded || loading || !visible || !stats) return null;
+  if (!isLoaded || isLoading || !visible || !stats) return null;
 
   const consistencyPct = Math.round((stats.consistencyScore / 7) * 100);
   const consistencyColor =

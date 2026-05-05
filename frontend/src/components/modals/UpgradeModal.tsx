@@ -159,28 +159,45 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
     try {
       const priceForCheckout = getPriceDisplay(plan, billingPeriod);
 
+      console.log("[UpgradeModal] Loading Razorpay script...");
       const loaded = await loadRazorpay();
-      if (!loaded) {
-        toast({ variant: "destructive", title: "Could not load payment gateway. Check your connection." });
+      console.log("[UpgradeModal] Razorpay loaded:", loaded, "window.Razorpay:", !!window.Razorpay);
+
+      if (!loaded || !window.Razorpay) {
+        toast({ 
+          variant: "destructive", 
+          title: "Payment Gateway Error", 
+          description: "Could not load Razorpay. Please disable any ad-blockers and try again, or use the Pricing page." 
+        });
         setPaymentState("idle");
         return;
       }
 
+      console.log("[UpgradeModal] Creating subscription on backend...", { plan, billingPeriod, currency });
       const data = await createSub.mutateAsync({ 
         planType: plan, 
         couponCode: discountPercent > 0 ? couponCode : undefined,
         billingPeriod: billingPeriod,
         currency: currency
       });
+      console.log("[UpgradeModal] Backend response received:", { hasSubId: !!data?.subscriptionId, keyId: data?.keyId });
+
+      if (!data?.subscriptionId) {
+        throw new Error("Failed to initialize subscription with payment provider.");
+      }
+
+      const razorpayKey = data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID;
+      console.log("[UpgradeModal] Initializing Razorpay with key:", razorpayKey?.substring(0, 8) + "...");
 
       const options = {
-        key: data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: razorpayKey,
         subscription_id: data.subscriptionId,
         name: "GrowFlow AI",
         description: `${planLabelForCheckout} plan · ${priceForCheckout}${billingPeriod === "yearly" ? '/year' : '/month'}`,
         theme: { color: "#7c3aed" },
         prefill: {},
         handler: async (response: any) => {
+          setPaymentState("pending"); // Keep loading while verifying
           try {
             await verifySub.mutateAsync({
               razorpay_payment_id: response.razorpay_payment_id,
@@ -190,21 +207,32 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
             });
             queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
             setPaymentState("success");
-          } catch {
+          } catch (err: any) {
+            console.error("Verification failed:", err);
             setPaymentState("error");
+            toast({ variant: "destructive", title: "Verification failed", description: "Payment was successful but we couldn't verify it. Contact support if your plan isn't active soon." });
           }
         },
         modal: {
           ondismiss: () => {
-            setPaymentState((prev) => (prev === "pending" ? "error" : prev));
+            setPaymentState("idle");
           },
+          escape: true,
+          backdropclose: false
         },
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        console.error("Payment failed:", response.error);
+        setPaymentState("error");
+        toast({ variant: "destructive", title: "Payment Failed", description: response.error.description });
+      });
+      
       rzp.open();
     } catch (err: any) {
-      toast({ variant: "destructive", title: err.message || "Failed to start checkout" });
+      console.error("Checkout error:", err);
+      toast({ variant: "destructive", title: "Checkout Error", description: err.message || "Failed to start checkout. Please try again." });
       setPaymentState("idle");
     }
   };

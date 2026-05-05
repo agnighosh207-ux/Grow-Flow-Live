@@ -1,13 +1,14 @@
 import { Router, type IRouter, type Response } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentCalendarTable, usersTable, contentGenerationsTable } from "@workspace/db";
 import { eq, and, sql, gte, lte } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-router.get("/items", requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
+router.get("/items", requireAuth, requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
   const { month, year } = req.query;
   if (!month || !year) {
     res.status(400).json({ error: "Month and year are required" });
@@ -39,7 +40,7 @@ router.get("/items", requirePlanOrTrial("calendar"), async (req: any, res: Respo
   }
 });
 
-router.post("/items", requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
+router.post("/items", requireAuth, requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
   const { date, idea, platform, contentType, scheduledTime, notes, color } = req.body;
   
   try {
@@ -62,7 +63,7 @@ router.post("/items", requirePlanOrTrial("calendar"), async (req: any, res: Resp
   }
 });
 
-router.patch("/items/:id", requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
+router.patch("/items/:id", requireAuth, requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
   const { date, idea, platform, contentType, scheduledTime, notes, color, status } = req.body;
@@ -99,7 +100,7 @@ router.patch("/items/:id", requirePlanOrTrial("calendar"), async (req: any, res:
   }
 });
 
-router.delete("/items/:id", requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
+router.delete("/items/:id", requireAuth, requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
   try {
     const result = await db.delete(contentCalendarTable)
       .where(and(
@@ -112,7 +113,7 @@ router.delete("/items/:id", requirePlanOrTrial("calendar"), async (req: any, res
   }
 });
 
-router.post("/ai-schedule", requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
+router.post("/ai-schedule", requireAuth, requirePlanOrTrial("calendar"), async (req: any, res: Response): Promise<void> => {
   const { niche, goal, daysAhead, existingItems } = req.body;
 
   const sanitizedNiche = typeof niche === 'string' ? niche.substring(0, 50).replace(/[`<>{}\\]/g, '') : 'General';
@@ -192,7 +193,7 @@ Return JSON:
   }
 });
 
-router.post("/items/:id/generate", requirePlanOrTrial("calendar"), enforceGenerationLimit, async (req: any, res: Response): Promise<void> => {
+router.post("/items/:id/generate", requireAuth, requirePlanOrTrial("calendar"), enforceGenerationLimit, async (req: any, res: Response): Promise<void> => {
   const { id } = req.params;
 
   try {
@@ -235,6 +236,7 @@ router.post("/items/:id/generate", requirePlanOrTrial("calendar"), enforceGenera
         .where(eq(contentCalendarTable.id, item.id));
 
     res.json({ content, generationId: savedGen.id });
+    invalidateAuthCache(req.userId);
   } catch (err: any) {
     console.error("CALENDAR GENERATE ERROR:", err);
     res.status(500).json({ error: "Generation failed. Please try again." });

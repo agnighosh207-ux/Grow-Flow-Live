@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
@@ -23,6 +24,9 @@ const requireTierLevel = (tier: string) => {
 };
 
 router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
+
   const { competitorContent, yourNiche, platform, yourGoal } = req.body;
 
   if (!competitorContent || competitorContent.length < 100) {
@@ -60,9 +64,6 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
   `;
 
   try {
-    // Using generateContent with userPlan="INFINITY" to trigger Perplexity/Sonar if configured in ai-engine
-    // Note: The prompt asks for Perplexity Sonar via OpenRouter. 
-    // I will pass a hint or ensure the ai-engine handles it.
     const response = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
@@ -71,7 +72,10 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
       userPlan: "INFINITY", // Force high-quality model (Sonar if available)
       userId: req.userId,
       maxTokens: 2000,
+      signal: abortController.signal,
     });
+
+    if (abortController.signal.aborted) return;
 
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
 
@@ -87,13 +91,18 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
     });
 
     res.json(parsed);
-  } catch (err) {
+    invalidateAuthCache(req.userId);
+  } catch (err: any) {
+    if (abortController.signal.aborted) return;
     console.error("COMPETITOR ANALYZE ERROR:", err);
     res.status(503).json({ error: "Analysis service unavailable." });
   }
 });
 
 router.post("/batch", requireAuth, enforceGenerationLimit, requireTierLevel("CREATOR"), async (req: any, res): Promise<void> => {
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
+
   const { items, niche, platform } = req.body;
   
   if (!Array.isArray(items) || items.length > 3) {
@@ -111,6 +120,7 @@ router.post("/batch", requireAuth, enforceGenerationLimit, requireTierLevel("CRE
         userPlan: "FREE", // Use Groq for speed in batch
         userId: req.userId,
         maxTokens: 600,
+        signal: abortController.signal,
       });
       return { 
         label: item.label, 
@@ -118,8 +128,12 @@ router.post("/batch", requireAuth, enforceGenerationLimit, requireTierLevel("CRE
       };
     }));
 
+    if (abortController.signal.aborted) return;
+
     res.json(results);
-  } catch (err) {
+    invalidateAuthCache(req.userId);
+  } catch (err: any) {
+    if (abortController.signal.aborted) return;
     res.status(503).json({ error: "Batch analysis failed." });
   }
 });

@@ -313,14 +313,14 @@ export default function PricingPage() {
         </div>
 
         {/* Plan Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-16">
+        <div className="flex overflow-x-auto pb-8 sm:grid sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-16 snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
 
           {/* Free / Explorer */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="w-full"
+            className="w-full min-w-[280px] sm:min-w-0 snap-start"
           >
             <Hover3DCard className="h-full">
               <div className="hyper-hover-card rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex flex-col h-full">
@@ -368,7 +368,7 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08 }}
-            className="w-full"
+            className="w-full min-w-[280px] sm:min-w-0 snap-start"
           >
             <Hover3DCard className="h-full">
               <div className="hyper-hover-card rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/30 to-teal-950/20 p-6 flex flex-col h-full">
@@ -450,7 +450,7 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="w-full"
+            className="w-full min-w-[280px] sm:min-w-0 snap-start"
           >
             <Hover3DCard className="h-full">
               <div className="hyper-hover-card relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)] h-full">
@@ -550,7 +550,7 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="w-full"
+            className="w-full min-w-[280px] sm:min-w-0 snap-start"
           >
             <Hover3DCard className="h-full">
               <div className="hyper-hover-card relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col h-full">

@@ -44,22 +44,20 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
 
   // Derive trial info directly from subscription status — no extra /api/trial/status call
   const trialsLeft = sub?.generationsRemaining ?? 0;
-  const isPaid = sub?.plan === "active" || sub?.plan === "trial" || sub?.plan === "pending" || sub?.plan === "past_due";
+  const isPaid = sub?.plan === "active" || sub?.plan === "trial" || sub?.plan === "pending";
 
   const useOneTrial = useCallback(async () => {
     if (!toolKey) return;
-    try {
-      await api.post("/trial/use", { toolKey });
-      // --- FIX: Stale State Vulnerability ---
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
-    } catch (err) {
-      console.error("[PlanGate] Error consuming trial:", err);
-    }
+    // --- FIX: Double Deduction Bug ---
+    // The backend enforceGenerationLimit middleware already handles credit deduction.
+    // Calling /api/trial/use here causes a double-deduction. Removed.
+    queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
   }, [toolKey, queryClient]);
 
-  // Don't block render — show content optimistically, overlay trial info when ready
+  // --- FIX: Jarring Content Flash ---
+  // Don't show children optimistically while loading, otherwise users see locked content briefly.
   if (subLoading) {
-    return <>{children}</>;
+    return <div className="animate-pulse h-96 rounded-3xl bg-white/[0.03] border border-white/5" />;
   }
 
   const userLevel = planLevel(sub?.planType);

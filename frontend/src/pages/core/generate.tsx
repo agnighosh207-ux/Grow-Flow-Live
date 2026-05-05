@@ -18,7 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Loader2, Copy, RefreshCw, Check, Sparkles, Linkedin, Twitter, X,
   Download, Hash, Zap, MessageCircle, Film, ChevronDown, ChevronUp, Crown, Heart,
-  TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2, AlertCircle, Lightbulb, Share2
+  TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2, AlertCircle, Lightbulb, Share2,
+  PenTool, CalendarDays
 } from "lucide-react";
 import { SiInstagram, SiYoutube } from "react-icons/si";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +32,73 @@ import { SUPPORTED_LANGUAGES } from "@/lib/languages";
 import { api } from "@/lib/api-client";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+
+const DISCOVERY_CARDS = [
+  { id: "ghostwriter", title: "AI Ghostwriter", msg: "Train the AI to write in your exact authentic voice.", path: "/ghostwriter", icon: PenTool, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+  { id: "predictor", title: "Performance Predictor", msg: "See how your post will perform before you hit publish.", path: "/predictor", icon: BarChart2, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+  { id: "strategy", title: "7-Day Strategy", msg: "Get a full week of strategic content ideas mapped out.", path: "/strategy", icon: CalendarDays, color: "text-cyan-400", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
+  { id: "coach", title: "AI Content Coach", msg: "Get real-time feedback on your content strategy.", path: "/coach", icon: Brain, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+];
+
+function CrossToolDiscoveryBanner() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    // Session-based rotation
+    const sessionIdx = sessionStorage.getItem("discovery_banner_idx");
+    let nextIdx = 0;
+    if (sessionIdx !== null) {
+      nextIdx = (parseInt(sessionIdx) + 1) % DISCOVERY_CARDS.length;
+    }
+    sessionStorage.setItem("discovery_banner_idx", nextIdx.toString());
+    setCurrentIndex(nextIdx);
+
+    const isDismissed = localStorage.getItem(`discovery_dismissed_${DISCOVERY_CARDS[nextIdx].id}`);
+    if (isDismissed) setDismissed(true);
+  }, []);
+
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    localStorage.setItem(`discovery_dismissed_${DISCOVERY_CARDS[currentIndex].id}`, "true");
+    setDismissed(true);
+  };
+
+  if (dismissed) return null;
+
+  const card = DISCOVERY_CARDS[currentIndex];
+  const Icon = card.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`relative group cursor-pointer overflow-hidden rounded-2xl border ${card.border} ${card.bg} p-4 mb-8 transition-all hover:border-white/20`}
+      onClick={() => navigate(card.path)}
+    >
+      <div className="flex items-center gap-4 relative z-10">
+        <div className={`w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center shrink-0 border border-white/5`}>
+          <Icon className={`w-5 h-5 ${card.color}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h4 className="text-xs font-black text-white uppercase tracking-wider">{card.title}</h4>
+            <span className="text-[8px] font-black bg-cyan-500 text-black px-1.5 py-0.5 rounded-sm uppercase">Try Now</span>
+          </div>
+          <p className="text-[11px] text-white/50 font-medium truncate mt-0.5">{card.msg}</p>
+        </div>
+        <button 
+          onClick={handleDismiss}
+          className="p-1.5 rounded-lg text-white/20 hover:text-white/60 hover:bg-white/5 transition-all"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-white/10 transition-all duration-700" />
+    </motion.div>
+  );
+}
 
 // ─── Constants ───
 const PLATFORMS = [
@@ -344,7 +412,7 @@ function ContentSection({ label, labelColor = "text-cyan-400/50", content, copyL
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className={`text-xs md:text-sm leading-relaxed whitespace-pre-wrap
+        className={`text-xs md:text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]
         ${isHashtags ? "text-cyan-400/90 font-medium text-xs leading-loose flex flex-wrap gap-x-2" : "text-white/85"}
       `}>
         {content}
@@ -646,7 +714,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-pink-400">Tactical Hook</span>
                               <CopyButton text={content.hook} label="Hook" size="xs" />
                            </div>
-                           <div className="p-8 rounded-3xl bg-pink-500/5 border border-pink-500/10 text-white font-black text-2xl leading-tight shadow-xl relative overflow-hidden group/hook">
+                           <div className="p-6 md:p-8 rounded-3xl bg-pink-500/5 border border-pink-500/10 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words [overflow-wrap:anywhere]">
                               <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-transparent opacity-0 group-hover/hook:opacity-100 transition-opacity duration-700" />
                               <span className="relative z-10">"{content.hook}"</span>
                            </div>
@@ -666,7 +734,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-400">Retention Hook</span>
                               <CopyButton text={content.hook} label="Hook" size="xs" />
                            </div>
-                           <div className="p-8 rounded-3xl bg-red-500/5 border border-red-500/10 text-white font-black text-2xl leading-tight shadow-xl relative overflow-hidden group/hook">
+                           <div className="p-6 md:p-8 rounded-3xl bg-red-500/5 border border-red-500/10 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words [overflow-wrap:anywhere]">
                               <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover/hook:opacity-100 transition-opacity duration-700" />
                               <span className="relative z-10">"{content.hook}"</span>
                            </div>
@@ -686,10 +754,10 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Authority Hook</span>
                             <CopyButton text={content.headline} label="Headline" size="xs" />
                           </div>
-                          <div className="bg-blue-500/5 border border-blue-500/10 rounded-3xl p-8 text-white font-black text-2xl leading-tight shadow-xl relative overflow-hidden group/hook">
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover/hook:opacity-100 transition-opacity duration-700" />
-                            <span className="relative z-10">"{content.headline}"</span>
-                          </div>
+                          <div className="bg-blue-500/5 border border-blue-500/10 rounded-3xl p-6 md:p-8 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words [overflow-wrap:anywhere]">
+                             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover/hook:opacity-100 transition-opacity duration-700" />
+                             <span className="relative z-10">"{content.headline}"</span>
+                           </div>
                         </div>
                       )}
                       {content.post && (
@@ -706,7 +774,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.1, duration: 0.5 }}
-                          className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 space-y-6 hover:border-white/10 transition-all shadow-xl group/tweet relative overflow-hidden"
+                          className="rounded-3xl border border-white/5 bg-white/[0.02] p-6 md:p-8 space-y-6 hover:border-white/10 transition-all shadow-xl group/tweet relative overflow-hidden"
                         >
                           <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/[0.02] rounded-full blur-3xl pointer-events-none" />
                           <ContentSection
@@ -749,7 +817,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Final Conversion CTA</span>
                          <CopyButton text={content.cta} label="CTA" size="xs" />
                       </div>
-                      <p className="text-lg text-white/90 font-bold leading-relaxed italic relative z-10">"{content.cta}"</p>
+                      <p className="text-base md:text-lg text-white/90 font-bold leading-relaxed italic relative z-10 break-words [overflow-wrap:anywhere]">"{content.cta}"</p>
                     </motion.div>
                   )}
 
@@ -1418,6 +1486,7 @@ export default function Generate() {
 
         {/* Studio Core Input Engine */}
         <div className="max-w-4xl mx-auto space-y-12">
+          <CrossToolDiscoveryBanner />
           
           {/* Quick Start Templates Grid */}
           <div className="space-y-5">

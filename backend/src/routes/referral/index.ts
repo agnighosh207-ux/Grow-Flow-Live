@@ -93,7 +93,14 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
       .from(usersTable)
       .where(eq(usersTable.id, req.userId));
 
-    const appUrl = process.env.FRONTEND_URL || "https://growflowai.space";
+    let appUrl = process.env.FRONTEND_URL || "https://growflowai.space";
+    // Force HTTPS for production domain
+    if (appUrl.includes("growflowai.space")) {
+      appUrl = appUrl.replace("http://", "https://");
+      if (!appUrl.startsWith("https://")) {
+        appUrl = "https://" + appUrl.replace(/^\/+/, "");
+      }
+    }
     const shareableLink = `${appUrl}/?ref=${code}`;
 
     const [referralStats] = await db

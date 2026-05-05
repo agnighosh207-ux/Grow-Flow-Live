@@ -108,7 +108,7 @@ export default function Saved() {
             <div key={i} className="h-36 rounded-xl bg-white/3 border border-white/5 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
           ))}
         </div>
-      ) : items.length === 0 ? (
+      ) : (!items || items.length === 0) ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}

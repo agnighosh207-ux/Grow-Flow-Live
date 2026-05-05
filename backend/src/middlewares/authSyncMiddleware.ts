@@ -1,4 +1,4 @@
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 import { db, usersTable, impersonationSessionsTable } from "@workspace/db";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import { WelcomeSequence } from "../lib/WelcomeSequence";
@@ -34,7 +34,6 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     const uid = userId as string;
     const rawEmail = auth.sessionClaims?.email;
     const emailFromSession: string | null = typeof rawEmail === 'string' ? rawEmail : null;
-    const adminEmailFromEnv = process.env.ADMIN_EMAIL;
 
     // 1. Fast Cache Check
     const cached = syncCache.get(uid);
@@ -45,36 +44,48 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     }
 
     // 2. DB Select
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, uid));
-    const emailToCheck = emailFromSession || user?.email;
-    const isAdminEmail = emailToCheck && adminEmailFromEnv && emailToCheck.toLowerCase() === adminEmailFromEnv.toLowerCase();
+    let [user] = await db.select().from(usersTable).where(eq(usersTable.id, uid));
 
-    // 3. Admin Auto-Unban & Escalation
-    if (isAdminEmail) {
-      if (!user?.isAdmin || user?.isBanned) {
-        logger.info({ userId: uid }, "[AUTH] Escalating user to Admin based on email match");
-        await db.update(usersTable).set({ 
-          isAdmin: true, 
-          isBanned: false, 
-          violationCount: 0,
-          planTier: "INFINITY",
-          planType: "infinity",
-          subscriptionStatus: "active",
-          generationsRemaining: 999999
-        }).where(eq(usersTable.id, uid));
-        
-        // Invalidate cache to force reload on next request
-        syncCache.delete(uid);
-        
-        // If user object exists in memory, update it
-        if (user) {
-          user.isAdmin = true;
-          user.isBanned = false;
-          user.planTier = "INFINITY";
-          user.planType = "infinity";
-          user.subscriptionStatus = "active";
-          user.generationsRemaining = 999999;
-        }
+    // 3. Admin Privilege Check
+    const adminEmailFromEnv = (process.env.ADMIN_EMAIL || "agnighosh207@gmail.com").toLowerCase();
+    const sessionEmail = (auth.sessionClaims?.email as string)?.toLowerCase();
+    const dbEmail = user?.email?.toLowerCase();
+    const clerkPrimaryEmail = emailFromSession?.toLowerCase();
+
+    let fetchedClerkEmail: string | null = null;
+    if (!dbEmail && !clerkPrimaryEmail) {
+      try {
+        const clerkUser = await clerkClient.users.getUser(uid);
+        fetchedClerkEmail = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase() || null;
+      } catch (e) {
+        logger.error({ err: String(e), uid }, "Failed to fetch user email from Clerk SDK");
+      }
+    }
+
+    const isAdminEmail = 
+      sessionEmail === adminEmailFromEnv || 
+      dbEmail === adminEmailFromEnv ||
+      clerkPrimaryEmail === adminEmailFromEnv ||
+      fetchedClerkEmail === adminEmailFromEnv;
+
+    if (isAdminEmail && user) {
+      // Auto-escalate EXISTING user in DB if not already set or if banned
+      if (!user.isAdmin || user.planTier !== "INFINITY" || user.isBanned) {
+        logger.info({ userId: uid, email: emailFromSession }, "[AUTH] Admin detected, ensuring high privileges");
+        const [updatedUser] = await db.update(usersTable)
+          .set({ 
+            isAdmin: true, 
+            isBanned: false,
+            violationCount: 0,
+            planTier: "INFINITY",
+            planType: "infinity",
+            subscriptionStatus: "active",
+            generationsRemaining: 999999,
+            isBetaUser: true
+          })
+          .where(eq(usersTable.id, uid))
+          .returning();
+        user = updatedUser;
       }
     }
 
@@ -107,52 +118,59 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         // NEW USER
         const [newUser] = await tx.insert(usersTable).values({
           id: uid,
-          email: emailFromSession,
-          firstName: (auth.sessionClaims?.firstName as string) || null,
+          email: emailFromSession || fetchedClerkEmail,
           lastLoginAt: now,
-          planTier: isAdminEmail ? "INFINITY" : "FREE",
-          planType: isAdminEmail ? "infinity" : "free",
           generationsRemaining: isAdminEmail ? 999999 : 10,
           lastCreditReset: now,
-          isAdmin: Boolean(isAdminEmail)
+          planTier: isAdminEmail ? "INFINITY" : "FREE",
+          planType: isAdminEmail ? "infinity" : "free",
+          subscriptionStatus: isAdminEmail ? "active" : "free",
+          isBetaUser: isAdminEmail,
+          isAdmin: isAdminEmail,
         }).returning();
         finalUser = newUser;
-        await ensureReferralCode(uid, tx);
-        if (emailFromSession) {
-          WelcomeSequence.sendWelcomeToBeta(emailFromSession, (auth.sessionClaims?.firstName as string) || "").catch(() => {});
-        }
+        
+        // Background tasks
+        WelcomeSequence.sendWelcomeToBeta(emailFromSession || "", (auth.sessionClaims?.firstName as string) || "").catch(() => {});
+        ensureReferralCode(uid, tx).catch(() => {});
       } else {
-        // UPDATE EXISTING (Credit Reset or Admin Escalation)
-        const updateData: any = { lastLoginAt: now, isFirstLogin: false };
-        const needsCreditReset = !user.lastCreditReset || (now.getTime() - new Date(user.lastCreditReset).getTime() > 24 * 60 * 60 * 1000 * 30);
-
-        if (isAdminEmail) {
-          updateData.isAdmin = true;
-          updateData.planTier = "INFINITY";
-          updateData.generationsRemaining = 999999;
-          updateData.subscriptionStatus = "active";
-        } else if (needsCreditReset) {
-          // Reset credits based on plan tier — use Math.max to avoid draining bonus credits
-          const tier = user.planTier || "FREE";
-          const resetCredits = TIER_CREDITS[tier] || 10;
-          updateData.generationsRemaining = Math.max(user.generationsRemaining || 0, resetCredits);
-          updateData.lastCreditReset = now;
-          logger.info({ userId: uid, tier, resetCredits, final: updateData.generationsRemaining }, "[AUTH] Monthly credits refreshed");
+        // EXISTING USER - Possible credit reset or info update
+        const updates: any = { lastLoginAt: now };
+        
+        const resetThreshold = 24 * 60 * 60 * 1000 * 30;
+        const needsCreditReset = !finalUser.lastCreditReset || (now.getTime() - new Date(finalUser.lastCreditReset).getTime() > resetThreshold);
+        
+        if (needsCreditReset) {
+          const tier = (finalUser.planTier || "FREE") as string;
+          updates.generationsRemaining = TIER_CREDITS[tier] || 10;
+          updates.lastCreditReset = now;
         }
 
-        const [updatedUser] = await tx.update(usersTable).set(updateData).where(eq(usersTable.id, uid)).returning();
+        if (emailFromSession && !finalUser.email) {
+          updates.email = emailFromSession;
+        }
+
+        if (isAdminEmail && !finalUser.isAdmin) {
+            updates.isAdmin = true;
+            updates.planTier = "INFINITY";
+            updates.planType = "infinity";
+            updates.subscriptionStatus = "active";
+            updates.generationsRemaining = 999999;
+        }
+
+        const [updatedUser] = await tx.update(usersTable).set(updates).where(eq(usersTable.id, uid)).returning();
         finalUser = updatedUser;
       }
 
-      req.user = finalUser;
-      syncCache.set(uid, { timestamp: now.getTime(), user: finalUser });
+      user = finalUser;
     });
 
     req.userId = uid;
+    req.user = user;
+    syncCache.set(uid, { timestamp: Date.now(), user });
     next();
-
   } catch (err: any) {
-    logger.error({ err: err.message, userId: req.userId }, "Auth Sync Error");
-    next(err);
+    logger.error({ err: err.message, stack: err.stack, userId: req.userId }, "[AUTH_SYNC_CRITICAL]");
+    next();
   }
 };

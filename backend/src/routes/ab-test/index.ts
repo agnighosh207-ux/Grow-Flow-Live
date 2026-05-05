@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { z } from "zod";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
@@ -15,7 +16,7 @@ const AB_TEST_SCHEMA = z.object({
   tone: z.string()
 });
 
-router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, res) => {
+router.post("/generate", requireAuth, requirePlanOrTrial("ab-test"), enforceGenerationLimit, async (req: any, res) => {
   try {
     const { idea, platform, niche, audienceA, audienceB, tone } = AB_TEST_SCHEMA.parse(req.body);
 
@@ -72,6 +73,7 @@ Generate the A/B test content.`;
     if (!result) throw new Error("Failed to parse A/B test result");
  
     res.json(result);
+    invalidateAuthCache(req.userId);
 
   } catch (error) {
     console.error("A/B Test Error:", error);

@@ -84,10 +84,19 @@ const SuspenseFallback = () => (
 
 
 function HomeRedirect() {
+  const [location, setLocation] = useLocation();
+  const isAdminRequest = window.location.search.includes("admin");
+
+  useEffect(() => {
+    if (isAdminRequest) {
+      setLocation("/admin");
+    }
+  }, [isAdminRequest, setLocation]);
+
   return (
     <>
       <SignedIn>
-        <Redirect to="/generate" />
+        <Redirect to={isAdminRequest ? "/admin" : "/generate"} />
       </SignedIn>
       <SignedOut>
         <Home />

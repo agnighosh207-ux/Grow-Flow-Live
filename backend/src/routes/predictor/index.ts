@@ -1,11 +1,15 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
-router.post("/analyze", requirePlanOrTrial("predictor"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/analyze", requireAuth, requirePlanOrTrial("predictor"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
+
   const { content, platform, niche, contentType } = req.body;
 
   if (!content || content.length < 50) {
@@ -55,6 +59,7 @@ Return JSON:
       userPlan: "FREE",
       userId: req.userId,
       maxTokens: 1500,
+      signal: abortController.signal,
     });
 
     const result = response.choices[0]?.message?.content || "{}";
@@ -64,6 +69,7 @@ Return JSON:
         return;
     }
     res.json(parsed);
+    invalidateAuthCache(req.userId);
   } catch (err: any) {
     console.error("PREDICTOR ANALYZE ERROR:", err);
     await refundGenerationCredit(req.userId, req.user?.planTier);

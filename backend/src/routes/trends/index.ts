@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
@@ -14,7 +15,7 @@ const router: IRouter = Router();
 // structures the output in a single call. NO Groq involved.
 const perplexityClient = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.PERPLEXITY_AI_API,
+  apiKey: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API,
   defaultHeaders: {
     "HTTP-Referer": "https://growflow.ai",
     "X-Title": "GrowFlow AI",
@@ -187,6 +188,7 @@ JSON schema:
     } catch (e) { /* non-critical — don't block response */ }
 
     res.json(responseData);
+    invalidateAuthCache(req.userId);
 
     db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),

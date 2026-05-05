@@ -22,6 +22,7 @@ import {
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { requireAuth, getOrCreateUser, requirePlanOrTrial, requireActivePlan } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { sendCreditWarningEmail } from "../../services/email";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
@@ -372,6 +373,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
       generationsRemaining: user?.generationsRemaining ?? 0,
       plan: status,
     });
+    invalidateAuthCache(req.userId);
 
     db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),

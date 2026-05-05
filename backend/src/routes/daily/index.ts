@@ -21,9 +21,11 @@ function getYesterdayDate(): string {
   return d.toISOString().slice(0, 10);
 }
 
-function daysBetween(dateA: string, dateB: string): number {
+function daysBetween(dateA: string | null | undefined, dateB: string | null | undefined): number {
+  if (!dateA || !dateB) return 0;
   const a = new Date(dateA);
   const b = new Date(dateB);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
   return Math.round(Math.abs(a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24));
 }
 

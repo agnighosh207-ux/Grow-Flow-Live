@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { motion, animate } from "framer-motion";
 import { BarChart3, Crown, TrendingUp, Zap, Linkedin, Twitter, Star } from "lucide-react";
 import { SiInstagram, SiYoutube } from "react-icons/si";
@@ -20,14 +21,16 @@ const CONTENT_TYPE_COLORS: Record<string, string> = {
 
 function AnimatedCounter({ value }: { value: number | string }) {
   const [count, setCount] = useState(typeof value === "number" ? 0 : value);
+  const [prevValue, setPrevValue] = useState(0);
   
   useEffect(() => {
     if (typeof value === "number") {
-      const controls = animate(0, value, {
+      const controls = animate(prevValue, value, {
         duration: 1.5,
         ease: "easeOut",
         onUpdate: (v) => setCount(Math.floor(v)),
       });
+      setPrevValue(value);
       return controls.stop;
     } else {
       setCount(value);
@@ -63,6 +66,7 @@ function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value
 }
 
 export default function Insights() {
+  const [, setLocation] = useLocation();
   const { data: stats } = useGetContentStats();
   const { data: historyData } = useGetContentHistory({ limit: 50, offset: 0 });
 
@@ -131,6 +135,28 @@ export default function Insights() {
      const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
      const val = groupedByDate[dateStr] || 0;
      weeklyHeights[i] = val === 0 ? 5 : Math.round((val / maxDaily) * 100); // 5% minimum height just for visibility
+  }
+
+  if (totalGenerations === 0) {
+    return (
+      <PlanGate requiredPlan="infinity" featureName="Performance Insights" description="Track your content output, consistency streaks, and style breakdown — available on the Infinity plan (₹499/month).">
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+          <div className="w-20 h-20 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-2">
+            <BarChart3 className="w-10 h-10 text-cyan-400" />
+          </div>
+          <div className="max-w-md space-y-2">
+            <h2 className="text-2xl font-bold text-white">No Analytics Yet</h2>
+            <p className="text-white/40">Generate some content first to see your performance metrics and consistency patterns here.</p>
+          </div>
+          <button 
+            onClick={() => setLocation("/generate")}
+            className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all hover:scale-105 flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4" /> Start Generating
+          </button>
+        </div>
+      </PlanGate>
+    );
   }
 
   return (

@@ -198,7 +198,37 @@ export default function CaptionEnhancer() {
               style={{ color: "#ffffff" }}
             />
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-white/25">{caption.length} characters</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-bold ${
+                  platform === "Twitter" 
+                    ? ((() => {
+                        const urlRegex = /https?:\/\/[^\s]+/g;
+                        const urls = caption.match(urlRegex) || [];
+                        let effectiveLength = caption.length;
+                        urls.forEach((url: string) => {
+                          effectiveLength = effectiveLength - url.length + 23;
+                        });
+                        return effectiveLength > 280 ? "text-red-400" : "text-white/25";
+                      })())
+                    : "text-white/25"
+                }`}>
+                  {(() => {
+                    if (platform !== "Twitter") return `${caption.length} characters`;
+                    const urlRegex = /https?:\/\/[^\s]+/g;
+                    const urls = caption.match(urlRegex) || [];
+                    let effectiveLength = caption.length;
+                    urls.forEach((url: string) => {
+                      effectiveLength = effectiveLength - url.length + 23;
+                    });
+                    return `${effectiveLength} / 280 chars`;
+                  })()}
+                </span>
+                {platform === "Twitter" && caption.match(/https?:\/\/[^\s]+/) && (
+                  <span className="text-[9px] text-cyan-400/50 font-medium tracking-tight">
+                    (Links auto-shortened to 23 chars)
+                  </span>
+                )}
+              </div>
               {caption.length > 0 && caption.length < 20 && (
                 <span className="text-[10px] text-amber-400/70">Paste more content for better results</span>
               )}

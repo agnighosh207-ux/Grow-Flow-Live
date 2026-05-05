@@ -83,7 +83,7 @@ export const validateAIConfig = () => {
     { name: "Groq", key: process.env.GROQ_API_KEY },
     { name: "Together AI", key: process.env.TOGETHER_AI_API_KEY },
     { name: "Cerebras", key: process.env.CEREBRAS_API_KEY },
-    { name: "Perplexity", key: process.env.PERPLEXITY_AI_API },
+    { name: "OpenRouter", key: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API },
     { name: "Gemini", key: process.env.GEMINI_API_KEY },
     { name: "SambaNova", key: process.env.SAMBANOVA_API_KEY },
   ];
@@ -98,6 +98,16 @@ export const validateAIConfig = () => {
     logger.info(`[AI] Initialized with providers: ${active.map(p => p.name).join(", ")}`);
   }
 };
+
+const clientPool = new Map<string, OpenAI>();
+
+function getClient(apiKey: string, baseURL: string): OpenAI {
+  const cacheKey = `${apiKey}-${baseURL}`;
+  if (!clientPool.has(cacheKey)) {
+    clientPool.set(cacheKey, new OpenAI({ apiKey, baseURL }));
+  }
+  return clientPool.get(cacheKey)!;
+}
 
 export const generateContent = async ({
   messages,
@@ -152,7 +162,7 @@ export const generateContent = async ({
     },
     {
       name: "OpenRouter (Llama)",
-      apiKey: process.env.PERPLEXITY_AI_API,
+      apiKey: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API,
       baseURL: "https://openrouter.ai/api/v1",
       model: isInfinity ? "meta-llama/llama-3.3-70b-instruct" : "meta-llama/llama-3.1-8b-instruct",
     },
@@ -172,7 +182,7 @@ export const generateContent = async ({
 
   let lastError: any = null;
   let attemptCount = 0;
-  const MAX_PROVIDER_ATTEMPTS = 5;
+  const MAX_PROVIDER_ATTEMPTS = 7;
   const TIMEOUT_MS = 30000;
 
   for (const provider of providers) {
@@ -180,7 +190,7 @@ export const generateContent = async ({
     if (attemptCount >= MAX_PROVIDER_ATTEMPTS) break;
     attemptCount++;
 
-    const client = new OpenAI({ apiKey: provider.apiKey, baseURL: provider.baseURL });
+    const client = getClient(provider.apiKey, provider.baseURL);
 
     // Each provider gets up to 2 attempts if JSON parsing fails
     for (let attempt = 0; attempt < 2; attempt++) {

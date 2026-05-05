@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, usersTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
@@ -84,6 +85,7 @@ Return JSON:
     }
 
     res.json(parsed);
+    invalidateAuthCache(userId);
   } catch (err: any) {
     if (abortController.signal.aborted) return;
     console.error("GHOSTWRITER ANALYZE ERROR:", err);
@@ -153,6 +155,7 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
       wordCount: String(post).split(/\s+/).length,
       voiceMatchScore: score
     });
+    invalidateAuthCache(userId);
   } catch (err: any) {
     if (abortController.signal.aborted) return;
     console.error("GHOSTWRITER WRITE ERROR:", err);

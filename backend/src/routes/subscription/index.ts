@@ -22,18 +22,18 @@ function getRazorpay() {
   // Try to find the most appropriate key
   const keyId = isProd 
     ? (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID)
-    : (process.env.RAZORPAY_TEST_KEY_ID || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_LIVE_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID);
+    : (process.env.RAZORPAY_TEST_KEY_ID && !process.env.RAZORPAY_TEST_KEY_ID.includes("...") ? process.env.RAZORPAY_TEST_KEY_ID : (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID));
     
   const keySecret = isProd 
     ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
-    : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_LIVE_KEY_SECRET);
+    : (process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...") ? process.env.RAZORPAY_TEST_KEY_SECRET : (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET));
 
   if (!keyId || !keySecret || keyId.includes("...") || keySecret.includes("...")) {
     logger.error({ keyId: !!keyId, keySecret: !!keySecret }, "[Razorpay] Missing or invalid API keys");
-    return null;
+    return { rzp: null, keyId: null };
   }
   
-  return new Razorpay({ key_id: keyId, key_secret: keySecret });
+  return { rzp: new Razorpay({ key_id: keyId, key_secret: keySecret }), keyId };
 }
 
 // requireAuth and getOrCreateUser are now centralized in planMiddleware.ts (Flaw 20 & 21 fix)
@@ -72,7 +72,8 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     };
   }
 
-  if (user.subscriptionStatus === "active") {
+  if (user.subscriptionStatus === "active" || (user.subscriptionStatus === "trial" && user.trialEndsAt && new Date(user.trialEndsAt) <= now)) {
+    // If trial ended but status is still "trial", treat as active (post-trial)
     if (planType === "starter") {
       return {
         plan: "active" as const, planType,
@@ -109,21 +110,38 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     }
   }
 
-  if (user.subscriptionStatus === "trial" && user.trialEndsAt && new Date(user.trialEndsAt) > now) {
-    const msLeft = new Date(user.trialEndsAt).getTime() - now.getTime();
-    const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+  // Handle trial period
+  if (user.subscriptionStatus === "trial") {
+    const isTrialActive = user.trialEndsAt && new Date(user.trialEndsAt) > now;
     
-    const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
-    const limit = tierLimits[planType] || 5;
+    if (isTrialActive) {
+      const msLeft = new Date(user.trialEndsAt).getTime() - now.getTime();
+      const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+      const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
+      const limit = tierLimits[planType] || 5;
 
-    return {
-      plan: "trial" as const, planType,
-      canGenerate: planType === "infinity" ? true : generationsRemaining > 0,
-      trialDaysLeft: daysLeft, generationLimit: limit,
-      monthlyGenerationsUsed: Math.max(0, limit - generationsRemaining),
-      generationsRemaining: generationsRemaining,
-      totalGenerationsUsed: totalGenerations,
-    };
+      return {
+        plan: "trial" as const, planType,
+        canGenerate: planType === "infinity" ? true : generationsRemaining > 0,
+        trialDaysLeft: daysLeft, generationLimit: limit,
+        monthlyGenerationsUsed: Math.max(0, limit - generationsRemaining),
+        generationsRemaining: generationsRemaining,
+        totalGenerationsUsed: totalGenerations,
+      };
+    } else if (user.razorpaySubscriptionId) {
+      // --- FIX: Trial Ends But User Still Shows as Trial in UI ---
+      // If trial ended but status is still 'trial', they are now active paid users.
+      const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
+      const limit = tierLimits[planType] || 5;
+      return {
+        plan: "active" as const, planType,
+        canGenerate: planType === "infinity" ? true : generationsRemaining > 0,
+        trialDaysLeft: 0, generationLimit: limit,
+        monthlyGenerationsUsed: Math.max(0, limit - generationsRemaining),
+        generationsRemaining: generationsRemaining,
+        totalGenerationsUsed: totalGenerations,
+      };
+    }
   }
 
   // Handle pending status — user initiated payment but hasn't completed it yet
@@ -170,7 +188,13 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
 
 function getMonthlyWindowStart(user: any): Date {
   const now = new Date();
-  // Use trialStartDate for paid users, fallback to createdAt for free users to ensure 30-day rolling window for all
+  // --- FIX: Monthly Window for Paid Users ---
+  // For active paid users, the window starts at the last credit reset (webhook sync).
+  // This ensures the UI monthly count aligns with the Razorpay billing cycle.
+  if (user.subscriptionStatus === "active" && user.lastCreditReset) {
+    return new Date(user.lastCreditReset);
+  }
+
   const baseDate = user.trialStartDate || user.createdAt || now;
   const subStart = new Date(baseDate);
   const msIn30Days = 30 * 24 * 60 * 60 * 1000;
@@ -180,7 +204,11 @@ function getMonthlyWindowStart(user: any): Date {
 }
 
 router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const user = await getOrCreateUser(req.userId);
+  const user = (req as any).user;
+  if (!user) {
+    res.status(401).json({ error: "User not found" });
+    return;
+  }
 
   const [genCount] = await db
     .select({ count: count() })
@@ -261,7 +289,7 @@ const PLAN_CONFIG = {
 
 router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const user = await getOrCreateUser(req.userId);
+    const user = (req as any).user;
     const { planType, couponCode, billingPeriod, currency = "INR" } = req.body as {
       planType?: "starter" | "creator" | "infinity";
       couponCode?: string;
@@ -291,15 +319,9 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       ? ((PLAN_CONFIG as any).USD[effectivePlan][billing] || (PLAN_CONFIG as any).USD[effectivePlan]['monthly'])
       : ((PLAN_CONFIG as any)[effectivePlan][billing] || (PLAN_CONFIG as any)[effectivePlan]['monthly']);
 
-    const subscription = await createSubscription(
-      req.userId, 
-      razorpayPlanId,
-      effectivePlan.toUpperCase(), 
-      user.email || undefined,
-      120 
-    );
-
+    // --- FIX: Race Condition ---
     // Prevent overwriting active paid subscriptions to avoid orphaned payments
+    // This MUST happen before calling the external createSubscription service.
     if (user.razorpaySubscriptionId && user.subscriptionStatus === "active") {
       res.status(400).json({ 
         error: "subscription_active", 
@@ -307,6 +329,20 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       });
       return;
     }
+
+    const { rzp, keyId } = getRazorpay();
+    if (!rzp) {
+      res.status(503).json({ error: "Payment gateway not configured" });
+      return;
+    }
+
+    const subscription = await createSubscription(
+      req.userId, 
+      razorpayPlanId,
+      effectivePlan.toUpperCase(), 
+      user.email || undefined,
+      120 
+    );
 
     await db.update(usersTable)
       .set({
@@ -321,7 +357,7 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
 
     res.json({
       subscriptionId: subscription.id,
-      keyId: (getRazorpay() as any)?.key_id,
+      keyId: keyId,
       planName: `GrowFlow AI ${effectivePlan.toUpperCase()}`,
       planType: effectivePlan,
       billingPeriod: billing,
@@ -351,7 +387,7 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
-  const rzp = getRazorpay();
+  const { rzp } = getRazorpay();
   if (!rzp) {
     res.status(503).json({ error: "Payment gateway not configured" });
     return;
@@ -476,18 +512,19 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     planType: effectivePlan,
     message: `${effectivePlan === "infinity" ? "Infinity" : effectivePlan === "creator" ? "Creator" : "Starter"} subscription activated. 7-day free trial started!`,
   });
+  invalidateAuthCache(req.userId);
 });
 
 
 router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const razorpay = getRazorpay();
-  const user = await getOrCreateUser(req.userId);
+  const { rzp } = getRazorpay();
+  const user = (req as any).user;
 
   const canCancel = user.subscriptionStatus === "active" || user.subscriptionStatus === "trial";
   
-  if (razorpay && user.razorpaySubscriptionId && canCancel) {
+  if (rzp && user.razorpaySubscriptionId && canCancel) {
     try {
-      await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, true);
+      await rzp.subscriptions.cancel(user.razorpaySubscriptionId, true);
     } catch (e: any) {
       logger.error({ error: e }, "Razorpay cancel error");
       res.status(502).json({ 
@@ -496,18 +533,22 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
       });
       return;
     }
+    await db.update(usersTable)
+      .set({ subscriptionStatus: "canceled" })
+      .where(eq(usersTable.id, req.userId));
   }
 
   res.json({ success: true, message: "Subscription will end at period close." });
+  invalidateAuthCache(req.userId);
 });
 
 router.post("/retry", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const razorpay = getRazorpay();
-  const user = await getOrCreateUser(req.userId);
+  const { rzp } = getRazorpay();
+  const user = (req as any).user;
 
-  if (razorpay && user.razorpaySubscriptionId) {
+  if (rzp && user.razorpaySubscriptionId) {
     try {
-      await razorpay.subscriptions.cancel(user.razorpaySubscriptionId, false);
+      await rzp.subscriptions.cancel(user.razorpaySubscriptionId, false);
     } catch (e) {
       logger.error({ error: e }, "Razorpay cancel (retry) error");
     }
@@ -521,6 +562,7 @@ router.post("/retry", requireAuth, async (req: AuthenticatedRequest, res: Respon
     .where(eq(usersTable.id, req.userId));
 
   res.json({ success: true, planType: "free" });
+  invalidateAuthCache(req.userId);
 });
 
 router.get("/validate-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -552,13 +594,33 @@ router.post("/apply-coupon", requireAuth, async (req: AuthenticatedRequest, res:
     return;
   }
   
-  const VALID_COUPONS: Record<string, { credits: number; days: number; description: string }> = {
-    "LAUNCH50": { credits: 50, days: 0, description: "Launch special: 50 bonus credits" },
-    "FRIEND15": { credits: 0, days: 15, description: "Friend referral: 15 Infinity days" },
-    "BETA100": { credits: 100, days: 0, description: "Beta tester reward: 100 credits" },
-  };
+  const [dbCoupon] = await db.select().from(couponsTable).where(eq(couponsTable.code, code.trim().toUpperCase()));
   
-  const coupon = VALID_COUPONS[code.trim().toUpperCase()];
+  let coupon: { credits: number; days: number; description: string } | null = null;
+  
+  if (dbCoupon && dbCoupon.isActive) {
+    if (dbCoupon.expiry && new Date(dbCoupon.expiry) < new Date()) {
+        res.status(400).json({ error: "Coupon code has expired" });
+        return;
+    }
+    if (dbCoupon.maxUses && dbCoupon.usesCount >= dbCoupon.maxUses) {
+        res.status(400).json({ error: "Coupon usage limit reached" });
+        return;
+    }
+    coupon = { 
+        credits: dbCoupon.discountPercent > 0 ? 0 : 25, // Fallback for DB coupons if not specified
+        days: 7, 
+        description: `Applied ${dbCoupon.code} successfully!` 
+    };
+  } else {
+    const VALID_COUPONS: Record<string, { credits: number; days: number; description: string }> = {
+      "LAUNCH50": { credits: 50, days: 0, description: "Launch special: 50 bonus credits" },
+      "FRIEND15": { credits: 0, days: 15, description: "Friend referral: 15 Infinity days" },
+      "BETA100": { credits: 100, days: 0, description: "Beta tester reward: 100 credits" },
+    };
+    coupon = VALID_COUPONS[code.trim().toUpperCase()] || null;
+  }
+
   if (!coupon) {
     res.status(400).json({ error: "Invalid or expired coupon code" });
     return;
@@ -579,7 +641,15 @@ router.post("/apply-coupon", requireAuth, async (req: AuthenticatedRequest, res:
   }
   
   await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId));
+  
+  if (dbCoupon) {
+    await db.update(couponsTable)
+      .set({ usesCount: sql`${couponsTable.usesCount} + 1` })
+      .where(eq(couponsTable.code, dbCoupon.code));
+  }
+
   res.json({ success: true, message: coupon.description });
+  invalidateAuthCache(req.userId);
 });
 
 

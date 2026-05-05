@@ -8,7 +8,7 @@ import { logger } from "../lib/logger";
 
 const client = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.PERPLEXITY_AI_API,
+  apiKey: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API,
   defaultHeaders: {
     "HTTP-Referer": "https://growflow.ai", // Required by OpenRouter for ranking
     "X-Title": "GrowFlow AI",

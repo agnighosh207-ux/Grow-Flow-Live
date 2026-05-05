@@ -1,11 +1,15 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
 router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
+
   const { sourceContent, sourceFormat, targetFormats, tone, niche, language } = req.body;
 
   if (!sourceContent || sourceContent.length < 50) {
@@ -28,10 +32,10 @@ router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Pro
   TONE: ${tone || "Professional"}
   NICHE: ${niche || "General"}
   LANGUAGE: ${language || "English"}
-
+ 
   SOURCE CONTENT:
   ${sanitizedContent}
-
+ 
   Return JSON:
   {
     "repurposed": {
@@ -47,7 +51,7 @@ router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Pro
     "repurposeStrategy": "string"
   }
   `;
-
+ 
   try {
     const isPaid = req.user?.planType !== "free";
     const response = await generateContent({
@@ -58,11 +62,14 @@ router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Pro
       userPlan: isPaid ? "INFINITY" : "FREE", 
       userId: req.userId,
       maxTokens: 2500,
+      signal: abortController.signal,
     });
-
+ 
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
-  } catch (err) {
+    invalidateAuthCache(req.userId);
+  } catch (err: any) {
+    if (abortController.signal.aborted) return;
     console.error("REPURPOSE ERROR:", err);
     // --- H-19 FIX: Refund credit if repurposing fails ---
     await refundGenerationCredit(req.userId, req.user?.planTier);

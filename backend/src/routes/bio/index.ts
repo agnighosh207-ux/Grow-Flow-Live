@@ -1,11 +1,15 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
 router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const abortController = new AbortController();
+  req.on('close', () => abortController.abort());
+
   const { name, niche, mainTopic, achievement, targetAudience, tone, language, formats } = req.body;
 
   if (!name || !formats || formats.length === 0) {
@@ -61,11 +65,14 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
       userPlan: "FREE",
       userId: req.userId,
       maxTokens: 2000,
+      signal: abortController.signal,
     });
 
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
-  } catch (err) {
+    invalidateAuthCache(req.userId);
+  } catch (err: any) {
+    if (abortController.signal.aborted) return;
     console.error("BIO GENERATE ERROR:", err);
     await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Profile generation service unavailable." });

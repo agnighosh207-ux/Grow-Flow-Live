@@ -89,6 +89,8 @@ export default function Support() {
       });
       if (!res.ok) throw new Error("Failed");
       setSubmitted(true);
+      toast({ title: "Message sent successfully!", description: "We'll get back to you within 24 hours." });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
       toast({ variant: "destructive", title: "Failed to send message", description: "Please check your network and try again." });
     } finally {

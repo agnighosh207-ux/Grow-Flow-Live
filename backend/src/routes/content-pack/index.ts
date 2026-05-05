@@ -1,14 +1,15 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, usersTable, contentGenerationsTable } from "@workspace/db";
-import { requireAuth } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { fetchLiveContext } from "../../services/perplexity-search";
 
 const router: IRouter = Router();
 
-router.post("/enhance", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/enhance", requireAuth, requirePlanOrTrial("content-pack"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { idea } = req.body;
   if (!idea?.trim()) { res.status(400).json({ error: "Idea is required" }); return; }
   const sanitizedIdea = String(idea).substring(0, 500);
@@ -16,23 +17,28 @@ router.post("/enhance", requireAuth, enforceGenerationLimit, async (req: any, re
   try {
     const prompt = `You are an elite creative director. Take the following raw content idea and rewrite it into an irresistible, viral-worthy, high-converting concept. Make it punchy. Return ONLY the enhanced idea, nothing else. Maximum 2 sentences.
 Raw Idea: "${sanitizedIdea}"`;
+    const abortController = new AbortController();
+    req.on('close', () => abortController.abort());
+
     const completion = await generateContent({
       messages: [{ role: "user", content: prompt }],
       userPlan: req.user?.planType || "free",
       userId: req.userId,
-      maxTokens: 150
+      maxTokens: 300,
+      signal: abortController.signal
     });
     let raw = completion.choices[0]?.message?.content?.trim() || sanitizedIdea;
     let parsed = extractJson(raw);
     let enhanced = parsed?.enhancedIdea || raw;
     enhanced = enhanced.replace(/^["']|["']$/g, ''); // strip quotes
     res.json({ enhancedIdea: enhanced });
+    invalidateAuthCache(req.userId);
   } catch (err: any) {
     res.status(500).json({ error: err?.message || "Failed to enhance idea" });
   }
 });
 
-router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/generate", requireAuth, requirePlanOrTrial("content-pack"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
@@ -133,6 +139,7 @@ JSON Structure:
     }
 
     res.json({ ...parsed, isPro, isCreator });
+    invalidateAuthCache(req.userId);
   } catch (err: any) {
     if (abortController.signal.aborted) return;
     console.error("Content pack error:", err);

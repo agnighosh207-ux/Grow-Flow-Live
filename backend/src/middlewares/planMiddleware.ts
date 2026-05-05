@@ -25,9 +25,16 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
 export const requireActivePlan = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const user = (req as any).user;
   if (!user) return res.status(401).json({ error: "Unauthorized" });
+  
   const status = user.subscriptionStatus ?? "free";
+  const planTier = user.planTier ?? "FREE";
   const isAdmin = user.isAdmin === true;
-  if (isAdmin || status === "active" || status === "trial") return next();
+
+  // --- FIX: requireActivePlan Only Checks subscriptionStatus Not planTier ---
+  // A user can have status="trial" but tier="FREE" if a coupon/trial expired.
+  // We must ensure they have a non-FREE tier AND an active status.
+  if (isAdmin || ((status === "active" || status === "trial") && planTier !== "FREE")) return next();
+  
   return res.status(402).json({
     error: "upgrade_required",
     message: "Upgrade to a paid plan to use the Regenerate feature."
@@ -117,6 +124,7 @@ export const FEATURE_CONFIG: Record<string, { name: string; requiredPlan: string
   repurpose: { name: "Content Repurposer", requiredPlan: "CREATOR" },
   predictor: { name: "Performance Predictor", requiredPlan: "CREATOR" },
   "ab-test": { name: "A/B Content Tester", requiredPlan: "CREATOR" },
+  "content-pack": { name: "Content Pack", requiredPlan: "CREATOR" },
 
   // ── INFINITY TIER (₹799/mo) ── AI Identity + Agency tools ─────────────
   coach: { name: "AI Content Coach", requiredPlan: "INFINITY" },
@@ -142,6 +150,12 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
+      // --- M-1 FIX: Allow read-only access without plan check ---
+      // Informational routes (GET) shouldn't be blocked by a payment required error.
+      if (req.method === "GET") {
+        return next();
+      }
+
       const requiredLevel = PLAN_RANKS[config.requiredPlan as keyof typeof PLAN_RANKS] || 0;
       const userLevel = PLAN_RANKS[planTier as keyof typeof PLAN_RANKS] || 0;
       const isAdmin = user.isAdmin === true;
@@ -150,12 +164,20 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
-      // --- M-2 FIX: Limit Free credit bypass to STARTER level tools only ---
-      if (user.generationsRemaining > 0 && requiredLevel <= PLAN_RANKS.STARTER) {
+      // --- L-10: Admin Bypass ---
+      if (user.isAdmin) {
         return next();
       }
 
-      if (user.generationsRemaining <= 0 && requiredLevel <= PLAN_RANKS.STARTER) {
+      // --- L-5: Free Trial Loophole Fix ---
+      // --- M-2 FIX: Allow credit usage for tools up to CREATOR level ---
+      // This allows free/starter users to try "Trends" or "Predictor" using their credits.
+      if (user.generationsRemaining > 0 && requiredLevel <= PLAN_RANKS.CREATOR) {
+        return next();
+      }
+
+      if (user.generationsRemaining <= 0 && requiredLevel <= PLAN_RANKS.CREATOR) {
+        logger.warn({ userId: req.userId, isAdmin: user.isAdmin, remaining: user.generationsRemaining, required: config.requiredPlan }, "[PLAN_MIDDLEWARE] 402 Triggered");
         return res.status(402).json({
           error: "upgrade_required",
           message: `You've used all your generations. Please upgrade to ${config.requiredPlan}.`

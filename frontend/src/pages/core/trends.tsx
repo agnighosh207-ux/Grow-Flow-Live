@@ -10,6 +10,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { UpgradeModal } from "@/components/modals/UpgradeModal";
 
 const NICHES = [
   { value: "General", emoji: "🌐", label: "General" },
@@ -174,6 +175,8 @@ export default function TrendEngine() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [alertsSummary, setAlertsSummary] = useState("");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<"limit" | "pro_feature">("limit");
 
   async function fetchAlerts() {
     setAlertsLoading(true);
@@ -211,12 +214,8 @@ export default function TrendEngine() {
         body: JSON.stringify({ niche }),
       });
       if (res.status === 402) {
-        toast({
-          title: "Upgrade Required",
-          description: "You've used your free trend engine tries. Get unlimited access to continue.",
-          variant: "destructive",
-        });
-        navigate("/pricing");
+        setUpgradeReason("limit");
+        setShowUpgradeModal(true);
         return;
       }
       if (!res.ok) {
@@ -270,7 +269,7 @@ export default function TrendEngine() {
                  <p className="text-indigo-400 font-bold tracking-widest text-xs uppercase mt-1">Niche-Specific Trend Analysis</p>
                </div>
             </div>
-            <div className="flex items-center gap-3 bg-black/40 p-2 rounded-2xl border border-white/5">
+            <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-fit max-w-full overflow-x-auto no-scrollbar">
               <Button 
                 variant="ghost" 
                 onClick={fetchAlerts} 

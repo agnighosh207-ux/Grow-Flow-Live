@@ -91,6 +91,7 @@ interface NavItemDef {
   label: string;
   icon: any;
   pro?: boolean;
+  desc?: string;
 }
 
 interface NavGroup {
@@ -102,48 +103,57 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Create",
     items: [
-      { path: "/generate", label: "Generate", icon: Wand2 },
-      { path: "/ideas", label: "Idea Generator", icon: Lightbulb },
-      { path: "/trends", label: "Trend Engine", icon: TrendingUp },
-      { path: "/hooks", label: "Viral Hooks", icon: MessageSquareQuote },
-      { path: "/improve", label: "Competitor Intel", icon: Swords },
-      { path: "/hashtags", label: "Hashtag Intel", icon: Flame },
-      { path: "/bio", label: "Profile Suite", icon: User },
-      { path: "/repurpose", label: "Content Repurposer", icon: RefreshCw },
-      { path: "/caption", label: "Caption Enhancer", icon: Wand2 },
-      { path: "/ghostwriter", label: "AI Ghostwriter", icon: PenTool },
-      { path: "/predictor", label: "Performance Predictor", icon: BarChart2 },
-      { path: "/ab-test", label: "A/B Duel", icon: GitBranch },
-      { path: "/hook-scorer", label: "Hook Radar", icon: Target },
+      { path: "/generate", label: "Generate", icon: Wand2, desc: "AI Content Campaign Generator" },
+      { path: "/ideas", label: "Idea Generator", icon: Lightbulb, desc: "Daily viral content concepts" },
+      { path: "/trends", label: "Trend Engine", icon: TrendingUp, desc: "Live viral trend detection" },
+      { path: "/hooks", label: "Viral Hooks", icon: MessageSquareQuote, desc: "100+ viral hook frameworks" },
+      { path: "/improve", label: "Competitor Intel", icon: Swords, desc: "Analyze competitor performance" },
+      { path: "/hashtags", label: "Hashtag Intel", icon: Flame, desc: "SEO-optimized tag intelligence" },
+      { path: "/bio", label: "Profile Suite", icon: User, desc: "Optimize your creator profile" },
+      { path: "/repurpose", label: "Content Repurposer", icon: RefreshCw, desc: "Turn one video into 10 posts" },
+      { path: "/caption", label: "Caption Enhancer", icon: Wand2, desc: "Polish your raw captions" },
+      { path: "/ghostwriter", label: "AI Ghostwriter", icon: PenTool, desc: "Write in your authentic voice" },
+      { path: "/predictor", label: "Performance Predictor", icon: BarChart2, desc: "Predict virality before posting" },
+      { path: "/ab-test", label: "A/B Duel", icon: GitBranch, desc: "Dual-concept performance test" },
+      { path: "/hook-scorer", label: "Hook Radar", icon: Target, desc: "Radar-grade hook strength" },
     ],
   },
   {
     label: "Strategy",
     items: [
-      { path: "/daily", label: "Daily Growth Plan", icon: Flame },
-      { path: "/coach", label: "AI Content Coach", icon: Brain },
-      { path: "/strategy", label: "7-Day Strategy", icon: CalendarDays },
-      { path: "/calendar", label: "Content Calendar", icon: Calendar, pro: true },
-      { path: "/insights", label: "Analytics", icon: BarChart3, pro: true },
+      { path: "/daily", label: "Daily Growth Plan", icon: Flame, desc: "Your 10-min growth ritual" },
+      { path: "/coach", label: "AI Content Coach", icon: Brain, desc: "Real-time AI content feedback" },
+      { path: "/strategy", label: "7-Day Strategy", icon: CalendarDays, desc: "Custom 7-day content roadmap" },
+      { path: "/calendar", label: "Content Calendar", icon: Calendar, pro: true, desc: "Plan and track your posting" },
+      { path: "/insights", label: "Analytics", icon: BarChart3, pro: true, desc: "Advanced performance metrics" },
     ],
   },
   {
     label: "Library",
     items: [
-      { path: "/vault", label: "Swipe Vault", icon: Flame },
-      { path: "/saved", label: "Saved", icon: Heart },
-      { path: "/history", label: "History", icon: History },
+      { path: "/vault", label: "Swipe Vault", icon: Flame, desc: "Library of viral frameworks" },
+      { path: "/saved", label: "Saved", icon: Heart, desc: "Revisit your top generations" },
+      { path: "/history", label: "History", icon: History, desc: "Full archive of past work" },
     ],
   },
   {
     label: "Account",
     items: [
-      { path: "/referrals", label: "Refer & Earn", icon: Zap },
-      { path: "/pricing", label: "Plans & Billing", icon: CreditCard },
-      { path: "/support", label: "Support", icon: HelpCircle },
-      { path: "/settings", label: "Settings", icon: Settings },
+      { path: "/referrals", label: "Refer & Earn", icon: Zap, desc: "Earn credits for sharing" },
+      { path: "/pricing", label: "Plans & Billing", icon: CreditCard, desc: "Manage your subscription" },
+      { path: "/support", label: "Support", icon: HelpCircle, desc: "Get help from our team" },
+      { path: "/settings", label: "Settings", icon: Settings, desc: "Adjust your preferences" },
     ],
   },
+];
+
+const DISCOVERY_ITEMS = [
+  { path: "/ghostwriter", label: "Writer", icon: PenTool, desc: "Write in your voice" },
+  { path: "/predictor", label: "Predict", icon: BarChart2, desc: "Predict virality" },
+  { path: "/ab-test", label: "A/B Duel", icon: GitBranch, desc: "Compare ideas" },
+  { path: "/coach", label: "Coach", icon: Brain, desc: "AI Feedback" },
+  { path: "/vault", label: "Vault", icon: Flame, desc: "Viral Swipe" },
+  { path: "/repurpose", label: "Repurpose", icon: RefreshCw, desc: "Video to Post" },
 ];
 
 const SIDEBAR_NAV = NAV_GROUPS.flatMap((g) => g.items);
@@ -152,8 +162,8 @@ const BOTTOM_NAV = [
   { path: "/generate", label: "Generate", icon: Wand2 },
   { path: "/hooks", label: "Hooks", icon: MessageSquareQuote },
   { path: "/ideas", label: "Ideas", icon: Lightbulb },
-  { path: "/history", label: "History", icon: History },
-  { path: "menu", label: "All Tools", icon: MoreHorizontal },
+  { path: "discover", label: "Discover", icon: Sparkles },
+  { path: "menu", label: "Menu", icon: MoreHorizontal },
 ];
 
 function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
@@ -279,7 +289,22 @@ function NavItem({
   badge?: ReactNode;
   isAccountGroup?: boolean;
 }) {
+  const [isVisited, setIsVisited] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const visited = localStorage.getItem(`visited_${path}`);
+    setIsVisited(!!visited);
+  }, [path]);
+
+  const handleVisit = () => {
+    localStorage.setItem(`visited_${path}`, "true");
+    setIsVisited(true);
+    onClick?.();
+  };
+
   const isLocked = pro && !isPro;
+  const showNewBadge = !isVisited && !isLocked && !isAccountGroup && path !== "/generate";
 
   let baseColorClass = "text-white/55 hover:bg-white/[0.06] hover:text-white/90";
   if (isAccountGroup) {
@@ -287,9 +312,8 @@ function NavItem({
   }
 
   return (
-    <Link key={path} href={path}>
+    <Link key={path} href={path} onClick={handleVisit}>
       <span
-        onClick={onClick}
         className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 cursor-pointer relative
           ${isActive
             ? "bg-cyan-600/20 text-white font-medium"
@@ -311,13 +335,17 @@ function NavItem({
         />
         <span className="text-sm flex-1 truncate">{label}</span>
         {badge}
+        {showNewBadge && (
+          <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+            NEW
+          </span>
+        )}
         {isLocked && <Lock className="w-3 h-3 text-cyan-500/40 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />}
         {pro && isPro && (
           <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0">
             PRO
           </span>
         )}
-
       </span>
     </Link>
   );
@@ -447,23 +475,29 @@ function SidebarContent({
           </div>
         ))}
 
-        {sub?.isAdmin && (
-          <div>
-            <p className="text-[11px] font-semibold text-cyan-400 uppercase tracking-widest mb-1.5 border-l-2 border-cyan-500/50 pl-2 ml-3">
-              Admin Control
-            </p>
-            <div className="space-y-0.5">
-              <NavItem
-                path="/admin"
-                label="Admin Dashboard"
-                icon={Shield}
-                isPro={true}
-                isActive={location === "/admin"}
-                onClick={onClick}
-              />
+        {(() => {
+          const isActuallyAdminEmail = user?.primaryEmailAddress?.emailAddress === "agnighosh207@gmail.com";
+          if (sub?.isAdmin || isActuallyAdminEmail) {
+          return (
+            <div>
+              <p className="text-[11px] font-semibold text-cyan-400 uppercase tracking-widest mb-1.5 border-l-2 border-cyan-500/50 pl-2 ml-3">
+                Admin Control
+              </p>
+              <div className="space-y-0.5">
+                <NavItem
+                  path="/admin"
+                  label="Admin Dashboard"
+                  icon={Shield}
+                  isPro={true}
+                  isActive={location === "/admin"}
+                  onClick={onClick}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          );
+        }
+        return null;
+      })()}
       </div>
 
       {sub && (sub.plan === "free" || sub.plan === "blocked") && (!sub.planType || sub.planType === "free") && (
@@ -559,14 +593,90 @@ function SidebarContent({
   );
 }
 
+function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void }) {
+  const [, setLocation] = useLocation();
+
+  const handleNavigate = (path: string) => {
+    localStorage.setItem(`visited_${path}`, "true");
+    setLocation(path);
+    onClick?.();
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto px-6 py-8 space-y-10 custom-scrollbar">
+      {NAV_GROUPS.map((group) => (
+        <div key={group.label} className="space-y-4">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 ml-1">{group.label}</h3>
+          <div className="grid grid-cols-1 gap-3">
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const isLocked = item.pro && !isPro;
+              const visited = typeof window !== "undefined" ? localStorage.getItem(`visited_${item.path}`) : "true";
+              const isNew = !visited && !isLocked && group.label !== "Account" && item.path !== "/generate";
+
+              return (
+                <div
+                  key={item.path}
+                  onClick={() => handleNavigate(item.path)}
+                  className={`group relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center gap-4
+                    ${isLocked 
+                      ? "bg-white/[0.01] border-white/5 opacity-60" 
+                      : "bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(0,242,255,0.05)]"
+                    }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-300
+                    ${isLocked ? "bg-white/5 border-white/5 text-white/20" : "bg-cyan-500/10 border-cyan-500/20 text-cyan-400 group-hover:scale-110 group-hover:border-cyan-500/40"}
+                  `}>
+                    {isLocked ? <Lock className="w-5 h-5" /> : <Icon className="w-6 h-6" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white/90 group-hover:text-white transition-colors">{item.label}</span>
+                      {isNew && (
+                        <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                          NEW
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-white/40 truncate font-medium group-hover:text-white/60 transition-colors">{(item as any).desc}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-white/30 transition-all group-hover:translate-x-1" />
+                  
+                  {isLocked && (
+                    <div className="absolute top-2 right-2">
+                      <span className="text-[8px] font-black text-cyan-500/60 uppercase tracking-widest bg-cyan-500/10 px-1.5 py-0.5 rounded-md">Locked</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: ReactNode }) {
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { data: sub } = useSubscriptionStatus();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("manual");
+  const [discoverItem, setDiscoverItem] = useState(DISCOVERY_ITEMS[0]);
+  
+  useEffect(() => {
+    // Session-based discovery rotation
+    const sessionIdx = sessionStorage.getItem("discovery_idx");
+    let nextIdx = 0;
+    if (sessionIdx !== null) {
+      nextIdx = (parseInt(sessionIdx) + 1) % DISCOVERY_ITEMS.length;
+    }
+    sessionStorage.setItem("discovery_idx", nextIdx.toString());
+    setDiscoverItem(DISCOVERY_ITEMS[nextIdx]);
+  }, []);
   
   const { toast } = useToast();
   const { getToken } = useAuth();
@@ -674,13 +784,14 @@ export function Layout({ children }: { children: ReactNode }) {
                     <Menu className="w-6 h-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-80 bg-[#080316] border-r border-white/10 flex flex-col h-full">
-                  <SidebarContent
-                    user={user}
-                    location={location}
-                    sub={sub}
+                <SheetContent side="bottom" className="p-0 h-[85vh] bg-[#050110] border-t border-white/10 rounded-t-[40px] flex flex-col focus:outline-none ring-0">
+                  <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mt-4 shrink-0" />
+                  <div className="px-8 pt-8 pb-2">
+                    <h2 className="text-2xl font-black text-white">All Toolkits</h2>
+                    <p className="text-sm text-white/40 font-medium">Browse our entire intelligence engine.</p>
+                  </div>
+                  <ToolsGrid
                     isPro={isPro}
-                    signOut={signOut}
                     onClick={() => setIsSheetOpen(false)}
                   />
                 </SheetContent>
@@ -707,22 +818,35 @@ export function Layout({ children }: { children: ReactNode }) {
             </AnimatePresence>
           </main>
 
-          <nav className="fixed bottom-0 inset-x-0 border-t border-white/[0.08] flex justify-around items-center p-2 pb-[calc(env(safe-area-inset-bottom)+1rem)] z-[100] bg-[#080316]/95 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+          <nav className="fixed bottom-0 inset-x-0 border-t border-white/[0.08] flex justify-around items-center p-2 z-[100] bg-[#080316]/95 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}>
             {BOTTOM_NAV.map((item) => {
                if (item.path === "menu") {
+                 const hasNew = SIDEBAR_NAV.some(n => !localStorage.getItem(`visited_${n.path}`) && !n.pro);
                  return (
-                   <button key="menu" onClick={() => setIsSheetOpen(true)} className="flex flex-col items-center gap-1 p-2 text-white/40">
+                   <button key="menu" onClick={() => setIsSheetOpen(true)} className="flex flex-col items-center gap-1 p-2 text-white/40 relative">
                      <Menu className="w-5 h-5" />
                      <span className="text-[9px] font-bold uppercase">Menu</span>
+                     {hasNew && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#080316] animate-pulse" />}
                    </button>
                  );
                }
-               const isActive = location === item.path;
-               const Icon = item.icon;
+               
+               const navItem = item.path === "discover" ? discoverItem : item;
+               const isActive = location === navItem.path;
+               const Icon = navItem.icon;
+               
                return (
-                  <Link key={item.path} href={item.path} className={`flex flex-col items-center gap-1 p-2 transition-all ${isActive ? "text-cyan-400" : "text-white/40"}`}>
-                    <Icon className="w-5 h-5" />
-                    <span className="text-[9px] font-bold uppercase tracking-tighter">{item.label}</span>
+                  <Link 
+                    key={item.path} 
+                    href={navItem.path} 
+                    className={`flex flex-col items-center gap-1 p-2 transition-all relative ${isActive ? "text-cyan-400" : "text-white/40"}`}
+                    onClick={() => localStorage.setItem(`visited_${navItem.path}`, "true")}
+                  >
+                    <Icon className={`w-5 h-5 ${item.path === "discover" && !isActive ? "text-cyan-400/60 animate-pulse" : ""}`} />
+                    <span className="text-[9px] font-bold uppercase tracking-tighter">{navItem.label}</span>
+                    {item.path === "discover" && !isActive && (
+                      <span className="absolute -top-1 right-0 text-[7px] font-black bg-cyan-500 text-black px-1 rounded-sm tracking-tighter">HOT</span>
+                    )}
                   </Link>
                 );
             })}

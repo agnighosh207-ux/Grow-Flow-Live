@@ -106,27 +106,7 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true }));
 
 // ─── 6. Auth (with timeout protection) ──────────────────────────────────────
-let clerkMw: any = (req: any, res: any, next: any) => next();
-try {
-  clerkMw = clerkMiddleware();
-} catch (err: any) {
-  logger.error(`[CRITICAL] Failed to initialize Clerk Middleware: ${err?.message}. Authentication is disabled.`);
-}
-app.use((req: any, res: any, next: any) => {
-  if (!req.path.startsWith("/api/")) return next();
-  if (req.path.startsWith("/api/subscription/webhook")) return next();
-  
-  const timer = setTimeout(() => {
-    logger.error("[CRITICAL] Clerk middleware timed out after 15s. Rejecting request for security.");
-    next(new Error("Authentication timeout"));
-  }, 15000);
-  
-  clerkMw(req, res, (err?: any) => {
-    clearTimeout(timer);
-    if (err) return next(err);
-    next();
-  });
-});
+app.use(clerkMiddleware());
 app.use(authSyncMiddleware);
 app.use(guardianMiddleware);
 
@@ -264,6 +244,7 @@ app.use((err: any, req: any, res: any, _next: any) => {
   };
 
   logger.error(errorDetails, "SYSTEMIC_FAILURE_DETECTED");
+  console.error("[GLOBAL_ERROR_RECOVERY]", errorDetails);
 
   if (!res.headersSent) {
     res.status(500).json(errorDetails);

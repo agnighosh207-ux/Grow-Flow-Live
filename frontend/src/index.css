@@ -59,19 +59,19 @@
 }
 
 :root {
-  --bg-obsidian: #0B1215;
-  --surface-petrol: #101C20;
+  --bg-obsidian: #1A262C;
+  --surface-petrol: #283C45;
   --accent-cyan: #00F2FF;
-  --text-main: #F1F5F9;
-  --text-muted: #94A3B8;
+  --text-main: #FFFFFF;
+  --text-muted: #D1D5DB;
 
-  --button-outline: rgba(0, 242, 255, 0.1);
-  --badge-outline: rgba(0, 242, 255, 0.05);
+  --button-outline: rgba(0, 242, 255, 0.25);
+  --badge-outline: rgba(0, 242, 255, 0.15);
 
-  --shadow-2xs: inset 0 0 4px rgba(0, 242, 255, 0.05);
-  --shadow-xs: inset 0 0 6px rgba(0, 242, 255, 0.05);
-  --shadow-sm: inset 0 0 10px rgba(0, 242, 255, 0.05);
-  --shadow: inset 0 0 15px rgba(0, 242, 255, 0.05);
+  --shadow-2xs: inset 0 0 6px rgba(0, 242, 255, 0.08);
+  --shadow-xs: inset 0 0 8px rgba(0, 242, 255, 0.1);
+  --shadow-sm: inset 0 0 12px rgba(0, 242, 255, 0.1);
+  --shadow: inset 0 0 18px rgba(0, 242, 255, 0.1);
   --shadow-md: inset 0 0 20px rgba(0, 242, 255, 0.05);
   --shadow-lg: inset 0 0 30px rgba(0, 242, 255, 0.05);
   --shadow-xl: inset 0 0 40px rgba(0, 242, 255, 0.05);
@@ -80,15 +80,14 @@
 }
 
 .dark {
-  /* Same Deep Sea Tech values structure for dark mode as primary theme */
-  --bg-obsidian: #0B1215;
-  --surface-petrol: #101C20;
+  --bg-obsidian: #1A262C;
+  --surface-petrol: #283C45;
   --accent-cyan: #00F2FF;
-  --text-main: #F1F5F9;
-  --text-muted: #94A3B8;
+  --text-main: #FFFFFF;
+  --text-muted: #D1D5DB;
   
-  --button-outline: rgba(0, 242, 255, 0.1);
-  --badge-outline: rgba(0, 242, 255, 0.05);
+  --button-outline: rgba(0, 242, 255, 0.25);
+  --badge-outline: rgba(0, 242, 255, 0.15);
 }
 
 @layer base {
@@ -105,9 +104,9 @@
     background-color: var(--bg-obsidian);
     /* Bioluminescent accent glows strictly in cyan */
     background-image: 
-      radial-gradient(ellipse 70% 70% at 50% -10%, rgba(0, 242, 255, 0.05), transparent 60%),
-      radial-gradient(circle at 10% 90%, rgba(0, 242, 255, 0.03), transparent 50%),
-      radial-gradient(circle at 90% 90%, rgba(0, 242, 255, 0.03), transparent 50%);
+      radial-gradient(ellipse 70% 70% at 50% -10%, rgba(0, 242, 255, 0.12), transparent 75%),
+      radial-gradient(circle at 10% 90%, rgba(0, 242, 255, 0.08), transparent 65%),
+      radial-gradient(circle at 90% 90%, rgba(0, 242, 255, 0.08), transparent 65%);
     background-attachment: fixed;
     min-height: 100vh;
     transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
@@ -121,10 +120,10 @@
 
 /* Glassmorphism Implementation Rule */
 .card, [class*="bg-card"], .glass-panel {
-  background: var(--surface-petrol) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(0, 242, 255, 0.1) !important;
+  background: rgba(40, 60, 69, 0.7) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(0, 242, 255, 0.15) !important;
 }
 
 .glow-primary {
@@ -392,6 +391,13 @@
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 242, 255, 0.2);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

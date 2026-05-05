@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { db, contentCalendarTable, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
 import { generateContent } from "../../services/ai-engine";
@@ -45,6 +46,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
     if (abortController.signal.aborted) return;
 
     let systemPrompt = `You are a senior content strategist. Create a ${duration}-day growth arc strategy for ${sanitizedNiche}.
+Be extremely concise and punchy. Avoid fluff. Every word must add value. 
 CONTEXT: ${goalContext}
 STRATEGIC FOCUS: ${improvementFocus}
 PLATFORMS: Primary = ${platforms.primary}, Secondary = ${platforms.secondary}.
@@ -79,7 +81,7 @@ Return ONLY a JSON object:
       userPlan: req.user?.planType || "free",
       userId: req.userId,
       language,
-      maxTokens: duration === 30 ? 8000 : 5000,
+      maxTokens: 4000,
       signal: abortController.signal, // --- H-21 FIX: Pass AbortSignal ---
     });
 
@@ -128,6 +130,7 @@ Return ONLY a JSON object:
     } catch (e) { /* non-critical */ }
 
     res.json({ plan: parsed.plan ?? [] });
+    invalidateAuthCache(req.userId);
 
     db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),

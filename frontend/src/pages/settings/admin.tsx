@@ -93,23 +93,42 @@ export default function AdminDashboard() {
   const { data: subData, isPending: isSubPending } = useSubscriptionStatus();
 
   // Debounce search
+  const [isDebouncing, setIsDebouncing] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(userSearchQuery), 400);
+    setIsDebouncing(true);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(userSearchQuery);
+      setIsDebouncing(false);
+    }, 400);
     return () => clearTimeout(timer);
   }, [userSearchQuery]);
 
-  const ADMIN_EMAIL = "agnighosh207@gmail.com";
+  const isAdmin = subData?.isAdmin === true || user?.primaryEmailAddress?.emailAddress === "agnighosh207@gmail.com";
 
   useEffect(() => {
     if (!isLoaded || isSubPending) return;
     
-    const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-    const isAdminEmail = userEmail === ADMIN_EMAIL.toLowerCase();
+    // BUG 9 FIX: Explicitly sync auth cache on admin load
+    const syncAuth = async () => {
+      try {
+        const token = await getToken();
+        await fetch("/api/auth/sync", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        // Invalidate sub data to reflect admin status
+        queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      } catch (err) {
+        console.error("Auth sync failed", err);
+      }
+    };
+    syncAuth();
 
-    if (!user || (!subData?.isAdmin && !isAdminEmail)) {
-      setLocation("/");
+    // Only redirect if we are SURE they aren't admin after loading
+    if (!user || (!isAdmin && !isSubPending)) {
+      const isActuallyAdminEmail = user?.primaryEmailAddress?.emailAddress === "agnighosh207@gmail.com";
+      if (!isActuallyAdminEmail) {
+        setLocation("/");
+      }
     }
-  }, [isLoaded, user, subData, isSubPending, setLocation]);
+  }, [isLoaded, user, isSubPending, subData, isAdmin, getToken, setLocation, queryClient]);
 
   const { data: stats, isLoading: isStatsLoading } = useQuery<AdminStats>({
     queryKey: ["admin_stats"],
@@ -119,7 +138,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error("Failed to fetch stats");
       return res.json();
     },
-    enabled: !!subData?.isAdmin,
+    enabled: !!subData?.isAdmin || isAdmin,
   });
 
   const { data: revenue, isLoading: isRevenueLoading } = useQuery<RevenueBreakdown>({
@@ -130,7 +149,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error("Failed to fetch revenue");
       return res.json();
     },
-    enabled: activeTab === "revenue" || activeTab === "overview",
+    enabled: (!!subData?.isAdmin || isAdmin) && (activeTab === "revenue" || activeTab === "overview"),
   });
 
   const { data: systemStatus, isLoading: isSystemLoading } = useQuery<SystemStatus>({
@@ -141,7 +160,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error("Failed to fetch system status");
       return res.json();
     },
-    enabled: activeTab === "system",
+    enabled: (!!subData?.isAdmin || isAdmin) && activeTab === "system",
   });
 
   const { data: searchResults, isFetching: isSearching } = useQuery<any[]>({
@@ -152,7 +171,7 @@ export default function AdminDashboard() {
       const res = await fetch(`/api/admin/users/search?q=${encodeURIComponent(debouncedSearch)}`, { headers: { Authorization: `Bearer ${token}` } });
       return res.json();
     },
-    enabled: activeTab === "users" && debouncedSearch.length >= 2,
+    enabled: (!!subData?.isAdmin || isAdmin) && activeTab === "users" && debouncedSearch.length >= 2,
   });
 
   const invalidateAll = () => {
@@ -162,12 +181,12 @@ export default function AdminDashboard() {
   };
 
   const modifyUserMutation = useMutation({
-    mutationFn: async ({ targetUserId, newPlan }: { targetUserId: string; newPlan: string }) => {
+    mutationFn: async ({ targetUserId, newPlan, newTier, newStatus }: { targetUserId: string; newPlan: string; newTier: string; newStatus?: string }) => {
       const token = await getToken();
       const res = await fetch("/api/admin/modify-user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ targetUserId, newPlan }),
+        body: JSON.stringify({ targetUserId, newPlan, newTier, newStatus }),
       });
       if (!res.ok) throw new Error("Failed");
       return res.json();
@@ -351,7 +370,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 p-1.5 bg-[#160d2b] rounded-2xl border border-white/5 w-fit">
+        <div className="flex gap-2 p-1.5 bg-[#160d2b] rounded-2xl border border-white/5 w-fit max-w-full overflow-x-auto no-scrollbar">
           {(["overview", "users", "revenue", "announcements", "system"] as AdminTab[]).map((tab) => (
             <button
               key={tab}
@@ -388,83 +407,87 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-8 rounded-3xl">
+                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-4 sm:p-8 rounded-3xl overflow-hidden">
                     <div className="flex items-center justify-between mb-8">
-                      <h3 className="text-xl font-bold flex items-center gap-2"><Activity className="w-5 h-5 text-cyan-400" /> DAU (30 Days)</h3>
+                      <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2"><Activity className="w-5 h-5 text-cyan-400" /> DAU (30 Days)</h3>
                     </div>
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={stats?.dauData || []}>
-                          <defs>
-                            <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                          <XAxis 
-                            dataKey="date" 
-                            stroke="rgba(255,255,255,0.3)" 
-                            fontSize={10} 
-                            tickFormatter={(val) => val ? new Date(val).toLocaleDateString("en-IN", {month: "short", day: "numeric"}) : ""} 
-                          />
-                          <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} />
-                          <RechartsTooltip contentStyle={{ backgroundColor: '#1a0f30', border: '1px solid rgba(6,182,212,0.2)', borderRadius: '12px' }} />
-                          <Area type="monotone" dataKey="activeusers" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
+                    <div className="h-64 sm:h-72 w-full overflow-x-auto no-scrollbar">
+                      <div className="h-full min-w-[500px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={stats?.dauData || []}>
+                            <defs>
+                              <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <XAxis 
+                              dataKey="date" 
+                              stroke="rgba(255,255,255,0.3)" 
+                              fontSize={9} 
+                              tickFormatter={(val) => val ? new Date(val).toLocaleDateString("en-IN", {month: "short", day: "numeric"}) : ""} 
+                            />
+                            <YAxis stroke="rgba(255,255,255,0.3)" fontSize={9} />
+                            <RechartsTooltip contentStyle={{ backgroundColor: '#1a0f30', border: '1px solid rgba(6,182,212,0.2)', borderRadius: '12px', fontSize: '10px' }} />
+                            <Area type="monotone" dataKey="activeusers" stroke="#06b6d4" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-8 rounded-3xl">
+                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-4 sm:p-8 rounded-3xl overflow-hidden">
                     <div className="flex items-center justify-between mb-8">
-                      <h3 className="text-xl font-bold flex items-center gap-2"><Zap className="w-5 h-5 text-amber-400" /> Generations (30 Days)</h3>
+                      <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2"><Zap className="w-5 h-5 text-amber-400" /> Generations (30 Days)</h3>
                     </div>
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={stats?.generationsData || []}>
-                          <defs>
-                            <linearGradient id="colorGens" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                          <XAxis 
-                            dataKey="date" 
-                            stroke="rgba(255,255,255,0.3)" 
-                            fontSize={10} 
-                            tickFormatter={(val) => val ? new Date(val).toLocaleDateString("en-IN", {month: "short", day: "numeric"}) : ""} 
-                          />
-                          <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} />
-                          <RechartsTooltip contentStyle={{ backgroundColor: '#1a0f30', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px' }} />
-                          <Area type="monotone" dataKey="generations" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorGens)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
+                    <div className="h-64 sm:h-72 w-full overflow-x-auto no-scrollbar">
+                      <div className="h-full min-w-[500px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={stats?.generationsData || []}>
+                            <defs>
+                              <linearGradient id="colorGens" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <XAxis 
+                              dataKey="date" 
+                              stroke="rgba(255,255,255,0.3)" 
+                              fontSize={9} 
+                              tickFormatter={(val) => val ? new Date(val).toLocaleDateString("en-IN", {month: "short", day: "numeric"}) : ""} 
+                            />
+                            <YAxis stroke="rgba(255,255,255,0.3)" fontSize={9} />
+                            <RechartsTooltip contentStyle={{ backgroundColor: '#1a0f30', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', fontSize: '10px' }} />
+                            <Area type="monotone" dataKey="generations" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorGens)" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-8 rounded-3xl">
-                    <h3 className="text-xl font-bold mb-8 flex items-center gap-2"><Activity className="w-5 h-5 text-indigo-400" /> Feature Performance</h3>
-                    <div className="h-72">
+                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-4 sm:p-8 rounded-3xl overflow-hidden">
+                    <h3 className="text-lg sm:text-xl font-bold mb-8 flex items-center gap-2"><Activity className="w-5 h-5 text-indigo-400" /> Feature Performance</h3>
+                    <div className="h-64 sm:h-72 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={stats?.featureUsageData || []}>
                           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                          <XAxis dataKey="feature" stroke="rgba(255,255,255,0.3)" fontSize={10} />
-                          <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} />
-                          <RechartsTooltip contentStyle={{ backgroundColor: '#1a0f30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} />
+                          <XAxis dataKey="feature" stroke="rgba(255,255,255,0.3)" fontSize={9} />
+                          <YAxis stroke="rgba(255,255,255,0.3)" fontSize={9} />
+                          <RechartsTooltip contentStyle={{ backgroundColor: '#1a0f30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }} />
                           <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
 
-                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-8 rounded-3xl">
-                    <h3 className="text-xl font-bold mb-8 flex items-center gap-2"><Eye className="w-5 h-5 text-pink-400" /> Content Categories</h3>
-                    <div className="h-72">
+                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-4 sm:p-8 rounded-3xl overflow-hidden">
+                    <h3 className="text-lg sm:text-xl font-bold mb-8 flex items-center gap-2"><Eye className="w-5 h-5 text-pink-400" /> Content Categories</h3>
+                    <div className="h-64 sm:h-72 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={stats?.languageData || []} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={8} dataKey="value">
+                          <Pie data={stats?.languageData || []} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={8} dataKey="value">
                             {(stats?.languageData || []).map((entry: any, index: number) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
@@ -489,14 +512,14 @@ export default function AdminDashboard() {
                     onChange={(e) => setUserSearchQuery(e.target.value)}
                     className="w-full bg-[#160d2b] border border-white/5 rounded-3xl pl-16 pr-8 py-5 text-lg focus:outline-none focus:border-cyan-500/50 transition-all placeholder:text-white/10"
                   />
-                  {isSearching && <div className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />}
+                  {(isSearching || (isDebouncing && userSearchQuery.length >= 2)) && <div className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />}
                 </div>
 
-                <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden">
-                  <div className="p-8 border-b border-white/5 bg-white/[0.02]">
+                <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 rounded-3xl pb-32">
+                  <div className="p-8 border-b border-white/5 bg-white/[0.02] rounded-t-3xl">
                     <h3 className="text-2xl font-black">{debouncedSearch ? `Search Results (${searchResults?.length || 0})` : "Recent Command Log (100 Users)"}</h3>
                   </div>
-                  <div className="overflow-x-auto">
+                  <div className="w-full">
                     <table className="w-full text-left">
                       <thead>
                         <tr className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-black border-b border-white/5">
@@ -565,15 +588,20 @@ export default function AdminDashboard() {
                                         </button>
                                         <div className="h-px bg-white/5 my-2" />
                                         <p className="px-4 py-1.5 text-[10px] font-black uppercase text-white/20 tracking-widest">Plan Overrides</p>
-                                        {["starter", "creator", "infinity", "free"].map(p => (
-                                          <button 
-                                            key={p}
-                                            onClick={() => modifyUserMutation.mutate({ targetUserId: user.id, newPlan: p })}
-                                            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-white/60 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all capitalize"
-                                          >
-                                            <Zap className="w-4 h-4" /> Set to {p}
-                                          </button>
-                                        ))}
+                                          {["starter", "creator", "infinity", "free"].map(p => (
+                                            <button 
+                                              key={p}
+                                              onClick={() => modifyUserMutation.mutate({ 
+                                                targetUserId: user.id, 
+                                                newPlan: p, 
+                                                newTier: p.toUpperCase(),
+                                                newStatus: p === 'free' ? 'free' : 'active'
+                                              })}
+                                              className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-white/60 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all capitalize"
+                                            >
+                                              <Zap className="w-4 h-4" /> Set to {p}
+                                            </button>
+                                          ))}
                                         <div className="h-px bg-white/5 my-2" />
                                         <button onClick={() => grantCreditsMutation.mutate({ userId: user.id, credits: 50 })} className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-all">
                                           <Gift className="w-4 h-4" /> Grant 50 Credits
@@ -637,16 +665,18 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2 bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-8 rounded-3xl">
                     <h3 className="text-xl font-bold mb-8 flex items-center gap-2"><CreditCard className="w-5 h-5 text-cyan-400" /> Revenue by Plan</h3>
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={stats?.revenueData || []}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                          <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" fontSize={10} className="capitalize" />
-                          <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} tickFormatter={(val) => `₹${val}`} />
-                          <RechartsTooltip contentStyle={{ backgroundColor: '#1a0f30', border: '1px solid rgba(6,182,212,0.2)', borderRadius: '12px' }} />
-                          <Bar dataKey="amount" fill="#06b6d4" radius={[6, 6, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                    <div className="h-72 overflow-x-auto no-scrollbar">
+                      <div className="h-full min-w-[400px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={stats?.revenueData || []}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" fontSize={10} className="capitalize" />
+                            <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} tickFormatter={(val) => `₹${val}`} />
+                            <RechartsTooltip contentStyle={{ backgroundColor: '#1a0f30', border: '1px solid rgba(6,182,212,0.2)', borderRadius: '12px' }} />
+                            <Bar dataKey="amount" fill="#06b6d4" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
                   </div>
 

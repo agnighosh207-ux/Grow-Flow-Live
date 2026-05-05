@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { requireAuth } from "../../middlewares/planMiddleware";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { AuthenticatedRequest } from "../../types";
 import { Response } from "express";
 
@@ -52,6 +53,11 @@ router.post("/complete-onboarding", requireAuth, async (req: AuthenticatedReques
   } catch (err: any) {
     res.status(500).json({ error: "Failed to apply referral code" });
   }
+});
+
+router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  invalidateAuthCache(req.userId);
+  res.json({ success: true, message: "Auth cache invalidated" });
 });
 
 export default router;

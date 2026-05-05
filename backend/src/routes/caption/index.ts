@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
@@ -92,6 +93,7 @@ Return ONLY this JSON: {
     } catch (e) { /* non-critical */ }
 
     res.json(parsed);
+    invalidateAuthCache(req.userId);
 
     db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),

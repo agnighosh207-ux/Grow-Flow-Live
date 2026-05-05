@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { GenerateHooksBody, GenerateHooksResponse } from "@workspace/api-zod";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
-import { enforceGenerationLimit } from "../../middlewares/generationLimiter";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
@@ -100,7 +101,12 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
 
     if (isAborted) return;
     const content = response.choices[0]?.message?.content || "";
-    const parsed = extractJson(content);
+    let parsed: any;
+    try {
+      parsed = extractJson(content);
+    } catch (e) {
+      throw new Error("MALFORMED_AI_RESPONSE");
+    }
     
     let hooks: string[] = [];
     if (parsed && Array.isArray(parsed.hooks)) {
@@ -124,6 +130,7 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
     } catch (e) { /* non-critical */ }
 
     res.json({ hooks });
+    invalidateAuthCache(req.userId);
 
     db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),

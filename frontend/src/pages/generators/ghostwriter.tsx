@@ -166,7 +166,7 @@ export default function GhostwriterPage() {
         subtitle="Write like a pro. In your voice."
         badge="Infinity"
         action={
-          <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl">
+          <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl overflow-x-auto no-scrollbar">
              <Sheet>
                <SheetTrigger asChild>
                  <Button variant="ghost" size="sm" className="rounded-xl gap-2 text-white/60 hover:text-white px-3" onClick={fetchHistory}>

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 import { db, usersTable, usageLogsTable, contentGenerationsTable, referralsTable, systemSettingsTable, globalAnnouncementsTable, featureUsageLogsTable, impersonationSessionsTable, securityLogsTable } from "@workspace/db";
 import { isNotNull, desc, sql, eq, ilike, count } from "drizzle-orm";
 import crypto from "crypto";
@@ -14,17 +14,13 @@ const router: IRouter = Router();
 const requireAdmin = async (req: any, res: any, next: any) => {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    
-    if (!user) {
-      return res.status(401).json({ error: "User not found" });
-    }
+    if (!user) return res.status(401).json({ error: "User not found" });
 
-    // Check for explicit admin flag or fallback to env-configured email
+    const adminEmailFromEnv = (process.env.ADMIN_EMAIL || "agnighosh207@gmail.com").toLowerCase();
     const isExplicitAdmin = user.isAdmin === true;
-    const isEnvAdmin = user.email && process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL;
+    const isHardcodedAdmin = user.email?.toLowerCase() === adminEmailFromEnv;
 
-    if (!isExplicitAdmin && !isEnvAdmin) {
-      console.warn(`[AUTH] Admin access denied for user: ${user.email} (${req.userId})`);
+    if (!isExplicitAdmin && !isHardcodedAdmin) {
       return res.status(403).json({ error: "Forbidden" });
     }
     next();
@@ -33,6 +29,11 @@ const requireAdmin = async (req: any, res: any, next: any) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+router.post("/sync", requireAuth, requireAdmin, async (req: any, res: any) => {
+  invalidateAuthCache(req.userId);
+  res.json({ success: true, message: "Admin cache synchronized" });
+});
 
 router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
@@ -136,12 +137,34 @@ router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
     const [settings] = settingsResult;
     const maintenanceMode = settings?.maintenanceMode || false;
 
+    let augmentedRecentUsers = (recentUsers as any).rows || [];
+    try {
+      const missingEmailIds = augmentedRecentUsers.filter((u: any) => !u.email).map((u: any) => u.id);
+      if (missingEmailIds.length > 0) {
+        const clerkUsersResp = await clerkClient.users.getUserList({ userId: missingEmailIds, limit: 100 });
+        const emailMap = new Map();
+        for (const cu of clerkUsersResp.data) {
+          if (cu.emailAddresses && cu.emailAddresses.length > 0) {
+            emailMap.set(cu.id, cu.emailAddresses[0].emailAddress);
+          }
+        }
+        augmentedRecentUsers = augmentedRecentUsers.map((u: any) => {
+          if (!u.email && emailMap.has(u.id)) {
+            return { ...u, email: emailMap.get(u.id) };
+          }
+          return u;
+        });
+      }
+    } catch (e) {
+      logger.error("Failed to fetch missing emails from Clerk for admin stats");
+    }
+
     res.json({
       maintenanceMode,
       totalUsers: Number(totalUsersResult[0]?.count) || 0,
       totalEmails: Number(totalEmailsResult[0]?.count) || 0,
       totalGenerations: Number(totalGenerationsResult[0]?.count) || 0,
-      recentUsers: (recentUsers as any).rows || [],
+      recentUsers: augmentedRecentUsers,
       dauData: dauDataList || [],
       generationsData: generationsDataList || [],
       languageData,
@@ -300,7 +323,29 @@ router.get("/users/search", requireAuth, requireAdmin, async (req: any, res: any
       .where(sql`${usersTable.email} ILIKE ${`%${q}%`} OR ${usersTable.id} = ${q}`)
       .limit(20);
 
-    res.json(results);
+    let augmentedResults = results;
+    try {
+      const missingEmailIds = augmentedResults.filter((u) => !u.email).map((u) => u.id);
+      if (missingEmailIds.length > 0) {
+        const clerkUsersResp = await clerkClient.users.getUserList({ userId: missingEmailIds, limit: 20 });
+        const emailMap = new Map();
+        for (const cu of clerkUsersResp.data) {
+          if (cu.emailAddresses && cu.emailAddresses.length > 0) {
+            emailMap.set(cu.id, cu.emailAddresses[0].emailAddress);
+          }
+        }
+        augmentedResults = augmentedResults.map((u) => {
+          if (!u.email && emailMap.has(u.id)) {
+            return { ...u, email: emailMap.get(u.id) };
+          }
+          return u;
+        });
+      }
+    } catch (e) {
+      logger.error("Failed to augment search results with Clerk API");
+    }
+
+    res.json(augmentedResults);
   } catch (err) {
     res.status(500).json({ error: "Search failed" });
   }
