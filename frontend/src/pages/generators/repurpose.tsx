@@ -14,6 +14,7 @@ import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formats = [
   { id: "instagram_caption", label: "Instagram", icon: <Instagram className="h-6 w-6" />, color: "from-pink-500 to-rose-500 shadow-pink-500/20" },
@@ -37,6 +38,7 @@ export default function RepurposePage() {
 
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const toggleTarget = (formatId: string) => {
     if (formatId === sourceFormat) return;
@@ -64,6 +66,7 @@ export default function RepurposePage() {
       });
       setResult(data);
       setStep(3);
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       toast({ variant: "destructive", title: "Repurposing failed" });
     } finally {

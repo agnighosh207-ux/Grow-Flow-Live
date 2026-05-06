@@ -62,6 +62,8 @@ export default function PredictorPage() {
       const newHistory = [newResult, ...history].slice(0, 10);
       setHistory(newHistory);
       localStorage.setItem("predictor_history", JSON.stringify(newHistory));
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       toast({ variant: "destructive", title: "Prediction failed", description: "AI service unavailable." });
     } finally {

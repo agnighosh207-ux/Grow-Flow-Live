@@ -76,6 +76,8 @@ export default function HashtagsPage() {
       });
       setResult(data);
       toast({ title: "Intelligence Gathered", description: "Your strategic hashtag set is ready." });
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       toast({ variant: "destructive", title: "Generation failed" });
     } finally {
@@ -91,6 +93,8 @@ export default function HashtagsPage() {
         hashtags: analyzeText, platform, niche
       });
       setAnalysisResult(data);
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       toast({ variant: "destructive", title: "Analysis failed" });
     } finally {

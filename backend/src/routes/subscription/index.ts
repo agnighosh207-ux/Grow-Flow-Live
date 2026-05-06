@@ -59,7 +59,19 @@ function getTierFromPlanId(planId: string): "starter" | "creator" | "infinity" |
 function computePlan(user: any, totalGenerations: number, monthlyGenerations: number) {
   const now = new Date();
   const planType = (user.planType || "free") as "free" | "starter" | "creator" | "infinity";
-  const generationsRemaining = user.generationsRemaining ?? 0;
+  const generationsRemaining = typeof user.generationsRemaining === 'number' ? user.generationsRemaining : parseInt(user.generationsRemaining || '0');
+  const dbGenerationsField = typeof user.totalGenerations === 'number' ? user.totalGenerations : parseInt(user.totalGenerations || '0');
+  
+  // Use logger for production-safe debugging
+  logger.info({ 
+    userId: user.id, 
+    remaining: generationsRemaining, 
+    status: user.subscriptionStatus, 
+    plan: planType,
+    isBeta: !!user.isBetaUser,
+    dbField: dbGenerationsField,
+    argCount: totalGenerations
+  }, "[SUBSCRIPTION_STATUS] Computing plan state");
 
   if (user.isAdmin) {
     return {
@@ -345,7 +357,7 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       razorpayPlanId,
       effectivePlan.toUpperCase(), 
       user.email || undefined,
-      120 
+      config.totalCount
     );
 
     await db.update(usersTable)
@@ -372,7 +384,13 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
     });
   } catch (err: any) {
     const errorMsg = err?.error?.description || err?.message || "Failed to create subscription";
-    logger.error({ error: err?.error || err }, "Subscription create error");
+    logger.error({ 
+      userId: req.userId,
+      error: err?.error || err,
+      razorpayError: err?.error?.description,
+      planType: req.body.planType,
+      billingPeriod: req.body.billingPeriod
+    }, "Subscription create error");
     res.status(500).json({ error: errorMsg });
   }
 });

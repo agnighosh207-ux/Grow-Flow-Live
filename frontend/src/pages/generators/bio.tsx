@@ -72,6 +72,8 @@ export default function CreatorProfilePage() {
       const firstFormat = Object.keys(data)[0];
       if (firstFormat) setActiveTab(firstFormat);
       toast({ title: "Brand Suite Synthesized", description: "Your cross-platform identity is ready." });
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       toast({ variant: "destructive", title: "Generation failed" });
     } finally {

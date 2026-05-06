@@ -142,7 +142,12 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         
         if (needsCreditReset) {
           const tier = (finalUser.planTier || "FREE") as string;
-          updates.generationsRemaining = TIER_CREDITS[tier] || 10;
+          // Ensure new or zero-credit users get their starting 10 credits
+          if (user.generationsRemaining === 0 && !user.lastCreditReset) {
+            updates.generationsRemaining = 10;
+          } else {
+            updates.generationsRemaining = TIER_CREDITS[tier] || 10;
+          }
           updates.lastCreditReset = now;
         }
 

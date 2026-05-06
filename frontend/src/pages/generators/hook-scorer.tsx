@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
-import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ScoreResult {
   score: number;
@@ -29,8 +29,8 @@ export default function HookScorerPage() {
   const [result, setResult] = useState<ScoreResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [debouncing, setDebouncing] = useState(false);
-  const { toast } = useToast();
   const { data: sub } = useSubscriptionStatus();
+  const queryClient = useQueryClient();
   
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -48,6 +48,7 @@ export default function HookScorerPage() {
         niche: nic
       });
       setResult(data);
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       console.error("Scoring error:", err);
     } finally {

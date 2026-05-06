@@ -229,7 +229,9 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
         toast({ variant: "destructive", title: "Payment Failed", description: response.error.description });
       });
       
+      console.log("[UpgradeModal] Calling rzp.open()...");
       rzp.open();
+      console.log("[UpgradeModal] rzp.open() called.");
     } catch (err: any) {
       console.error("Checkout error:", err);
       toast({ variant: "destructive", title: "Checkout Error", description: err.message || "Failed to start checkout. Please try again." });
@@ -240,7 +242,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -253,7 +255,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-cyan-500/25"
+            className="relative w-full max-w-5xl max-h-[95vh] rounded-3xl border border-white/10 shadow-2xl flex flex-col overflow-hidden"
             style={{
               background: "linear-gradient(135deg, rgba(15,8,35,0.97) 0%, rgba(20,10,45,0.97) 100%)",
               backdropFilter: "blur(24px)",
@@ -262,7 +264,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
           >
             <div className="h-0.5 w-full bg-gradient-to-r from-cyan-600 via-teal-500 to-cyan-600" />
 
-            <div className="p-6">
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
               <AnimatePresence mode="wait">
 
                 {paymentState === "success" ? (

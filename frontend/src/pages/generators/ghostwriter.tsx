@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface VoiceProfile {
   sentenceStyle: string;
@@ -67,6 +68,7 @@ export default function GhostwriterPage() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [savingTuning, setSavingTuning] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     fetchProfile();
@@ -139,6 +141,7 @@ export default function GhostwriterPage() {
       });
       setOutput(data);
       fetchHistory(); // Refresh history after writing
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       toast({ variant: "destructive", title: "Generation Error", description: "Something went wrong. Please try again." });
     } finally {

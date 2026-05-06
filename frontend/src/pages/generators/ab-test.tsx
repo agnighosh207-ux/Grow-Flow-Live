@@ -38,6 +38,8 @@ export default function ABTestPage() {
         idea, platform, niche, tone, audienceA, audienceB
       });
       setResult(data);
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       toast({ variant: "destructive", title: "A/B test generation failed" });
     } finally {

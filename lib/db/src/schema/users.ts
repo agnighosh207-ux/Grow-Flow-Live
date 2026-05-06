@@ -20,7 +20,7 @@ export const usersTable = pgTable("users", {
   trialStartDate: timestamp("trial_start_date", { withTimezone: true }),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   originalTrialStart: timestamp("original_trial_start", { withTimezone: true }),
-  generationsRemaining: integer("generations_remaining").notNull().default(5),
+  generationsRemaining: integer("generations_remaining").notNull().default(10),
   totalGenerations: integer("total_generations").notNull().default(0),
   lastCreditReset: timestamp("last_credit_reset", { withTimezone: true }).notNull().defaultNow(),
   isBetaUser: boolean("is_beta_user").notNull().default(false),
