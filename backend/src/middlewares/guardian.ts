@@ -115,6 +115,7 @@ const createLimiter = (windowMs: number, prefix: string) => {
       sendCommand: (...args: string[]) => redisClient.call(...args),
       prefix: `rl_${prefix}:`,
     }) : undefined,
+    validate: { xForwardedForHeader: false },
   });
 };
 

@@ -13,14 +13,21 @@ const router: IRouter = Router();
 // ─── Perplexity AI Direct Client (for 100% search routes) ─────────────────
 // Ideas use Perplexity DIRECTLY — it searches the live web AND
 // structures the output in a single call. NO Groq involved.
-const perplexityClient = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    "HTTP-Referer": "https://growflow.ai",
-    "X-Title": "GrowFlow AI",
-  },
-});
+let perplexityClient: OpenAI | null = null;
+try {
+  if (process.env.OPENROUTER_API_KEY) {
+    perplexityClient = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: process.env.OPENROUTER_API_KEY,
+      defaultHeaders: {
+        "HTTP-Referer": "https://growflow.ai",
+        "X-Title": "GrowFlow AI",
+      },
+    });
+  }
+} catch (e) {
+  console.warn("Failed to initialize Perplexity client:", e);
+}
 
 const nicheContextMap: Record<string, string> = {
   Fitness: "body transformation, training optimization, nutrition science, gym culture, injury prevention, performance metrics, workout psychology, recovery",
@@ -112,6 +119,7 @@ Return ONLY a JSON object.`;
 
     let ideas: any[] = [];
     try {
+      if (!perplexityClient) throw new Error("Perplexity client not initialized (missing API key)");
       const completion = await perplexityClient.chat.completions.create({
         model: "perplexity/sonar",
         messages: [
