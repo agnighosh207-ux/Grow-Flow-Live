@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { PageWrapper } from "@/components/shared/PageWrapper";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { useQueryClient } from "@tanstack/react-query";
 
