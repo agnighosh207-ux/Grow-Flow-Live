@@ -109,7 +109,6 @@ const createLimiter = (windowMs: number, prefix: string) => {
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req: any) => req.rateLimitUser?.id || req.ip || "unknown",
-    validate: false, // Suppress all validation warnings for production stability
     handler: handleRateLimitReached,
     store: redisClient ? new RedisStore({
       // @ts-ignore

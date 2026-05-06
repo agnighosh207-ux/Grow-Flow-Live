@@ -5,12 +5,15 @@ import { db, contentGenerationsTable, usersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { redis } from "../../lib/redis";
 
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
+
 const router: IRouter = Router();
 
 const COACH_CACHE = new Map<string, { data: any, timestamp: number }>();
 const COACH_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-router.post("/analyze", requireAuth, requirePlanOrTrial("coach"), async (req: any, res): Promise<void> => {
+router.post("/analyze", requireAuth, requirePlanOrTrial("coach"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const userId = req.userId;
 
   // 1. Cache Check
@@ -132,6 +135,7 @@ Analyze the data and return a JSON object with the following structure:
 
   } catch (err: any) {
     console.error("COACH ANALYZE ERROR:", err);
+    await refundGenerationCredit(userId, req.user?.planTier);
     res.status(503).json({ error: "Coach is temporarily unavailable." });
   }
 });

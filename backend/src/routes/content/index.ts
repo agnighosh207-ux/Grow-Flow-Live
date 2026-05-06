@@ -179,6 +179,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
       userPlan,
       userId,
       maxTokens: 4000,
+      forceJsonMode: true,
       signal, // --- H-21 FIX: Pass AbortSignal ---
     });
 
@@ -190,40 +191,35 @@ Return ONLY valid JSON (no markdown, no code blocks):
     }
 
     // ─── VIRAL SCORE CALCULATION ──────────────────────────────────────────────
-    // SECOND lightweight call for scoring (Groq llama-3.1-8b-instant)
-    let viralScores = null;
-    try {
-      const scoringPrompt = `Score this social media content 0-100 for viral potential. 
-Consider: hook strength, emotional trigger, clarity, shareability, platform fit.
-Return ONLY JSON: { "instagram": number, "youtube": number, "twitter": number, "linkedin": number, "overall": number }
+    // Fire and forget — do not await this
+    const scoringPrompt = `You are a viral content analyst. Analyze the following content for virality across Instagram, YouTube, Twitter, and LinkedIn.
+Content: ${JSON.stringify(finalContent)}
 
-CONTENT TO SCORE:
-Instagram: ${finalContent.instagram.hook}
-YouTube: ${finalContent.youtube.title}
-Twitter: ${finalContent.twitter.tweets[0] || ""}
-LinkedIn: ${finalContent.linkedin.headline}`;
+Return ONLY a JSON object with scores (0-100) for each platform:
+{
+  "instagram": number,
+  "youtube": number,
+  "twitter": number,
+  "linkedin": number
+}`;
 
-      // 3-second timeout for the lightweight scoring call
-      const scoringPromise = generateContent({
-        messages: [{ role: "user", content: scoringPrompt }],
-        userPlan: "free", // Forces lightweight model
-        userId,
-        maxTokens: 200,
-        temperature: 0.3,
-        signal, // --- H-21 FIX: Pass AbortSignal ---
-      });
+    generateContent({
+      messages: [{ role: "user", content: scoringPrompt }],
+      userPlan: "free", // Forces lightweight model
+      userId,
+      maxTokens: 200,
+      temperature: 0.3,
+      forceJsonMode: true,
+      signal, // --- H-21 FIX: Pass AbortSignal ---
+    }).then(scoringResult => {
+      // Background scoring logic if needed
+      const scoreContent = (scoringResult as any).choices[0]?.message?.content || "{}";
+      const scores = extractJson(scoreContent);
+      // In a real app we might update the DB here with the late-arriving scores
+      logger.info({ userId, scores }, "Viral scores calculated in background");
+    }).catch(() => {});
 
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 3000));
-
-      const scoringResult: any = await Promise.race([scoringPromise, timeoutPromise]);
-      const scoreContent = scoringResult.choices[0]?.message?.content || "{}";
-      viralScores = extractJson(scoreContent);
-    } catch (scoreErr) {
-      console.warn("[VIRAL_SCORE] Scoring failed or timed out:", scoreErr instanceof Error ? scoreErr.message : String(scoreErr));
-      viralScores = null;
-    }
-
-    return { ...finalContent, viralScores };
+    return finalContent; // Return immediately without waiting for scoring
   } catch (err: any) {
     if (err.name === 'AbortError' || err.message === 'ABORTED') {
       throw err; // Propagate aborts
@@ -295,7 +291,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
         error: "upgrade_required",
         message: upgradeMessage,
         plan: status,
-        generationsRemaining,
+        generationsRemaining: (req as any).user?.generationsRemaining ?? generationsRemaining,
       });
       return;
     }
@@ -307,7 +303,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
           error: "upgrade_required",
           message: `Your Starter plan is locked to ${user.regionalLanguageLock}. Upgrade to Creator for full language access!`,
           plan: status,
-          generationsRemaining,
+          generationsRemaining: (req as any).user?.generationsRemaining ?? generationsRemaining,
         });
         return;
       }
@@ -370,7 +366,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
       id: savedGen.id,
       content,
       // BUG 3 Fix: Return the actual remaining count (already decremented by middleware)
-      generationsRemaining: user?.generationsRemaining ?? 0,
+      generationsRemaining: (req as any).user?.generationsRemaining ?? user?.generationsRemaining ?? 0,
       plan: status,
     });
     invalidateAuthCache(req.userId);
@@ -512,6 +508,7 @@ Return ONLY this JSON:
       userPlan: planType.toUpperCase(),
       userId: req.userId,
       maxTokens: 4000,
+      forceJsonMode: true,
     });
 
     const rawContent = response.choices[0]?.message?.content ?? "{}";
@@ -801,6 +798,7 @@ Return ONLY valid JSON:
       userPlan: req.user?.planType || "free",
       userId: req.userId,
       maxTokens: 1200,
+      forceJsonMode: true,
     });
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? "{}";

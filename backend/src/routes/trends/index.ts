@@ -15,7 +15,7 @@ const router: IRouter = Router();
 // structures the output in a single call. NO Groq involved.
 const perplexityClient = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API,
+  apiKey: process.env.OPENROUTER_API_KEY,
   defaultHeaders: {
     "HTTP-Referer": "https://growflow.ai",
     "X-Title": "GrowFlow AI",
@@ -155,6 +155,7 @@ JSON schema:
         userId: req.userId,
         language,
         maxTokens: 2000,
+        forceJsonMode: true,
         signal: abortController.signal
       });
       const raw = fallback.choices[0]?.message?.content?.trim() ?? '{"trends": []}';

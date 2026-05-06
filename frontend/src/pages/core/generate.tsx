@@ -1216,7 +1216,7 @@ export default function Generate() {
   }, [generatedContent?.id]);
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema as any),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       idea: prefillIdea,
       contentType: prefillType,

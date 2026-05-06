@@ -72,6 +72,7 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
       userPlan: "INFINITY", // Force high-quality model (Sonar if available)
       userId: req.userId,
       maxTokens: 2000,
+      forceJsonMode: true,
       signal: abortController.signal,
     });
 
@@ -95,6 +96,7 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
   } catch (err: any) {
     if (abortController.signal.aborted) return;
     console.error("COMPETITOR ANALYZE ERROR:", err);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Analysis service unavailable." });
   }
 });
@@ -120,6 +122,7 @@ router.post("/batch", requireAuth, enforceGenerationLimit, requireTierLevel("CRE
         userPlan: "FREE", // Use Groq for speed in batch
         userId: req.userId,
         maxTokens: 600,
+        forceJsonMode: true,
         signal: abortController.signal,
       });
       return { 
@@ -134,6 +137,7 @@ router.post("/batch", requireAuth, enforceGenerationLimit, requireTierLevel("CRE
     invalidateAuthCache(req.userId);
   } catch (err: any) {
     if (abortController.signal.aborted) return;
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Batch analysis failed." });
   }
 });

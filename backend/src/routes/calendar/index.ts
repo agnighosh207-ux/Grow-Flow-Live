@@ -239,6 +239,7 @@ router.post("/items/:id/generate", requireAuth, requirePlanOrTrial("calendar"), 
     invalidateAuthCache(req.userId);
   } catch (err: any) {
     console.error("CALENDAR GENERATE ERROR:", err);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(500).json({ error: "Generation failed. Please try again." });
   }
 });

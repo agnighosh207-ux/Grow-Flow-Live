@@ -114,13 +114,13 @@ app.use(guardianMiddleware);
 app.use((req: any, res, next) => {
   if (req.path.startsWith("/api/") && req.path !== "/api/health") {
     res.on("finish", async () => {
-      // Only log non-2xx responses. EXCLUDE 429 to avoid DB saturation/DOS during an attack
-      if (res.statusCode >= 400 && res.statusCode !== 429) {
+      // Bug 7 Fix: Only log auth failures (401/403) to DB to avoid saturation
+      if (res.statusCode === 401 || res.statusCode === 403) {
         try {
           await db.insert(securityLogsTable).values({
             id: crypto.randomUUID(),
             userId: (req as any).userId || "anonymous",
-            eventType: res.statusCode === 401 || res.statusCode === 403 ? "AUTH_FAILURE" : "API_REQUEST",
+            eventType: "AUTH_FAILURE",
             ipAddress: req.ip || "unknown",
             userAgent: req.get("User-Agent") || "unknown",
             metadata: { method: req.method, path: req.path, statusCode: res.statusCode }
@@ -128,6 +128,14 @@ app.use((req: any, res, next) => {
         } catch (err) {
           logger.error({ err, path: req.path }, "FAILED_TO_WRITE_SECURITY_LOG");
         }
+      } else if (res.statusCode >= 500) {
+        // Log server errors to aggregator but NOT to DB
+        logger.error({ 
+          userId: (req as any).userId || "anonymous", 
+          path: req.path, 
+          method: req.method, 
+          statusCode: res.statusCode 
+        }, "SERVER_ERROR_DETECTED");
       }
     });
   }
@@ -214,29 +222,31 @@ if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCT
 }
 
 // ─── DEBUG ──────────────────────────────────────────────────────────────────
-app.get("/api/debug-db", (req: any, res, next) => {
-  if (!req.user?.isAdmin) {
-    res.status(403).json({ error: "Forbidden" });
-    return;
-  }
-  next();
-}, async (req, res) => {
-  try {
-    const { db, usersTable } = await import("@workspace/db");
-    const { sql } = await import("drizzle-orm");
-    const countResult = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
-    res.json({ success: true, count: countResult[0].count });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+if (process.env.NODE_ENV === "development") {
+  app.get("/api/debug-db", (req: any, res, next) => {
+    if (!req.user?.isAdmin) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    next();
+  }, async (req, res) => {
+    try {
+      const { db, usersTable } = await import("@workspace/db");
+      const { sql } = await import("drizzle-orm");
+      const countResult = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
+      res.json({ success: true, count: countResult[0].count });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+}
 
 // ─── 12. Error handler (RECOVERY MODE: Exposing errors) ──────────────────────
 app.use((err: any, req: any, res: any, _next: any) => {
   const isDev = process.env.NODE_ENV === "development";
   const errorDetails = {
     error: "Internal Server Error",
-    message: err.message || "Unknown error",
+    message: isDev ? (err.message || "Unknown error") : "Something went wrong. Please try again.",
     path: req.path,
     method: req.method,
     stack: isDev ? err.stack : undefined, // ONLY expose stack in dev

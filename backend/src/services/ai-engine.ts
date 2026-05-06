@@ -29,6 +29,7 @@ export interface GenerateContentOptions {
   maxTokens?: number;
   language?: string;
   zodSchema?: z.ZodSchema<any>;
+  forceJsonMode?: boolean;
   signal?: AbortSignal; // --- H-21 FIX: Support request cancellation ---
 }
 
@@ -83,7 +84,7 @@ export const validateAIConfig = () => {
     { name: "Groq", key: process.env.GROQ_API_KEY },
     { name: "Together AI", key: process.env.TOGETHER_AI_API_KEY },
     { name: "Cerebras", key: process.env.CEREBRAS_API_KEY },
-    { name: "OpenRouter", key: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API },
+    { name: "OpenRouter", key: process.env.OPENROUTER_API_KEY },
     { name: "Gemini", key: process.env.GEMINI_API_KEY },
     { name: "SambaNova", key: process.env.SAMBANOVA_API_KEY },
   ];
@@ -118,6 +119,7 @@ export const generateContent = async ({
   monthlyGenerationsUsed = 0,
   language = "English",
   zodSchema,
+  forceJsonMode,
   signal, // --- H-21 FIX: Accept AbortSignal ---
 }: GenerateContentOptions) => {
   
@@ -162,7 +164,7 @@ export const generateContent = async ({
     },
     {
       name: "OpenRouter (Llama)",
-      apiKey: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API,
+      apiKey: process.env.OPENROUTER_API_KEY,
       baseURL: "https://openrouter.ai/api/v1",
       model: isInfinity ? "meta-llama/llama-3.3-70b-instruct" : "meta-llama/llama-3.1-8b-instruct",
     },
@@ -170,22 +172,25 @@ export const generateContent = async ({
       name: "Gemini",
       apiKey: process.env.GEMINI_API_KEY,
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash",
     },
     {
       name: "SambaNova",
       apiKey: process.env.SAMBANOVA_API_KEY,
       baseURL: "https://api.sambanova.ai/v1",
-      model: isInfinity ? "Meta-Llama-3.1-70B-Instruct" : "Meta-Llama-3.1-8B-Instruct",
+      model: isInfinity ? "Meta-Llama-3.3-70B-Instruct" : "Meta-Llama-3.1-8B-Instruct",
     }
   ];
 
   let lastError: any = null;
   let attemptCount = 0;
   const MAX_PROVIDER_ATTEMPTS = 7;
-  const TIMEOUT_MS = 30000;
+  const TIMEOUT_MS = 12000; // 12 seconds per provider
+  const TOTAL_BUDGET_MS = 45000; // 45 seconds max for entire chain
+  const startTime = Date.now();
 
   for (const provider of providers) {
+    if (Date.now() - startTime > TOTAL_BUDGET_MS) break; // Hard stop before Railway kills us
     if (!provider.apiKey) continue;
     if (attemptCount >= MAX_PROVIDER_ATTEMPTS) break;
     attemptCount++;
@@ -231,7 +236,7 @@ export const generateContent = async ({
             messages: finalMessages,
             temperature: attempt > 0 ? 0.3 : temperature, // Reduce temp on retry for stability
             max_tokens: maxTokens,
-            response_format: zodSchema ? { type: "json_object" } : undefined,
+            response_format: (zodSchema || forceJsonMode) ? { type: "json_object" } : undefined,
           },
           { 
             timeout: TIMEOUT_MS, 

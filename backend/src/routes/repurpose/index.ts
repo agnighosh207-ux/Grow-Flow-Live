@@ -62,6 +62,7 @@ router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Pro
       userPlan: isPaid ? "INFINITY" : "FREE", 
       userId: req.userId,
       maxTokens: 2500,
+      forceJsonMode: true,
       signal: abortController.signal,
     });
  

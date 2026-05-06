@@ -97,6 +97,7 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
       userId: req.userId,
       language,
       maxTokens: 3000,
+      forceJsonMode: true,
     });
 
     if (isAborted) return;

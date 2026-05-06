@@ -82,6 +82,7 @@ Return ONLY a JSON object:
       userId: req.userId,
       language,
       maxTokens: 4000,
+      forceJsonMode: true,
       signal: abortController.signal, // --- H-21 FIX: Pass AbortSignal ---
     });
 

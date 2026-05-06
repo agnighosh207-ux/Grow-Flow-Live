@@ -65,6 +65,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
       userPlan: "FREE",
       userId: req.userId,
       maxTokens: 2000,
+      forceJsonMode: true,
       signal: abortController.signal,
     });
 

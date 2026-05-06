@@ -15,7 +15,7 @@ const router: IRouter = Router();
 // structures the output in a single call. NO Groq involved.
 const perplexityClient = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API,
+  apiKey: process.env.OPENROUTER_API_KEY,
   defaultHeaders: {
     "HTTP-Referer": "https://growflow.ai",
     "X-Title": "GrowFlow AI",
@@ -44,6 +44,12 @@ const nichePainPoints: Record<string, string> = {
 
 const IDEAS_CACHE = new Map<string, { data: any, timestamp: number }>();
 const IDEAS_TTL = 15 * 60 * 1000; // 15 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of IDEAS_CACHE.entries()) {
+    if (now - entry.timestamp > IDEAS_TTL) IDEAS_CACHE.delete(key);
+  }
+}, 5 * 60 * 1000); // Evict stale entries every 5 minutes
 
 // ─── /generate — 100% PERPLEXITY SEARCH ROUTE ──────────────────────
 // Perplexity sonar searches the live web AND structures JSON in ONE call.
@@ -134,6 +140,7 @@ Return ONLY a JSON object.`;
         userId: req.userId,
         language,
         maxTokens: 2500,
+        forceJsonMode: true,
         signal: abortController.signal
       });
       if (abortController.signal.aborted) return;

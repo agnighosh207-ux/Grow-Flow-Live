@@ -1,12 +1,24 @@
 import { useState, useCallback, useEffect } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
-import { useRazorpay } from "react-razorpay";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles, Crown, Zap, Shield, ChevronRight, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCreateSubscription, useVerifySubscription } from "@/hooks/useSubscription";
+
+declare global { interface Window { Razorpay: any; } }
+
+function loadRazorpay(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (window.Razorpay) { resolve(true); return; }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 type BillingPeriod = "monthly" | "quarterly" | "half-yearly" | "yearly";
 type Currency = "INR" | "USD";
@@ -26,7 +38,6 @@ export function PricingTable() {
   const [hoveredPlan, setHoveredPlan] = useState<string | null>("creator");
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const { user } = useUser();
-  const { Razorpay } = useRazorpay();
   const createSub = useCreateSubscription();
   const verifySub = useVerifySubscription();
   const [, setLocation] = useLocation();
@@ -84,6 +95,16 @@ export function PricingTable() {
       });
       const { subscriptionId, keyId } = data;
 
+      if (!subscriptionId) {
+        throw new Error("Failed to create subscription on backend.");
+      }
+
+      const loaded = await loadRazorpay();
+      if (!loaded || !window.Razorpay) {
+        alert("Payment gateway failed to load. Please disable ad-blockers and try again.");
+        return;
+      }
+
       const options = {
         key: keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_placeholder",
         subscription_id: subscriptionId,
@@ -119,17 +140,18 @@ export function PricingTable() {
         theme: { color: "#00F2FF" },
       };
 
-      const rzp = new Razorpay(options as any);
+      const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", function (response: any) {
         alert(`Payment Failed: ${response.error.description}`);
       });
       rzp.open();
     } catch (err: any) {
+      console.error("Checkout initialization failed:", err);
       alert(err.message || "Failed to initialize checkout.");
     } finally {
       setIsProcessing(null);
     }
-  }, [Razorpay, user, createSub, verifySub, billingPeriod, currency]);
+  }, [user, createSub, verifySub, billingPeriod, currency]);
 
   const plans = [
     {

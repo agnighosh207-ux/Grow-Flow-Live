@@ -4,7 +4,7 @@ import { logger } from "../lib/logger";
 function getRazorpayClient() {
   const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
   const keyId = isProd 
-    ? (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID)
+    ? (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID)
     : (process.env.RAZORPAY_TEST_KEY_ID && !process.env.RAZORPAY_TEST_KEY_ID.includes("...") ? process.env.RAZORPAY_TEST_KEY_ID : (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID));
   
   const keySecret = isProd

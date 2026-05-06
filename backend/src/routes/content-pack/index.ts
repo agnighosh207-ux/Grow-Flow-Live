@@ -14,17 +14,18 @@ router.post("/enhance", requireAuth, requirePlanOrTrial("content-pack"), enforce
   if (!idea?.trim()) { res.status(400).json({ error: "Idea is required" }); return; }
   const sanitizedIdea = String(idea).substring(0, 500);
 
-  try {
-    const prompt = `You are an elite creative director. Take the following raw content idea and rewrite it into an irresistible, viral-worthy, high-converting concept. Make it punchy. Return ONLY the enhanced idea, nothing else. Maximum 2 sentences.
-Raw Idea: "${sanitizedIdea}"`;
     const abortController = new AbortController();
-    req.on('close', () => abortController.abort());
+    try {
+      const prompt = `You are an elite creative director. Take the following raw content idea and rewrite it into an irresistible, viral-worthy, high-converting concept. Make it punchy. Return ONLY the enhanced idea, nothing else. Maximum 2 sentences.
+Raw Idea: "${sanitizedIdea}"`;
+      req.on('close', () => abortController.abort());
 
     const completion = await generateContent({
       messages: [{ role: "user", content: prompt }],
       userPlan: req.user?.planType || "free",
       userId: req.userId,
       maxTokens: 300,
+      forceJsonMode: true,
       signal: abortController.signal
     });
     let raw = completion.choices[0]?.message?.content?.trim() || sanitizedIdea;
@@ -34,6 +35,8 @@ Raw Idea: "${sanitizedIdea}"`;
     res.json({ enhancedIdea: enhanced });
     invalidateAuthCache(req.userId);
   } catch (err: any) {
+    if (abortController.signal.aborted) return;
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(500).json({ error: err?.message || "Failed to enhance idea" });
   }
 });
@@ -126,6 +129,7 @@ JSON Structure:
       userId: req.userId,
       language,
       maxTokens: isPro ? 4000 : 2500,
+      forceJsonMode: true,
       signal: abortController.signal
     });
 

@@ -203,7 +203,7 @@ export function ClerkProviderWithRoutes() {
             <Route path="/calendar"><ProtectedRoute component={ContentCalendar} /></Route>
             <Route path="/insights"><ProtectedRoute component={Insights} /></Route>
             <Route path="/pricing"><Pricing /></Route>
-            <Route path="/support"><Support /></Route>
+            <Route path="/support"><ProtectedRoute component={Support} /></Route>
             <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
             <Route path="/saved"><ProtectedRoute component={Saved} /></Route>
             <Route path="/referrals"><ProtectedRoute component={ReferralsPage} /></Route>

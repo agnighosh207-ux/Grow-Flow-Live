@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/planMiddleware";
+import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { z } from "zod";
 import { generateContent, extractJson } from "../../services/ai-engine";
 
@@ -14,7 +16,7 @@ const SCORE_SCHEMA = z.object({
 const URGENCY_WORDS = ["stop", "never", "always", "secret", "mistake", "truth", "warning", "finally", "immediately"];
 const POWER_WORDS = ["proven", "exact", "specific", "real", "honest", "brutal"];
 
-router.post("/score", requireAuth, async (req, res) => {
+router.post("/score", requireAuth, enforceGenerationLimit, async (req: any, res) => {
   try {
     const { hook, platform, niche } = SCORE_SCHEMA.parse(req.body);
 
@@ -99,9 +101,11 @@ Format must be exactly: {"aiScore": number (0-40 additional points), "mainIssue"
       quickFix: aiResult.quickFix || null,
       grade
     });
+    invalidateAuthCache(req.userId);
 
   } catch (error) {
     console.error("Hook scorer error:", error);
+    await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(500).json({ error: "Failed to score hook" });
   }
 });

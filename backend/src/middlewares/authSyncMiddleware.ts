@@ -70,7 +70,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
 
     if (isAdminEmail && user) {
       // Auto-escalate EXISTING user in DB if not already set or if banned
-      if (!user.isAdmin || user.planTier !== "INFINITY" || user.isBanned) {
+      if (!user.isAdmin || user.planTier !== "INFINITY") {
         logger.info({ userId: uid, email: emailFromSession }, "[AUTH] Admin detected, ensuring high privileges");
         const [updatedUser] = await db.update(usersTable)
           .set({ 
@@ -101,7 +101,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       
       if (!needsCreditReset && !isAdminEmail && !user.isFirstLogin) {
         // Quick update in background
-        db.update(usersTable).set({ lastLoginAt: now }).where(eq(usersTable.id, uid)).catch(() => {});
+        db.update(usersTable).set({ lastLoginAt: now }).where(eq(usersTable.id, uid)).catch(err => logger.warn({ err, userId: uid }, "lastLoginAt update failed"));
         req.userId = uid;
         req.user = user;
         syncCache.set(uid, { timestamp: now.getTime(), user });

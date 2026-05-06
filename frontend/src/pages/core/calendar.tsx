@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CalendarItem {
   id: number;
@@ -58,6 +59,7 @@ export default function CalendarPage() {
   const [isAIScheduleOpen, setIsAIScheduleOpen] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   // Form State
   const [newItem, setNewItem] = useState({
@@ -123,6 +125,7 @@ export default function CalendarPage() {
       toast({ title: "Generating...", description: "AI is writing your content." });
       await api.post(`/calendar/items/${id}/generate`);
       fetchItems();
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
       toast({ title: "Generated!", description: "Content is ready in your history." });
     } catch (err) {
         toast({ variant: "destructive", title: "Generation failed" });
@@ -136,6 +139,7 @@ export default function CalendarPage() {
       await api.post("/calendar/ai-schedule", { ...aiConfig, existingItems: existingDates });
       setIsAIScheduleOpen(false);
       fetchItems();
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
       toast({ title: "Schedule Created!", description: "AI has filled your calendar." });
     } catch (err) {
       toast({ variant: "destructive", title: "AI Failed" });

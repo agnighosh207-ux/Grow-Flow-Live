@@ -72,8 +72,12 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     };
   }
 
-  if (user.subscriptionStatus === "active" || (user.subscriptionStatus === "trial" && user.trialEndsAt && new Date(user.trialEndsAt) <= now)) {
-    // If trial ended but status is still "trial", treat as active (post-trial)
+  if (
+    user.subscriptionStatus === "active" || 
+    (user.subscriptionStatus === "trial" && user.trialEndsAt && new Date(user.trialEndsAt) <= now) ||
+    (user.subscriptionStatus === "canceled" && user.planExpiry && new Date(user.planExpiry) > now)
+  ) {
+    // If trial ended but status is still "trial", or if canceled but within grace period, treat as active
     if (planType === "starter") {
       return {
         plan: "active" as const, planType,

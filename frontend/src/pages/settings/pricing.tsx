@@ -45,21 +45,21 @@ const BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
 };
 
 const USD_BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 5, quarterly: 4.5, "half-yearly": 4.25, yearly: 4 },
-  creator: { monthly: 15, quarterly: 13.5, "half-yearly": 13, yearly: 12 },
-  infinity: { monthly: 27, quarterly: 24.3, "half-yearly": 23.4, yearly: 21.6 },
+  starter: { monthly: 1.99, quarterly: 1.79, "half-yearly": 1.69, yearly: 1.49 },
+  creator: { monthly: 5.49, quarterly: 4.99, "half-yearly": 4.79, yearly: 4.39 },
+  infinity: { monthly: 9.49, quarterly: 8.49, "half-yearly": 7.99, yearly: 7.49 },
 };
 
 const USD_STRIKETHROUGH_PRICES: Record<string, number> = {
-  starter: 15,
-  creator: 27,
-  infinity: 45,
+  starter: 5.49,
+  creator: 9.49,
+  infinity: 15.49,
 };
 
 const USD_BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
-  starter: { monthly: 5, quarterly: 13.5, "half-yearly": 25.5, yearly: 48 },
-  creator: { monthly: 15, quarterly: 40.5, "half-yearly": 78, yearly: 144 },
-  infinity: { monthly: 27, quarterly: 72.9, "half-yearly": 140.4, yearly: 259.2 },
+  starter: { monthly: 1.99, quarterly: 5.37, "half-yearly": 10.14, yearly: 17.88 },
+  creator: { monthly: 5.49, quarterly: 14.97, "half-yearly": 28.74, yearly: 52.68 },
+  infinity: { monthly: 9.49, quarterly: 25.47, "half-yearly": 47.94, yearly: 89.88 },
 };
 
 function getBillingMonths(period: BillingPeriod): number {

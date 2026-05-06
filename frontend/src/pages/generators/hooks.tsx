@@ -46,7 +46,7 @@ function HooksGeneratorInner() {
   const isFreeUser = !sub?.planType || sub.planType === "free";
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema as any),
+    resolver: zodResolver(formSchema),
     defaultValues: { topic: "", tone: "Aggressive", language: "English" }
   });
 
