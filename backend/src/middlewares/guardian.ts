@@ -14,11 +14,11 @@ const redisClient = redis;
 // Dynamic Quotas Based on Tier
 const getQuotaForTier = (tier: string) => {
   switch (tier.toUpperCase()) {
-    case "INFINITY": return 60; // 60 / hour (The Human Speed limit)
-    case "CREATOR": return 30; // 30 / hour
-    case "STARTER": return 10; // 10 / hour
+    case "INFINITY": return 200; // 200 / hour (Power user / Agency)
+    case "CREATOR": return 100;  // 100 / hour
+    case "STARTER": return 60;   // 60 / hour (1 request per minute)
     case "FREE":
-    default: return 100; // 100 / hour (Allow for normal dashboard browsing)
+    default: return 40;        // 40 / hour (Browsing + minimal generation)
   }
 };
 

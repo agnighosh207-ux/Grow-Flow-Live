@@ -27,7 +27,7 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
-  const { competitorContent, yourNiche, platform, yourGoal } = req.body;
+  const { competitorContent, yourNiche, platform, yourGoal, language = "English" } = req.body;
 
   if (!competitorContent || competitorContent.length < 100) {
     res.status(400).json({ error: "Competitor content must be at least 100 characters" });
@@ -71,6 +71,7 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
       ],
       userPlan: "INFINITY", // Force high-quality model (Sonar if available)
       userId: req.userId,
+      language, // Fixed: Pass language to engine
       maxTokens: 2000,
       forceJsonMode: true,
       signal: abortController.signal,
@@ -105,7 +106,7 @@ router.post("/batch", requireAuth, enforceGenerationLimit, requireTierLevel("CRE
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
-  const { items, niche, platform } = req.body;
+  const { items, niche, platform, language = "English" } = req.body;
   
   if (!Array.isArray(items) || items.length > 3) {
     res.status(400).json({ error: "Max 3 items allowed for batch analysis" });
@@ -121,6 +122,7 @@ router.post("/batch", requireAuth, enforceGenerationLimit, requireTierLevel("CRE
         ],
         userPlan: "FREE", // Use Groq for speed in batch
         userId: req.userId,
+        language, // Fixed: Pass language to engine
         maxTokens: 600,
         forceJsonMode: true,
         signal: abortController.signal,

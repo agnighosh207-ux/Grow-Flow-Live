@@ -110,6 +110,7 @@ Analyze the data and return a JSON object with the following structure:
       ],
       userPlan: isPaid ? "INFINITY" : "FREE", 
       userId,
+      language: user.languagePreference || "English", // Fixed: Pass language to engine
       maxTokens: 1500,
     });
 

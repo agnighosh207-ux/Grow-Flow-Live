@@ -10,7 +10,7 @@ router.post("/analyze", requireAuth, requirePlanOrTrial("predictor"), enforceGen
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
-  const { content, platform, niche, contentType } = req.body;
+  const { content, platform, niche, contentType, language = "English" } = req.body;
 
   if (!content || content.length < 50) {
     res.status(400).json({ error: "Content must be at least 50 characters" });
@@ -58,6 +58,7 @@ Return JSON:
       ],
       userPlan: "FREE",
       userId: req.userId,
+      language, // Fixed: Pass language to engine
       maxTokens: 1500,
       signal: abortController.signal,
     });

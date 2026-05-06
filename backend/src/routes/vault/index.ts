@@ -39,7 +39,7 @@ router.post("/remix", requireAuth, requirePlanOrTrial("vault"), enforceGeneratio
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
-  const { vaultItemId, userTopic, userNiche, tone } = req.body;
+  const { vaultItemId, userTopic, userNiche, tone, language = "English" } = req.body;
 
   if (!vaultItemId || !userTopic) {
     res.status(400).json({ error: "Vault item ID and topic are required" });
@@ -80,6 +80,7 @@ Return JSON:
       ],
       userPlan: "FREE", // Use Groq llama-3.1-8b-instant as requested
       userId: req.userId,
+      language, // Fixed: Pass language to engine
       maxTokens: 800,
       signal: abortController.signal,
     });

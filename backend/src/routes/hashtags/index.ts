@@ -48,6 +48,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hashtags"), enforceGen
       ],
       userPlan: "FREE", // Use Groq as requested
       userId: req.userId,
+      language: language || "English", // Fixed: Pass language to engine
       maxTokens: 1200,
     });
 
@@ -61,7 +62,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hashtags"), enforceGen
 });
 
 router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  const { hashtags, platform, niche } = req.body;
+  const { hashtags, platform, niche, language = "English" } = req.body;
 
   if (!hashtags) {
     res.status(400).json({ error: "Hashtags are required" });
@@ -93,6 +94,7 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
       ],
       userPlan: "FREE",
       userId: req.userId,
+      language, // Fixed: Pass language to engine
       maxTokens: 1000,
     });
 

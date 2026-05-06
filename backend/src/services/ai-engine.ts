@@ -182,6 +182,13 @@ export const generateContent = async ({
     }
   ];
 
+  // --- FIX: Distribute load across providers to prevent immediate rate-limit exhaustion ---
+  // Shuffle providers so we don't always hit the same one first
+  for (let i = providers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [providers[i], providers[j]] = [providers[j], providers[i]];
+  }
+
   let lastError: any = null;
   let attemptCount = 0;
   const MAX_PROVIDER_ATTEMPTS = 7;

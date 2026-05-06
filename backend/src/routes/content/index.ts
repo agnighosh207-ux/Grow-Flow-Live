@@ -178,6 +178,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
       ],
       userPlan,
       userId,
+      language, // Fixed: Pass language to engine
       maxTokens: 4000,
       forceJsonMode: true,
       signal, // --- H-21 FIX: Pass AbortSignal ---
@@ -190,36 +191,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
       throw new Error("Failed to generate valid content JSON structure");
     }
 
-    // ─── VIRAL SCORE CALCULATION ──────────────────────────────────────────────
-    // Fire and forget — do not await this
-    const scoringPrompt = `You are a viral content analyst. Analyze the following content for virality across Instagram, YouTube, Twitter, and LinkedIn.
-Content: ${JSON.stringify(finalContent)}
-
-Return ONLY a JSON object with scores (0-100) for each platform:
-{
-  "instagram": number,
-  "youtube": number,
-  "twitter": number,
-  "linkedin": number
-}`;
-
-    generateContent({
-      messages: [{ role: "user", content: scoringPrompt }],
-      userPlan: "free", // Forces lightweight model
-      userId,
-      maxTokens: 200,
-      temperature: 0.3,
-      forceJsonMode: true,
-      signal, // --- H-21 FIX: Pass AbortSignal ---
-    }).then(scoringResult => {
-      // Background scoring logic if needed
-      const scoreContent = (scoringResult as any).choices[0]?.message?.content || "{}";
-      const scores = extractJson(scoreContent);
-      // In a real app we might update the DB here with the late-arriving scores
-      logger.info({ userId, scores }, "Viral scores calculated in background");
-    }).catch(() => {});
-
-    return finalContent; // Return immediately without waiting for scoring
+    return finalContent; // Return immediately
   } catch (err: any) {
     if (err.name === 'AbortError' || err.message === 'ABORTED') {
       throw err; // Propagate aborts
@@ -365,6 +337,9 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     res.json({
       id: savedGen.id,
       content,
+      idea, // Return idea for frontend analysis synchronization
+      contentType, // Return contentType for frontend analysis synchronization
+      niche: resolvedNiche, // Return niche for frontend analysis synchronization
       // BUG 3 Fix: Return the actual remaining count (already decremented by middleware)
       generationsRemaining: (req as any).user?.generationsRemaining ?? user?.generationsRemaining ?? 0,
       plan: status,
@@ -507,6 +482,7 @@ Return ONLY this JSON:
       ],
       userPlan: planType.toUpperCase(),
       userId: req.userId,
+      language, // Fixed: Pass language to engine for variations
       maxTokens: 4000,
       forceJsonMode: true,
     });

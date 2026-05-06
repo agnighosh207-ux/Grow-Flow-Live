@@ -10,6 +10,7 @@ const router: IRouter = Router();
 
 router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const userId = req.userId;
+  const { language = "English" } = req.body;
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
@@ -63,6 +64,7 @@ Return JSON:
       ],
       userPlan: req.user?.planType || "FREE",
       userId,
+      language, // Fixed: Pass language to engine
       maxTokens: 1000,
       signal: abortController.signal,
     });
@@ -95,7 +97,7 @@ Return JSON:
 });
 
 router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  const { topic, platform, length, useVoice } = req.body;
+  const { topic, platform, length, useVoice, language = "English" } = req.body;
   const userId = req.userId;
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
@@ -126,6 +128,7 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
       ],
       userPlan: req.user?.planType || "FREE",
       userId,
+      language, // Fixed: Pass language to engine
       maxTokens,
       signal: abortController.signal,
     });

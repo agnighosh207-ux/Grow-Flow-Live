@@ -61,6 +61,7 @@ router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Pro
       ],
       userPlan: isPaid ? "INFINITY" : "FREE", 
       userId: req.userId,
+      language, // Fixed: Pass language to engine
       maxTokens: 2500,
       forceJsonMode: true,
       signal: abortController.signal,

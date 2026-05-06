@@ -149,6 +149,7 @@ Return JSON:
       ],
       userPlan: "FREE",
       userId: req.userId,
+      language: "English", // Default to English for scheduling logic
       maxTokens: 2500,
     });
 
@@ -218,6 +219,7 @@ router.post("/items/:id/generate", requireAuth, requirePlanOrTrial("calendar"), 
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: `Generate the full content for this ${item.contentType} post.` }],
         userPlan: "FREE",
         userId: req.userId,
+        language: "English", // Default for calendar gen
         maxTokens: 2000
     });
 

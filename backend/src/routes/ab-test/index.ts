@@ -13,12 +13,13 @@ const AB_TEST_SCHEMA = z.object({
   niche: z.string(),
   audienceA: z.string().min(3).max(200),
   audienceB: z.string().min(3).max(200),
-  tone: z.string()
+  tone: z.string(),
+  language: z.string().optional()
 });
 
 router.post("/generate", requireAuth, requirePlanOrTrial("ab-test"), enforceGenerationLimit, async (req: any, res) => {
   try {
-    const { idea, platform, niche, audienceA, audienceB, tone } = AB_TEST_SCHEMA.parse(req.body);
+    const { idea, platform, niche, audienceA, audienceB, tone, language = "English" } = AB_TEST_SCHEMA.parse(req.body);
 
     const systemPrompt = `You are an expert A/B content tester. Create two distinct content versions for the same topic, each optimized for a different audience segment. Version A and Version B must feel genuinely different — different hooks, different angles, different psychological triggers. Then predict which will perform better and why.
 
@@ -66,6 +67,7 @@ Generate the A/B test content.`;
         { role: "user", content: userPrompt }
       ],
       userPlan: "FREE",
+      language, // Fixed: Pass language to engine
       maxTokens: 2000
     });
  
