@@ -10,12 +10,16 @@ const router = Router();
 
 router.use("/og", ogRouter);
 
+// Alias for frontend compatibility
+router.get("/top-creators", (req, res) => {
+  return res.redirect(301, "/api/public/leaderboard");
+});
+
 router.get("/leaderboard", async (req, res) => {
   const cacheKey = "public:leaderboard:weekly";
   const cached = await getCache<any[]>(cacheKey);
   if (cached) {
-    res.json(cached);
-    return;
+    return res.json(cached);
   }
 
   try {
@@ -37,7 +41,15 @@ router.get("/leaderboard", async (req, res) => {
       )
     )
     .where(eq(usersTable.showOnLeaderboard, true))
-    .groupBy(usersTable.id)
+    .groupBy(
+      usersTable.id, 
+      usersTable.displayName, 
+      usersTable.avatarUrl, 
+      usersTable.niche, 
+      usersTable.currentStreak, 
+      usersTable.planTier, 
+      usersTable.username
+    )
     .orderBy(desc(sql`COUNT(${contentGenerationsTable.id})`))
     .limit(20);
 
@@ -48,10 +60,10 @@ router.get("/leaderboard", async (req, res) => {
     }));
 
     await setCache(cacheKey, formatted, 3600);
-    res.json(formatted);
+    return res.json(formatted);
   } catch (err) {
     logger.error({ err }, "Failed to fetch leaderboard");
-    res.status(500).json({ error: "Failed to fetch leaderboard" });
+    return res.status(500).json({ error: "Failed to fetch leaderboard" });
   }
 });
 
@@ -75,9 +87,9 @@ router.get("/stats", async (req, res) => {
     };
 
     await setCache(cacheKey, stats, 60); 
-    res.json(stats);
+    return res.json(stats);
   } catch (err) {
-    res.json({ totalGenerations: 12450, totalUsers: 420 });
+    return res.json({ totalGenerations: 12450, totalUsers: 420 });
   }
 });
 
@@ -99,9 +111,9 @@ router.get("/testimonials", async (req, res) => {
     }
 
     await setCache(cacheKey, testimonials, 3600);
-    res.json(testimonials);
+    return res.json(testimonials);
   } catch (err) {
-    res.json([]);
+    return res.json([]);
   }
 });
 
@@ -131,9 +143,9 @@ router.get("/profile/:username", async (req, res) => {
       username: user.username,
     };
 
-    res.json({ profile, content: publicContent });
+    return res.json({ profile, content: publicContent });
   } catch (err) {
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -152,9 +164,9 @@ router.get("/review/:shareId", async (req, res) => {
     // Track view
     await db.update(sharingLinksTable).set({ viewCount: sql`${sharingLinksTable.viewCount} + 1` }).where(eq(sharingLinksTable.id, shareId));
 
-    res.json({ content, expiresAt: link.expiresAt });
+    return res.json({ content, expiresAt: link.expiresAt });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch review content" });
+    return res.status(500).json({ error: "Failed to fetch review content" });
   }
 });
 
@@ -187,10 +199,10 @@ router.post("/review/:shareId/feedback", async (req, res) => {
       }
     }
 
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch (err) {
     logger.error({ err }, "Feedback notification error");
-    res.status(500).json({ error: "Failed to save feedback" });
+    return res.status(500).json({ error: "Failed to save feedback" });
   }
 });
 

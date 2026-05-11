@@ -462,6 +462,14 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
 
   try {
     const success = await db.transaction(async (tx) => {
+      // Lock user record to prevent concurrent subscription updates
+      const [lockedUser] = await tx.select()
+        .from(usersTable)
+        .where(eq(usersTable.id, req.userId))
+        .for('update');
+
+      if (!lockedUser) throw new Error("USER_NOT_FOUND_DURING_LOCK");
+
       const [existingPayment] = await tx.select()
         .from(paymentsTable)
         .where(eq(paymentsTable.id, razorpay_payment_id))

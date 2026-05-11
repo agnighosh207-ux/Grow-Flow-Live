@@ -121,7 +121,9 @@ const createLimiter = (windowMs: number, prefix: string) => {
 
 // Initialize globally so they aren't recreated on every request
 // Standard 1 hour limiter for everyone
-const guardianLimiter = createLimiter(60 * 60 * 1000, "global");
+// Standard 1 hour limiter for everyone
+const envPrefix = process.env.NODE_ENV === "production" ? "prod" : "dev";
+const guardianLimiter = createLimiter(60 * 60 * 1000, `global_${envPrefix}`);
 
 export const guardianMiddleware = async (req: any, res: any, next: any) => {
   if (!req.path.startsWith("/api/") || req.path.startsWith("/api/health") || req.path.startsWith("/api/subscription/webhook")) {

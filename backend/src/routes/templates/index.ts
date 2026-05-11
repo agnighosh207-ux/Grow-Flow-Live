@@ -8,7 +8,10 @@ const router: IRouter = Router();
 
 const requireAdmin = async (req: any, res: any, next: any) => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-  if (!user || !user.isAdmin) return res.status(403).json({ error: "Forbidden" });
+  if (!user || !user.isAdmin) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
   next();
 };
 

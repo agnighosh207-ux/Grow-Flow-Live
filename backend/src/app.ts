@@ -110,23 +110,33 @@ app.use(clerkMiddleware());
 app.use(authSyncMiddleware);
 app.use(guardianMiddleware);
 
-// ─── 7. Security logging (Only log failures to avoid DB saturation) ─────────
+// ─── 7. Security logging (Throttled to avoid DB saturation) ─────────
+const securityLogThrottle = new Map<string, number>();
+
 app.use((req: any, res, next) => {
   if (req.path.startsWith("/api/") && req.path !== "/api/health") {
     res.on("finish", async () => {
-      // Bug 7 Fix: Only log auth failures (401/403) to DB to avoid saturation
       if (res.statusCode === 401 || res.statusCode === 403) {
-        try {
-          await db.insert(securityLogsTable).values({
-            id: crypto.randomUUID(),
-            userId: (req as any).userId || "anonymous",
-            eventType: "AUTH_FAILURE",
-            ipAddress: req.ip || "unknown",
-            userAgent: req.get("User-Agent") || "unknown",
-            metadata: { method: req.method, path: req.path, statusCode: res.statusCode }
-          });
-        } catch (err) {
-          logger.error({ err, path: req.path }, "FAILED_TO_WRITE_SECURITY_LOG");
+        const ip = req.ip || "unknown";
+        const throttleKey = `${ip}:${res.statusCode}:${req.path}`;
+        const now = Date.now();
+        const lastLog = securityLogThrottle.get(throttleKey) || 0;
+        
+        // Log at most once every 5 minutes per IP/path combo for auth failures
+        if (now - lastLog > 5 * 60 * 1000) {
+          securityLogThrottle.set(throttleKey, now);
+          try {
+            await db.insert(securityLogsTable).values({
+              id: crypto.randomUUID(),
+              userId: (req as any).userId || "anonymous",
+              eventType: "AUTH_FAILURE",
+              ipAddress: ip,
+              userAgent: req.get("User-Agent") || "unknown",
+              metadata: { method: req.method, path: req.path, statusCode: res.statusCode }
+            });
+          } catch (err) {
+            logger.error({ err, path: req.path }, "FAILED_TO_WRITE_SECURITY_LOG");
+          }
         }
       } else if (res.statusCode >= 500) {
         // Log server errors to aggregator but NOT to DB

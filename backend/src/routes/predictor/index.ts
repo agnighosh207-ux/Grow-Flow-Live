@@ -4,6 +4,7 @@ import { enforceGenerationLimit, refundGenerationCredit } from "../../middleware
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, predictorResultsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 
 const router: IRouter = Router();
 
@@ -86,10 +87,12 @@ Return JSON:
     }).catch((e) => console.error("Failed to save predictor result:", e));
 
     invalidateAuthCache(req.userId);
+    return;
   } catch (err: any) {
     console.error("PREDICTOR ANALYZE ERROR:", err);
     await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Predictor service unavailable. Please try again." });
+    return;
   }
 });
 
@@ -100,8 +103,10 @@ router.get("/history", requireAuth, async (req: any, res): Promise<void> => {
       .orderBy(desc(predictorResultsTable.createdAt))
       .limit(50);
     res.json(history);
+    return;
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch history" });
+    return;
   }
 });
 

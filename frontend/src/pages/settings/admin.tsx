@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { Button } from "@/components/ui/button";
 
 type AdminTab = "overview" | "users" | "churn" | "revenue" | "announcements" | "system";
 

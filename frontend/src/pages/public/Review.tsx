@@ -3,9 +3,9 @@ import { useParams, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, MessageSquare, Sparkles, Send, ArrowRight, Instagram, Twitter, Linkedin, Youtube, Loader2, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
-import { Logo } from "@/components/layout/layout";
+import { Logo } from "@/components/layout/Logo";
 
 export default function ReviewPage() {
   const { shareId } = useParams();

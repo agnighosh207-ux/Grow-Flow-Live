@@ -15,14 +15,21 @@ const router: IRouter = Router();
 const requireAdmin = async (req: any, res: any, next: any) => {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    if (!user) return res.status(401).json({ error: "User not found" });
+    if (!user) {
+      res.status(401).json({ error: "User not found" });
+      return;
+    }
 
-    const adminEmailFromEnv = (process.env.ADMIN_EMAIL || "agnighosh207@gmail.com").toLowerCase();
+    const adminEmailFromEnv = (process.env.ADMIN_EMAIL || "").toLowerCase();
+    if (!adminEmailFromEnv) {
+      logger.error("[AUTH] ADMIN_EMAIL not configured in environment");
+    }
     const isExplicitAdmin = user.isAdmin === true;
-    const isHardcodedAdmin = user.email?.toLowerCase() === adminEmailFromEnv;
+    const isHardcodedAdmin = adminEmailFromEnv && user.email?.toLowerCase() === adminEmailFromEnv;
 
     if (!isExplicitAdmin && !isHardcodedAdmin) {
-      return res.status(403).json({ error: "Forbidden" });
+      res.status(403).json({ error: "Forbidden" });
+      return;
     }
     next();
   } catch (error: any) {
@@ -60,7 +67,8 @@ router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
       settingsResult,
       activeAnnouncements,
       featureUsageData,
-      couponStats
+      couponStats,
+      churnRisk
     ] = await Promise.all([
       safeQuery(db.select({ count: sql<string>`count(*)` }).from(usersTable), [{ count: "0" }], "totalUsers"),
       safeQuery(db.select({ count: sql<string>`count(*)` }).from(usersTable).where(isNotNull(usersTable.email)), [{ count: "0" }], "totalEmails"),
@@ -347,7 +355,8 @@ router.get("/users/search", requireAuth, requireAdmin, async (req: any, res: any
   try {
     const q = req.query.q as string;
     if (!q || q.length < 2) {
-      return res.status(400).json({ error: "Query must be at least 2 characters" });
+      res.status(400).json({ error: "Query must be at least 2 characters" });
+      return;
     }
 
     const results = await db
@@ -388,7 +397,10 @@ router.get("/users/search", requireAuth, requireAdmin, async (req: any, res: any
 router.get("/users/:id", requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.params.id));
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
 
     const [genStats] = await db.select({ count: count() }).from(contentGenerationsTable).where(eq(contentGenerationsTable.userId, user.id));
     const [referralStats] = await db.select({ count: count() }).from(referralsTable).where(eq(referralsTable.referrerUserId, user.id));
@@ -408,7 +420,8 @@ router.post("/users/:id/grant-credits", requireAuth, requireAdmin, async (req: a
   try {
     const credits = Number(req.body.credits);
     if (isNaN(credits) || credits < 1 || credits > 1000) {
-      return res.status(400).json({ error: "Credits must be between 1 and 1000" });
+      res.status(400).json({ error: "Credits must be between 1 and 1000" });
+      return;
     }
 
     const [updated] = await db.update(usersTable)
@@ -465,7 +478,10 @@ router.post("/users/:id/unban", requireAuth, requireAdmin, async (req: any, res:
 router.post("/users/:id/reset-credits", requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
     const [user] = await db.select({ planTier: usersTable.planTier }).from(usersTable).where(eq(usersTable.id, req.params.id));
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
 
     const tier = user.planTier || "FREE";
     const defaultCredits = TIER_CREDITS[tier] || 5;
@@ -581,7 +597,8 @@ router.post("/reengagement/send-personal", requireAuth, requireAdmin, async (req
   try {
     const { userId, email, daysSinceLogin, name } = req.body;
     if (!email || !userId) {
-      return res.status(400).json({ error: "Missing email or userId" });
+      res.status(400).json({ error: "Missing email or userId" });
+      return;
     }
 
     await sendPersonalReengagementEmail(email, name, daysSinceLogin);

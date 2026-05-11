@@ -17,7 +17,8 @@ router.post("/create", requireAuth, async (req: any, res: any) => {
   });
 
   if (user?.teamId) {
-    return res.status(400).json({ error: "User already belongs to a team" });
+    res.status(400).json({ error: "User already belongs to a team" });
+    return;
   }
 
   const teamId = nanoid();
@@ -27,7 +28,7 @@ router.post("/create", requireAuth, async (req: any, res: any) => {
     await db.transaction(async (tx) => {
       await tx.insert(teamsTable).values({
         id: teamId,
-        name: `${user?.name || 'Owner'}'s Team`,
+        name: `${(user?.displayName || user?.firstName || "Owner")}'s Team`,
         ownerId: userId,
         planTier: "agency",
         maxSeats: 5,
@@ -56,7 +57,8 @@ router.get("/members", requireAuth, async (req: any, res: any) => {
   });
 
   if (!user?.teamId) {
-    return res.json({ members: [], teamCode: null });
+    res.json({ members: [], teamCode: null });
+    return;
   }
 
   const team = await db.query.teamsTable.findFirst({
@@ -70,10 +72,10 @@ router.get("/members", requireAuth, async (req: any, res: any) => {
   res.json({ 
     members: members.map(m => ({
       id: m.id,
-      name: m.name,
+      name: m.displayName || m.firstName || "User",
       email: m.email,
       role: m.teamRole,
-      generationsUsed: m.monthlyGenerationsUsed,
+      generationsUsed: m.totalGenerations,
       joinedAt: m.createdAt
     })),
     teamCode: team?.teamCode 
@@ -85,18 +87,23 @@ router.post("/join", requireAuth, async (req: any, res: any) => {
   const { code } = req.body;
   const userId = req.auth.userId;
 
-  if (!code) return res.status(400).json({ error: "Team code is required" });
+  if (!code) {
+    res.status(400).json({ error: "Team code is required" });
+    return;
+  }
 
   const team = await db.query.teamsTable.findFirst({
     where: eq(teamsTable.teamCode, code)
   });
 
   if (!team) {
-    return res.status(404).json({ error: "Invalid team code" });
+    res.status(404).json({ error: "Invalid team code" });
+    return;
   }
 
   if (team.seatsUsed >= team.maxSeats) {
-    return res.status(400).json({ error: "Team is full" });
+    res.status(400).json({ error: "Team is full" });
+    return;
   }
 
   try {
@@ -127,7 +134,8 @@ router.delete("/member/:id", requireAuth, async (req: any, res: any) => {
   });
 
   if (user?.teamRole !== "owner") {
-    return res.status(403).json({ error: "Only team owners can remove members" });
+    res.status(403).json({ error: "Only team owners can remove members" });
+    return;
   }
 
   const memberToRemove = await db.query.usersTable.findFirst({
@@ -138,7 +146,8 @@ router.delete("/member/:id", requireAuth, async (req: any, res: any) => {
   });
 
   if (!memberToRemove) {
-    return res.status(404).json({ error: "Member not found in your team" });
+    res.status(404).json({ error: "Member not found in your team" });
+    return;
   }
 
   try {

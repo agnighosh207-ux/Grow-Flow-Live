@@ -1,7 +1,7 @@
 import { pgTable, text, serial, timestamp, jsonb, index, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { usersTable } from "./users";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 export const contentGenerationsTable = pgTable("content_generations", {
   id: serial("id").primaryKey(),
@@ -27,6 +27,6 @@ export const contentGenerationsTable = pgTable("content_generations", {
   userIdCreatedAtIdx: index("content_generations_user_id_created_at_idx").on(table.userId, table.createdAt),
 }));
 
-export const insertContentGenerationSchema = createInsertSchema(contentGenerationsTable).omit({ id: true, createdAt: true });
+export const insertContentGenerationSchema = createInsertSchema(contentGenerationsTable).omit({ id: true, createdAt: true }) as unknown as z.ZodObject<any>;
 export type InsertContentGeneration = z.infer<typeof insertContentGenerationSchema>;
 export type ContentGeneration = typeof contentGenerationsTable.$inferSelect;

@@ -170,12 +170,44 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       user = finalUser;
     });
 
+    // 7. Impersonation Check (Admins only)
+    const targetUserId = req.headers["x-impersonate-user"] as string;
+    if (isAdminEmail && targetUserId) {
+      const [impersonatedUser] = await db.select().from(usersTable).where(eq(usersTable.id, targetUserId));
+      if (impersonatedUser) {
+        // Verify session exists and is active
+        const [activeSession] = await db.select()
+          .from(impersonationSessionsTable)
+          .where(and(
+            eq(impersonationSessionsTable.adminId, uid),
+            eq(impersonationSessionsTable.targetUserId, targetUserId),
+            isNull(impersonationSessionsTable.endedAt),
+            gt(impersonationSessionsTable.expiresAt, new Date())
+          ))
+          .limit(1);
+
+        if (activeSession) {
+          logger.info({ adminId: uid, targetUserId }, "[AUTH] Admin impersonating user");
+          req.userId = targetUserId;
+          req.user = impersonatedUser;
+          req.isAdminImpersonating = true;
+          // DO NOT cache impersonated sessions in syncCache to avoid cross-pollination
+          return next();
+        } else {
+          logger.warn({ adminId: uid, targetUserId }, "[AUTH] Impersonation attempt failed: No active session");
+        }
+      }
+    }
+
     req.userId = uid;
     req.user = user;
     syncCache.set(uid, { timestamp: Date.now(), user });
     next();
   } catch (err: any) {
     logger.error({ err: err.message, stack: err.stack, userId: req.userId }, "[AUTH_SYNC_CRITICAL]");
-    next();
+    res.status(500).json({ 
+      error: "AUTH_SYNC_FAILED", 
+      message: "Identity synchronization failed. Please try again in a moment." 
+    });
   }
 };

@@ -104,7 +104,7 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
     const fifteenDays = 15 * 24 * 60 * 60 * 1000;
     const now = new Date();
 
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       // Mark referral as rewarded
       const [updatedReferral] = await tx.update(referralsTable)
         .set({ rewardGranted: true })

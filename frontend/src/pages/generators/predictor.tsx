@@ -243,7 +243,7 @@ export default function PredictorPage() {
                       Algorithm Signals
                     </h3>
                     <div className="space-y-3">
-                      {result.algorithmSignals.map((sig, i) => (
+                      {result.algorithmSignals.map((sig: any, i: number) => (
                         <div key={i} className="p-4 rounded-xl border bg-card flex gap-4">
                           <div className={`mt-1 h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${sig.impact === 'positive' ? 'bg-emerald-500/10 text-emerald-500' : sig.impact === 'negative' ? 'bg-red-500/10 text-red-500' : 'bg-muted text-muted-foreground'}`}>
                             {sig.impact === 'positive' ? <Check className="h-3 w-3" /> : sig.impact === 'negative' ? <X className="h-3 w-3" /> : <Info className="h-3 w-3" />}
@@ -313,7 +313,7 @@ export default function PredictorPage() {
                   <div className="relative space-y-2">
                     <h3 className="text-2xl font-bold">{platform} Algorithm Strategy</h3>
                     <ul className="space-y-2">
-                      {result.platformSpecificTips.map((tip, i) => (
+                      {result.platformSpecificTips.map((tip: string, i: number) => (
                         <li key={i} className="flex gap-2 items-start text-sm font-medium">
                           <Check className="h-5 w-5 shrink-0 mt-0.5" />
                           {tip}
@@ -332,7 +332,7 @@ export default function PredictorPage() {
 
         <TabsContent value="history">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {history.map((h, i) => (
+            {history.map((h: any, i: number) => (
               <Card key={i} className="hover:border-indigo-500/50 cursor-pointer transition-all group" onClick={() => { setResult(h); window.scrollTo(0, 0); }}>
                 <CardContent className="p-6 space-y-4">
                   <div className="flex justify-between items-center">

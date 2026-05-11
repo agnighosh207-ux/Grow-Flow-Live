@@ -17,6 +17,6 @@ export const brandVoicesTable = pgTable("brand_voices", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const insertBrandVoiceSchema = createInsertSchema(brandVoicesTable).omit({ id: true, createdAt: true });
+export const insertBrandVoiceSchema = createInsertSchema(brandVoicesTable).omit({ id: true, createdAt: true }) as unknown as z.ZodObject<any>;
 export type InsertBrandVoice = z.infer<typeof insertBrandVoiceSchema>;
 export type BrandVoice = typeof brandVoicesTable.$inferSelect;

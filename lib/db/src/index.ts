@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import * as schema from "./schema/index.ts";
+import * as schema from "./schema/index";
 
 // Correctly resolve root in both TS (source) and JS (bundled)
 const currentFileUrl = fileURLToPath(import.meta.url);

@@ -4,7 +4,7 @@ import { Layout } from "@/components/layout/layout";
 import { Search, Sparkles, BookOpen, MessageSquare, Rocket, Zap, ChevronRight, Filter, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { api } from "@/lib/api";
+import { api } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 
 interface Template {

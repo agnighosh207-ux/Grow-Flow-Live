@@ -13,6 +13,6 @@ export const foldersTable = pgTable("folders", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const insertFolderSchema = createInsertSchema(foldersTable).omit({ id: true, createdAt: true });
+export const insertFolderSchema = createInsertSchema(foldersTable).omit({ id: true, createdAt: true }) as unknown as z.ZodObject<any>;
 export type InsertFolder = z.infer<typeof insertFolderSchema>;
 export type Folder = typeof foldersTable.$inferSelect;

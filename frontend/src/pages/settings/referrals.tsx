@@ -78,7 +78,7 @@ export default function ReferralsPage() {
 
   const referralCount = referral?.successfulReferrals || 0;
   const rewardsEarned = referral?.totalBonusDays || 0;
-  const isPaidUser = sub?.planTier && sub.planTier !== "FREE";
+  const isPaidUser = sub?.planType && sub.planType !== "free";
   
   // Progress towards standard 15 Days
   const target = 1;

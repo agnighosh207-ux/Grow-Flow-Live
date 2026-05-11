@@ -25,10 +25,10 @@ router.post("/join", requireAuth, async (req: any, res) => {
       completedDays: 0,
     });
 
-    res.json({ success: true });
+    return res.json({ success: true });
   } catch (err) {
     console.error("Join challenge error:", err);
-    res.status(500).json({ error: "Failed to join challenge" });
+    return res.status(500).json({ error: "Failed to join challenge" });
   }
 });
 
@@ -102,10 +102,10 @@ router.get("/certificate", requireAuth, async (req: any, res) => {
     
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Content-Disposition", `attachment; filename="GrowFlow-Certificate-${name}.png"`);
-    res.send(png);
+    return res.send(png);
   } catch (err) {
     console.error("Certificate generation error:", err);
-    res.status(500).json({ error: "Failed to generate certificate" });
+    return res.status(500).json({ error: "Failed to generate certificate" });
   }
 });
 

@@ -362,7 +362,7 @@ export async function sendPersonalReengagementEmail(email: string, name: string,
     `;
 
     await resend.emails.send({
-      from: "Agnish @ GrowFlow AI <agnighosh207@gmail.com>", // Using personal-looking sender
+      from: FROM_EMAIL, 
       to: email,
       subject: `Quick question about your GrowFlow account?`,
       html,

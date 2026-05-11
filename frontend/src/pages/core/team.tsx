@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, UserPlus, Shield, UserMinus, 
   ExternalLink, Copy, Check, Loader2,
-  Brain, Zap, Crown, BarChart3
+  Brain, Zap, Crown, BarChart3, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";

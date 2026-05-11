@@ -53,9 +53,11 @@ router.get("/profile/:username", async (req, res) => {
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Cache-Control", "public, max-age=3600");
     res.send(png);
+    return;
   } catch (err) {
     console.error("OG Generation error:", err);
     res.status(500).send("Error generating image");
+    return;
   }
 });
 

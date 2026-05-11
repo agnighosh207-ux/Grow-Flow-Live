@@ -1161,8 +1161,8 @@ export default function Generate() {
   useEffect(() => {
     if (user) {
       identify(user.id, user.primaryEmailAddress?.emailAddress, {
-        plan: sub?.planTier,
-        totalGenerations: sub?.totalGenerations
+        plan: sub?.planType,
+        totalGenerations: sub?.generationsUsed
       });
     }
   }, [user, sub]);
@@ -1189,8 +1189,8 @@ export default function Generate() {
     mutation: {
       onSuccess: (data) => {
         track("generation_completed", {
-          viralScore: data.content?.viral_score,
-          plan: sub?.planTier,
+          viralScore: (data as any).content?.viral_score,
+          plan: sub?.planType,
           contentType: data.contentType
         });
 
@@ -1237,7 +1237,7 @@ export default function Generate() {
         track("generation_failed", {
           error: error?.message || error?.data?.message,
           status: error?.status,
-          plan: sub?.planTier
+          plan: sub?.planType
         });
 
         if (error?.status === 403) {

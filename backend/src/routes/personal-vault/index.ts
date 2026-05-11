@@ -13,14 +13,19 @@ router.get("/folders", requireAuth, async (req: any, res): Promise<void> => {
       .where(eq(foldersTable.userId, req.userId))
       .orderBy(desc(foldersTable.createdAt));
     res.json(folders);
+    return;
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch folders" });
+    return;
   }
 });
 
 router.post("/folders", requireAuth, async (req: any, res): Promise<void> => {
   const { name, color, icon } = req.body;
-  if (!name) return res.status(400).json({ error: "Folder name is required" });
+  if (!name) {
+    res.status(400).json({ error: "Folder name is required" });
+    return;
+  }
 
   try {
     const id = nanoid();
@@ -32,8 +37,10 @@ router.post("/folders", requireAuth, async (req: any, res): Promise<void> => {
       icon: icon || "Folder",
     });
     res.json({ success: true, id });
+    return;
   } catch (err) {
     res.status(500).json({ error: "Failed to create folder" });
+    return;
   }
 });
 
@@ -45,10 +52,11 @@ router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
   if (folderId) conditions.push(eq(contentGenerationsTable.folderId, String(folderId)));
   if (platform) conditions.push(eq(contentGenerationsTable.platform, String(platform)));
   if (search) {
-    conditions.push(or(
+    const searchCondition = or(
       ilike(contentGenerationsTable.idea, `%${search}%`),
       sql`${contentGenerationsTable.content}::text ILIKE ${`%${search}%`}`
-    ));
+    );
+    if (searchCondition) conditions.push(searchCondition);
   }
   if (tags) {
     const tagList = String(tags).split(",");
@@ -62,9 +70,11 @@ router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
       .limit(Number(limit));
     
     res.json(items);
+    return;
   } catch (err) {
     console.error("Content bank fetch error:", err);
     res.status(500).json({ error: "Failed to fetch content bank items" });
+    return;
   }
 });
 
@@ -84,8 +94,10 @@ router.patch("/items/:id", requireAuth, async (req: any, res): Promise<void> => 
       .where(and(eq(contentGenerationsTable.id, Number(id)), eq(contentGenerationsTable.userId, req.userId)));
     
     res.json({ success: true });
+    return;
   } catch (err) {
     res.status(500).json({ error: "Failed to update content item" });
+    return;
   }
 });
 
