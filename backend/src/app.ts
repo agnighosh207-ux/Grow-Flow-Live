@@ -1,5 +1,7 @@
 import express, { type Express } from "express";
 import path from "path";
+import { fileURLToPath } from "node:url";
+
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
@@ -202,10 +204,18 @@ app.use("/api", generalLimiter);
 app.use("/api", router);
 
 // ─── 11. Frontend serving (production only) ─────────────────────────────────
-if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA") {
-  // In the monorepo, frontend is a sibling to backend. 
-  // dist/index.mjs is in backend/dist/
-  const frontendPath = path.resolve(__dirname, "../../frontend/dist/public");
+const isProd = process.env.NODE_ENV === "production" || 
+               process.env.APP_STATUS === "PRODUCTION" || 
+               process.env.APP_STATUS === "BETA" ||
+               process.env.RAILWAY_ENVIRONMENT; // Include Railway auto-detect
+
+if (isProd) {
+  // ESM-safe path resolution
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  // Structure: backend/dist/index.mjs -> ../../frontend/dist/public
+  const frontendPath = path.resolve(currentDir, "../../frontend/dist/public");
+  
+  console.log(`[BOOT] Production mode: Serving frontend from ${frontendPath}`);
   
   // Static assets (hashed files) can be cached for a long time
   app.use(express.static(frontendPath, {
@@ -224,12 +234,26 @@ if (process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCT
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
-    res.sendFile(path.join(frontendPath, "index.html"), (err) => {
+    const indexPath = path.join(frontendPath, "index.html");
+    res.sendFile(indexPath, (err) => {
       if (err) {
-        res.status(200).send("GrowFlow AI API is running. Frontend is hosted separately.");
+        console.error(`[ERROR] Failed to send index.html from ${indexPath}:`, err.message);
+        res.status(200).send(`
+          <html>
+            <body style="background: #050111; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+              <div style="text-align: center; border: 1px solid #1e293b; padding: 40px; border-radius: 12px; background: #0a051d;">
+                <h1 style="color: #00F2FF;">GrowFlow AI</h1>
+                <p>API is healthy, but frontend assets are missing.</p>
+                <p style="font-size: 12px; color: #475569;">Path: ${frontendPath}</p>
+              </div>
+            </body>
+          </html>
+        `);
       }
     });
   });
+} else {
+  console.log("[BOOT] Development mode: API only server. Start frontend separately.");
 }
 
 // ─── DEBUG ──────────────────────────────────────────────────────────────────
