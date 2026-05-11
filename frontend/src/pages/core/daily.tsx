@@ -27,6 +27,11 @@ interface DailyResponse {
   plan: DailyPlan;
   streak: number;
   completedToday: boolean;
+  challenge?: {
+    joined: boolean;
+    completedDays: number;
+    challengeId: string;
+  };
 }
 
 
@@ -221,6 +226,15 @@ export default function DailyActionMode() {
             </motion.div>
           )}
 
+          {data?.challenge?.completedDays === 30 && (
+            <Button 
+              onClick={() => window.open("/api/challenge/certificate", "_blank")}
+              className="w-full h-12 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black transition-all active:scale-95"
+            >
+              Download Creator Certificate 🏆
+            </Button>
+          )}
+
           <Button 
             onClick={() => setShowCelebration(false)}
             className="w-full h-14 rounded-2xl bg-white text-black font-black hover:bg-zinc-200 transition-all active:scale-95"
@@ -263,6 +277,73 @@ export default function DailyActionMode() {
         />
 
         {streak > 0 && <StreakBadge streak={streak} />}
+
+        {data?.challenge?.joined && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="border border-violet-500/30 rounded-[32px] p-6 bg-violet-500/5 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 blur-3xl -mr-16 -mt-16" />
+            <div className="flex items-center gap-4 mb-5 relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center text-3xl shadow-glow-sm">🏆</div>
+              <div>
+                <p className="font-black text-white uppercase tracking-tight">30-Day Creator Challenge</p>
+                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-0.5">Architecting Consistency</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-10 gap-1.5 mb-5 relative z-10">
+              {Array.from({ length: 30 }, (_, i) => (
+                <div key={i} className={`h-2 rounded-full transition-all duration-500 ${i < (data.challenge?.completedDays || 0) ? 'bg-violet-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]' : 'bg-white/5'}`} />
+              ))}
+            </div>
+            <div className="flex items-center justify-between relative z-10">
+              <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.1em]">
+                {data.challenge?.completedDays === 30 ? "Challenge Completed! 🎉" : `${30 - (data.challenge?.completedDays || 0)} Days Remaining`}
+              </p>
+              {data.challenge?.completedDays === 30 ? (
+                <button 
+                  onClick={() => window.open("/api/challenge/certificate", "_blank")}
+                  className="text-[10px] text-cyan-400 font-black uppercase tracking-widest bg-cyan-500/10 px-2 py-0.5 rounded-md hover:bg-cyan-500/20 transition-colors"
+                >
+                  Download Certificate 🏆
+                </button>
+              ) : (
+                <p className="text-[10px] text-violet-400 font-black uppercase tracking-widest bg-violet-500/10 px-2 py-0.5 rounded-md">
+                  +50 Bonus Credits at Finish
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {!data?.challenge?.joined && !loading && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="border border-cyan-500/20 rounded-[32px] p-6 bg-cyan-500/5 flex flex-col md:flex-row items-center gap-5"
+          >
+             <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-3xl shrink-0">🚀</div>
+             <div className="flex-1 text-center md:text-left">
+                <p className="font-black text-white uppercase tracking-tight">Accept the 30-Day Challenge</p>
+                <p className="text-xs text-white/40 font-medium mt-1">Generate content for 30 days straight to unlock the Creator Certificate + 50 Credits.</p>
+             </div>
+             <Button 
+               onClick={async () => {
+                 try {
+                   await api.post("/challenge/join");
+                   fetchToday();
+                   toast({ title: "Challenge Accepted! 🚀", description: "Good luck, Creator. Let's make history." });
+                 } catch (err) {
+                   toast({ variant: "destructive", title: "Failed to join challenge" });
+                 }
+               }}
+               className="bg-cyan-600 hover:bg-cyan-500 text-white font-black px-6 rounded-xl shadow-glow-sm"
+             >
+               JOIN NOW
+             </Button>
+          </motion.div>
+        )}
 
         {streak === 0 && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}

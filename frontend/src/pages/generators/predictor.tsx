@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { BarChart2, Zap, Instagram, Twitter, Linkedin, Youtube, Check, X, Info, Copy, RefreshCw, History, ArrowRight, TrendingUp } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -39,14 +40,15 @@ export default function PredictorPage() {
   const [contentType, setContentType] = useState("Post");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
-  const [history, setHistory] = useState<PredictionResult[]>([]);
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const saved = localStorage.getItem("predictor_history");
-    if (saved) setHistory(JSON.parse(saved));
-  }, []);
+  const { data: history = [], isLoading: historyLoading } = useQuery({
+    queryKey: ["predictor-history"],
+    queryFn: () => api.get("/predictor/history").then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const handlePredict = async () => {
     if (content.length < 50) {
@@ -59,10 +61,7 @@ export default function PredictorPage() {
       const newResult = { ...data, platform, timestamp: Date.now() };
       setResult(newResult);
       
-      const newHistory = [newResult, ...history].slice(0, 10);
-      setHistory(newHistory);
-      localStorage.setItem("predictor_history", JSON.stringify(newHistory));
-      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.invalidateQueries({ queryKey: ["predictor-history"] });
       queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
       toast({ variant: "destructive", title: "Prediction failed", description: "AI service unavailable." });
@@ -342,7 +341,7 @@ export default function PredictorPage() {
                       {h.platform === "Twitter" && <Twitter className="h-4 w-4 text-sky-500" />}
                       <span className="text-[10px] font-bold uppercase">{h.platform}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">{new Date(h.timestamp!).toLocaleDateString()}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date((h as any).createdAt || h.timestamp!).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className={`text-3xl font-black ${getScoreColor(h.overallScore)}`}>{h.overallScore}</span>

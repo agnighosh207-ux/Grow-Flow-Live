@@ -183,6 +183,7 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many requests. Please slow down and try again." },
   skip: (req) => req.path.startsWith(CLERK_PROXY_PATH),
+  validate: false,
 });
 
 app.use("/api", generalLimiter);

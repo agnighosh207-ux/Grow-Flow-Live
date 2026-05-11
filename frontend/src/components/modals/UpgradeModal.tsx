@@ -4,6 +4,7 @@ import { X, Zap, Check, Loader2, Crown, Lock, AlertCircle, Sparkles } from "luci
 import { Button } from "@/components/ui/button";
 import { useCreateSubscription, useVerifySubscription, useValidateCoupon } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
+import { NPSModal } from "@/components/modals/NPSModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 
@@ -109,6 +110,7 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
   const queryClient = useQueryClient();
   const [couponCode, setCouponCode] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [showNPS, setShowNPS] = useState(false);
   const validateCoupon = useValidateCoupon();
   const [, setLocation] = useLocation();
 
@@ -239,6 +241,70 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
     }
   };
 
+  const handleTopup = async (packKey: "small" | "medium" | "large") => {
+    setPaymentState("pending");
+    try {
+      const token = await (window as any).Clerk?.session?.getToken();
+      const res = await fetch("/api/subscription/credits/topup", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ pack: packKey }),
+      });
+      const data = await res.json();
+      
+      if (!data.orderId) throw new Error("Failed to create topup order");
+
+      const loaded = await loadRazorpay();
+      if (!loaded) throw new Error("Razorpay failed to load");
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: "INR",
+        name: "GrowFlow AI",
+        description: `Top-up: ${data.label}`,
+        order_id: data.orderId,
+        handler: async (response: any) => {
+          setPaymentState("pending");
+          try {
+            const verifyRes = await fetch("/api/subscription/credits/verify-topup", {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                ...(token ? { "Authorization": `Bearer ${token}` } : {})
+              },
+              body: JSON.stringify({
+                ...response,
+                credits: data.credits
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+              setPaymentState("success");
+              toast({ title: "Credits added!", description: `${data.credits} credits have been added to your account.` });
+            } else {
+              throw new Error(verifyData.error || "Verification failed");
+            }
+          } catch (err: any) {
+            setPaymentState("error");
+            toast({ variant: "destructive", title: "Top-up failed", description: err.message });
+          }
+        },
+        modal: { ondismiss: () => setPaymentState("idle") }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Top-up Error", description: err.message });
+      setPaymentState("idle");
+    }
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -308,11 +374,14 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       </ul>
 
                       <Button
-                        className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40"
+                        className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-3"
                         onClick={handleClose}
                       >
                         <Zap className="w-4 h-4 mr-2" /> Start creating
                       </Button>
+                      <button onClick={() => setShowNPS(true)} className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">
+                        Quick Feedback?
+                      </button>
                     </motion.div>
                   </motion.div>
                 ) : paymentState === "error" ? (
@@ -432,28 +501,53 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       </button>
                     </div>
 
-                    <div className="flex gap-3 mb-5">
+                    <div className="flex flex-col gap-4 mb-6">
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                        <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-3 text-center">Quick Credit Top-up</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button 
+                            variant="outline" 
+                            className="h-14 rounded-xl border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all group"
+                            onClick={() => handleTopup("small")}
+                            disabled={paymentState === "pending"}
+                          >
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-bold">10 Credits</span>
+                              <span className="text-[10px] text-white/40 group-hover:text-cyan-400">₹49</span>
+                            </div>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            className="h-14 rounded-xl border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all group"
+                            onClick={() => handleTopup("medium")}
+                            disabled={paymentState === "pending"}
+                          >
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-bold">25 Credits</span>
+                              <span className="text-[10px] text-white/40 group-hover:text-cyan-400">₹99</span>
+                            </div>
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-white/5" />
+                        </div>
+                        <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
+                          <span className="bg-[#0f0823] px-3 text-white/20">or unlock everything</span>
+                        </div>
+                      </div>
+
                       <Button
-                        className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/30 text-white/80 hover:text-white font-semibold text-sm rounded-xl transition-all duration-200"
-                        variant="outline"
+                        className="w-full h-16 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-cyan-900/40"
                         onClick={() => handleCheckout("creator")}
                         disabled={paymentState === "pending"}
                       >
                         {paymentState === "pending" ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
+                          <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Activating...</>
                         ) : (
-                          <>Get More Credits</>
-                        )}
-                      </Button>
-                      <Button
-                        className="flex-1 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-cyan-900/40"
-                        onClick={() => handleCheckout("infinity")}
-                        disabled={paymentState === "pending"}
-                      >
-                        {paymentState === "pending" ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
-                        ) : (
-                          <><Zap className="w-4 h-4 mr-1.5" /> Unlock Full Power</>
+                          <><Zap className="w-5 h-5 mr-2" /> Upgrade to Creator →</>
                         )}
                       </Button>
                     </div>
@@ -592,6 +686,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
               </AnimatePresence>
             </div>
           </motion.div>
+          <NPSModal open={showNPS} onClose={() => { setShowNPS(false); handleClose(); }} trigger="upgrade" />
         </div>
       )}
     </AnimatePresence>

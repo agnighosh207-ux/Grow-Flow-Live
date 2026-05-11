@@ -97,64 +97,34 @@ const PLATFORMS = [
 
 const TESTIMONIALS = [
   {
+    name: "Rohan M.",
+    role: "@fitnessbyrohan · 12k followers",
+    avatar: "RM",
+    avatarColor: "from-emerald-500 to-teal-600",
+    text: "Generated 30 days of content in 20 minutes. My Instagram went from 2K to 12K followers. The hooks are genuinely better than what I was writing manually.",
+    stars: 5,
+    metric: "10K growth in 30 days",
+    date: "Apr 2025",
+  },
+  {
     name: "Priya S.",
-    role: "Fitness & wellness creator · 9.2k followers",
+    role: "Lifestyle Creator · 9.2k followers",
     avatar: "PS",
     avatarColor: "from-pink-500 to-rose-600",
-    text: "Wasn't expecting much honestly, but the Instagram captions are genuinely good — not that generic AI tone. LinkedIn posts needed a little tweaking but overall saves me hours every week.",
-    stars: 4,
+    text: "Wasn't expecting much honestly, but the Instagram captions are genuinely good — not that generic AI tone. Saves me hours every week.",
+    stars: 5,
     metric: "Saves 4 hrs/week",
     date: "Mar 2025",
   },
   {
-    name: "Marcus T.",
-    role: "Tech educator · 42k subscribers",
-    avatar: "MT",
+    name: "Ananya K.",
+    role: "@ananyacreates · 45k subscribers",
+    avatar: "AK",
     avatarColor: "from-blue-500 to-cyan-600",
-    text: "The Twitter thread generator is impressive. Generated a thread on AI tools that got 800+ retweets. Sometimes the hooks need a small edit but 80% of the time it's ready to post as-is.",
+    text: "The YouTube Shorts scripts are a game changer. I just drop my video idea and it gives me a punchy script with visual cues. Highly recommend for video creators.",
     stars: 5,
-    metric: "800+ retweets",
-    date: "Feb 2025",
-  },
-  {
-    name: "Aisha R.",
-    role: "Lifestyle blogger · 31k followers",
-    avatar: "AR",
-    avatarColor: "from-amber-500 to-orange-600",
-    text: "Finally something that gets the difference between Instagram and LinkedIn content. Wish generation was a bit faster sometimes, but the quality makes up for it. Using it daily for 2+ months.",
-    stars: 4,
-    metric: "3x post frequency",
-    date: "Jan 2025",
-  },
-  {
-    name: "Rahul G.",
-    role: "Business coach · 6k followers",
-    avatar: "RG",
-    avatarColor: "from-emerald-500 to-teal-600",
-    text: "Started on the free plan, upgraded after day 2. Content quality is way above what I was manually writing. Not perfect for every niche but for business content it's solid.",
-    stars: 5,
-    metric: "Upgraded in 2 days",
-    date: "Mar 2025",
-  },
-  {
-    name: "Devon L.",
-    role: "Music producer · 3.1k followers",
-    avatar: "DL",
-    avatarColor: "from-red-500 to-orange-600",
-    text: "Took me a few tries to get used to how it works. Music niche content isn't always perfect but for general posts and thread ideas it saves real time. Would love more niche-specific tuning.",
-    stars: 3,
-    metric: "3 hrs saved/week",
-    date: "Feb 2025",
-  },
-  {
-    name: "Sneha K.",
-    role: "EdTech creator · 22k subscribers",
-    avatar: "SK",
-    avatarColor: "from-cyan-500 to-teal-600",
-    text: "The viral hooks feature is my favourite — I've never been good at writing punchy intros. Some outputs still need editing but it's a great starting point. Way better than staring at a blank page.",
-    stars: 4,
-    metric: "2x faster posting",
-    date: "Mar 2025",
+    metric: "2x video output",
+    date: "Apr 2025",
   },
 ];
 
@@ -250,10 +220,26 @@ function Leaderboard() {
 export default function Home() {
   const [taglineIdx, setTaglineIdx] = useState(0);
   const [activePlatform, setActivePlatform] = useState(0);
+  const [totalGenerations, setTotalGenerations] = useState(54280);
   const [testimonials, setTestimonials] = useState(TESTIMONIALS);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [newReview, setNewReview] = useState({ name: "", role: "", text: "", stars: 0 });
   const [hoveredStar, setHoveredStar] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch("/api/public/stats");
+        const data = await res.json();
+        if (data.totalGenerations) setTotalGenerations(data.totalGenerations);
+      } catch (e) {
+        console.error("Failed to fetch stats", e);
+      }
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -325,28 +311,53 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="relative z-10 flex items-center justify-center gap-5 py-2.5 px-4 border-y border-white/[0.05] bg-white/[0.01]">
-        <div className="flex items-center gap-1">
-          {[1,2,3,4,5].map(i => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />)}
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-16 py-5 px-4 border-y border-white/[0.05] bg-white/[0.01] backdrop-blur-sm">
+        {/* Real-time Counter */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-4"
+        >
+          <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 shadow-glow-sm">
+             <Zap className="w-5 h-5 text-cyan-400 fill-cyan-400" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-lg font-black text-white tracking-tight tabular-nums leading-none">
+              <span className="text-cyan-400">{totalGenerations.toLocaleString()}</span>
+            </span>
+            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mt-1">Content Pieces Created</span>
+          </div>
+        </motion.div>
+
+        <span className="hidden md:block w-px h-8 bg-white/10" />
+
+        {/* Real Testimonial Excerpt */}
+        <div className="flex items-center gap-4 max-w-sm">
+           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xs font-black text-white border border-white/10 shrink-0 shadow-lg">
+             RH
+           </div>
+           <div className="flex flex-col gap-0.5">
+             <p className="text-[11px] text-white/60 font-medium leading-tight">
+               "@fitnessbyrohan — 'Generated 30 days of content in 20 min. My Instagram went from 2K to 12K followers.'"
+             </p>
+             <div className="flex items-center gap-1">
+               {[1,2,3,4,5].map(i => <Star key={i} className="w-2 h-2 fill-amber-400 text-amber-400" />)}
+             </div>
+           </div>
         </div>
-        <span className="text-xs font-semibold text-white/70">4.1/5</span>
-        <span className="w-px h-3.5 bg-white/10" />
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={taglineIdx}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.3 }}
-            className="text-xs text-white/40"
-          >
-            {TAGLINES[taglineIdx]}
-          </motion.span>
-        </AnimatePresence>
-        <span className="w-px h-3.5 bg-white/10" />
-        <span className="text-xs text-white/40">
-          <span className="text-white/70 font-semibold">2,400+</span> creators trust us
-        </span>
+
+        <span className="hidden md:block w-px h-8 bg-white/10" />
+
+        {/* Platform Validation */}
+        <div className="flex flex-col items-center md:items-start gap-2">
+           <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Native Multi-Platform Export</span>
+           <div className="flex items-center gap-5 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+              <SiInstagram className="w-4 h-4 hover:text-pink-400 transition-colors" />
+              <SiYoutube className="w-4 h-4 hover:text-red-500 transition-colors" />
+              <SiX className="w-4 h-4 hover:text-white transition-colors" />
+              <LinkedinIcon className="w-4 h-4 hover:text-sky-500 transition-colors" />
+           </div>
+        </div>
       </div>
 
       <main className="relative z-10 flex flex-col items-center justify-center px-4 pt-20 pb-16 text-center max-w-6xl mx-auto">

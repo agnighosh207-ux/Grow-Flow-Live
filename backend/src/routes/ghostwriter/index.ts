@@ -82,7 +82,10 @@ Return JSON:
 
     if (isValidVoiceProfile) {
       await db.update(usersTable)
-        .set({ voiceProfile: vp })
+        .set({ 
+          voiceProfile: vp,
+          voiceProfileUpdatedAt: new Date()
+        })
         .where(eq(usersTable.id, userId));
     }
 
@@ -198,7 +201,21 @@ router.patch("/voice-profile", requireAuth, requirePlanOrTrial("ghostwriter"), a
 router.get("/voice-profile", requireAuth, requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    res.json(user?.voiceProfile || null);
+    if (!user?.voiceProfile) {
+      res.json(null);
+      return;
+    }
+
+    const profileAge = user.voiceProfileUpdatedAt 
+      ? Date.now() - new Date(user.voiceProfileUpdatedAt).getTime() 
+      : 0;
+    const isStale = profileAge > 30 * 24 * 60 * 60 * 1000; // 30 days
+
+    res.json({ 
+      ...user.voiceProfile, 
+      isStale, 
+      daysSinceUpdate: Math.floor(profileAge / 86400000) 
+    });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch voice profile" });
   }

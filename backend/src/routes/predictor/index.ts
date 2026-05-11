@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
-import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
+import { db, predictorResultsTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -70,11 +71,37 @@ Return JSON:
         return;
     }
     res.json(parsed);
+    
+    // Persistence
+    db.insert(predictorResultsTable).values({
+      userId: req.userId,
+      content: content.substring(0, 500),
+      platform: platform,
+      niche: niche || "General",
+      overallScore: parsed.overallScore,
+      algorithmScore: parsed.algorithmScore || 0,
+      hookScore: parsed.hookScore,
+      verdict: parsed.verdict,
+      topFix: parsed.topFix,
+    }).catch((e) => console.error("Failed to save predictor result:", e));
+
     invalidateAuthCache(req.userId);
   } catch (err: any) {
     console.error("PREDICTOR ANALYZE ERROR:", err);
     await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Predictor service unavailable. Please try again." });
+  }
+});
+
+router.get("/history", requireAuth, async (req: any, res): Promise<void> => {
+  try {
+    const history = await db.select().from(predictorResultsTable)
+      .where(eq(predictorResultsTable.userId, req.userId))
+      .orderBy(desc(predictorResultsTable.createdAt))
+      .limit(50);
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch history" });
   }
 });
 

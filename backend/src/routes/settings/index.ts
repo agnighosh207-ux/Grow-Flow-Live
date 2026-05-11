@@ -17,6 +17,12 @@ router.get("/", requireAuth, async (req: any, res): Promise<void> => {
       weeklyDigest: user?.weeklyDigest ?? true,
       marketingEmails: user?.marketingEmails ?? false,
     },
+    profile: {
+      username: user?.username ?? "",
+      displayName: user?.displayName ?? "",
+      showOnLeaderboard: user?.showOnLeaderboard ?? false,
+      avatarUrl: user?.avatarUrl ?? "",
+    }
   });
 });
 
@@ -64,6 +70,30 @@ router.patch("/preferences", requireAuth, async (req: any, res): Promise<void> =
       .where(eq(usersTable.id, req.userId));
   }
 
+  res.json({ success: true });
+});
+
+router.patch("/profile", requireAuth, async (req: any, res): Promise<void> => {
+  const { username, displayName, showOnLeaderboard, avatarUrl } = req.body;
+  const updates: any = {};
+
+  if (typeof username === "string") updates.username = username.toLowerCase().replace(/[^a-z0-9_]/g, "");
+  if (typeof displayName === "string") updates.displayName = displayName;
+  if (typeof showOnLeaderboard === "boolean") updates.showOnLeaderboard = showOnLeaderboard;
+  if (typeof avatarUrl === "string") updates.avatarUrl = avatarUrl;
+
+  if (updates.username) {
+    const [existing] = await db.select().from(usersTable)
+      .where(and(eq(usersTable.username, updates.username), sql`id != ${req.userId}`));
+    if (existing) {
+      res.status(400).json({ error: "Username already taken" });
+      return;
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId));
+  }
   res.json({ success: true });
 });
 

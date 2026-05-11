@@ -31,6 +31,9 @@ function ApiAuthBridge() {
 import { Layout } from "@/components/layout/layout";
 const Home = React.lazy(() => import("@/pages/core/home"));
 const Generate = React.lazy(() => import("@/pages/core/generate"));
+const Templates = React.lazy(() => import("@/pages/core/templates"));
+const Review = React.lazy(() => import("@/pages/public/Review"));
+const QuickGenerate = React.lazy(() => import("@/pages/core/quick"));
 const History = React.lazy(() => import("@/pages/core/history"));
 const HooksGenerator = React.lazy(() => import("@/pages/generators/hooks"));
 const Pricing = React.lazy(() => import("@/pages/settings/pricing"));
@@ -61,6 +64,13 @@ const Repurpose = React.lazy(() => import("@/pages/generators/repurpose"));
 const ABTest = React.lazy(() => import("@/pages/generators/ab-test"));
 const HookScorer = React.lazy(() => import("@/pages/generators/hook-scorer"));
 const CreatorProfile = React.lazy(() => import("@/pages/public/CreatorProfile"));
+const TeamPage = React.lazy(() => import("@/pages/core/team"));
+const BrandVoice = React.lazy(() => import("@/pages/core/BrandVoice"));
+const VaultBank = React.lazy(() => import("@/pages/core/VaultBank"));
+const NicheLanding = React.lazy(() => import("@/pages/seo/NicheLanding"));
+const ToolLanding = React.lazy(() => import("@/pages/seo/ToolLanding"));
+const BlogPost = React.lazy(() => import("@/pages/seo/BlogPost"));
+const Comparison = React.lazy(() => import("@/pages/seo/Comparison"));
 import { OnboardingModal } from "@/components/modals/OnboardingModal";
 
 const SuspenseFallback = () => (
@@ -190,6 +200,8 @@ export function ClerkProviderWithRoutes() {
             <Route path="/sign-up/*?"><SignUpPage /></Route>
             
             <Route path="/generate"><ProtectedRoute component={Generate} /></Route>
+            <Route path="/templates"><ProtectedRoute component={Templates} /></Route>
+            <Route path="/quick"><ProtectedRoute component={QuickGenerate} /></Route>
             <Route path="/ideas"><ProtectedRoute component={IdeasGenerator} /></Route>
             <Route path="/trends"><ProtectedRoute component={TrendEngine} /></Route>
             <Route path="/strategy"><ProtectedRoute component={StrategyPlanner} /></Route>
@@ -210,9 +222,27 @@ export function ClerkProviderWithRoutes() {
             <Route path="/privacy"><Privacy /></Route>
             <Route path="/terms"><Terms /></Route>
             <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
-            
             <Route path="/coach"><ProtectedRoute component={ContentCoach} /></Route>
-            <Route path="/vault"><ProtectedRoute component={SwipeVault} /></Route>
+            
+            <Route path="/vault"><ProtectedRoute component={VaultBank} /></Route>
+            <Route path="/inspiration"><ProtectedRoute component={SwipeVault} /></Route>
+            <Route path="/brand-voice"><ProtectedRoute component={BrandVoice} /></Route>
+            
+            {/* SEO Niche Pages */}
+            <Route path="/for/fitness-creators"><NicheLanding niche="fitness" /></Route>
+            <Route path="/for/finance-creators"><NicheLanding niche="finance" /></Route>
+            <Route path="/for/tech-creators"><NicheLanding niche="tech" /></Route>
+            <Route path="/for/food-bloggers"><NicheLanding niche="food" /></Route>
+
+            {/* SEO Tool Pages */}
+            <Route path="/tools/:tool">{(params) => <ToolLanding tool={params.tool} />}</Route>
+
+            {/* SEO Blog */}
+            <Route path="/blog/:slug">{(params) => <BlogPost slug={params.slug} />}</Route>
+
+            {/* SEO Comparison */}
+            <Route path="/vs/:slug">{(params) => <Comparison slug={params.slug} />}</Route>
+
             <Route path="/ghostwriter"><ProtectedRoute component={Ghostwriter} /></Route>
             <Route path="/predictor"><ProtectedRoute component={Predictor} /></Route>
             <Route path="/hashtags"><ProtectedRoute component={Hashtags} /></Route>
@@ -220,6 +250,8 @@ export function ClerkProviderWithRoutes() {
             <Route path="/ab-test"><ProtectedRoute component={ABTest} /></Route>
             <Route path="/hook-scorer"><ProtectedRoute component={HookScorer} /></Route>
             <Route path="/creator/:code"><CreatorProfile /></Route>
+            <Route path="/team"><ProtectedRoute component={TeamPage} /></Route>
+            <Route path="/review/:shareId"><Review /></Route>
             
             <Route><NotFound /></Route>
           </Switch>

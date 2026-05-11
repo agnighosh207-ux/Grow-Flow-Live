@@ -35,6 +35,11 @@ import abTestRouter from "./ab-test";
 import trendAlertsRouter from "./trend-alerts";
 import trialRouter from "./trial";
 import userRouter from "./user";
+import teamRouter from "./team";
+import challengeRouter from "./challenge";
+import brandVoiceRouter from "./brand-voice";
+import personalVaultRouter from "./personal-vault";
+import templatesRouter from "./templates";
 
 const router: IRouter = Router();
 
@@ -74,5 +79,10 @@ router.use("/ab-test", abTestRouter);
 router.use("/trend-alerts", trendAlertsRouter);
 router.use("/trial", trialRouter);
 router.use("/user", userRouter);
+router.use("/team", teamRouter);
+router.use("/challenge", challengeRouter);
+router.use("/brand-voice", brandVoiceRouter);
+router.use("/personal-vault", personalVaultRouter);
+router.use("/templates", templatesRouter);
 
 export default router;

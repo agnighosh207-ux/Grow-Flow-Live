@@ -6,9 +6,9 @@ if (process.env.RESEND_API_KEY) {
   resend = new Resend(process.env.RESEND_API_KEY);
 }
 
-const FROM_EMAIL = "GrowFlow AI <noreply@growflowai.space>";
+export const FROM_EMAIL = "GrowFlow AI <noreply@growflowai.space>";
 
-const emailLayout = (title: string, content: string) => `
+export const emailLayout = (title: string, content: string) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -318,5 +318,93 @@ export async function sendReactivationEmail(email: string) {
     });
   } catch (error) {
     logger.error({ email, error: String(error) }, "Reactivation email failure");
+  }
+}
+export async function sendStreakAtRiskEmail(email: string, name: string, streak: number) {
+  if (!resend) return;
+  try {
+    const html = emailLayout(
+      "Don't lose your streak! 🔥",
+      `
+        <p>Hey ${name},</p>
+        <p>You're on an incredible <strong>${streak}-day streak</strong>, but it's about to break! You haven't generated your content for today yet.</p>
+        <p>Consistency is how you win the game. Don't let all that hard work go to waste.</p>
+        <div style="text-align: center;"><a href="https://growflowai.space/daily" class="btn">Save My Streak</a></div>
+        <p>GrowFlow AI Team</p>
+      `
+    );
+
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `⚠️ Action Required: Save your ${streak}-day streak!`,
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Streak at risk email failure");
+  }
+}
+export async function sendPersonalReengagementEmail(email: string, name: string, daysSince: number) {
+  if (!resend) return;
+  try {
+    const html = `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #334155; line-height: 1.6; max-width: 600px;">
+        <p>Hey ${name || "there"},</p>
+        <p>I was just looking through our dashboard and noticed you haven't generated any content in ${daysSince} days. I wanted to reach out personally to see if everything is okay or if you got stuck anywhere with GrowFlow?</p>
+        <p>We've added some major updates recently (like our new AI Writing Profiles and better Viral Predictors) that I think you'd love.</p>
+        <p><strong>I've just added 10 bonus credits to your account</strong> to help you get back into the flow. No catch — just want to see you winning.</p>
+        <p>Reply to this email if you need anything at all. I read every single one.</p>
+        <p>Best,<br/><strong>Agnish</strong><br/>Founder, GrowFlow AI</p>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8;">
+          GrowFlow AI · 10 credits added to ${email} · <a href="https://growflowai.space/generate" style="color: #00F2FF;">Start Generating</a>
+        </div>
+      </div>
+    `;
+
+    await resend.emails.send({
+      from: "Agnish @ GrowFlow AI <agnighosh207@gmail.com>", // Using personal-looking sender
+      to: email,
+      subject: `Quick question about your GrowFlow account?`,
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Personal re-engagement email failure");
+  }
+}
+
+export async function sendReviewFeedbackNotification(email: string, contentTitle: string, status: string, comment?: string | null) {
+  if (!resend) return;
+  try {
+    const isApproved = status === "approved";
+    const statusText = isApproved ? "✅ APPROVED" : "❌ NEEDS CHANGES";
+    const title = `Review Update: ${contentTitle}`;
+    
+    const html = emailLayout(
+      title,
+      `
+        <p>A collaborator has just left feedback on your shared content.</p>
+        <div style="background-color: rgba(255,255,255,0.02); border: 1px solid ${isApproved ? '#10b981' : '#ef4444'}; border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <p style="text-transform: uppercase; font-size: 10px; font-weight: 900; color: ${isApproved ? '#10b981' : '#ef4444'}; margin-bottom: 8px;">Current Status</p>
+          <p style="font-size: 18px; font-weight: bold; color: #ffffff; margin: 0;">${statusText}</p>
+          ${comment ? `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+              <p style="text-transform: uppercase; font-size: 10px; font-weight: 900; color: #94a3b8; margin-bottom: 8px;">Comments</p>
+              <p style="font-size: 14px; color: #cbd5e1; margin: 0; font-style: italic;">"${comment}"</p>
+            </div>
+          ` : ''}
+        </div>
+        <div style="text-align: center;"><a href="https://growflowai.space/history" class="btn">View & Edit Content</a></div>
+        <p>GrowFlow AI Team</p>
+      `
+    );
+
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `${isApproved ? '✓' : '✗'} Feedback on: ${contentTitle}`,
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Review notification email failure");
   }
 }

@@ -9,6 +9,7 @@ import { FeedbackModal, checkShouldShowFeedback } from "@/components/modals/Feed
 import { Link, useLocation } from "wouter";
 import { useClerk, useUser, useAuth } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   Wand2,
   History,
@@ -415,6 +416,7 @@ function SidebarContent({
   location: string;
   onClick?: () => void;
 }) {
+  const { i18n } = useTranslation();
   const { getToken } = useAuth();
   const { data: streakData } = useQuery({ 
     queryKey: ['daily-streak'], 
@@ -558,6 +560,19 @@ function SidebarContent({
       {sub && <CreditCounter sub={sub} />}
 
       <div className="border-t border-white/[0.06] px-4 py-3">
+        <div className="flex items-center justify-between mb-3 px-2">
+           <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Interface Language</span>
+            <select 
+              value={i18n.language} 
+              onChange={e => i18n.changeLanguage(e.target.value)}
+              className="text-[10px] font-bold bg-transparent text-cyan-400 border-none outline-none cursor-pointer hover:text-cyan-300 transition-colors"
+            >
+              <option value="en" className="bg-zinc-950 text-white">English</option>
+              <option value="hi" className="bg-zinc-950 text-white">Hindi</option>
+              <option value="bn" className="bg-zinc-950 text-white">Bengali</option>
+            </select>
+        </div>
+
         <div className="flex items-center gap-2.5 mb-2.5">
           {user?.imageUrl ? (
             <img
@@ -665,6 +680,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("manual");
+  const { i18n } = useTranslation();
   const [discoverItem, setDiscoverItem] = useState(DISCOVERY_ITEMS[0]);
   
   useEffect(() => {
@@ -794,6 +810,20 @@ export function Layout({ children }: { children: ReactNode }) {
                     isPro={isPro}
                     onClick={() => setIsSheetOpen(false)}
                   />
+                  <div className="mt-auto border-t border-white/5 p-8 flex items-center justify-between">
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Language</span>
+                    <div className="flex gap-4">
+                      {['en', 'hi', 'bn'].map(lang => (
+                        <button 
+                          key={lang}
+                          onClick={() => { i18n.changeLanguage(lang); setIsSheetOpen(false); }}
+                          className={`text-xs font-bold uppercase tracking-widest ${i18n.language === lang ? 'text-cyan-400' : 'text-white/40'}`}
+                        >
+                          {lang === 'en' ? 'EN' : lang === 'hi' ? 'HI' : 'BN'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </SheetContent>
               </Sheet>
             </div>

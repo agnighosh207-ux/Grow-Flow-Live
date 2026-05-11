@@ -19,27 +19,7 @@ function getRazorpayClient() {
 }
 
 
-/**
- * Maps GrowFlow AI tiers mapping dynamically to Razorpay Plan IDs.
- */
-const RAZORPAY_PLAN_MAP: Record<string, string> = {
-  STARTER: process.env.RAZORPAY_PLAN_STARTER || "",
-  CREATOR: process.env.RAZORPAY_PLAN_CREATOR || "",
-  INFINITY: process.env.RAZORPAY_PLAN_INFINITY || "",
-};
 
-// --- L-9 FIX: Validate Plan IDs at startup to prevent silent 400s from Razorpay ---
-const isProdOrBeta = process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION" || process.env.APP_STATUS === "BETA";
-if (isProdOrBeta) {
-  const missing = Object.entries(RAZORPAY_PLAN_MAP).filter(([_, v]) => !v).map(([k]) => k);
-  if (missing.length > 0) {
-    logger.error(`[CRITICAL] Missing Razorpay Plan IDs for: ${missing.join(", ")}. Subscriptions will fail until these are set in the Environment Variables.`);
-    // --- FIX: Do not crash in production to allow the server to start and serve non-payment routes ---
-    // if (process.env.NODE_ENV === "production") {
-    //   throw new Error(`Missing required Razorpay Plan IDs: ${missing.join(", ")}`);
-    // }
-  }
-}
 
 export const createSubscription = async (userId: string, planId: string, planTier: string, customerEmail?: string, totalCount?: number) => {
   try {

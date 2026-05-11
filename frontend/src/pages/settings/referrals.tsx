@@ -13,24 +13,56 @@ export default function ReferralsPage() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  const isPaidUser = !!sub && sub.planType !== "free" && sub.plan !== "trial";
+  const referralLink = referral?.shareableLink || `https://growflowai.space/sign-up?ref=${referral?.referralCode}`;
+  const shareText = `I've been using GrowFlow AI to create content for Instagram, YouTube & LinkedIn in minutes! 🚀 Use my link to get 10 bonus credits free → ${referralLink}`;
+  const whatsappText = `Hey! I've been using this AI tool to create 30 days of content in 20 minutes. Try it free → ${referralLink} (you get 10 bonus credits with my code)`;
 
-  const handleCopyLink = () => {
-    if (referral?.shareableLink) {
-      navigator.clipboard.writeText(referral.shareableLink);
-      setCopied(true);
-      toast({ title: "Link copied to clipboard!" });
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleShareCreatorCard = () => {
-    if (referral?.referralCode) {
-      const url = `https://growflowai.space/creator/${referral.referralCode}`;
-      navigator.clipboard.writeText(url);
-      toast({ title: "Creator Card URL copied!", description: "Share this link to show off your profile!" });
-    }
-  };
+  const SHARE_OPTIONS = [
+    {
+      label: "WhatsApp",
+      icon: "💬",
+      color: "bg-[#25D366]/10 border-[#25D366]/30 text-[#25D366]",
+      action: () => window.open(`https://wa.me/?text=${encodeURIComponent(whatsappText)}`),
+    },
+    {
+      label: "Twitter",
+      icon: "🐦",
+      color: "bg-sky-500/10 border-sky-500/30 text-sky-400",
+      action: () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`),
+    },
+    {
+      label: "LinkedIn",
+      icon: "💼",
+      color: "bg-blue-600/10 border-blue-600/30 text-blue-400",
+      action: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`),
+    },
+    {
+      label: "Email",
+      icon: "✉️",
+      color: "bg-white/5 border-white/10 text-white/60",
+      action: () => window.open(`mailto:?subject=Try%20GrowFlow%20AI&body=${encodeURIComponent(shareText)}`),
+    },
+    {
+      label: "Copy Link",
+      icon: "🔗",
+      color: "bg-white/5 border-white/10 text-white/60",
+      action: () => { 
+        navigator.clipboard.writeText(referralLink); 
+        setCopied(true);
+        toast({ title: "Link copied!" }); 
+        setTimeout(() => setCopied(false), 2000);
+      },
+    },
+    {
+      label: "Copy Text",
+      icon: "📝",
+      color: "bg-white/5 border-white/10 text-white/60",
+      action: () => { 
+        navigator.clipboard.writeText(shareText); 
+        toast({ title: "Sharing text copied!" }); 
+      },
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -46,6 +78,7 @@ export default function ReferralsPage() {
 
   const referralCount = referral?.successfulReferrals || 0;
   const rewardsEarned = referral?.totalBonusDays || 0;
+  const isPaidUser = sub?.planTier && sub.planTier !== "FREE";
   
   // Progress towards standard 15 Days
   const target = 1;
@@ -114,38 +147,25 @@ export default function ReferralsPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {isErrorCode ? (
                     <Button 
                       onClick={() => window.location.reload()}
-                      className="w-full h-16 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/20 font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg"
+                      className="col-span-full h-16 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/20 font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg"
                     >
                       <RefreshCcw className="w-5 h-5 mr-3 animate-spin-slow" /> Force Protocol Reset
                     </Button>
                   ) : (
-                    <>
-                      <Button 
-                        onClick={handleCopyLink}
-                        className={`h-16 font-black text-sm uppercase tracking-widest rounded-2xl transition-all duration-500 shadow-2xl relative overflow-hidden group ${
-                          copied 
-                            ? "bg-emerald-500 text-slate-950" 
-                            : "bg-cyan-600 hover:bg-cyan-500 text-white"
-                        }`}
+                    SHARE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={opt.action}
+                        className={`group flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.05] active:scale-[0.95] ${opt.color}`}
                       >
-                        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                        <div className="relative z-10 flex items-center justify-center">
-                          {copied ? <CheckCircle2 className="w-5 h-5 mr-3" /> : <Copy className="w-5 h-5 mr-3" />}
-                          {copied ? "Engine Linked" : "Deploy Link"}
-                        </div>
-                      </Button>
-                      <Button 
-                        onClick={handleShareCreatorCard}
-                        variant="outline"
-                        className="h-16 bg-white/5 hover:bg-white/10 text-white border-white/10 font-black text-sm uppercase tracking-widest rounded-2xl transition-all shine-effect"
-                      >
-                        <Share2 className="w-5 h-5 mr-3 text-cyan-400" /> Showcase Card
-                      </Button>
-                    </>
+                        <span className="text-2xl group-hover:scale-125 transition-transform">{opt.icon}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{opt.label}</span>
+                      </button>
+                    ))
                   )}
                 </div>
               </div>

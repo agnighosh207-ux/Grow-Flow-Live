@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, usersTable, dailyPlansTable, featureUsageLogsTable } from "@workspace/db";
+import { db, usersTable, dailyPlansTable, featureUsageLogsTable, challengeParticipantsTable } from "@workspace/db";
 import crypto from "crypto";
 import { DailyResponseSchema } from "@workspace/api-zod";
 import { requireAuth } from "../../middlewares/planMiddleware";
@@ -120,10 +120,18 @@ router.get("/today", requireAuth, async (req: any, res): Promise<void> => {
     }
   }
 
+  const [challenge] = await db.select().from(challengeParticipantsTable)
+    .where(and(eq(challengeParticipantsTable.userId, userId), eq(challengeParticipantsTable.challengeId, "30-day-creator-2026")));
+
   res.json({
     plan: existing,
     streak: currentStreak,
     completedToday: !!existing?.completedAt,
+    challenge: challenge ? {
+      joined: true,
+      completedDays: challenge.completedDays,
+      challengeId: challenge.challengeId,
+    } : { joined: false, completedDays: 0, challengeId: "" },
   });
 });
 
@@ -184,6 +192,21 @@ router.patch("/today/complete", requireAuth, async (req: any, res): Promise<void
     }
 
     await db.update(usersTable).set(updates).where(eq(usersTable.id, userId));
+
+    // Update challenge progress
+    const [challenge] = await db.select().from(challengeParticipantsTable)
+      .where(and(eq(challengeParticipantsTable.userId, userId), eq(challengeParticipantsTable.challengeId, "30-day-creator-2026")));
+    
+    if (challenge && !challenge.isCompleted) {
+      const isFinish = challenge.completedDays + 1 >= 30;
+      await db.update(challengeParticipantsTable)
+        .set({ 
+          completedDays: challenge.completedDays + 1,
+          lastCompletedAt: new Date(),
+          isCompleted: isFinish
+        })
+        .where(eq(challengeParticipantsTable.id, challenge.id));
+    }
 
     db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),

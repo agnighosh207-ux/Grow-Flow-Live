@@ -4,6 +4,7 @@ import { db, usersTable, usageLogsTable, contentGenerationsTable, referralsTable
 import { isNotNull, desc, sql, eq, ilike, count } from "drizzle-orm";
 import crypto from "crypto";
 import { requireAuth, TIER_CREDITS } from "../../middlewares/planMiddleware";
+import { sendPersonalReengagementEmail } from "../../services/email";
 import { logger } from "../../lib/logger";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 
@@ -122,7 +123,38 @@ router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
       })
       .from(usersTable)
       .where(isNotNull(usersTable.couponCode))
-      .groupBy(usersTable.couponCode), [], "couponStats")
+      .groupBy(usersTable.couponCode), [], "couponStats"),
+      safeQuery(db.execute(sql`
+        SELECT 
+          u.id, u.email, u.plan_type, u.plan_tier,
+          u.subscription_status,
+          u.current_streak,
+          u.generations_remaining,
+          EXTRACT(DAY FROM NOW() - u.last_login_at) as days_since_login,
+          COUNT(cg.id) as gens_last_30_days,
+          CASE 
+            WHEN EXTRACT(DAY FROM NOW() - u.last_login_at) > 14 AND u.subscription_status = 'active' 
+              THEN 'HIGH'
+            WHEN EXTRACT(DAY FROM NOW() - u.last_login_at) > 7 AND u.generations_remaining > 5 
+              THEN 'MEDIUM'
+            ELSE 'LOW'
+          END as churn_risk
+        FROM users u
+        LEFT JOIN content_generations cg ON cg.user_id = u.id 
+          AND cg.created_at > NOW() - INTERVAL '30 days'
+        WHERE u.subscription_status = 'active'
+          AND u.plan_tier != 'FREE'
+        GROUP BY u.id
+        HAVING (
+          CASE 
+            WHEN EXTRACT(DAY FROM NOW() - u.last_login_at) > 14 AND u.subscription_status = 'active' THEN 'HIGH'
+            WHEN EXTRACT(DAY FROM NOW() - u.last_login_at) > 7 AND u.generations_remaining > 5 THEN 'MEDIUM'
+            ELSE 'LOW'
+          END
+        ) IN ('HIGH', 'MEDIUM')
+        ORDER BY churn_risk DESC, days_since_login DESC
+        LIMIT 50
+      `), { rows: [] } as any, "churnRisk")
     ]);
 
     const languageData = languageStats.length > 0 
@@ -172,7 +204,8 @@ router.get("/stats", requireAuth, requireAdmin, async (req: any, res: any) => {
       topReferrers: (topReferrers as any).rows || [],
       activeAnnouncements,
       featureUsageData: featureUsageData.map((f: any) => ({ feature: f.feature, count: Number(f.count) })),
-      couponStats: couponStats || []
+      couponStats: couponStats || [],
+      churnRisk: (churnRisk as any).rows || []
     });
 
   } catch (err: any) {
@@ -541,6 +574,32 @@ router.post("/trigger-reengagement", requireAuth, requireAdmin, async (req: any,
   } catch (err: any) {
     logger.error({ err }, "Manual re-engagement trigger failed");
     res.status(500).json({ error: err.message || "Failed to trigger re-engagement" });
+  }
+});
+
+router.post("/reengagement/send-personal", requireAuth, requireAdmin, async (req: any, res: any) => {
+  try {
+    const { userId, email, daysSinceLogin, name } = req.body;
+    if (!email || !userId) {
+      return res.status(400).json({ error: "Missing email or userId" });
+    }
+
+    await sendPersonalReengagementEmail(email, name, daysSinceLogin);
+    
+    // Log the re-engagement attempt
+    await db.insert(securityLogsTable).values({
+      id: crypto.randomUUID(),
+      userId: userId,
+      eventType: "ADMIN_PERSONAL_REENGAGEMENT",
+      ipAddress: req.ip,
+      userAgent: req.get("User-Agent") || "unknown",
+      metadata: { adminId: req.userId, daysSinceLogin }
+    }).catch(() => {});
+
+    res.json({ success: true });
+  } catch (err: any) {
+    logger.error({ err }, "Personal re-engagement failed");
+    res.status(500).json({ error: "Failed to send personal email" });
   }
 });
 

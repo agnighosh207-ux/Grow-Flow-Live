@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { db, betaFeedbackTable, usersTable } from "@workspace/db";
+import { db, betaFeedbackTable, usersTable, npsResponsesTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 import { Resend } from "resend";
 import { requireAuth } from "../../middlewares/planMiddleware";
@@ -82,6 +82,65 @@ router.get("/", requireAuth, requireOwner, async (_req: any, res): Promise<void>
     .orderBy(desc(betaFeedbackTable.createdAt));
 
   res.json({ feedback: rows });
+});
+
+router.post("/nps/respond", requireAuth, async (req: any, res): Promise<void> => {
+  const { score, comment, trigger } = req.body;
+  const userId = req.userId;
+
+  if (typeof score !== "number" || score < 0 || score > 10) {
+    res.status(400).json({ error: "Score must be a number between 0 and 10" });
+    return;
+  }
+
+  try {
+    const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).then(r => r[0]);
+    
+    await db.insert(npsResponsesTable).values({
+      userId,
+      score,
+      comment: comment?.trim() || null,
+      trigger,
+      planTier: user?.planTier,
+      generationsCount: user?.totalGenerations,
+    });
+
+    const userEmail = user?.email || userId;
+
+    if (score >= 9) {
+      // Promoter: ask for review
+      await getResend().emails.send({
+        from: "GrowFlow AI <onboarding@resend.dev>",
+        to: userEmail,
+        subject: "Thank you! Can you leave us a review?",
+        html: `
+          <h3>Wow, ${score}/10! Thank you!</h3>
+          <p>We are so glad you're loving GrowFlow AI. Since you're a fan, would you mind leaving us a quick review on Twitter or the App Store?</p>
+          <p>It helps us a lot!</p>
+          <a href="https://twitter.com/intent/tweet?text=I've%20been%20using%20GrowFlow%20AI%20to%20grow%20my%20content%20and%20it's%20incredible!%20🚀" style="background:#00F2FF; color:black; padding:10px 20px; text-decoration:none; border-radius:10px; font-weight:bold;">Share on Twitter</a>
+        `,
+      }).catch(console.error);
+    } else if (score <= 6) {
+      // Detractor: notify Agnish
+      await getResend().emails.send({
+        from: "GrowFlow AI <onboarding@resend.dev>",
+        to: "agnighosh207@gmail.com",
+        subject: `⚠️ Detractor: ${userEmail} gave ${score}/10`,
+        html: `
+          <h2>Action Required: Detractor Follow-up</h2>
+          <p><strong>User:</strong> ${userEmail}</p>
+          <p><strong>Score:</strong> ${score}/10</p>
+          <p><strong>Comment:</strong> ${comment || "No comment provided."}</p>
+          <p>Personal followup is recommended to prevent churn.</p>
+        `,
+      }).catch(console.error);
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("NPS Response Error:", err);
+    res.status(500).json({ error: "Failed to save NPS response" });
+  }
 });
 
 export default router;

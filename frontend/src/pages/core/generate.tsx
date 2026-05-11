@@ -23,15 +23,20 @@ import {
 } from "lucide-react";
 import { SiInstagram, SiYoutube } from "react-icons/si";
 import { motion, AnimatePresence } from "framer-motion";
+import * as htmlToImage from "html-to-image";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { FeedbackModal, checkShouldShowRating, checkShouldShowFeedback, incrementGenCount } from "@/components/modals/FeedbackModal";
-import { useAuth } from "@clerk/react";
+import { useAuth, useUser } from "@clerk/react";
 import { WeeklyReportCard } from "@/components/shared/WeeklyReportCard";
 import { SUPPORTED_LANGUAGES } from "@/lib/languages";
 import { api } from "@/lib/api-client";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { NPSModal, checkShouldShowNPS } from "@/components/modals/NPSModal";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { track, identify } from "@/lib/analytics";
 
 const DISCOVERY_CARDS = [
   { id: "ghostwriter", title: "AI Ghostwriter", msg: "Train the AI to write in your exact authentic voice.", path: "/ghostwriter", icon: PenTool, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
@@ -182,6 +187,7 @@ function ContentScoreBadge({ score, label, color, delay = 0 }: { score: number; 
 }
 
 function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; analysis?: ContentAnalysis | null; analysisLoading?: boolean }) {
+  const { toast } = useToast();
   const directViralScore = data?.content?.viral_score;
   const directFeedback = data?.content?.viral_feedback;
   const directSuggestion = data?.content?.viral_suggestion;
@@ -204,105 +210,196 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
     return Math.round(scores.reduce((a, s) => a + s.score, 0) / scores.length);
   }, [scores]);
 
+  const getExportItems = () => {
+    if (!data) return [];
+    const items = [];
+    if (data.instagram) items.push({ platform: "Instagram", content: data.instagram.caption, idea: data.idea });
+    if (data.linkedin) items.push({ platform: "LinkedIn", content: data.linkedin.post, idea: data.idea });
+    if (data.twitter && data.twitter.tweets) items.push({ platform: "Twitter", content: data.twitter.tweets.join("\n\n"), idea: data.idea });
+    if (data.youtube) items.push({ platform: "YouTube", content: data.youtube.script, idea: data.idea });
+    return items;
+  };
+
+  const handleExportBuffer = () => {
+    const items = getExportItems();
+    const headers = ["Schedule Date", "Platform", "Content", "Status"];
+    const rows = items.map((item, idx) => {
+      const d = new Date(); d.setDate(d.getDate() + idx);
+      return [`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`, item.platform, `"${item.content.replace(/"/g, '""')}"`, "draft"].join(",");
+    });
+    const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "growflow-buffer.csv"; a.click();
+    toast({ title: "Buffer CSV Ready", description: "Import this file into your Buffer dashboard." });
+  };
+
+  const handleExportGCal = () => {
+    const items = getExportItems();
+    const formatDate = (date: Date) => date.toISOString().replace(/-|:|\.\d+/g, "");
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", ...items.map((item, idx) => {
+      const d = new Date(); d.setDate(d.getDate() + idx);
+      return `BEGIN:VEVENT\nDTSTART:${formatDate(d)}\nSUMMARY:Post on ${item.platform}\nDESCRIPTION:${item.content.replace(/\n/g, "\\n")}\nEND:VEVENT`;
+    }), "END:VCALENDAR"].join("\n");
+    const blob = new Blob([ics], { type: "text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "growflow-schedule.ics"; a.click();
+    toast({ title: "Calendar Exported", description: "Import the .ics file to Google Calendar." });
+  };
+
+  const handleCopyNotion = () => {
+    const items = getExportItems();
+    const tsv = ["Platform\tContent\tStatus", ...items.map(item => `${item.platform}\t${item.content.replace(/\n/g, " ")}\tDraft`)].join("\n");
+    navigator.clipboard.writeText(tsv);
+    toast({ title: "Copied for Notion", description: "Paste this into any Notion database." });
+  };
+
   return (
-    <motion.div
-      id="tour-viral-score"
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-[32px] glass-panel-premium overflow-hidden shadow-2xl group border border-white/10"
-    >
-      <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none group-hover:bg-cyan-500/20 transition-all duration-1000" />
-      
-      <div className="p-8 md:p-12 relative z-10">
-        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-12">
-          
-          {/* AI Metrics Pillar */}
-          <div className="lg:col-span-5 space-y-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shadow-glow">
-                 <Brain className="w-6 h-6 text-cyan-400" />
-              </div>
-              <div>
-                 <h3 className="text-xl font-black text-white tracking-tight">Campaign Intelligence</h3>
-                 <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">Bioluminescent Content Audit</p>
-              </div>
-            </div>
-
-            <div className="flex items-baseline gap-4 py-4">
-              <span className={`text-7xl font-black tracking-tighter ${avg >= 85 ? 'text-emerald-400' : avg >= 75 ? 'text-cyan-400' : 'text-amber-400'} glow-text-intense`}>
-                {avg}
-              </span>
-              <div className="space-y-1">
-                <p className="text-xl font-bold text-white/20">/ 100</p>
-                <div className={`px-3 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-widest ${
-                  avg >= 85 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 
-                  avg >= 75 ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400' : 
-                  'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                }`}>
-                   {avg >= 85 ? "Excellent" : avg >= 75 ? "Superior" : "Optimized"}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 pt-6 border-t border-white/5">
-              {scores.map((s, i) => (
-                <ContentScoreBadge key={s.label} score={s.score} label={s.label} color={s.color} delay={0.2 + (i * 0.1)} />
-              ))}
-            </div>
-          </div>
-
-          {/* Qualitative Insights Pillar */}
-          <div className="lg:col-span-7 flex flex-col justify-between space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <motion.div 
-                 whileHover={{ y: -5 }}
-                 className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 space-y-4 hover:border-white/10 transition-all"
-               >
-                  <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20">
-                    <Flame className="w-5 h-5" />
-                  </div>
-                  <p className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em]">Emotional Trigger</p>
-                  <p className="text-sm text-white/60 leading-relaxed font-medium">
-                    {analysis?.emotionalTrigger || directFeedback || "Deeply resonates with user pain points and aspirations."}
-                  </p>
-               </motion.div>
-               <motion.div 
-                 whileHover={{ y: -5 }}
-                 className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 space-y-4 hover:border-white/10 transition-all"
-               >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
-                    <Zap className="w-5 h-5" />
-                  </div>
-                  <p className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em]">Curiosity Gap</p>
-                  <p className="text-sm text-white/60 leading-relaxed font-medium">
-                    {analysis?.curiosityGap || "Constructs a powerful open loop that demands immediate engagement and click-through."}
-                  </p>
-               </motion.div>
-            </div>
-
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-              className="relative p-8 rounded-3xl bg-gradient-to-r from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 shadow-xl overflow-hidden group/tip"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover/tip:bg-white/10 transition-all duration-700" />
-              <div className="flex items-start gap-6 relative z-10">
-                <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-glow">
-                   <Sparkles className="w-7 h-7 text-cyan-300" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-cyan-300 uppercase tracking-[0.3em] mb-2">Growth Architect Recommendation</p>
-                  <p className="text-base text-white font-medium italic leading-relaxed">
-                    {directSuggestion ? `"${directSuggestion}"` : "Pro Tip: Use a high-contrast thumbnail with minimal text to amplify the curiosity gap identified in your hook."}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
+        <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Viral Potential Analytics</h4>
+        
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0">
+          <Button variant="ghost" size="sm" onClick={handleExportBuffer} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">
+            <Download className="w-3 h-3 mr-2" /> Buffer CSV
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleExportGCal} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">
+            <CalendarDays className="w-3 h-3 mr-2" /> GCal (.ics)
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleCopyNotion} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">
+             <PenTool className="w-3 h-3 mr-2" /> Notion Table
+          </Button>
         </div>
       </div>
-    </motion.div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {scores.map((s, i) => (
+          <motion.div 
+            key={s.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3"
+          >
+             <ContentScoreBadge score={s.score} label={s.label} color={s.color} delay={0.2 + (i * 0.1)} />
+          </motion.div>
+        ))}
+      </div>
+
+      {avg < 80 && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="p-4 rounded-2xl bg-white/[0.03] border border-white/5"
+        >
+          <p className="text-[10px] text-white/50 font-black uppercase tracking-widest flex items-center gap-2">
+            <Lightbulb className="w-3 h-3 text-amber-400" /> Strategy to increase your score:
+          </p>
+          <ul className="text-xs text-white/40 mt-2 space-y-1.5 font-medium">
+            {avg < 60 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-amber-500" /> Add a stronger visceral hook in the first 5 words</li>}
+            {avg < 75 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-cyan-500" /> Include a high-friction Call to Action (e.g. "Save this")</li>}
+            {avg < 85 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-violet-500" /> Use more emotional, low-entropy language</li>}
+          </ul>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+function ViralScoreMeter({ score }: { score: number }) {
+  const level = score >= 80 ? { label: "🔥 Viral Potential", color: "text-emerald-400", ring: "ring-emerald-500/30" }
+              : score >= 60 ? { label: "⚡ Strong Content",  color: "text-cyan-400",    ring: "ring-cyan-500/30" }
+              : score >= 40 ? { label: "📈 Good Foundation", color: "text-amber-400",    ring: "ring-amber-500/30" }
+              :               { label: "💡 Needs Polish",    color: "text-white/50",     ring: "ring-white/10" };
+  return (
+    <div className={`relative flex items-center justify-center w-20 h-20 rounded-full ring-4 ${level.ring} bg-black/40 shadow-glow-sm`}>
+      <motion.span
+        className={`text-2xl font-black ${level.color}`}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 200, delay: 0.5 }}
+      >
+        {score}
+      </motion.span>
+      <span className="absolute -bottom-6 text-[10px] font-black text-center whitespace-nowrap tracking-widest uppercase opacity-60">{level.label}</span>
+    </div>
+  );
+}
+
+function PerformancePredictionCard({ viralScore, platform, niche }: { viralScore: number; platform: string; niche: string }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  
+  const baseReach = { instagram: 800, youtube: 1200, twitter: 2000, linkedin: 1500 };
+  const multiplier = viralScore / 50; 
+  const pKey = platform.toLowerCase() as keyof typeof baseReach;
+  const reach = baseReach[pKey] || 1000;
+  const estimatedReach = Math.floor(reach * multiplier * (1 + Math.random() * 0.2));
+  const engagementRate = (3 + (viralScore / 100) * 5).toFixed(1);
+
+  const handleShareCard = async () => {
+    if (!cardRef.current) return;
+    try {
+      const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 1.0, pixelRatio: 2 });
+      const link = document.createElement('a');
+      link.download = `growflow-prediction-${platform}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast({ title: "Prediction card generated!", description: "Share this to your Stories to flex your content game." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Failed to generate card" });
+    }
+  };
+  
+  return (
+    <div className="mt-8">
+      <div ref={cardRef} className="p-8 rounded-[32px] border border-cyan-500/20 bg-[#0c0d12] relative overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-violet-500/10 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl -mr-16 -mt-16" />
+        
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-cyan-500 flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5 text-black fill-black" />
+            </div>
+            <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">GrowFlow AI Intelligence</span>
+          </div>
+          <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{niche} • {platform}</span>
+        </div>
+
+        <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.2em] mb-6 text-center">Projected Algorithmic Performance</p>
+        
+        <div className="grid grid-cols-3 gap-6 relative z-10">
+          <div className="text-center space-y-1">
+            <p className="text-2xl font-black text-white tracking-tighter">{estimatedReach.toLocaleString()}+</p>
+            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Est. Reach</p>
+          </div>
+          <div className="text-center space-y-1 border-x border-white/5">
+            <p className="text-2xl font-black text-cyan-400 tracking-tighter">{engagementRate}%</p>
+            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Eng. Rate</p>
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-2xl font-black text-violet-400 tracking-tighter">{viralScore}</p>
+            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Viral Score™</p>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between opacity-40">
+           <span className="text-[9px] font-bold text-white/30 italic">© 2026 GrowFlow Platform</span>
+           <div className="flex items-center gap-1.5">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+             <span className="text-[8px] font-black uppercase tracking-widest">Verified Logic</span>
+           </div>
+        </div>
+      </div>
+      
+      <button 
+        onClick={handleShareCard}
+        className="w-full mt-4 flex items-center justify-center gap-2 text-[10px] font-black text-white/30 hover:text-cyan-400 transition-all uppercase tracking-[0.2em] group"
+      >
+        <Share2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+        Export Performance Prediction Card
+      </button>
+    </div>
   );
 }
 
@@ -333,6 +430,7 @@ const formSchema = z.object({
   tone: z.enum(["Casual", "Professional", "Aggressive"]),
   niche: z.enum(NICHES).default("General"),
   language: z.enum(ALL_LANGUAGE_VALUES).default("English"),
+  brandVoiceId: z.string().optional(),
 });
 
 type Platform = "instagram" | "youtube" | "twitter" | "linkedin";
@@ -909,6 +1007,7 @@ function buildAllPlatformsText(data: any): string {
 export default function Generate() {
   const queryClient = useQueryClient();
   const { getToken } = useAuth();
+  const { user } = useUser();
   const searchParams = new URLSearchParams(
     typeof window !== "undefined" ? window.location.search : ""
   );
@@ -931,6 +1030,17 @@ export default function Generate() {
   const lastSubmittedValues = useRef<any>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      idea: prefillIdea,
+      contentType: prefillType,
+      tone: prefillTone,
+      niche: "General",
+      language: "English",
+    }
+  });
   
   const { data: trendsData, isLoading: trendsLoading } = useQuery({
     queryKey: ["trend-sidebar", "General"],
@@ -981,6 +1091,31 @@ export default function Generate() {
   
   const generationsUsed = sub?.monthlyGenerationsUsed ?? 0;
   const generationLimit = sub?.generationLimit ?? (isFreeUser ? 10 : 25);
+
+  const isFirstTime = !sessionStorage.getItem("has_generated") && !localStorage.getItem("has_generated");
+
+  useEffect(() => {
+    if (isFirstTime && savedPrefs?.niche) {
+      const DEMO_IDEAS: Record<string, string> = {
+        "Fitness": "3 mistakes beginners make at the gym that slow their progress",
+        "Finance": "The one money habit that changed how I think about saving forever",
+        "Tech": "Why most people are using AI tools completely wrong in 2025",
+        "Business": "The biggest lesson I learned from my first business failure",
+        "Food": "5 restaurant-quality meals you can make in under 15 minutes",
+        "Motivation": "The one thing that separates successful creators from everyone else",
+        "General": "The one thing that separates successful creators from everyone else",
+        "default": "The one thing that separates successful creators from everyone else"
+      };
+      
+      const niche = (savedPrefs.niche as keyof typeof DEMO_IDEAS) || "default";
+      if (!form.getValues("idea")) {
+        form.setValue("idea", DEMO_IDEAS[niche] || DEMO_IDEAS.default);
+        form.setValue("contentType", "Educational");
+        form.setValue("tone", "Professional");
+        form.setValue("niche", savedPrefs.niche as any);
+      }
+    }
+  }, [isFirstTime, savedPrefs, form]);
   
   // Triggers
   const showMidLimitWarning = isFreeUser && !warningDismissed && generationsUsed === 2 && sub?.canGenerate;
@@ -1022,14 +1157,64 @@ export default function Generate() {
     })();
   }, []);
 
+  // Track user identify on mount
+  useEffect(() => {
+    if (user) {
+      identify(user.id, user.primaryEmailAddress?.emailAddress, {
+        plan: sub?.planTier,
+        totalGenerations: sub?.totalGenerations
+      });
+    }
+  }, [user, sub]);
+
+  // Restore last used settings
+  useEffect(() => {
+    try {
+      const last = localStorage.getItem("gf_last_settings");
+      const templateFill = localStorage.getItem("gf_template_fill");
+      
+      if (last) {
+        const s = JSON.parse(last);
+        form.reset({ ...form.getValues(), ...s });
+      }
+
+      if (templateFill) {
+        form.setValue("idea", templateFill);
+        localStorage.removeItem("gf_template_fill");
+      }
+    } catch {}
+  }, []);
+
   const generateMutation = useGenerateContent({
     mutation: {
       onSuccess: (data) => {
+        track("generation_completed", {
+          viralScore: data.content?.viral_score,
+          plan: sub?.planTier,
+          contentType: data.contentType
+        });
+
+        // Save preferences for next session
+        try {
+          localStorage.setItem("gf_last_settings", JSON.stringify({
+            contentType: form.getValues("contentType"),
+            tone: form.getValues("tone"),
+            language: form.getValues("language"),
+            niche: form.getValues("niche"),
+          }));
+        } catch {}
+
         setGeneratedContent(data);
         setIsFavorited(false);
         setGenerationBlockedMsg(null);
-        const count = incrementGenCount();
-        if (checkShouldShowRating(count)) {
+        const currentGenCount = incrementGenCount();
+        if (checkShouldShowNPS(currentGenCount)) {
+          setTimeout(() => {
+            setNpsTrigger("10th_generation");
+            setShowNPS(true);
+          }, 3000);
+        }
+        if (checkShouldShowRating(currentGenCount)) {
           setRatingTrigger("gen-3");
           setTimeout(() => setShowRatingModal(true), 1500);
         }
@@ -1049,6 +1234,12 @@ export default function Generate() {
         } catch {}
       },
       onError: (error: any) => {
+        track("generation_failed", {
+          error: error?.message || error?.data?.message,
+          status: error?.status,
+          plan: sub?.planTier
+        });
+
         if (error?.status === 403) {
           const errCode = error?.data?.error;
           if (errCode === "EMAIL_NOT_VERIFIED") {
@@ -1127,7 +1318,14 @@ export default function Generate() {
           description: isOffline
             ? "Check your connection and try again."
             : is5xx
-            ? "Our AI is temporarily overloaded. Please try again in a moment."
+            ? (
+              <div className="space-y-2">
+                <p>Our AI is temporarily overloaded. Please try again in a moment.</p>
+                <p className="text-[10px] text-white/40">
+                  Check <a href="https://status.growflowai.space" target="_blank" rel="noreferrer" className="text-cyan-400 underline">status.growflowai.space</a> for real-time availability.
+                </p>
+              </div>
+            )
             : "Something went wrong. Please try again.",
         });
       }
@@ -1215,16 +1413,6 @@ export default function Generate() {
     return () => controller.abort();
   }, [generatedContent?.id]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      idea: prefillIdea,
-      contentType: prefillType,
-      tone: prefillTone,
-      niche: "General",
-      language: "English",
-    }
-  });
 
   const currentIdea = form.watch("idea");
   const currentNiche = form.watch("niche");
@@ -1290,7 +1478,10 @@ export default function Generate() {
     }
   }, []);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const [showNPS, setShowNPS] = useState(false);
+  const [npsTrigger, setNpsTrigger] = useState("10th_generation");
+
+  const handleGenerate = async (values: z.infer<typeof formSchema>) => {
     if (generateMutation.isPending) return;
     // Save language preference via API instead of localStorage
     (async () => {
@@ -1528,7 +1719,7 @@ export default function Generate() {
               </div>
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+                <form onSubmit={form.handleSubmit(handleGenerate)} className="space-y-10">
                   <FormField
                     control={form.control}
                     name="idea"
@@ -1545,6 +1736,7 @@ export default function Generate() {
                               placeholder="e.g. 5 ways AI is replacing junior developers — and what to do about it..."
                               className="min-h-[140px] md:min-h-[180px] p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
                             />
+                            
                             <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl bg-white/5 text-[9px] md:text-[10px] text-white/20 font-black uppercase tracking-widest border border-white/5">
                                <Activity className="w-3 md:w-3.5 h-3 md:h-3.5 text-cyan-500/50" />
                                Trending
@@ -1552,10 +1744,58 @@ export default function Generate() {
                             {isScoringHook && (
                                <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 text-[10px] md:text-xs font-bold text-white/40">
                                  <Loader2 className="w-3.5 md:w-4 h-3.5 md:h-4 animate-spin" /> Scoring...
-                               </div>
+                                </div>
                             )}
                           </div>
                         </FormControl>
+
+                        {/* Brand Voice Toggle */}
+                        <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/5 mt-4">
+                           <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                                 <MessageCircle size={16} />
+                              </div>
+                              <div>
+                                 <p className="text-[10px] font-black text-white uppercase tracking-wider">Write in my voice</p>
+                                 <p className="text-[8px] text-white/30 font-bold uppercase">Use your analyzed linguistic DNA</p>
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-4">
+                              <FormField
+                                control={form.control}
+                                name="brandVoiceId"
+                                render={({ field }) => (
+                                  <div className="flex items-center gap-3">
+                                    {/* Simplified: just using a toggle for now that picks the first voice */}
+                                    <Switch 
+                                      checked={!!field.value && field.value !== "none"}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          // Fetch voices and set first one
+                                          fetch("/api/brand-voice", { headers: { "Authorization": `Bearer ${getToken().then(t => t)}` } })
+                                            .then(r => r.json())
+                                            .then(data => {
+                                              if (data && data.length > 0) {
+                                                field.onChange(data[0].id);
+                                              } else {
+                                                toast({ 
+                                                  title: "Voice profile required", 
+                                                  description: "Set up your brand voice first to use this feature.",
+                                                  action: <ToastAction altText="Setup" onClick={() => navigate("/brand-voice")}>Setup →</ToastAction>
+                                                });
+                                                field.onChange("none");
+                                              }
+                                            });
+                                        } else {
+                                          field.onChange("none");
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              />
+                           </div>
+                        </div>
                         <AnimatePresence mode="wait">
                           {hookScore && currentIdea && currentIdea.length > 20 && !isScoringHook && (
                             <motion.div
@@ -1717,24 +1957,24 @@ export default function Generate() {
                     </div>
 
                     <div className="pt-4">
-                      <Button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full h-14 md:h-16 rounded-[24px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black text-base shadow-2xl shadow-cyan-500/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 group overflow-hidden relative"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        {isLoading ? (
-                          <div className="flex items-center gap-3">
-                             <Loader2 className="w-6 h-6 animate-spin" />
-                             <span>Architecting Campaign...</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3 relative z-10">
-                             <Zap className="w-5 h-5 fill-white" />
-                             <span className="tracking-widest uppercase">Generate High-Authority Campaign</span>
-                          </div>
-                        )}
-                      </Button>
+                        <Button
+                          type="submit"
+                          disabled={isLoading}
+                          className={`w-full h-14 md:h-16 rounded-[24px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black text-base shadow-2xl shadow-cyan-500/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 group overflow-hidden relative ${isFirstTime ? 'animate-pulse scale-[1.02] shadow-[0_0_25px_rgba(6,182,212,0.4)]' : ''}`}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          {isLoading ? (
+                            <div className="flex items-center gap-3">
+                               <Loader2 className="w-6 h-6 animate-spin" />
+                               <span>Architecting Campaign...</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3 relative z-10">
+                               <Zap className="w-5 h-5 fill-white" />
+                               <span className="tracking-widest uppercase">{isFirstTime ? "Generate Your First Content →" : "Generate High-Authority Campaign"}</span>
+                            </div>
+                          )}
+                        </Button>
                     </div>
                   </div>
                 </form>
@@ -1793,18 +2033,8 @@ export default function Generate() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col items-center md:items-end">
-                      <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">Viral Score™</span>
-                      <div className="flex items-baseline gap-1 group">
-                        <motion.span 
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="text-6xl md:text-7xl font-black text-white drop-shadow-[0_0_25px_rgba(34,211,238,0.3)] group-hover:drop-shadow-[0_0_35px_rgba(34,211,238,0.5)] transition-all duration-500"
-                        >
-                          {generatedContent.content.viralScores.overall}
-                        </motion.span>
-                        <span className="text-xl font-bold text-white/20">/100</span>
-                      </div>
+                    <div className="flex flex-col items-center md:items-end gap-2">
+                      <ViralScoreMeter score={generatedContent.content.viralScores.overall} />
                     </div>
                   </motion.div>
                 )}
@@ -1846,14 +2076,25 @@ export default function Generate() {
               {/* Platform Results Grid */}
               <div className="grid grid-cols-1 gap-12">
                 {platforms.map((platform, i) => (
-                  <PlatformCard
-                    key={platform}
-                    platform={platform}
-                    content={generatedContent.content?.[platform]}
-                    onRegenerate={() => handleRegenerate(platform)}
-                    isRegenerating={regeneratingPlatform === platform}
-                    index={i}
-                  />
+                  <div key={platform} className="space-y-4">
+                    <PlatformCard
+                      platform={platform}
+                      content={generatedContent.content?.[platform]}
+                      onRegenerate={() => handleRegenerate(platform)}
+                      isRegenerating={regeneratingPlatform === platform}
+                      index={i}
+                    />
+                    <PerformancePredictionCard 
+                      viralScore={generatedContent.content?.[platform]?.viral_score || generatedContent.content.viralScores?.[platform] || 80}
+                      platform={platform}
+                      niche={generatedContent.niche || "General"}
+                    />
+                    {isFreeUser && (
+                      <p className="text-[10px] text-white/30 px-6 font-medium">
+                        Free plan includes GrowFlow watermark. <button className="text-cyan-400 underline font-black" onClick={() => setShowUpgradeModal(true)}>Upgrade to remove it →</button>
+                      </p>
+                    )}
+                  </div>
                 ))}
               </div>
 

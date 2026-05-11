@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
-type AdminTab = "overview" | "users" | "revenue" | "announcements" | "system";
+type AdminTab = "overview" | "users" | "churn" | "revenue" | "announcements" | "system";
 
 interface AdminStats {
   totalUsers: number;
@@ -33,6 +33,15 @@ interface AdminStats {
   activeAnnouncements?: any[];
   featureUsageData?: { feature: string; count: number }[];
   couponStats?: { code: string; count: number }[];
+  churnRisk?: {
+    id: string;
+    email: string;
+    plan_type: string;
+    plan_tier: string;
+    days_since_login: number;
+    gens_last_30_days: number;
+    churn_risk: "HIGH" | "MEDIUM";
+  }[];
 }
 
 interface RevenueBreakdown {
@@ -310,6 +319,30 @@ export default function AdminDashboard() {
     }
   }
 
+  const sendReengagementMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      const token = await getToken();
+      const res = await fetch("/api/admin/reengagement/send-personal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ 
+          userId: userData.id, 
+          email: userData.email, 
+          daysSinceLogin: userData.days_since_login,
+          name: userData.email.split('@')[0]
+        }),
+      });
+      if (!res.ok) throw new Error();
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Re-engagement email sent!", description: "Founder outreach triggered successfully." });
+    },
+    onError: () => {
+      toast({ variant: "destructive", title: "Failed to send email", description: "Please check service status." });
+    }
+  });
+
   if (!isLoaded || isSubPending || (isStatsLoading && !stats)) {
     return (
       <div className="flex flex-col items-center justify-center p-20 min-h-screen bg-[#0b0416]">
@@ -371,7 +404,7 @@ export default function AdminDashboard() {
 
         {/* Tab Navigation */}
         <div className="flex gap-2 p-1.5 bg-[#160d2b] rounded-2xl border border-white/5 w-fit max-w-full overflow-x-auto no-scrollbar">
-          {(["overview", "users", "revenue", "announcements", "system"] as AdminTab[]).map((tab) => (
+          {(["overview", "users", "churn", "revenue", "announcements", "system"] as AdminTab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -646,6 +679,80 @@ export default function AdminDashboard() {
                             )}
                           </React.Fragment>
                         ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "churn" && (
+              <div className="space-y-6">
+                <div className="bg-red-500/5 border border-red-500/20 p-8 rounded-[32px]">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center">
+                      <AlertTriangle className="text-red-400 w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black text-white">Retention Guard</h2>
+                      <p className="text-white/40 text-sm">Identifying paid users at high risk of churn based on inactivity.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-black border-b border-white/5">
+                          <th className="px-8 py-6">At-Risk Creator</th>
+                          <th className="px-8 py-6">Inactivity</th>
+                          <th className="px-8 py-6">Usage (30d)</th>
+                          <th className="px-8 py-6">Risk Level</th>
+                          <th className="px-8 py-6 text-right">Intervention</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {stats?.churnRisk?.map((user: any) => (
+                          <tr key={user.id} className="hover:bg-white/[0.03] transition-colors group">
+                            <td className="px-8 py-6">
+                              <div>
+                                <p className="font-bold text-white/90">{user.email}</p>
+                                <p className="text-[10px] text-white/20 mt-1 uppercase font-black">{user.plan_tier} • {user.plan_type}</p>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <p className={`text-sm font-bold ${user.days_since_login > 14 ? 'text-red-400' : 'text-amber-400'}`}>
+                                {user.days_since_login} days away
+                              </p>
+                            </td>
+                            <td className="px-8 py-6">
+                              <p className="text-sm font-bold text-white/60">{user.gens_last_30_days} generations</p>
+                            </td>
+                            <td className="px-8 py-6">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                user.churn_risk === 'HIGH' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'
+                              }`}>
+                                {user.churn_risk} RISK
+                              </span>
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <Button
+                                onClick={() => sendReengagementMutation.mutate(user)}
+                                disabled={sendReengagementMutation.isPending}
+                                className="bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-[#0b0416] border border-cyan-500/30 text-xs font-black rounded-xl h-10 px-4 transition-all"
+                              >
+                                {sendReengagementMutation.isPending ? "Sending..." : "Send Personal Outreach"}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                        {(!stats?.churnRisk || stats.churnRisk.length === 0) && (
+                          <tr>
+                            <td colSpan={5} className="px-8 py-20 text-center">
+                              <CheckCircle className="w-12 h-12 text-emerald-500/20 mx-auto mb-4" />
+                              <p className="text-white/40 font-bold uppercase tracking-widest">No high-risk churners detected</p>
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>

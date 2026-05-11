@@ -1,12 +1,16 @@
 import { pgTable, text, timestamp, boolean, jsonb, integer, pgEnum } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-export const userPlanEnum = pgEnum("user_plan", ["FREE", "STARTER", "CREATOR", "INFINITY"]);
+export const userPlanEnum = pgEnum("user_plan", ["FREE", "STARTER", "CREATOR", "INFINITY", "AGENCY"]);
 
 export const usersTable = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email"),
   firstName: text("first_name"),
+  displayName: text("display_name"),
+  avatarUrl: text("avatar_url"),
+  username: text("username").unique(),
+  showOnLeaderboard: boolean("show_on_leaderboard").notNull().default(false),
   razorpayCustomerId: text("razorpay_customer_id"),
   razorpaySubscriptionId: text("razorpay_subscription_id"),
   subscriptionStatus: text("subscription_status").notNull().default("free"),
@@ -46,6 +50,8 @@ export const usersTable = pgTable("users", {
   platformPreference: text("platform_preference"),
   isFirstLogin: boolean("is_first_login").notNull().default(true),
   couponCode: text("coupon_code"),
+  teamId: text("team_id"),
+  teamRole: text("team_role").default("member"), // "owner" | "member"
   paymentFailedAt: timestamp("payment_failed_at", { withTimezone: true }),
   dunningReminderSentAt: timestamp("dunning_reminder_sent_at", { withTimezone: true }),
   streakRewardLastGrantedAt: timestamp("streak_reward_last_granted_at", { withTimezone: true }),
@@ -58,6 +64,7 @@ export const usersTable = pgTable("users", {
     closingStyle: string;
     uniqueTraits: string[];
   }>(),
+  voiceProfileUpdatedAt: timestamp("voice_profile_updated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => {
   return {

@@ -41,26 +41,34 @@ function AnimatedCounter({ value }: { value: number | string }) {
   return <>{count}</>;
 }
 
-function StatCard({ label, value, sub, icon, delay = 0 }: { label: string; value: string | number; sub?: string; icon: React.ReactNode; delay?: number }) {
+function StatCard({ label, value, sub, icon, delta, delay = 0 }: { label: string; value: string | number; sub?: string; icon: React.ReactNode; delta?: number; delay?: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, scale: 1.02 }}
       transition={{ delay }}
-      className="hyper-hover-card rounded-2xl border border-white/8 p-5"
+      className="hyper-hover-card rounded-2xl border border-white/8 p-5 relative overflow-hidden"
       style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(255,255,255,0.02) 100%)" }}
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 relative z-10">
         <span className="text-xs text-white/40 font-medium uppercase tracking-widest">{label}</span>
         <div className="w-8 h-8 rounded-lg bg-cyan-600/15 border border-cyan-500/20 flex items-center justify-center">
           {icon}
         </div>
       </div>
-      <div className="text-3xl font-bold text-white">
-        <AnimatedCounter value={value} />
+      <div className="flex items-end justify-between relative z-10">
+        <div className="text-3xl font-bold text-white">
+          <AnimatedCounter value={value} />
+        </div>
+        {delta !== undefined && (
+          <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${delta >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+            {delta >= 0 ? "+" : ""}{delta}%
+          </div>
+        )}
       </div>
-      {sub && <div className="text-xs text-white/40 mt-1">{sub}</div>}
+      {sub && <div className="text-xs text-white/40 mt-1 relative z-10">{sub}</div>}
+      <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 blur-3xl -mr-12 -mt-12 pointer-events-none" />
     </motion.div>
   );
 }
@@ -69,6 +77,14 @@ export default function Insights() {
   const [, setLocation] = useLocation();
   const { data: stats } = useGetContentStats();
   const { data: historyData } = useGetContentHistory({ limit: 50, offset: 0 });
+  const [insightStats, setInsightStats] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/content/insights/stats")
+      .then(r => r.json())
+      .then(data => setInsightStats(data))
+      .catch(() => null);
+  }, []);
 
   const history = historyData?.items ?? [];
   const totalGenerations = stats?.totalGenerations ?? history.length;
@@ -175,9 +191,9 @@ export default function Insights() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard label="Total generations" value={totalGenerations} sub="All time" icon={<Zap className="w-4 h-4 text-cyan-400" />} delay={0} />
-          <StatCard label="This month" value={thisMonthGenerations} sub="Content pieces" icon={<TrendingUp className="w-4 h-4 text-cyan-400" />} delay={0.05} />
-          <StatCard label="Best style" value={topType} sub="Most used format" icon={<Star className="w-4 h-4 text-cyan-400" />} delay={0.1} />
-          <StatCard label="Current streak" value={`${streak} day${streak !== 1 ? "s" : ""}`} sub="Keep it going" icon={<Crown className="w-4 h-4 text-cyan-400" />} delay={0.15} />
+          <StatCard label="Growth Momentum" value={insightStats?.thisWeek || 0} sub="This week vs last" icon={<TrendingUp className="w-4 h-4 text-cyan-400" />} delta={insightStats?.pct || 0} delay={0.05} />
+          <StatCard label="Strategic style" value={topType} sub="High engagement format" icon={<Star className="w-4 h-4 text-cyan-400" />} delay={0.1} />
+          <StatCard label="Active presence" value={`${streak} day streak`} sub="Momentum lock" icon={<Crown className="w-4 h-4 text-cyan-400" />} delay={0.15} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

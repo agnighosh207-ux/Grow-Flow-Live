@@ -10,17 +10,17 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api-client";
 
 export default function CreatorProfile() {
-  const [, params] = useRoute("/creator/:code");
-  const code = params?.code;
+  const [, params] = useRoute("/profile/:username");
+  const username = params?.username;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!code) return;
+    if (!username) return;
     const fetchProfile = async () => {
       try {
-        const { data } = await api.get(`/public/creator/${code}`);
+        const { data } = await api.get(`/public/profile/${username}`);
         setData(data);
       } catch (err: any) {
         setError(err.response?.status === 404 ? "Creator Not Found" : "Something went wrong");
@@ -29,7 +29,7 @@ export default function CreatorProfile() {
       }
     };
     fetchProfile();
-  }, [code]);
+  }, [username]);
 
   if (loading) {
     return (
@@ -57,10 +57,20 @@ export default function CreatorProfile() {
   const creationDate = new Date(data.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   return (
-    <div className="min-h-screen bg-[#030303] flex flex-col items-center justify-center p-6 overflow-hidden relative">
+    <div className="min-h-screen bg-[#030303] flex flex-col items-center p-6 overflow-x-hidden relative">
+      {/* Meta Tags for Social Sharing */}
+      {data?.profile && (
+        <>
+          <title>{data.profile.displayName} — Creator on GrowFlow AI</title>
+          <meta property="og:title" content={`${data.profile.displayName} — Creator on GrowFlow AI`} />
+          <meta property="og:description" content={`${data.profile.streak} day streak • ${data.profile.totalGenerations} pieces created`} />
+          <meta property="og:image" content={`/api/public/og/profile/${data.profile.username}`} />
+        </>
+      )}
+
       {/* Background Glows */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 blur-[120px] rounded-full" />
-      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-purple-500/5 blur-[120px] rounded-full" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -78,8 +88,8 @@ export default function CreatorProfile() {
               {/* Profile Header */}
               <div className="space-y-6 text-center">
                 <div className="relative inline-block">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-4xl shadow-2xl shadow-cyan-500/20 mx-auto">
-                    {data.firstName.charAt(0)}
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-2xl mx-auto">
+                    <img src={data.profile.avatar} alt={data.profile.displayName} className="w-full h-full object-cover" />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center shadow-xl">
                     <Crown className="w-5 h-5 text-amber-400" />
@@ -88,23 +98,22 @@ export default function CreatorProfile() {
 
                 <div className="space-y-1">
                   <h1 className="text-3xl font-black text-white italic tracking-tight">
-                    @{data.firstName}
+                    {data.profile.displayName}
                   </h1>
                   <p className="text-cyan-400 font-bold uppercase tracking-[0.2em] text-[10px]">
-                    GrowFlow {data.planTier} Creator
+                    GrowFlow {data.profile.planTier} Creator
                   </p>
                 </div>
               </div>
 
-              {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 space-y-1">
                   <div className="flex items-center gap-2 text-white/30 mb-1">
                     <Layout className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Impact</span>
                   </div>
-                  <p className="text-2xl font-black text-white">{data.totalGenerations}</p>
-                  <p className="text-[10px] text-white/40 font-medium">Pieces of content</p>
+                  <p className="text-2xl font-black text-white">{data.profile.totalGenerations}</p>
+                  <p className="text-[10px] text-white/40 font-medium">Pieces created</p>
                 </div>
 
                 <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 space-y-1">
@@ -112,8 +121,8 @@ export default function CreatorProfile() {
                     <Flame className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Streak</span>
                   </div>
-                  <p className="text-2xl font-black text-white">{data.currentStreak}</p>
-                  <p className="text-[10px] text-white/40 font-medium">Days active 🔥</p>
+                  <p className="text-2xl font-black text-white">{data.profile.streak}</p>
+                  <p className="text-[10px] text-white/40 font-medium">Day streak 🔥</p>
                 </div>
               </div>
 
@@ -122,29 +131,48 @@ export default function CreatorProfile() {
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
                    <div className="flex items-center gap-3">
                       <Calendar className="w-4 h-4 text-white/20" />
-                      <span className="text-sm font-medium text-white/60">Creating since {creationDate}</span>
+                      <span className="text-sm font-medium text-white/60">Creating since {new Date(data.profile.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
                    </div>
                 </div>
                 
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
                    <div className="flex items-center gap-3">
                       <Star className="w-4 h-4 text-amber-400/50" />
-                      <span className="text-sm font-medium text-white/60">Niche: {data.niche}</span>
+                      <span className="text-sm font-medium text-white/60">Niche: {data.profile.niche}</span>
                    </div>
                 </div>
               </div>
 
+              {/* Sample Work Section */}
+              {data.content && data.content.length > 0 && (
+                <div className="space-y-6 pt-4">
+                   <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.3em] text-center">Sample Work</p>
+                   <div className="space-y-4">
+                     {data.content.map((item: any) => (
+                       <div key={item.id} className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-3">
+                          <div className="flex items-center gap-2 text-[9px] font-black text-cyan-400/60 uppercase tracking-widest">
+                            <Sparkles className="w-3 h-3" /> {item.contentType} • {item.platform}
+                          </div>
+                          <p className="text-sm text-white/80 font-medium leading-relaxed line-clamp-3">
+                            {item.idea}
+                          </p>
+                       </div>
+                     ))}
+                   </div>
+                </div>
+              )}
+
               {/* CTA */}
-              <div className="pt-4">
+              <div className="pt-6 border-t border-white/5">
                 <Button 
-                  onClick={() => window.location.href = `/?ref=${code}`}
+                  onClick={() => window.location.href = `/?ref=${data.profile.username}`}
                   className="w-full h-16 rounded-3xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-base shadow-2xl shadow-cyan-500/20 transition-all hover:scale-[1.02] active:scale-98 group"
                 >
-                  Get Your Own GrowFlow AI 
+                  Create Your Content with GrowFlow AI 
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <p className="text-center text-[10px] text-white/20 font-bold uppercase tracking-widest mt-4">
-                  Free 5-day trial · No credit card required
+                  Free 10 credits · join the {data.profile.niche} elite
                 </p>
               </div>
 

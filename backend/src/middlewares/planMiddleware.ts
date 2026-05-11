@@ -94,7 +94,8 @@ export const PLAN_RANKS: Record<string, number> = {
   FREE: 0,
   STARTER: 1,
   CREATOR: 2,
-  INFINITY: 3
+  INFINITY: 3,
+  AGENCY: 4
 };
 
 export const TIER_CREDITS: Record<string, number> = {
@@ -102,6 +103,7 @@ export const TIER_CREDITS: Record<string, number> = {
   STARTER: 25,
   CREATOR: 150,
   INFINITY: 999999,
+  AGENCY: 1000,
 };
 
 

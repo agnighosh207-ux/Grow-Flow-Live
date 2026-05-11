@@ -2,6 +2,10 @@ import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import App from "./App";
 import "./index.css";
+import "./lib/i18n";
+import { initAnalytics } from "./lib/analytics";
+
+initAnalytics();
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({

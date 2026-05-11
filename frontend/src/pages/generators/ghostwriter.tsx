@@ -27,6 +27,8 @@ interface VoiceProfile {
   openingStyle: string;
   closingStyle: string;
   uniqueTraits: string[];
+  isStale?: boolean;
+  daysSinceUpdate?: number;
 }
 
 interface GhostHistoryItem {
@@ -388,6 +390,18 @@ export default function GhostwriterPage() {
                 <PenTool className="h-64 w-64" />
               </div>
               <CardContent className="p-8 space-y-8 relative">
+                {profile?.isStale && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-4">
+                    <span className="text-amber-400">⚠️</span>
+                    <div>
+                      <p className="text-xs font-semibold text-amber-400">Voice profile is {profile.daysSinceUpdate} days old</p>
+                      <p className="text-[11px] text-white/40">Your writing style may have evolved. Retrain for better accuracy.</p>
+                    </div>
+                    <button onClick={analyzeVoice} className="ml-auto text-xs text-amber-400 underline hover:text-amber-300 transition-colors">
+                      {analyzing ? "Analyzing..." : "Retrain"}
+                    </button>
+                  </div>
+                )}
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
                     <label className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">

@@ -12,7 +12,7 @@ import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import {
   Settings, User, CreditCard, Bell, AlertTriangle,
   Loader2, Crown, Zap, Shield, Mail,
-  Trash2, X, RefreshCcw, Gift, Copy, Check, Users, Sliders, Camera
+  Trash2, X, RefreshCcw, Gift, Copy, Check, Users, Sliders, Camera, Trophy
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -180,6 +180,14 @@ export default function SettingsPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [retryLoading, setRetryLoading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profile, setProfile] = useState({
+    username: "",
+    displayName: "",
+    showOnLeaderboard: false,
+    avatarUrl: "",
+  });
+
   const retrySub = useRetrySubscription();
 
   async function secureFetch(url: string, options: RequestInit = {}) {
@@ -200,6 +208,9 @@ export default function SettingsPage() {
       .then(data => {
         if (data.notifications) {
           setPrefs(data.notifications);
+        }
+        if (data.profile) {
+          setProfile(data.profile);
         }
         setPrefsLoaded(true);
       })
@@ -323,6 +334,25 @@ export default function SettingsPage() {
     } finally {
       setDeleteLoading(false);
       setShowDeleteModal(false);
+    }
+  }
+
+  async function saveProfile() {
+    setProfileSaving(true);
+    try {
+      const res = await secureFetch("/api/settings/profile", {
+        method: "PATCH",
+        body: JSON.stringify(profile),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update profile");
+      }
+      toast({ title: "Profile updated!", description: "Your changes are now live." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error updating profile", description: e.message });
+    } finally {
+      setProfileSaving(false);
     }
   }
 
@@ -495,6 +525,78 @@ export default function SettingsPage() {
               </Button>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Public Profile */}
+      <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
+        <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-cyan-400/70" />
+            <h2 className="text-white/80 font-semibold text-sm">Public Profile</h2>
+          </div>
+          {profileSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
+        </div>
+        <div className="p-5 space-y-5">
+           <p className="text-white/40 text-xs leading-relaxed">
+            Customize how you appear to other creators and on the public leaderboard.
+          </p>
+          <div className="space-y-4">
+             <div className="space-y-1.5">
+                <label className="text-white/60 text-xs font-medium">Username (Vanity URL)</label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                   <div className="bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white/40 text-sm font-mono shrink-0">
+                      growflowai.space/profile/
+                   </div>
+                   <input
+                    type="text"
+                    value={profile.username}
+                    onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
+                    placeholder="yourname"
+                    className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 font-mono"
+                  />
+                </div>
+             </div>
+             <div className="space-y-1.5">
+                <label className="text-white/60 text-xs font-medium">Display Name</label>
+                <input
+                  type="text"
+                  value={profile.displayName}
+                  onChange={e => setProfile(p => ({ ...p, displayName: e.target.value }))}
+                  placeholder="The Creator"
+                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
+                />
+             </div>
+             <div className="flex items-start justify-between gap-4 py-2">
+                <div className="flex items-start gap-3">
+                  <Trophy className="w-4 h-4 mt-0.5 text-amber-400/70" />
+                  <div>
+                    <p className="text-white/80 text-sm font-medium">Show on Leaderboard</p>
+                    <p className="text-white/35 text-xs mt-0.5">Opt-in to compete with other creators and build authority.</p>
+                  </div>
+                </div>
+                <ToggleSwitch
+                  checked={profile.showOnLeaderboard}
+                  onChange={(v) => setProfile(p => ({ ...p, showOnLeaderboard: v }))}
+                />
+             </div>
+             {profile.username && (
+               <a 
+                href={`/profile/${profile.username}`} 
+                target="_blank" 
+                className="inline-flex items-center gap-1.5 text-cyan-400 text-xs font-bold uppercase tracking-widest hover:text-cyan-300 transition-colors"
+               >
+                 View My Public Profile <RefreshCcw className="w-3 h-3" />
+               </a>
+             )}
+             <Button
+                onClick={saveProfile}
+                disabled={profileSaving}
+                className="w-full bg-white text-black hover:bg-zinc-200 font-bold rounded-xl text-sm transition-all"
+              >
+                {profileSaving ? "Saving..." : "Update Profile"}
+              </Button>
+          </div>
         </div>
       </section>
 

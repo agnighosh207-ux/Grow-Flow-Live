@@ -537,6 +537,111 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
   invalidateAuthCache(req.userId);
 });
 
+router.post("/credits/topup", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const { pack: packKey } = req.body as { pack: "small" | "medium" | "large" };
+  const PACKS: Record<string, { credits: number; amount: number; label: string }> = {
+    small:  { credits: 10,  amount: 4900,  label: "10 credits — ₹49" },
+    medium: { credits: 25,  amount: 9900,  label: "25 credits — ₹99" },
+    large:  { credits: 60,  amount: 19900, label: "60 credits — ₹199" },
+  };
+  
+  const pack = PACKS[packKey];
+  if (!pack) {
+    res.status(400).json({ error: "Invalid pack selection" });
+    return;
+  }
+
+  const { rzp, keyId } = getRazorpay();
+  if (!rzp) {
+    res.status(503).json({ error: "Payment gateway not configured" });
+    return;
+  }
+
+  try {
+    const order = await rzp.orders.create({ 
+      amount: pack.amount, 
+      currency: "INR",
+      notes: {
+        clerk_user_id: req.userId,
+        type: "credit_topup",
+        credits: pack.credits
+      }
+    });
+    res.json({ 
+      orderId: order.id, 
+      keyId: keyId,
+      amount: pack.amount,
+      currency: "INR",
+      credits: pack.credits,
+      label: pack.label
+    });
+  } catch (err: any) {
+    logger.error({ err: err.message, userId: req.userId }, "Failed to create topup order");
+    res.status(500).json({ error: "Failed to create order" });
+  }
+});
+
+router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, credits } = req.body;
+
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    res.status(400).json({ error: "Missing payment verification data" });
+    return;
+  }
+
+  const { rzp } = getRazorpay();
+  if (!rzp) {
+    res.status(503).json({ error: "Payment gateway not configured" });
+    return;
+  }
+
+  const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
+  const keySecret = isProd 
+    ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
+    : (process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...") ? process.env.RAZORPAY_TEST_KEY_SECRET : (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET));
+
+  if (!keySecret) {
+    res.status(503).json({ error: "Payment gateway not configured" });
+    return;
+  }
+
+  const expectedSig = crypto
+    .createHmac("sha256", keySecret)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    .digest("hex");
+
+  if (expectedSig !== razorpay_signature) {
+    res.status(400).json({ error: "Invalid payment signature" });
+    return;
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx.update(usersTable)
+        .set({
+          generationsRemaining: sql`${usersTable.generationsRemaining} + ${credits}`
+        })
+        .where(eq(usersTable.id, req.userId));
+
+      await tx.insert(paymentsTable).values({
+        id: razorpay_payment_id,
+        userId: req.userId,
+        amount: 0, 
+        status: "captured",
+        processedAt: new Date(),
+        metadata: { razorpay_order_id, type: "credit_topup", credits }
+      });
+    });
+
+    res.json({ success: true, message: `${credits} credits added successfully!` });
+    invalidateAuthCache(req.userId);
+  } catch (err: any) {
+    logger.error({ err: err.message, userId: req.userId }, "Failed to verify topup payment");
+    res.status(500).json({ error: "Failed to process credit addition" });
+  }
+});
+
+
 
 router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { rzp } = getRazorpay();
@@ -558,6 +663,11 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
     await db.update(usersTable)
       .set({ subscriptionStatus: "canceled" })
       .where(eq(usersTable.id, req.userId));
+      
+    // Trigger churn sequence day 1
+    import("../../services/emailSequences").then(({ sendSequenceEmail }) => {
+      sendSequenceEmail(req.userId, "churn", 1);
+    }).catch((e) => logger.error({ err: e.message }, "Failed to trigger churn email"));
   }
 
   res.json({ success: true, message: "Subscription will end at period close." });

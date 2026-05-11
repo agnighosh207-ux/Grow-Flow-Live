@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
@@ -12,7 +13,7 @@ import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
   Sparkles, TrendingUp, BarChart3, CalendarDays, Flame, Wand2,
   Shield, Clock, ChevronRight, Crown, Lock, AlertTriangle,
-  IndianRupee, RefreshCw, Brain, Globe, DollarSign
+  IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users
 } from "lucide-react";
 import { MagneticButton } from "@/components/shared/MagneticButton";
 import { Hover3DCard } from "@/components/shared/Hover3DCard";
@@ -23,7 +24,7 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string; badge?: string }[] =
   { key: "monthly", label: "Monthly" },
   { key: "quarterly", label: "3-Month", badge: "Save 10%" },
   { key: "half-yearly", label: "6-Month", badge: "Save 20%" },
-  { key: "yearly", label: "Yearly", badge: "Best Deal" },
+  { key: "yearly", label: "Yearly" },
 ];
 
 const BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
@@ -139,7 +140,7 @@ function CellContent({ value, infinityLabel }: { value: boolean | string; infini
 const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3 };
 
 export default function PricingPage() {
-  const [billing, setBilling] = useState<BillingPeriod>("monthly");
+  const [billing, setBilling] = useState<BillingPeriod>("yearly");
   const [currency, setCurrency] = useState<"INR" | "USD">((): "INR" | "USD" => {
     try {
       if (typeof window !== "undefined") {
@@ -158,7 +159,10 @@ export default function PricingPage() {
   useEffect(() => {
     localStorage.setItem("pricing_currency", currency);
   }, [currency]);
-  
+
+  const [showExitIntent, setShowExitIntent] = useState(false);
+  const [exitIntentShown, setExitIntentShown] = useState(false);
+
   const { data: sub, isLoading: subLoading } = useSubscriptionStatus();
   const { isSignedIn, isLoaded } = useAuth();
   const [, navigate] = useLocation();
@@ -167,6 +171,23 @@ export default function PricingPage() {
   const currentPlan = sub?.planType ?? "free";
   const currentRank = PLAN_RANK[currentPlan] ?? 0;
   const isActivePaidUser = sub?.plan === "active" || sub?.plan === "trial";
+
+  useEffect(() => {
+    const handleMouseLeave = (e: MouseEvent) => {
+      // Trigger if mouse leaves the top of the viewport
+      if (e.clientY <= 0 && !exitIntentShown && !isActivePaidUser) {
+        const shownInSession = sessionStorage.getItem("exit_intent_shown");
+        if (!shownInSession) {
+          setShowExitIntent(true);
+          setExitIntentShown(true);
+          sessionStorage.setItem("exit_intent_shown", "true");
+        }
+      }
+    };
+    
+    document.addEventListener("mouseleave", handleMouseLeave);
+    return () => document.removeEventListener("mouseleave", handleMouseLeave);
+  }, [exitIntentShown, isActivePaidUser]);
   
   const prices = currency === "USD" ? USD_BASE_PRICES : BASE_PRICES;
   const totals = currency === "USD" ? USD_BILLING_TOTALS : BILLING_TOTALS;
@@ -220,6 +241,50 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-[#050210] text-white overflow-x-hidden">
+      <AnimatePresence>
+        {showExitIntent && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="bg-[#12121C] border border-white/10 rounded-[40px] p-8 md:p-12 max-w-sm text-center relative overflow-hidden shadow-[0_0_80px_rgba(0,242,255,0.1)]"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+              
+              <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 flex items-center justify-center mx-auto mb-6">
+                <Gift className="w-8 h-8 text-cyan-400" />
+              </div>
+              
+              <h2 className="text-3xl font-black text-white mb-2 italic">Wait! Don't leave empty-handed.</h2>
+              <p className="text-white/40 text-sm mb-8 leading-relaxed font-medium">
+                Try the <span className="text-cyan-400 font-bold">Creator Plan</span> today and get <span className="text-white font-bold">50% extra credits</span> for your first month.
+              </p>
+              
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => { setShowExitIntent(false); handlePlanClick("creator"); }}
+                  className="w-full h-14 bg-cyan-500 hover:bg-cyan-400 text-black font-black rounded-2xl shadow-xl shadow-cyan-900/40"
+                >
+                  Claim My Bonus Offer
+                </Button>
+                <button 
+                  onClick={() => setShowExitIntent(false)}
+                  className="w-full h-12 text-white/30 hover:text-white/50 text-xs font-bold uppercase tracking-widest transition-colors"
+                >
+                  Maybe later
+                </button>
+              </div>
+
+              <p className="text-[10px] text-white/20 mt-8 font-bold uppercase tracking-widest">Limited time founder's offer</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Background orbs */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-cyan-700/20 blur-[140px]" />
@@ -285,30 +350,40 @@ export default function PricingPage() {
               🌍 USD
             </button>
           </div>
-          <div className="relative bg-white/5 border border-white/10 rounded-xl p-1 flex gap-1 flex-wrap justify-center">
-            {BILLING_OPTIONS.map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => setBilling(opt.key)}
-                className={`relative px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
-                  billing === opt.key ? "text-white" : "text-white/50 hover:text-white/70"
-                }`}
-              >
-                {billing === opt.key && (
-                  <motion.div
-                    layoutId="billingPill"
-                    className="absolute inset-0 bg-cyan-600 rounded-lg"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                  />
-                )}
-                <span className="relative z-10">{opt.label}</span>
-                {opt.badge && (
-                  <span className="relative z-10 ml-1 sm:ml-1.5 text-[9px] sm:text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full px-1 sm:px-1.5 py-0.5 font-semibold">
-                    {opt.badge}
+          <div className="flex flex-col items-center">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 text-xs text-emerald-400 font-semibold text-center mb-4">
+              🎉 Save up to 20% with yearly — most popular among serious creators
+            </div>
+            <div className="relative bg-white/5 border border-white/10 rounded-xl p-1 flex gap-1 flex-wrap justify-center">
+              {BILLING_OPTIONS.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => setBilling(opt.key)}
+                  className={`relative px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-all duration-200 ${
+                    opt.key === 'yearly' 
+                      ? `font-bold ${billing === 'yearly' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-white/50 hover:text-white/70'}`
+                      : `font-medium ${billing === opt.key ? "text-white" : "text-white/50 hover:text-white/70"}`
+                  }`}
+                >
+                  {billing === opt.key && opt.key !== 'yearly' && (
+                    <motion.div
+                      layoutId="billingPill"
+                      className="absolute inset-0 bg-cyan-600 rounded-lg"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                    />
+                  )}
+                  <span className="relative z-10">
+                    {opt.label}
+                    {opt.key === 'yearly' && <span className="text-emerald-400 ml-1">-20%</span>}
                   </span>
-                )}
-              </button>
-            ))}
+                  {opt.badge && opt.key !== 'yearly' && (
+                    <span className="relative z-10 ml-1 sm:ml-1.5 text-[9px] sm:text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full px-1 sm:px-1.5 py-0.5 font-semibold">
+                      {opt.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -632,6 +707,53 @@ export default function PricingPage() {
             </Hover3DCard>
           </motion.div>
         </div>
+
+        {/* Agency Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-16 border border-violet-500/30 rounded-2xl p-8 bg-violet-500/5 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none group-hover:bg-violet-500/20 transition-all duration-1000" />
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+            <div className="space-y-4 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-3">
+                 <div className="w-12 h-12 rounded-2xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center shadow-lg shadow-violet-500/10">
+                    <Users className="w-6 h-6 text-violet-400" />
+                 </div>
+                 <div>
+                    <h3 className="text-2xl font-bold text-white">For Agencies & Teams</h3>
+                    <p className="text-violet-400/60 text-xs font-black uppercase tracking-widest">Enterprise Grade Scale</p>
+                 </div>
+              </div>
+              <p className="text-white/50 text-sm max-w-lg leading-relaxed">
+                Empower your entire team with collaborative content generation. Manage members, monitor usage, and maintain consistent brand voice across all accounts.
+              </p>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-[10px] font-black uppercase tracking-wider text-violet-300">
+                <span className="bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> 5 Member Seats</span>
+                <span className="bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> 1,000 Generations / mo</span>
+                <span className="bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> Team Analytics</span>
+              </div>
+            </div>
+            <div className="flex flex-col items-center md:items-end gap-4 min-w-[200px]">
+              <div className="text-center md:text-right">
+                <div className="flex items-baseline gap-1 justify-center md:justify-end">
+                  <span className="text-4xl font-black text-white">{currency === "USD" ? "$39" : "₹2,999"}</span>
+                  <span className="text-white/40 text-sm">/ mo</span>
+                </div>
+                <p className="text-violet-400/40 text-[10px] font-bold uppercase tracking-tighter mt-1">Billed monthly</p>
+              </div>
+              <Button 
+                onClick={() => window.open("mailto:agnighosh207@gmail.com?subject=GrowFlow%20Agency%20Plan%20Inquiry")}
+                className="w-full md:w-auto h-12 bg-violet-600 hover:bg-violet-500 text-white font-bold px-10 rounded-xl shadow-lg shadow-violet-900/40 transition-all hover:scale-105 active:scale-95"
+              >
+                Contact Sales
+              </Button>
+            </div>
+          </div>
+        </motion.div>
 
         {/* ROI Anchor Section */}
         <motion.div
