@@ -71,7 +71,7 @@ export function ReferralPopup() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 12 }}
             transition={{ type: "spring", stiffness: 320, damping: 28 }}
-            className="fixed z-[100] left-1/2 -translate-x-1/2 bottom-8 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 w-[calc(100vw-2rem)] max-w-sm"
+            className="fixed z-[100] left-1/2 -translate-x-1/2 bottom-8 sm:bottom-auto sm:top-[12vh] w-[calc(100vw-2rem)] max-w-sm"
           >
             <div
               className="relative rounded-2xl overflow-hidden p-6"

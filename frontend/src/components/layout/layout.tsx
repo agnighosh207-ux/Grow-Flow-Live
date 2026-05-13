@@ -44,7 +44,9 @@ import {
   Target,
   ArrowRight,
   AlertTriangle,
-  Shield
+  Shield,
+  BookOpen,
+  Library
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -105,7 +107,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Create",
     items: [
-      { path: "/generate", label: "Generate", icon: Wand2, desc: "AI Content Campaign Generator" },
+      { path: "/generate", label: "generate", icon: Wand2, desc: "AI Content Campaign Generator" },
       { path: "/ideas", label: "Idea Generator", icon: Lightbulb, desc: "Daily viral content concepts" },
       { path: "/trends", label: "Trend Engine", icon: TrendingUp, desc: "Live viral trend detection" },
       { path: "/hooks", label: "Viral Hooks", icon: MessageSquareQuote, desc: "100+ viral hook frameworks" },
@@ -116,8 +118,7 @@ const NAV_GROUPS: NavGroup[] = [
       { path: "/caption", label: "Caption Enhancer", icon: Wand2, desc: "Polish your raw captions" },
       { path: "/ghostwriter", label: "AI Ghostwriter", icon: PenTool, desc: "Write in your authentic voice" },
       { path: "/predictor", label: "Performance Predictor", icon: BarChart2, desc: "Predict virality before posting" },
-      { path: "/ab-test", label: "A/B Duel", icon: GitBranch, desc: "Dual-concept performance test" },
-      { path: "/hook-scorer", label: "Hook Radar", icon: Target, desc: "Radar-grade hook strength" },
+
     ],
   },
   {
@@ -133,9 +134,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Library",
     items: [
-      { path: "/vault", label: "Swipe Vault", icon: Flame, desc: "Library of viral frameworks" },
+      { path: "/vault", label: "Content Bank", icon: Library, desc: "Your personal content vault" },
+      { path: "/swipe-vault", label: "Swipe Vault", icon: BookOpen, desc: "Library of viral frameworks" },
       { path: "/saved", label: "Saved", icon: Heart, desc: "Revisit your top generations" },
-      { path: "/history", label: "History", icon: History, desc: "Full archive of past work" },
+      { path: "/history", label: "history", icon: History, desc: "Full archive of past work" },
     ],
   },
   {
@@ -152,16 +154,16 @@ const NAV_GROUPS: NavGroup[] = [
 const DISCOVERY_ITEMS = [
   { path: "/ghostwriter", label: "Writer", icon: PenTool, desc: "Write in your voice" },
   { path: "/predictor", label: "Predict", icon: BarChart2, desc: "Predict virality" },
-  { path: "/ab-test", label: "A/B Duel", icon: GitBranch, desc: "Compare ideas" },
+
   { path: "/coach", label: "Coach", icon: Brain, desc: "AI Feedback" },
-  { path: "/vault", label: "Vault", icon: Flame, desc: "Viral Swipe" },
+  { path: "/swipe-vault", label: "Vault", icon: BookOpen, desc: "Viral Swipe" },
   { path: "/repurpose", label: "Repurpose", icon: RefreshCw, desc: "Video to Post" },
 ];
 
 const SIDEBAR_NAV = NAV_GROUPS.flatMap((g) => g.items);
 
 const BOTTOM_NAV = [
-  { path: "/generate", label: "Generate", icon: Wand2 },
+  { path: "/generate", label: "generate", icon: Wand2 },
   { path: "/hooks", label: "Hooks", icon: MessageSquareQuote },
   { path: "/ideas", label: "Ideas", icon: Lightbulb },
   { path: "discover", label: "Discover", icon: Sparkles },
@@ -417,7 +419,7 @@ function SidebarContent({
   location: string;
   onClick?: () => void;
 }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { getToken } = useAuth();
   const { data: streakData } = useQuery({ 
     queryKey: ['daily-streak'], 
@@ -454,7 +456,7 @@ function SidebarContent({
                 <NavItem
                   key={path}
                   path={path}
-                  label={label}
+                  label={t(label)}
                   icon={icon}
                   pro={pro}
                   isPro={isPro}
@@ -479,8 +481,7 @@ function SidebarContent({
         ))}
 
         {(() => {
-          const isActuallyAdminEmail = user?.primaryEmailAddress?.emailAddress === "agnighosh207@gmail.com";
-          if (sub?.isAdmin || isActuallyAdminEmail) {
+          if (sub?.isAdmin) {
           return (
             <div>
               <p className="text-[11px] font-semibold text-cyan-400 uppercase tracking-widest mb-1.5 border-l-2 border-cyan-500/50 pl-2 ml-3">
@@ -650,7 +651,7 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white/90 group-hover:text-white transition-colors">{item.label}</span>
+                      <span className="text-sm font-bold text-white/90 group-hover:text-white transition-colors">{t(item.label)}</span>
                       {isNew && (
                         <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
                           NEW
@@ -684,7 +685,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("manual");
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [discoverItem, setDiscoverItem] = useState(DISCOVERY_ITEMS[0]);
   
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -914,7 +915,7 @@ export function Layout({ children }: { children: ReactNode }) {
                      }}
                   >
                     <Icon className={`w-5 h-5 ${item.path === "discover" && !isActive ? "text-cyan-400/60 animate-pulse" : ""}`} />
-                    <span className="text-[9px] font-bold uppercase tracking-tighter">{navItem.label}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-tighter">{t(navItem.label)}</span>
                     {item.path === "discover" && !isActive && (
                       <span className="absolute -top-1 right-0 text-[7px] font-black bg-cyan-500 text-black px-1 rounded-sm tracking-tighter">HOT</span>
                     )}

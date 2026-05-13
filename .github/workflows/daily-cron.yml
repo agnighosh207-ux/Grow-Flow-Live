@@ -1,0 +1,16 @@
+name: Daily Maintenance Cron
+
+on:
+  schedule:
+    - cron: '30 4 * * *' # 10:00 AM IST (04:30 AM UTC)
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Daily Cron Process
+        run: |
+          curl -X POST "${{ secrets.API_URL }}/api/cron/process" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          -H "Content-Type: application/json"

@@ -247,12 +247,14 @@ export default function PricingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            className="fixed inset-0 z-[2000] flex items-start justify-center bg-black/80 backdrop-blur-md p-4 pt-[12vh]"
+
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-[#12121C] border border-white/10 rounded-[40px] p-8 md:p-12 max-w-sm text-center relative overflow-hidden shadow-[0_0_80px_rgba(0,242,255,0.1)]"
+              className="bg-[#12121C] border border-white/10 rounded-[40px] pt-10 pb-8 px-8 md:pt-14 md:pb-12 md:px-12 max-w-sm text-center relative overflow-hidden shadow-[0_0_80px_rgba(0,242,255,0.1)]"
+
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
               

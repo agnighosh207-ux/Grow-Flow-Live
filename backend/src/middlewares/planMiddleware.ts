@@ -152,6 +152,7 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
+      const requiredLevel = PLAN_RANKS[config.requiredPlan as keyof typeof PLAN_RANKS] || 0;
       // --- FIX (HIGH-3): Only bypass plan check for GET on STARTER-tier tools ---
       // Informational GET routes for basic tools shouldn't be blocked, but
       // Creator/Infinity-tier read endpoints should still require the plan.
@@ -159,7 +160,6 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
-      const requiredLevel = PLAN_RANKS[config.requiredPlan as keyof typeof PLAN_RANKS] || 0;
       const userLevel = PLAN_RANKS[planTier as keyof typeof PLAN_RANKS] || 0;
       const isAdmin = user.isAdmin === true;
 

@@ -44,3 +44,11 @@ attached_assets/
 /coverage/
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
+
+# Debug & Scratch (Dangerous scripts)
+backend/scratch/
+backend/check_logs.ts
+lib/db/check-user.mjs
+lib/db/purge-users.mjs
+lib/db/total-purge.mjs
+lib/db/unban-users.mjs

@@ -315,7 +315,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[50] overflow-y-auto bg-black/60 backdrop-blur-sm">
-          <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+          <div className="flex min-h-full items-start justify-center p-4 sm:p-6 pt-[8vh] md:pt-[12vh]">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

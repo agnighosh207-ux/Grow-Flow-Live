@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 import { logger } from "../lib/logger";
+import { db, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 let resend: Resend | null = null;
 if (process.env.RESEND_API_KEY) {

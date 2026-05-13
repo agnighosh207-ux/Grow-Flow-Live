@@ -54,7 +54,7 @@ const ImproveCompetitorContent = React.lazy(() => import("@/pages/core/improve")
 const BioGenerator = React.lazy(() => import("@/pages/generators/bio"));
 const CaptionEnhancer = React.lazy(() => import("@/pages/generators/caption"));
 const DailyActionMode = React.lazy(() => import("@/pages/core/daily"));
-const ContentPack = React.lazy(() => import("@/pages/generators/pack"));
+
 const AdminDashboard = React.lazy(() => import("@/pages/settings/admin"));
 const ReferralsPage = React.lazy(() => import("@/pages/settings/referrals"));
 const ContentCoach = React.lazy(() => import("@/pages/core/coach"));
@@ -63,8 +63,7 @@ const Ghostwriter = React.lazy(() => import("@/pages/generators/ghostwriter"));
 const Predictor = React.lazy(() => import("@/pages/generators/predictor"));
 const Hashtags = React.lazy(() => import("@/pages/generators/hashtags"));
 const Repurpose = React.lazy(() => import("@/pages/generators/repurpose"));
-const ABTest = React.lazy(() => import("@/pages/generators/ab-test"));
-const HookScorer = React.lazy(() => import("@/pages/generators/hook-scorer"));
+
 const CreatorProfile = React.lazy(() => import("@/pages/public/CreatorProfile"));
 const TeamPage = React.lazy(() => import("@/pages/core/team"));
 const BrandVoice = React.lazy(() => import("@/pages/core/BrandVoice"));
@@ -138,10 +137,10 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const PageTransition = ({ children }: { children: React.ReactNode }) => (
   <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -10 }}
-    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.15, ease: "easeOut" }}
     className="w-full"
   >
     {children}
@@ -214,7 +213,7 @@ export function ClerkProviderWithRoutes() {
               <Route path="/bio"><ProtectedRoute component={BioGenerator} /></Route>
               <Route path="/caption"><ProtectedRoute component={CaptionEnhancer} /></Route>
               <Route path="/daily"><ProtectedRoute component={DailyActionMode} /></Route>
-              <Route path="/pack"><ProtectedRoute component={ContentPack} /></Route>
+
               <Route path="/calendar"><ProtectedRoute component={ContentCalendar} /></Route>
               <Route path="/insights"><ProtectedRoute component={Insights} /></Route>
               <Route path="/pricing"><Pricing /></Route>
@@ -228,7 +227,7 @@ export function ClerkProviderWithRoutes() {
               <Route path="/coach"><ProtectedRoute component={ContentCoach} /></Route>
               
               <Route path="/vault"><ProtectedRoute component={VaultBank} /></Route>
-              <Route path="/inspiration"><ProtectedRoute component={SwipeVault} /></Route>
+              <Route path="/swipe-vault"><ProtectedRoute component={SwipeVault} /></Route>
               <Route path="/brand-voice"><ProtectedRoute component={BrandVoice} /></Route>
               
               {/* SEO Niche Pages */}
@@ -250,8 +249,7 @@ export function ClerkProviderWithRoutes() {
               <Route path="/predictor"><ProtectedRoute component={Predictor} /></Route>
               <Route path="/hashtags"><ProtectedRoute component={Hashtags} /></Route>
               <Route path="/repurpose"><ProtectedRoute component={Repurpose} /></Route>
-              <Route path="/ab-test"><ProtectedRoute component={ABTest} /></Route>
-              <Route path="/hook-scorer"><ProtectedRoute component={HookScorer} /></Route>
+
               <Route path="/creator/:code"><CreatorProfile /></Route>
               <Route path="/team"><ProtectedRoute component={TeamPage} /></Route>
               <Route path="/review/:shareId"><Review /></Route>

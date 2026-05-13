@@ -345,9 +345,28 @@ if (process.env.NODE_ENV === "development") {
   });
 }
 
+// ─── 11.5 Cron Endpoint (Triggered via GitHub Action) ──────────────────────
+app.post("/api/cron/process", async (req, res) => {
+  const secret = req.headers["authorization"]?.replace("Bearer ", "");
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    logger.warn({ ip: req.ip }, "Unauthorized cron attempt blocked");
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const { processDailyCron } = await import("./services/cron");
+    const result = await processDailyCron();
+    res.json(result);
+  } catch (err: any) {
+    logger.error({ err }, "Cron endpoint failure");
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── 12. Error handler (RECOVERY MODE: Exposing errors) ──────────────────────
 app.use((err: any, req: any, res: any, _next: any) => {
-  const isDev = process.env.NODE_ENV === "development" || !!process.env.RAILWAY_ENVIRONMENT;
+  const isDev = process.env.NODE_ENV === "development" && !process.env.RAILWAY_ENVIRONMENT;
   
   // Log the full error object for server logs
   logger.error({ 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -19,7 +20,7 @@ import {
   Loader2, Copy, RefreshCw, Check, Sparkles, Linkedin, Twitter, X,
   Download, Hash, Zap, MessageCircle, Film, ChevronDown, ChevronUp, Crown, Heart,
   TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2, AlertCircle, Lightbulb, Share2,
-  PenTool, CalendarDays
+  PenTool, CalendarDays, Package2, GitBranch, ArrowRightLeft, BarChart3, Info, Trophy
 } from "lucide-react";
 import { SiInstagram, SiYoutube } from "react-icons/si";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,6 +35,7 @@ import { api } from "@/lib/api-client";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NPSModal, checkShouldShowNPS } from "@/components/modals/NPSModal";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { track, identify } from "@/lib/analytics";
@@ -125,6 +127,363 @@ function AnimatedOrbs() {
         style={{ background: "radial-gradient(circle, rgba(20,184,166,0.03) 0%, transparent 70%)" }} />
       <div className="absolute -bottom-[10%] right-[20%] w-[700px] h-[700px] rounded-full"
         style={{ background: "radial-gradient(circle, rgba(6,182,212,0.02) 0%, transparent 70%)" }} />
+    </div>
+  );
+}
+
+interface ContentAnalysis {
+  viralityScore: number;
+  hookStrength: number;
+  engagementPotential: number;
+  shareability: number;
+  emotionalTrigger: string;
+  curiosityGap: string;
+  targetAudienceReaction: string;
+  improvementTip: string;
+}
+
+function CopyBtn({ text, label, size = "default" }: { text: string; label?: string, size?: "default" | "xs" }) {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+  const copy = () => { 
+    navigator.clipboard.writeText(text); 
+    setCopied(true); 
+    toast({ title: "Copied!" });
+    setTimeout(() => setCopied(false), 2000); 
+  };
+  return (
+    <button onClick={copy} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white ${size === "xs" ? "text-[9px]" : "text-xs"} transition-all shrink-0 border border-white/5`}>
+      {copied ? <><Check className="w-3 h-3 text-emerald-400" />{label || "Copied!"}</> : <><Copy className="w-3 h-3" />{label || "Copy"}</>}
+    </button>
+  );
+}
+
+function SectionCard({
+  icon: Icon,
+  title,
+  badge,
+  color,
+  children,
+  locked,
+  lockedReason,
+}: {
+  icon: any;
+  title: string;
+  badge?: string;
+  color: string;
+  children?: React.ReactNode;
+  locked?: boolean;
+  lockedReason?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`rounded-3xl border ${locked ? "bg-white/[0.01] border-white/5" : "bg-white/[0.035] border-white/10 hover:border-white/15 transition-all shadow-xl"}`}
+    >
+      <div className={`flex items-center gap-3 px-5 py-4 border-b ${locked ? "border-white/5" : "border-white/8"}`}>
+        <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center shadow-lg`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <span className={`text-sm font-black tracking-tight uppercase ${locked ? "text-white/30" : "text-white/90"}`}>{title}</span>
+        {badge && (
+          <span className={`ml-auto text-[9px] px-2.5 py-1 rounded-lg border font-black tracking-widest uppercase ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-cyan-500/12 text-cyan-300 border-cyan-500/20"}`}>
+            {badge}
+          </span>
+        )}
+        {locked && <Lock className="w-4 h-4 text-white/20 ml-auto" />}
+      </div>
+      <div className={`p-6 ${locked ? "opacity-40" : ""}`}>
+        {locked ? (
+          <div className="text-center py-8">
+            <Crown className="w-10 h-10 text-white/10 mx-auto mb-4" />
+            <p className="text-white/20 text-xs font-black uppercase tracking-widest">{lockedReason || "Unlock to access"}</p>
+          </div>
+        ) : children}
+      </div>
+    </motion.div>
+  );
+}
+
+function BatchResultView({ result, onSave }: { result: any; onSave: () => void }) {
+  const [activeTab, setActiveTab] = useState<"blueprint" | "kit">("kit");
+  
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex bg-white/5 p-1 rounded-2xl w-full max-w-sm border border-white/5">
+          {[
+            { id: "kit", label: "The Kit", icon: Wand2 },
+            { id: "blueprint", label: "The Blueprint", icon: Brain }
+          ].map(tab => (
+            <button 
+              key={tab.id} 
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                activeTab === tab.id 
+                  ? "bg-cyan-600 text-white shadow-lg shadow-cyan-500/20" 
+                  : "text-white/30 hover:text-white/60"
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        
+        <button 
+          onClick={onSave}
+          className="w-full sm:w-auto px-8 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest border border-white/5 transition-all"
+         >
+          Save Ecosystem
+        </button>
+      </div>
+
+      {activeTab === "blueprint" && (
+        <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-8">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <SectionCard icon={Activity} title="Strategic Context" color="bg-emerald-500/10 text-emerald-300">
+                 <div className="space-y-6">
+                    <div>
+                       <h4 className="text-[10px] font-black text-emerald-400/80 uppercase tracking-widest mb-2">Market Sentiment</h4>
+                       <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.whyThisWorksNow}</p>
+                    </div>
+                    <div>
+                       <h4 className="text-[10px] font-black text-emerald-400/80 uppercase tracking-widest mb-2">Audience Psychology</h4>
+                       <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.targetAudiencePsychology}</p>
+                    </div>
+                 </div>
+              </SectionCard>
+              <SectionCard icon={Target} title="Competitive Edge" color="bg-cyan-500/10 text-cyan-300">
+                 <div className="space-y-6">
+                    <div>
+                       <h4 className="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-2">Unfair Advantage</h4>
+                       <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.competitorGap}</p>
+                    </div>
+                    <div>
+                       <h4 className="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-2">Core Value Prop</h4>
+                       <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.painPointAddressed}</p>
+                    </div>
+                 </div>
+              </SectionCard>
+           </div>
+        </motion.div>
+      )}
+
+      {activeTab === "kit" && (
+        <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-8">
+           {result.instagram && (
+            <SectionCard icon={() => <span className="text-xl">📸</span>} title="Instagram Ecosystem" color="bg-pink-500/10 text-pink-300">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-[10px] font-black text-pink-400/60 uppercase tracking-widest mb-3">Conversion Caption</h4>
+                  <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-black/20 border border-white/5">
+                    <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap flex-1">{result.instagram.caption}</p>
+                    <CopyBtn text={result.instagram.caption} />
+                  </div>
+                </div>
+                {result.instagram.storyStrategy && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {result.instagram.storyStrategy.map((s: string, i: number) => (
+                      <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-xs text-white/60">
+                        <span className="font-black text-pink-400 block mb-1 uppercase tracking-tighter">Slide {i+1}</span>
+                        {s}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+           )}
+           {result.twitter && (
+            <SectionCard icon={() => <span className="text-xl">🐦</span>} title="Viral X Thread" color="bg-sky-500/10 text-sky-300">
+              <div className="space-y-4">
+                {result.twitter.thread.map((t: string, i: number) => (
+                  <div key={i} className="flex items-start gap-4 p-5 rounded-2xl bg-black/20 border border-white/5 group">
+                    <span className="text-[10px] text-white/20 font-black mt-1">{i + 1}</span>
+                    <p className="text-white/85 text-sm flex-1 leading-relaxed">{t}</p>
+                    <CopyBtn text={t} />
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+           )}
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+function AbDuelView({ idea, niche, tone, onResult, result }: { idea: string; niche: string; tone: string; onResult: (r: any) => void; result: any }) {
+  const [audienceA, setAudienceA] = useState("");
+  const [audienceB, setAudienceB] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleDuel = async () => {
+    if (!audienceA || !audienceB) return;
+    setLoading(true);
+    try {
+      const { data } = await api.post("/ab-test/generate", {
+        idea, niche, tone, platform: "Instagram", audienceA, audienceB
+      });
+      onResult(data);
+    } catch {
+      toast({ variant: "destructive", title: "Duel failed" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (result) {
+    return (
+      <div className="space-y-12">
+        <div className={`p-10 rounded-[3rem] border shadow-2xl flex flex-col lg:flex-row items-center gap-12 ${
+          result.prediction.winner === 'A' ? 'bg-indigo-950/20 border-indigo-500/30' : 
+          result.prediction.winner === 'B' ? 'bg-cyan-950/20 border-cyan-500/30' : 
+          'bg-zinc-900/40 border-white/10'
+        }`}>
+           <div className={`p-8 rounded-[2rem] ${
+             result.prediction.winner === 'A' ? 'bg-indigo-500/20 text-indigo-400' :
+             result.prediction.winner === 'B' ? 'bg-cyan-500/20 text-cyan-400' :
+             'bg-zinc-500/20 text-zinc-400'
+           }`}>
+             {result.prediction.winner !== 'too_close' ? <Trophy className="w-16 h-16" /> : <GitBranch className="w-16 h-16" />}
+           </div>
+           <div className="flex-1 space-y-4 text-center lg:text-left">
+              <h3 className="text-4xl font-black text-white tracking-tight">
+                {result.prediction.winner === 'A' ? "Variant A Wins" : 
+                 result.prediction.winner === 'B' ? "Variant B Wins" : "Statistical Deadlock"}
+              </h3>
+              <p className="text-lg font-medium text-white/60 leading-relaxed">{result.prediction.reasoning}</p>
+              <Button variant="ghost" onClick={() => onResult(null)} className="text-white/40 hover:text-white uppercase text-[10px] font-black tracking-widest">
+                New Duel
+              </Button>
+           </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+           <SectionCard icon={Users} title={`Variant A: ${result.versionA.audienceTarget}`} color="bg-indigo-500/10 text-indigo-400">
+              <p className="text-xl font-black text-white leading-tight mb-6 italic">"{result.versionA.hook}"</p>
+              <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                 <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Strength</span>
+                 <span className="text-sm font-black text-indigo-400">{result.versionA.predictedStrength}</span>
+              </div>
+           </SectionCard>
+           <SectionCard icon={Users} title={`Variant B: ${result.versionB.audienceTarget}`} color="bg-cyan-500/10 text-cyan-400">
+              <p className="text-xl font-black text-white leading-tight mb-6 italic">"{result.versionB.hook}"</p>
+              <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                 <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Strength</span>
+                 <span className="text-sm font-black text-cyan-400">{result.versionB.predictedStrength}</span>
+              </div>
+           </SectionCard>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Card className="bg-white/[0.02] border-white/5 rounded-[3rem] p-10 max-w-4xl mx-auto text-center space-y-10">
+      <div className="space-y-2">
+        <h3 className="text-3xl font-black text-white tracking-tight">The Audience Duel</h3>
+        <p className="text-white/40 font-medium max-w-lg mx-auto">Test your hook against two different audiences to see which psychological angle hits hardest.</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-3 text-left">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 ml-1">Audience A</Label>
+          <Input placeholder="e.g. Agency owners" value={audienceA} onChange={(e) => setAudienceA(e.target.value)} className="h-14 rounded-2xl bg-black/40 border-white/10" />
+        </div>
+        <div className="space-y-3 text-left">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-cyan-400 ml-1">Audience B</Label>
+          <Input placeholder="e.g. Freelance designers" value={audienceB} onChange={(e) => setAudienceB(e.target.value)} className="h-14 rounded-2xl bg-black/40 border-white/10" />
+        </div>
+      </div>
+      <Button onClick={handleDuel} disabled={loading || !audienceA || !audienceB} className="h-16 px-12 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl text-lg w-full">
+        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Run Duel Simulation"}
+      </Button>
+    </Card>
+  );
+}
+
+function HookIntelligenceView({ content, niche }: { content: any; niche: string }) {
+  const [score, setScore] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const scoreHook = async (text: string) => {
+    setLoading(true);
+    try {
+      const { data } = await api.post("/hook-scorer/score", {
+        hook: text, niche, platform: "Instagram"
+      });
+      setScore(data);
+    } catch {
+      toast({ variant: "destructive", title: "Scoring failed" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getHook = () => {
+    if (content.isBatch) return content.strategy?.coreMessage;
+    return content.content?.instagram?.hook || content.content?.twitter?.hook || content.idea;
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <Card className="bg-white/[0.02] border-white/5 rounded-[3rem] p-10 text-center space-y-8">
+        <div className="space-y-2">
+          <h3 className="text-3xl font-black text-white tracking-tight">Hook Intelligence</h3>
+          <p className="text-white/40 font-medium">Psychological impact scoring for your main campaign hook.</p>
+        </div>
+        
+        <div className="p-8 rounded-[2rem] bg-black/40 border border-white/5 text-xl font-black text-white italic">
+          "{getHook()}"
+        </div>
+
+        {!score ? (
+          <Button onClick={() => scoreHook(getHook())} disabled={loading} className="h-16 px-12 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-lg w-full">
+            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Analyze Psychological Impact"}
+          </Button>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Psych Score</span>
+                <span className="text-4xl font-black text-emerald-400">{score.score}%</span>
+              </div>
+              <div className="h-3 bg-white/5 rounded-full overflow-hidden">
+                <motion.div initial={{ width: 0 }} animate={{ width: `${score.score}%` }} className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+              </div>
+              <div className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block mb-2">Patterns Detected</span>
+                <div className="flex flex-wrap gap-2">
+                  {score.patternMatches.map((m: string) => (
+                    <span key={m} className="px-2 py-1 rounded-lg bg-white/5 text-[9px] font-black text-white/60 uppercase">{m}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+                 <div className="flex items-center gap-3 mb-3">
+                    <Info className="w-4 h-4 text-amber-500" />
+                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Main Issue</span>
+                 </div>
+                 <p className="text-sm font-medium text-amber-100/80 leading-relaxed">{score.mainIssue}</p>
+              </div>
+              {score.quickFix && (
+                <div className="p-6 rounded-2xl bg-cyan-500/5 border border-cyan-500/10">
+                  <div className="flex items-center gap-3 mb-3">
+                      <Sparkles className="w-4 h-4 text-cyan-400" />
+                      <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Quick Fix</span>
+                  </div>
+                  <p className="text-sm font-black text-white italic leading-relaxed">"{score.quickFix}"</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
@@ -442,6 +801,7 @@ interface CopyButtonProps {
 }
 
 function CopyButton({ text, label, size = "sm" }: CopyButtonProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -469,7 +829,7 @@ function CopyButton({ text, label, size = "sm" }: CopyButtonProps) {
     >
       {copied
         ? <><Check className={size === "xs" ? "w-2.5 h-2.5" : "w-3 h-3"} /> Copied</>
-        : <><Copy className={size === "xs" ? "w-2.5 h-2.5" : "w-3 h-3"} /> {label || "Copy"}</>
+        : <><Copy className={size === "xs" ? "w-2.5 h-2.5" : "w-3 h-3"} /> {label || t("copy")}</>
       }
     </button>
   );
@@ -1005,6 +1365,7 @@ function buildAllPlatformsText(data: any): string {
 }
 
 export default function Generate() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -1025,8 +1386,12 @@ export default function Generate() {
   const [upgradeReason, setUpgradeReason] = useState<"limit" | "expired" | "blocked" | "pro_feature">("limit");
   const [proFeatureName, setProFeatureName] = useState("");
   const [viralMode, setViralMode] = useState(false);
-  const [multiVariation, setMultiVariation] = useState(false);
+  const [batchMode, setBatchMode] = useState(false);
   const [styleMode, setStyleMode] = useState(false);
+  const [activeResultTab, setActiveResultTab] = useState("campaign");
+  const [abTestResult, setAbTestResult] = useState<any>(null);
+  const [isRunningAbTest, setIsRunningAbTest] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
   const lastSubmittedValues = useRef<any>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -1225,6 +1590,7 @@ export default function Generate() {
           const upsellShown = sessionStorage.getItem("shown_post_gen_upsell");
           if (!upsellShown && sub && sub.plan === "free" && (sub.generationsRemaining ?? 0) <= 1 && !showUpgradeModal) {
             setShowPostGenUpsell(true);
+            try { sessionStorage.setItem("shown_post_gen_upsell", "true"); } catch {}
           }
         } catch {}
         try {
@@ -1538,9 +1904,33 @@ export default function Generate() {
     setAnalysisLoading(false);
     setRetryCount(0);
     
-    const mutationData = { data: { ...rest, idea: ideaWithNiche } };
+    const mutationData = { data: { ...rest, idea: ideaWithNiche, language: values.language } };
     lastSubmittedValues.current = mutationData;
-    generateMutation.mutate(mutationData as any);
+
+    if (batchMode) {
+      setBatchLoading(true);
+      try {
+        const token = await getToken();
+        const res = await api.post("/content-pack/generate", {
+          idea: ideaWithNiche,
+          tone: rest.tone,
+          contentType: rest.contentType,
+          language: values.language
+        }, {
+          headers: token ? { "Authorization": `Bearer ${token}` } : {}
+        });
+        setGeneratedContent({ ...res.data, isBatch: true, idea: values.idea });
+        queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+        setActiveResultTab("campaign");
+      } catch (err) {
+        toast({ variant: "destructive", title: "Batch generation failed" });
+      } finally {
+        setBatchLoading(false);
+      }
+    } else {
+      generateMutation.mutate(mutationData as any);
+      setActiveResultTab("campaign");
+    }
   }
 
   function handleTemplate(template: typeof TEMPLATES[number]) {
@@ -1605,7 +1995,7 @@ export default function Generate() {
     toast({ title: "Downloaded!" });
   }
 
-  const isLoading = generateMutation.isPending || variationMutation.isPending;
+  const isLoading = generateMutation.isPending || variationMutation.isPending || batchLoading;
   const platforms: Platform[] = ["instagram", "youtube", "twitter", "linkedin"];
 
   const isLimited = sub && !sub.canGenerate;
@@ -1623,7 +2013,7 @@ export default function Generate() {
             {generationsUsed}
           </span>
           <span className="text-white/30">/</span>
-          <span className="text-white/50">{generationLimit} monthly</span>
+          <span className="text-white/50">{generationLimit} {t("credits")}</span>
         </motion.div>
       );
     }
@@ -1681,7 +2071,7 @@ export default function Generate() {
                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
                     <Sparkles className="w-5 h-5 text-white" />
                  </div>
-                 <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">Generate Content</h1>
+                 <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">{t("generateBtn")}</h1>
               </div>
               <p className="text-white/40 font-medium max-w-lg mx-auto">Transform one idea into a high-authority content ecosystem across four platforms, instantly.</p>
            </motion.div>
@@ -1740,14 +2130,14 @@ export default function Generate() {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between px-2 mb-4">
-                           <FormLabel className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Your Content Vision</FormLabel>
+                           <FormLabel className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">{t("your_idea")}</FormLabel>
                            <UsageCounter />
                         </div>
                         <FormControl>
                           <div className="relative group">
                             <Textarea
                               {...field}
-                              placeholder="e.g. 5 ways AI is replacing junior developers — and what to do about it..."
+                              placeholder={t("ideaPlaceholder")}
                               className="min-h-[140px] md:min-h-[180px] p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
                             />
                             
@@ -1974,6 +2364,55 @@ export default function Generate() {
                       />
                     </div>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2">
+                       <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-all">
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                                <Package2 className="w-4 h-4 text-cyan-400" />
+                             </div>
+                             <div className="space-y-0.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-white/80">Batch Mode</Label>
+                                <p className="text-[9px] text-white/30 font-medium leading-none">Full Content Ecosystem</p>
+                             </div>
+                          </div>
+                          <Switch 
+                            checked={batchMode} 
+                            onCheckedChange={(val) => {
+                              if (val && isFreeUser) {
+                                setUpgradeReason("pro_feature");
+                                setProFeatureName("Batch Mode");
+                                setShowUpgradeModal(true);
+                                return;
+                              }
+                              setBatchMode(val);
+                            }} 
+                          />
+                       </div>
+                       <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-all">
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                                <Flame className="w-4 h-4 text-orange-400" />
+                             </div>
+                             <div className="space-y-0.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-white/80">Viral Mode</Label>
+                                <p className="text-[9px] text-white/30 font-medium leading-none">High-Aggression Open Loops</p>
+                             </div>
+                          </div>
+                          <Switch 
+                            checked={viralMode} 
+                            onCheckedChange={(val) => {
+                              if (val && isFreeUser) {
+                                setUpgradeReason("pro_feature");
+                                setProFeatureName("Viral Mode");
+                                setShowUpgradeModal(true);
+                                return;
+                              }
+                              setViralMode(val);
+                            }} 
+                          />
+                       </div>
+                    </div>
+
                     <div className="pt-4">
                         <Button
                           type="submit"
@@ -1990,7 +2429,7 @@ export default function Generate() {
                             <div className="flex items-center gap-3 relative z-10">
                                <Zap className="w-5 h-5 fill-white" />
                                <div className="flex flex-col items-center">
-                                 <span className="tracking-widest uppercase">{isFirstTime ? "Generate Your First Content →" : "Generate High-Authority Campaign"}</span>
+                                 <span className="tracking-widest uppercase">{isFirstTime ? t("get_started") : t("generateBtn")}</span>
                                  <span className="text-[10px] text-white/30 font-black tracking-[0.2em] mt-1 hidden md:block">CTRL + ENTER</span>
                                </div>
                             </div>
@@ -2032,92 +2471,139 @@ export default function Generate() {
             </motion.div>
           ) : generatedContent ? (
             <motion.div
-              key="generated-content"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-12 pt-12"
+              key="results-container"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-12"
             >
-              <AnimatePresence>
-                {generatedContent?.content?.viralScores?.overall && (
+              <Tabs value={activeResultTab} onValueChange={setActiveResultTab} className="space-y-12 pt-12">
+                <div className="flex justify-center mb-8">
+                  <TabsList className="bg-white/5 border border-white/5 p-1 rounded-2xl md:rounded-[2rem] h-auto flex-wrap justify-center">
+                    <TabsTrigger value="campaign" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
+                       <Sparkles className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">The Campaign</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="duel" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
+                       <ArrowRightLeft className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">Hook Duel</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="intelligence" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
+                       <BarChart3 className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">Intelligence</span>
+                    </TabsTrigger>
+                  </TabsList>
+               </div>
+
+               <TabsContent value="campaign" className="space-y-12 outline-none">
+                {generatedContent.isBatch ? (
+                  <BatchResultView result={generatedContent} onSave={() => toast({ title: "Saved to Bank" })} />
+                ) : (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    key="generated-content"
+                    initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8"
+                    className="space-y-12"
                   >
-                    <div className="space-y-2">
-                      <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
-                        Your High-Performance <br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Content Campaign</span>
-                      </h2>
-                      <p className="text-white/40 font-medium flex items-center gap-2">
-                        <Flame className="w-4 h-4 text-orange-500" /> Topic: {generatedContent.idea}
-                      </p>
+                    <AnimatePresence>
+                      {generatedContent?.content?.viralScores?.overall && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8"
+                        >
+                          <div className="space-y-2">
+                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
+                              Your High-Performance <br/>
+                              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Content Campaign</span>
+                            </h2>
+                            <p className="text-white/40 font-medium flex items-center gap-2">
+                              <Flame className="w-4 h-4 text-orange-500" /> Topic: {generatedContent.idea}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col items-center md:items-end gap-2">
+                            <ViralScoreMeter score={generatedContent.content.viralScores.overall} />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {/* Campaign Strategy Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-6 p-8 rounded-[40px] glass-panel-premium border-cyan-500/20 relative overflow-hidden group shadow-2xl">
+                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex items-center gap-5 relative z-10">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                           <Activity className="w-6 h-6 text-emerald-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-xl font-black text-white leading-none tracking-tight">Campaign Fully Architected</h4>
+                          <p className="text-[10px] text-emerald-400/80 uppercase font-black tracking-[0.2em] mt-2">All Platform Nodes Synchronized</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 relative z-10">
+                        <button
+                          onClick={handleCopyAll}
+                          className={`h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-3 ${
+                            copiedAll 
+                              ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/30" 
+                              : "bg-white/5 hover:bg-white/10 text-white/80 border border-white/10"
+                          }`}
+                        >
+                          {copiedAll ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          {copiedAll ? "Campaign Copied" : "Copy Full Campaign"}
+                        </button>
+                        <button
+                          onClick={handleDownload}
+                          className="h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 flex items-center gap-3 transition-all"
+                        >
+                          <Download className="w-4 h-4" />
+                          Export PDF
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex flex-col items-center md:items-end gap-2">
-                      <ViralScoreMeter score={generatedContent.content.viralScores.overall} />
+                    {/* Platform Results Grid */}
+                    <div className="grid grid-cols-1 gap-12">
+                      {platforms.map((platform, i) => (
+                        <div key={platform} className="space-y-4">
+                          <PlatformCard
+                            platform={platform}
+                            content={generatedContent.content?.[platform]}
+                            onRegenerate={() => handleRegenerate(platform)}
+                            isRegenerating={regeneratingPlatform === platform}
+                            index={i}
+                          />
+                          <PerformancePredictionCard 
+                            viralScore={generatedContent.content?.[platform]?.viral_score || generatedContent.content.viralScores?.[platform] || 80}
+                            platform={platform}
+                            niche={generatedContent.niche || "General"}
+                          />
+                          {isFreeUser && (
+                            <p className="text-[10px] text-white/30 px-6 font-medium">
+                              Free plan includes GrowFlow watermark. <button className="text-cyan-400 underline font-black" onClick={() => setShowUpgradeModal(true)}>Upgrade to remove it →</button>
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </motion.div>
                 )}
-              </AnimatePresence>
-              {/* Campaign Strategy Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-6 p-8 rounded-[40px] glass-panel-premium border-cyan-500/20 relative overflow-hidden group shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="flex items-center gap-5 relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
-                     <Activity className="w-6 h-6 text-emerald-400" />
-                  </div>
-                  <div>
-                    <h4 className="text-xl font-black text-white leading-none tracking-tight">Campaign Fully Architected</h4>
-                    <p className="text-[10px] text-emerald-400/80 uppercase font-black tracking-[0.2em] mt-2">All Platform Nodes Synchronized</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 relative z-10">
-                  <button
-                    onClick={handleCopyAll}
-                    className={`h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-3 ${
-                      copiedAll 
-                        ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/30" 
-                        : "bg-white/5 hover:bg-white/10 text-white/80 border border-white/10"
-                    }`}
-                  >
-                    {copiedAll ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {copiedAll ? "Campaign Copied" : "Copy Full Campaign"}
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    className="h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 flex items-center gap-3 transition-all"
-                  >
-                    <Download className="w-4 h-4" />
-                    Export PDF
-                  </button>
-                </div>
-              </div>
+               </TabsContent>
 
-              {/* Platform Results Grid */}
-              <div className="grid grid-cols-1 gap-12">
-                {platforms.map((platform, i) => (
-                  <div key={platform} className="space-y-4">
-                    <PlatformCard
-                      platform={platform}
-                      content={generatedContent.content?.[platform]}
-                      onRegenerate={() => handleRegenerate(platform)}
-                      isRegenerating={regeneratingPlatform === platform}
-                      index={i}
-                    />
-                    <PerformancePredictionCard 
-                      viralScore={generatedContent.content?.[platform]?.viral_score || generatedContent.content.viralScores?.[platform] || 80}
-                      platform={platform}
-                      niche={generatedContent.niche || "General"}
-                    />
-                    {isFreeUser && (
-                      <p className="text-[10px] text-white/30 px-6 font-medium">
-                        Free plan includes GrowFlow watermark. <button className="text-cyan-400 underline font-black" onClick={() => setShowUpgradeModal(true)}>Upgrade to remove it →</button>
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+               <TabsContent value="duel" className="outline-none">
+                  <AbDuelView 
+                    idea={generatedContent.idea} 
+                    niche={generatedContent.niche || "General"}
+                    tone={generatedContent.tone}
+                    onResult={setAbTestResult}
+                    result={abTestResult}
+                  />
+               </TabsContent>
+
+               <TabsContent value="intelligence" className="outline-none">
+                  <HookIntelligenceView 
+                    content={generatedContent}
+                    niche={generatedContent.niche || "General"}
+                  />
+               </TabsContent>
+            </Tabs>
 
               <CampaignScorePanel data={generatedContent} analysis={contentAnalysis} analysisLoading={analysisLoading} />
 
@@ -2161,32 +2647,6 @@ export default function Generate() {
                     </div>
                   </motion.div>
                 )}
-
-                {/* Viral Pack Upsell */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-[40px] border border-cyan-500/20 p-10 relative overflow-hidden group shadow-2xl"
-                  style={{ background: "linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(124,58,237,0.05) 100%)" }}
-                >
-                  <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 blur-[120px] rounded-full group-hover:bg-cyan-500/15 transition-all duration-1000" />
-                  <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 h-full">
-                     <div className="w-20 h-20 rounded-[32px] bg-white/5 border border-white/10 flex items-center justify-center text-4xl shadow-2xl backdrop-blur-md">📦</div>
-                     <div className="flex-1 text-center md:text-left space-y-3">
-                        <h3 className="text-2xl font-black text-white tracking-tight leading-none">Unlock Content Pack</h3>
-                        <p className="text-sm text-white/45 leading-relaxed font-medium">
-                          Convert this vision into Reel Scripts, Cinematic prompts, and LinkedIn Authority slides in one click.
-                        </p>
-                        <a
-                          href={`/pack?idea=${encodeURIComponent(generatedContent?.idea ?? "")}`}
-                          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-sm transition-all shadow-xl shadow-cyan-600/30 group-hover:scale-105 active:scale-95"
-                        >
-                          <Crown className="w-4 h-4 fill-white" />
-                          Generate Media Pack
-                        </a>
-                     </div>
-                  </div>
-                </motion.div>
               </div>
             </motion.div>
           ) : (

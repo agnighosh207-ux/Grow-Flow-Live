@@ -15,10 +15,20 @@ export function useLoginTracking() {
   const { user, isSignedIn } = useUser();
 
   useEffect(() => {
-    // authSyncMiddleware in backend already handles lastLoginAt and isFirstLogin.
-    // This endpoint (/api/user/login) now only needs to be called if deviceId explicitly needs updating.
-    // For now, we remove the automated fetch to reduce redundant backend hits.
-  }, [isSignedIn, user?.id]);
+    if (isSignedIn && user?.id) {
+      const email = user.primaryEmailAddress?.emailAddress;
+      const name = user.fullName || undefined;
+      
+      // Identify user in PostHog
+      import("@/lib/analytics").then(({ identify }) => {
+        identify(user.id, email, {
+          name,
+          plan: user.publicMetadata?.planType || "free",
+          deviceId: getOrCreateDeviceId()
+        });
+      }).catch(() => {});
+    }
+  }, [isSignedIn, user?.id, user?.fullName, user?.primaryEmailAddress, user?.publicMetadata]);
 }
 
 // isFirstLogin: used for analytics to count new vs returning users in authSyncMiddleware

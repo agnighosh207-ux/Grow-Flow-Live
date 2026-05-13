@@ -47,8 +47,6 @@ export default function VaultBankPage() {
     }
   });
 
-  if (foldersLoading && itemsLoading) return <PageSkeleton />;
-
   const createFolderMutation = useMutation({
     mutationFn: async (name: string) => {
       const token = await getToken();
@@ -67,6 +65,8 @@ export default function VaultBankPage() {
       toast({ title: "Folder created!" });
     }
   });
+
+  if (foldersLoading && itemsLoading) return <PageSkeleton />;
 
   const handleCreateFolder = () => {
     const name = prompt("Enter folder name:");

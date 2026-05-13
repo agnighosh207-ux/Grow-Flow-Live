@@ -72,7 +72,8 @@ export function NPSModal({ open, onClose, trigger = "10th_generation" }: NPSModa
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-start justify-center p-4 pt-[12vh]">
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

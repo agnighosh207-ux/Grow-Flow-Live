@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth";
-import { db } from "../../../../lib/db/src";
-import { usersTable, teamsTable } from "../../../../lib/db/src/schema";
+import { db, usersTable, teamsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 

@@ -9,11 +9,14 @@ import { AuthenticatedRequest } from "../../types";
 import { Response } from "express";
 import { ensureReferralCode, grantReferralReward } from "../../utils/referral";
 import { sendWelcomeEmail, sendPaymentFailedEmail } from "../../services/email";
-import { createSubscription } from "../../services/payment-service";
-import { getRazorpayPlanId } from "../../utils/planRouter";
+import { sendSequenceEmail } from "../../services/emailSequences";
+import { sendWhatsAppMessage } from "../../services/whatsapp";
 import Razorpay from "razorpay";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import { getRazorpayPlanId } from "../../utils/planRouter";
+import { createSubscription } from "../../services/payment-service";
+
 
 const router: IRouter = Router();
 
@@ -598,6 +601,11 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
       "7 Days Limit-Free Trial", 
       `₹${(user.subscriptionAmount || 0) / 100}`
     ).catch((err: any) => logger.error({ err: String(err) }, "sendPaymentSuccess error"));
+
+    // WhatsApp Notification
+    if (user.phone) {
+      sendWhatsAppMessage(user.phone, "subscription_active", [user.firstName || "Creator", effectivePlan]).catch(() => {});
+    }
   }
 
   res.json({
@@ -830,9 +838,7 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
       .where(eq(usersTable.id, req.userId));
       
     // Trigger churn sequence day 1
-    import("../../services/emailSequences").then(({ sendSequenceEmail }) => {
-      sendSequenceEmail(req.userId, "churn", 1);
-    }).catch((e) => logger.error({ err: e.message }, "Failed to trigger churn email"));
+    sendSequenceEmail(req.userId, "churn", 1).catch((e) => logger.error({ err: e.message }, "Failed to trigger churn email"));
 
     res.json({ 
       accessUntil: periodEnd.toISOString()

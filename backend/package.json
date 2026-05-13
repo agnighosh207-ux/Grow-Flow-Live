@@ -44,7 +44,6 @@
     "http-proxy-middleware": "^3.0.5",
     "ioredis": "^5.10.1",
     "nanoid": "^3.3.11",
-    "node-cron": "^4.2.1",
     "openai": "^6.34.0",
     "pino": "^9",
     "pino-http": "^10",
@@ -60,7 +59,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "catalog:",
-    "@types/node-cron": "^3.0.11",
+
     "cross-env": "^7.0.3",
     "esbuild": "^0.27.3",
     "esbuild-plugin-pino": "^2.3.3",

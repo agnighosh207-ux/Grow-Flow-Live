@@ -51,12 +51,10 @@ logger.info(`[BOOT] DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
 // ─── 4. Import the Express app AFTER diagnostics ────────────────────────────
 import app from "./app.js";
 import { initSentry } from "./sentry.js";
-import { initCronJobs } from "./services/cron.js";
 
 import { setShuttingDown } from "./lib/state.js";
 
 initSentry();
-initCronJobs();
 
 // ─── 5. Start Server ────────────────────────────────────────────────────────
 // Railway requirement: Must listen on 0.0.0.0 and process.env.PORT
