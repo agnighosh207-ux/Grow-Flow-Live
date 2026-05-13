@@ -31,7 +31,7 @@ const router: IRouter = Router();
 
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
-const demoLimiter = rateLimit({ windowMs: 60*1000, limit: 5, keyGenerator: (req, res) => ipKeyGenerator(req, res) });
+const demoLimiter = rateLimit({ windowMs: 60*1000, limit: 5, keyGenerator: (req: any, res: any) => ipKeyGenerator(req, res) });
 
 router.post("/demo", demoLimiter, async (req, res) => {
   try {

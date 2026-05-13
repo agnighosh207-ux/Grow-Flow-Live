@@ -603,8 +603,8 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     ).catch((err: any) => logger.error({ err: String(err) }, "sendPaymentSuccess error"));
 
     // WhatsApp Notification
-    if (user.phone) {
-      sendWhatsAppMessage(user.phone, "subscription_active", [user.firstName || "Creator", effectivePlan]).catch(() => {});
+    if ((user as any).phone) {
+      sendWhatsAppMessage((user as any).phone, "subscription_active", [user.firstName || "Creator", effectivePlan]).catch(() => {});
     }
   }
 

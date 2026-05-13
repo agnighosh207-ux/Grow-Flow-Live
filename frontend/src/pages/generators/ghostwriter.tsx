@@ -490,7 +490,6 @@ export default function GhostwriterPage() {
                 <p className="text-white/15 text-xs mt-1">Configure your focus and target on the left and hit Manifest Content</p>
               </motion.div>
             )}
-          </AnimatePresence>
             {output && (
               <motion.div
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
@@ -554,7 +553,6 @@ export default function GhostwriterPage() {
                 </Card>
               </motion.div>
             )}
-          </AnimatePresence>
         </div>
       </motion.div>
     </PageWrapper>

@@ -320,8 +320,7 @@ export default function CaptionEnhancer() {
             <p className="text-white/15 text-xs mt-1">Paste your caption above and hit Enhance</p>
           </motion.div>
         )}
-      </AnimatePresence>
-          {result && (
+        {result && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
               {result.diagnosis && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -415,7 +414,6 @@ export default function CaptionEnhancer() {
               </button>
             </motion.div>
           )}
-        </AnimatePresence>
     </PageWrapper>
   );
 }
