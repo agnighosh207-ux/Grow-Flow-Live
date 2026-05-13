@@ -152,9 +152,10 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
-      // --- M-1 FIX: Allow read-only access without plan check ---
-      // Informational routes (GET) shouldn't be blocked by a payment required error.
-      if (req.method === "GET") {
+      // --- FIX (HIGH-3): Only bypass plan check for GET on STARTER-tier tools ---
+      // Informational GET routes for basic tools shouldn't be blocked, but
+      // Creator/Infinity-tier read endpoints should still require the plan.
+      if (req.method === "GET" && requiredLevel <= PLAN_RANKS.STARTER) {
         return next();
       }
 
@@ -171,10 +172,11 @@ export function requirePlanOrTrial(toolKey: string) {
         return next();
       }
 
-      // --- L-5: Free Trial Loophole Fix ---
-      // --- M-2 FIX: Allow credit usage for tools up to CREATOR level ---
-      // This allows free/starter users to try "Trends" or "Predictor" using their credits.
+      // --- FIX (HIGH-2): Free users can try Creator tools but MUST have credits ---
+      // They will still need to pass enforceGenerationLimit on the route handler.
+      // This only gates entry; the actual credit deduction happens in the route middleware.
       if (user.generationsRemaining > 0 && requiredLevel <= PLAN_RANKS.CREATOR) {
+        logger.info({ userId: req.userId, tool: toolKey, remaining: user.generationsRemaining }, "[PLAN] Allowing credit-based access to Creator tool");
         return next();
       }
 

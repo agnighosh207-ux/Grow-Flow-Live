@@ -1785,21 +1785,25 @@ export default function Generate() {
                                       checked={!!field.value && field.value !== "none"}
                                       onCheckedChange={(checked) => {
                                         if (checked) {
-                                          // Fetch voices and set first one
-                                          fetch("/api/brand-voice", { headers: { "Authorization": `Bearer ${getToken().then(t => t)}` } })
-                                            .then(r => r.json())
-                                            .then(data => {
-                                              if (data && data.length > 0) {
-                                                field.onChange(data[0].id);
-                                              } else {
-                                                toast({ 
-                                                  title: "Voice profile required", 
-                                                  description: "Set up your brand voice first to use this feature.",
-                                                  action: <ToastAction altText="Setup" onClick={() => navigate("/brand-voice")}>Setup →</ToastAction>
-                                                });
-                                                field.onChange("none");
-                                              }
-                                            });
+                                          // --- FIX (HIGH-5): Must await getToken() before using as header ---
+                                          (async () => {
+                                            const token = await getToken();
+                                            fetch("/api/brand-voice", { headers: { "Authorization": `Bearer ${token}` } })
+                                              .then(r => r.json())
+                                              .then(data => {
+                                                if (data && data.length > 0) {
+                                                  field.onChange(data[0].id);
+                                                } else {
+                                                  toast({ 
+                                                    title: "Voice profile required", 
+                                                    description: "Set up your brand voice first to use this feature.",
+                                                    action: <ToastAction altText="Setup" onClick={() => navigate("/brand-voice")}>Setup →</ToastAction>
+                                                  });
+                                                  field.onChange("none");
+                                                }
+                                              })
+                                              .catch(() => field.onChange("none"));
+                                          })();
                                         } else {
                                           field.onChange("none");
                                         }

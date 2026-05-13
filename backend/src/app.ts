@@ -128,13 +128,14 @@ app.use(
 );
 
 // ─── 5. Body parsing ────────────────────────────────────────────────────────
+// --- FIX (ARCH-5): Increased from 10kb to 50kb to prevent Razorpay webhook payloads from being silently rejected ---
 app.use(express.json({
-  limit: '10kb',
+  limit: '50kb',
   verify: (req, res, buf) => {
     (req as any).rawBody = buf;
   }
 }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
 // ─── 6. Auth (with timeout protection) ──────────────────────────────────────
 app.use(clerkMiddleware());
@@ -143,6 +144,15 @@ app.use(guardianMiddleware);
 
 // ─── 7. Security logging (Throttled to avoid DB saturation) ─────────
 const securityLogThrottle = new Map<string, number>();
+const SECURITY_LOG_THROTTLE_MAX = 5000; // Max entries to prevent memory leak
+
+// --- FIX (MOD-3): Clean up old entries every 10 minutes ---
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamp] of securityLogThrottle.entries()) {
+    if (now - timestamp > 10 * 60 * 1000) securityLogThrottle.delete(key);
+  }
+}, 10 * 60 * 1000);
 
 app.use((req: any, res, next) => {
   if (req.path.startsWith("/api/") && req.path !== "/api/health") {
@@ -155,6 +165,11 @@ app.use((req: any, res, next) => {
         
         // Log at most once every 5 minutes per IP/path combo for auth failures
         if (now - lastLog > 5 * 60 * 1000) {
+          // Cap map size to prevent OOM under sustained attack
+          if (securityLogThrottle.size >= SECURITY_LOG_THROTTLE_MAX) {
+            const oldestKey = securityLogThrottle.keys().next().value;
+            if (oldestKey) securityLogThrottle.delete(oldestKey);
+          }
           securityLogThrottle.set(throttleKey, now);
           try {
             await db.insert(securityLogsTable).values({
@@ -290,7 +305,20 @@ if (process.env.NODE_ENV === "development") {
     res.json({ message: "pong" });
   });
 
-  app.get("/api/diag/env", (req, res) => {
+  // --- FIX (CRIT-6): Debug endpoints now require admin authentication ---
+  // Previously these were completely unauthenticated, leaking partial secrets.
+  app.get("/api/diag/env", async (req: any, res: any) => {
+    try {
+      const { getAuth } = await import("@clerk/express");
+      const auth = getAuth(req);
+      const userId = auth?.sessionClaims?.userId || auth?.userId;
+      if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+      const { db: dbImport, usersTable: usersImport } = await import("@workspace/db");
+      const { eq: eqImport } = await import("drizzle-orm");
+      const [user] = await dbImport.select().from(usersImport).where(eqImport(usersImport.id, userId as string));
+      if (!user?.isAdmin) { res.status(403).json({ error: "Forbidden" }); return; }
+    } catch (e) { res.status(500).json({ error: "Auth check failed" }); return; }
+
     const scrubbedEnv = Object.keys(process.env).reduce((acc: any, key) => {
       const val = process.env[key] || "";
       acc[key] = val.length > 8 ? `${val.substring(0, 4)}...${val.substring(val.length - 4)}` : "***";
@@ -299,14 +327,20 @@ if (process.env.NODE_ENV === "development") {
     res.json(scrubbedEnv);
   });
 
-  app.get("/api/diag/db-check", async (req, res) => {
+  app.get("/api/diag/db-check", async (req: any, res: any) => {
     try {
-      const { db, usersTable } = await import("@workspace/db");
-      const { sql } = await import("drizzle-orm");
-      const countResult = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
+      const { getAuth } = await import("@clerk/express");
+      const auth = getAuth(req);
+      const userId = auth?.sessionClaims?.userId || auth?.userId;
+      if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+      const { db: dbImport, usersTable: usersImport } = await import("@workspace/db");
+      const { eq: eqImport, sql: sqlImport } = await import("drizzle-orm");
+      const [user] = await dbImport.select().from(usersImport).where(eqImport(usersImport.id, userId as string));
+      if (!user?.isAdmin) { res.status(403).json({ error: "Forbidden" }); return; }
+      const countResult = await dbImport.select({ count: sqlImport<number>`count(*)` }).from(usersImport);
       res.json({ success: true, count: countResult[0].count });
     } catch (err: any) {
-      res.status(500).json({ success: false, error: err.message, stack: err.stack });
+      res.status(500).json({ success: false, error: err.message });
     }
   });
 }

@@ -79,10 +79,10 @@ export function useSubscriptionStatus() {
       if (!token) throw new Error("Not authenticated");
       return fetchWithAuth(`${BASE}/api/subscription/status`, token, { signal });
     },
-    staleTime: 5 * 60 * 1000,      // 5 minutes
+    staleTime: 2 * 60 * 1000,      // 2 minutes (reduced from 5 for faster post-upgrade sync)
     gcTime: 15 * 60 * 1000,        // 15 minutes  
-    refetchOnWindowFocus: false,    // Prevent refetch on focus
-    refetchOnMount: false,          // Don't refetch if data exists
+    refetchOnWindowFocus: true,     // --- FIX (HIGH-4): Refetch when user tabs back to app ---
+    refetchOnMount: 'always',       // --- FIX (HIGH-4): Always refetch on mount to catch post-upgrade state ---
     refetchInterval: false,         // No polling
     retry: 3,
     retryDelay: 1000,

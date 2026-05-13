@@ -97,10 +97,9 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
 
   if (
     user.subscriptionStatus === "active" || 
-    (user.subscriptionStatus === "trial" && user.trialEndsAt && new Date(user.trialEndsAt) <= now) ||
     (user.subscriptionStatus === "canceled" && user.planExpiry && new Date(user.planExpiry) > now)
   ) {
-    // If trial ended but status is still "trial", or if canceled but within grace period, treat as active
+    // Active subscription or canceled but within grace period — treat as active
     if (planType === "starter") {
       return {
         plan: "active" as const, planType,
@@ -321,6 +320,7 @@ const subscriptionCreateLimiter = rateLimit({
   message: { error: "Too many payment attempts. Please wait before trying again." },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
 });
 
 router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -653,7 +653,7 @@ router.post("/credits/topup", requireAuth, async (req: AuthenticatedRequest, res
 });
 
 router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, credits } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
     res.status(400).json({ error: "Missing payment verification data" });
@@ -689,16 +689,47 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
     .update(`${razorpay_order_id}|${razorpay_payment_id}`)
     .digest("hex");
 
-  if (expectedSig !== razorpay_signature) {
+  // --- FIX (MOD-1): Use timing-safe comparison to prevent timing attacks ---
+  const sigBuffer = Buffer.from(razorpay_signature);
+  const expectedBuffer = Buffer.from(expectedSig);
+  if (sigBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
     res.status(400).json({ error: "Invalid payment signature" });
+    return;
+  }
+
+  // --- FIX (CRIT-3): Never trust client-supplied credits. Fetch from Razorpay order notes ---
+  let verifiedCredits: number;
+  try {
+    const order = await rzp.orders.fetch(razorpay_order_id);
+    const orderCredits = Number((order as any).notes?.credits);
+    if (!orderCredits || orderCredits <= 0 || orderCredits > 200) {
+      logger.error({ razorpay_order_id, notes: (order as any).notes }, "[TOPUP] Invalid or missing credits in order notes");
+      res.status(400).json({ error: "Invalid order: credits not found in payment metadata" });
+      return;
+    }
+    verifiedCredits = orderCredits;
+  } catch (fetchErr: any) {
+    logger.error({ err: fetchErr.message, razorpay_order_id }, "[TOPUP] Failed to fetch order from Razorpay");
+    res.status(502).json({ error: "Could not verify order with payment provider" });
     return;
   }
 
   try {
     await db.transaction(async (tx) => {
+      // Check idempotency — prevent double-crediting
+      const [existingPayment] = await tx.select()
+        .from(paymentsTable)
+        .where(eq(paymentsTable.id, razorpay_payment_id))
+        .for('update');
+
+      if (existingPayment) {
+        logger.info({ razorpay_payment_id }, "[TOPUP] Payment already processed, skipping");
+        return;
+      }
+
       await tx.update(usersTable)
         .set({
-          generationsRemaining: sql`${usersTable.generationsRemaining} + ${credits}`
+          generationsRemaining: sql`${usersTable.generationsRemaining} + ${verifiedCredits}`
         })
         .where(eq(usersTable.id, req.userId));
 
@@ -708,11 +739,11 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
         amount: 0, 
         status: "captured",
         processedAt: new Date(),
-        metadata: { razorpay_order_id, type: "credit_topup", credits }
+        metadata: { razorpay_order_id, type: "credit_topup", credits: verifiedCredits }
       });
     });
 
-    res.json({ success: true, message: `${credits} credits added successfully!` });
+    res.json({ success: true, message: `${verifiedCredits} credits added successfully!` });
     invalidateAuthCache(req.userId);
   } catch (err: any) {
     logger.error({ err: err.message, userId: req.userId }, "Failed to verify topup payment");
@@ -722,10 +753,11 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
 
 
 
+// --- FIX (CRIT-4): Removed hardcoded coupons (LAUNCH50, FRIEND15, BETA100) ---
+// All coupons must now be managed via the admin panel / couponsTable in the database.
+// This prevents unlimited-use 100% discount exploits.
 const HARDCODED_COUPONS: Record<string, { credits: number; days: number; description: string; discount?: number; type?: 'percent' | 'flat' }> = {
-  'LAUNCH50': { credits: 50, days: 0, description: "Launch special: 50 bonus credits", discount: 50, type: 'percent' },
-  'FRIEND15': { credits: 0, days: 15, description: "Friend referral: 15 Infinity days", discount: 15, type: 'percent' },
-  'BETA100': { credits: 100, days: 0, description: "Beta tester reward: 100 credits", discount: 100, type: 'percent' },
+  // Intentionally empty — all coupons are now DB-managed for security
 };
 
 async function validateCouponCode(code: string) {
@@ -811,10 +843,10 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
         sendCancellationEmail(user.email, periodEnd).catch(() => {});
       }).catch(() => {});
     }
+    invalidateAuthCache(req.userId);
   } else {
     res.status(400).json({ error: "No active subscription to cancel" });
   }
-  invalidateAuthCache(req.userId);
 });
 
 router.post("/retry", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
