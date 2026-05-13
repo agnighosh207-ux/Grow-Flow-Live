@@ -6,18 +6,41 @@ import { useLocation } from "wouter";
 
 interface CompConfig {
   competitor: string;
-  slug: string;
-  h1: string;
+  title: string;
+  description: string;
+  ourAdvantages: string[];
+  theirAdvantages: string[];
+  verdict: string;
 }
 
 const COMP_DATA: Record<string, CompConfig> = {
-  "jasper-ai-india": { competitor: "Jasper AI", slug: "jasper-ai-india", h1: "GrowFlow vs Jasper AI: Which is better for Indian Creators?" },
-  "copy-ai-india": { competitor: "Copy.ai", slug: "copy-ai-india", h1: "GrowFlow vs Copy.ai: The Best Content AI for India 2026" },
+  "jasper-ai-india": {
+    competitor: "Jasper AI",
+    title: "GrowFlow AI vs Jasper AI — Best AI Writing Tool for India (2026)",
+    description: "Detailed comparison of GrowFlow AI and Jasper AI for Indian creators and marketers.",
+    ourAdvantages: ["5x cheaper (₹149/mo vs $49/mo)", "Hindi & Hinglish support", "Built for Indian social media platforms", "Razorpay payments (no international card needed)", "Indian creator templates"],
+    theirAdvantages: ["More templates for Western markets", "Better for long-form blog writing", "Larger template library"],
+    verdict: "For Indian creators and small businesses, GrowFlow AI wins on price, language support, and platform relevance."
+  },
+  "copy-ai-india": {
+    competitor: "Copy.ai",
+    title: "GrowFlow AI vs Copy.ai — Which is Better for Indian Creators?",
+    description: "Compare GrowFlow AI and Copy.ai features, pricing, and Indian market support.",
+    ourAdvantages: ["INR pricing (₹149/mo vs $49/mo)", "Regional Indian language support", "Social media first design", "Indian payment methods", "Faster generation with Groq"],
+    theirAdvantages: ["More marketing copy templates", "Workflow automation", "Team collaboration tools"],
+    verdict: "Copy.ai is great for global marketers. GrowFlow AI is built specifically for Indian social media creators."
+  }
 };
 
 export default function ComparisonPage({ slug }: { slug: string }) {
   const config = COMP_DATA[slug as keyof typeof COMP_DATA];
   const [, navigate] = useLocation();
+
+  React.useEffect(() => {
+    if (config) {
+      document.title = `${config.title} — GrowFlow AI`;
+    }
+  }, [config]);
 
   if (!config) return <div>Comparison not found</div>;
 
@@ -32,12 +55,12 @@ export default function ComparisonPage({ slug }: { slug: string }) {
 
   return (
     <PageWrapper maxWidth="lg" className="py-20 space-y-24">
-      <div className="text-center space-y-6 max-w-3xl mx-auto">
-        <h1 className="text-5xl md:text-6xl font-black text-white italic tracking-tight leading-tight">
-          {config.h1}
+      <div className="text-center space-y-6 max-w-4xl mx-auto">
+        <h1 className="text-4xl md:text-6xl font-black text-white italic tracking-tight leading-tight">
+          {config.title}
         </h1>
         <p className="text-lg text-white/50 font-medium">
-          Jasper and Copy.ai are built for the US market. GrowFlow was built from the ground up for the next 100M creators in India.
+          {config.description}
         </p>
       </div>
 
@@ -66,22 +89,34 @@ export default function ComparisonPage({ slug }: { slug: string }) {
         </table>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-        <div className="space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400"><Globe /></div>
-          <h3 className="text-xl font-black text-white italic">Localized Context</h3>
-          <p className="text-white/40 text-sm">GrowFlow understands Indian cultural nuances, festivals, and trending topics in real-time. Jasper doesn't know who CarryMinati or Flying Beast is—we do.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="p-8 rounded-3xl bg-cyan-500/5 border border-cyan-500/10 space-y-6">
+          <h3 className="text-2xl font-black text-white italic">Why GrowFlow Wins</h3>
+          <ul className="space-y-4">
+            {config.ourAdvantages.map(adv => (
+              <li key={adv} className="flex items-center gap-3 text-white/70">
+                <Check className="w-5 h-5 text-cyan-400 shrink-0" />
+                {adv}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400"><Shield /></div>
-          <h3 className="text-xl font-black text-white italic">Localized Pricing</h3>
-          <p className="text-white/40 text-sm">Don't pay in USD with heavy conversion fees. GrowFlow offers plans starting at ₹149/month, making it accessible for every aspiring creator.</p>
+        <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 space-y-6">
+          <h3 className="text-2xl font-black text-white italic">The Alternative</h3>
+          <ul className="space-y-4">
+            {config.theirAdvantages.map(adv => (
+              <li key={adv} className="flex items-center gap-3 text-white/40">
+                <div className="w-5 h-px bg-white/20 shrink-0" />
+                {adv}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400"><Zap /></div>
-          <h3 className="text-xl font-black text-white italic">Creator First</h3>
-          <p className="text-white/40 text-sm">We are not a general "AI Writer." We are a growth platform for creators. We provide challenges, calendars, and viral scoring to help you actually grow.</p>
-        </div>
+      </div>
+
+      <div className="p-10 rounded-3xl bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 text-center space-y-4">
+        <h3 className="text-2xl font-black text-white italic">The Verdict</h3>
+        <p className="text-xl text-white/80 leading-relaxed font-medium">{config.verdict}</p>
       </div>
 
       <div className="text-center p-16 rounded-[40px] bg-gradient-to-r from-zinc-900 to-black border border-white/5 space-y-8">

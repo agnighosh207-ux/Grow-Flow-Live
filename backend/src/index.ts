@@ -5,30 +5,48 @@ import fs from "node:fs";
 import http from "node:http";
 
 // ─── 1. Load .env BEFORE any application code ────────────────────────────────
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../");
-// Use process.env.ROOT_DIR if available (for container environments)
-const baseDir = process.env.ROOT_DIR || rootDir;
-const envFile = path.join(baseDir, ".env");
-if (fs.existsSync(envFile)) {
-  dotenv.config({ path: envFile });
+function loadEnv() {
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  let dir = currentDir;
+  
+  // Search upwards for .env (max 5 levels)
+  for (let i = 0; i < 5; i++) {
+    const potentialPath = path.join(dir, ".env");
+    if (fs.existsSync(potentialPath)) {
+      dotenv.config({ path: potentialPath });
+      console.log(`[BOOT] Environment loaded from: ${potentialPath}`);
+      return true;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return false;
 }
+
+const envLoaded = loadEnv();
+if (!envLoaded) {
+  console.error("[BOOT] ❌ CRITICAL: Could not find .env file in any parent directory!");
+}
+
+import { logger } from "./lib/logger.js";
+logger.info("[BOOT] Environment synchronized");
 
 // ─── 2. Process-level crash handlers ─────────────────────────────────────────
 process.on("uncaughtException", (err) => {
-  console.error("[CRITICAL] Uncaught Exception:", err);
+  logger.error({ err }, "[CRITICAL] Uncaught Exception");
   process.exit(1);
 });
 process.on("unhandledRejection", (reason) => {
-  console.error("[CRITICAL] Unhandled Rejection:", reason);
+  logger.error({ reason }, "[CRITICAL] Unhandled Rejection");
   // process.exit(1); // Removed: Do not crash the entire app for unhandled promises
 });
 
 // ─── 3. Boot diagnostics ─────────────────────────────────────────────────────
-// We use direct console for early boot diagnostics before logger is imported
-console.log("[BOOT] Starting GrowFlow AI Server...");
-console.log("[BOOT] Node:", process.version, "| CWD:", process.cwd());
-console.log("[BOOT] NODE_ENV:", process.env.NODE_ENV);
-console.log("[BOOT] DATABASE_URL set:", !!process.env.DATABASE_URL);
+logger.info("[BOOT] Starting GrowFlow AI Server...");
+logger.info(`[BOOT] Node: ${process.version} | CWD: ${process.cwd()}`);
+logger.info(`[BOOT] NODE_ENV: ${process.env.NODE_ENV}`);
+logger.info(`[BOOT] DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
 
 // ─── 4. Import the Express app AFTER diagnostics ────────────────────────────
 import app from "./app.js";
@@ -60,7 +78,7 @@ const startServer = () => {
       }
 
       // 2. LOG REQUESTS FOR DEBUGGING (Essential for monitoring)
-      console.log(`[REQ] ${req.method} ${url}`);
+      logger.info(`[REQ] ${req.method} ${url}`);
 
       // 3. DELEGATE TO EXPRESS (Full Application)
       if (typeof requestListener === "function") {
@@ -73,17 +91,17 @@ const startServer = () => {
 
     // Bind to 0.0.0.0 (Mandatory)
     server.listen(FINAL_PORT, "0.0.0.0", () => {
-      console.log(`[BOOT] ✅ GrowFlow AI is LIVE on port ${FINAL_PORT}`);
+      logger.info(`[BOOT] ✅ GrowFlow AI is LIVE on port ${FINAL_PORT}`);
     });
 
     server.on("error", (err: any) => {
-      console.error("[CRITICAL] Server error:", err);
+      logger.error({ err }, "[CRITICAL] Server error");
       process.exit(1);
     });
 
     // Graceful Shutdown
     const shutdown = async (signal: string) => {
-      console.log(`[SHUTDOWN] ${signal}`);
+      logger.info(`[SHUTDOWN] ${signal}`);
       setShuttingDown(true);
       server.close(() => process.exit(0));
       setTimeout(() => process.exit(1), 5000);
@@ -93,7 +111,7 @@ const startServer = () => {
     process.on("SIGINT", () => shutdown("SIGINT"));
 
   } catch (err: any) {
-    console.error("[CRITICAL] Boot failed:", err.message);
+    logger.error({ err: err.message }, "[CRITICAL] Boot failed");
     process.exit(1);
   }
 };

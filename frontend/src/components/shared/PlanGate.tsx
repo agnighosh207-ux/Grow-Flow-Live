@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
 import { api } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
+import { CardSkeleton } from "@/components/shared/Skeleton";
 
 const PLAN_LEVEL: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3 };
 
@@ -57,7 +58,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
   // --- FIX: Jarring Content Flash ---
   // Don't show children optimistically while loading, otherwise users see locked content briefly.
   if (subLoading) {
-    return <div className="animate-pulse h-96 rounded-3xl bg-white/[0.03] border border-white/5" />;
+    return <CardSkeleton />;
   }
 
   const userLevel = planLevel(sub?.planType);

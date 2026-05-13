@@ -94,7 +94,7 @@ export default function RepurposePage() {
   };
 
   return (
-    <PageWrapper maxWidth="xl" className="space-y-12 pb-32">
+    <PageWrapper maxWidth="xl" className="space-y-12 pb-24 md:pb-8">
       <FeatureGuideBanner 
         toolKey="repurpose" 
         title="Content Repurposer" 
@@ -154,7 +154,7 @@ export default function RepurposePage() {
                      <div className="xl:col-span-5 space-y-6 md:space-y-8">
                         <div className="space-y-4">
                            <label className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Original Format</label>
-                           <div className="grid grid-cols-2 gap-3">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {formats.map(f => (
                                 <button
                                   key={f.id}

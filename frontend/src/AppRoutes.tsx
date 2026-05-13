@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 
 import { clerkPubKey, clerkProxyUrl, basePath, stripBase } from "@/components/auth/AuthPages";
 import { SignInPage, SignUpPage } from "@/components/auth/AuthPages";
-import { 
+import {
   ClerkQueryClientCacheInvalidator, 
   LoginTracker, 
   ReferralCodeCapture,
@@ -17,6 +17,8 @@ import {
 } from "@/components/auth/AuthComponents";
 import { useAuth } from "@clerk/react";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { PageSkeleton } from "@/components/shared/Skeleton";
 
 function ApiAuthBridge() {
   const { getToken } = useAuth();
@@ -120,7 +122,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     <>
       <SignedIn>
         <Layout>
-          <React.Suspense fallback={<SuspenseFallback />}>
+          <React.Suspense fallback={<PageSkeleton />}>
             <Component />
           </React.Suspense>
         </Layout>
@@ -193,69 +195,71 @@ export function ClerkProviderWithRoutes() {
         <SignedIn>
           <OnboardingModal />
         </SignedIn>
-        <React.Suspense fallback={<SuspenseFallback />}>
-          <Switch>
-            <Route path="/"><HomeRedirect /></Route>
-            <Route path="/sign-in/*?"><SignInPage /></Route>
-            <Route path="/sign-up/*?"><SignUpPage /></Route>
-            
-            <Route path="/generate"><ProtectedRoute component={Generate} /></Route>
-            <Route path="/templates"><ProtectedRoute component={Templates} /></Route>
-            <Route path="/quick"><ProtectedRoute component={QuickGenerate} /></Route>
-            <Route path="/ideas"><ProtectedRoute component={IdeasGenerator} /></Route>
-            <Route path="/trends"><ProtectedRoute component={TrendEngine} /></Route>
-            <Route path="/strategy"><ProtectedRoute component={StrategyPlanner} /></Route>
-            <Route path="/history"><ProtectedRoute component={History} /></Route>
-            <Route path="/hooks"><ProtectedRoute component={HooksGenerator} /></Route>
-            <Route path="/improve"><ProtectedRoute component={ImproveCompetitorContent} /></Route>
-            <Route path="/bio"><ProtectedRoute component={BioGenerator} /></Route>
-            <Route path="/caption"><ProtectedRoute component={CaptionEnhancer} /></Route>
-            <Route path="/daily"><ProtectedRoute component={DailyActionMode} /></Route>
-            <Route path="/pack"><ProtectedRoute component={ContentPack} /></Route>
-            <Route path="/calendar"><ProtectedRoute component={ContentCalendar} /></Route>
-            <Route path="/insights"><ProtectedRoute component={Insights} /></Route>
-            <Route path="/pricing"><Pricing /></Route>
-            <Route path="/support"><ProtectedRoute component={Support} /></Route>
-            <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
-            <Route path="/saved"><ProtectedRoute component={Saved} /></Route>
-            <Route path="/referrals"><ProtectedRoute component={ReferralsPage} /></Route>
-            <Route path="/privacy"><Privacy /></Route>
-            <Route path="/terms"><Terms /></Route>
-            <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
-            <Route path="/coach"><ProtectedRoute component={ContentCoach} /></Route>
-            
-            <Route path="/vault"><ProtectedRoute component={VaultBank} /></Route>
-            <Route path="/inspiration"><ProtectedRoute component={SwipeVault} /></Route>
-            <Route path="/brand-voice"><ProtectedRoute component={BrandVoice} /></Route>
-            
-            {/* SEO Niche Pages */}
-            <Route path="/for/fitness-creators"><NicheLanding niche="fitness" /></Route>
-            <Route path="/for/finance-creators"><NicheLanding niche="finance" /></Route>
-            <Route path="/for/tech-creators"><NicheLanding niche="tech" /></Route>
-            <Route path="/for/food-bloggers"><NicheLanding niche="food" /></Route>
-
-            {/* SEO Tool Pages */}
-            <Route path="/tools/:tool">{(params) => <ToolLanding tool={params.tool} />}</Route>
-
-            {/* SEO Blog */}
-            <Route path="/blog/:slug">{(params) => <BlogPost slug={params.slug} />}</Route>
-
-            {/* SEO Comparison */}
-            <Route path="/vs/:slug">{(params) => <Comparison slug={params.slug} />}</Route>
-
-            <Route path="/ghostwriter"><ProtectedRoute component={Ghostwriter} /></Route>
-            <Route path="/predictor"><ProtectedRoute component={Predictor} /></Route>
-            <Route path="/hashtags"><ProtectedRoute component={Hashtags} /></Route>
-            <Route path="/repurpose"><ProtectedRoute component={Repurpose} /></Route>
-            <Route path="/ab-test"><ProtectedRoute component={ABTest} /></Route>
-            <Route path="/hook-scorer"><ProtectedRoute component={HookScorer} /></Route>
-            <Route path="/creator/:code"><CreatorProfile /></Route>
-            <Route path="/team"><ProtectedRoute component={TeamPage} /></Route>
-            <Route path="/review/:shareId"><Review /></Route>
-            
-            <Route><NotFound /></Route>
-          </Switch>
-        </React.Suspense>
+        <ErrorBoundary>
+          <React.Suspense fallback={<PageSkeleton />}>
+            <Switch>
+              <Route path="/"><HomeRedirect /></Route>
+              <Route path="/sign-in/*?"><SignInPage /></Route>
+              <Route path="/sign-up/*?"><SignUpPage /></Route>
+              
+              <Route path="/generate"><ProtectedRoute component={Generate} /></Route>
+              <Route path="/templates"><ProtectedRoute component={Templates} /></Route>
+              <Route path="/quick"><ProtectedRoute component={QuickGenerate} /></Route>
+              <Route path="/ideas"><ProtectedRoute component={IdeasGenerator} /></Route>
+              <Route path="/trends"><ProtectedRoute component={TrendEngine} /></Route>
+              <Route path="/strategy"><ProtectedRoute component={StrategyPlanner} /></Route>
+              <Route path="/history"><ProtectedRoute component={History} /></Route>
+              <Route path="/hooks"><ProtectedRoute component={HooksGenerator} /></Route>
+              <Route path="/improve"><ProtectedRoute component={ImproveCompetitorContent} /></Route>
+              <Route path="/bio"><ProtectedRoute component={BioGenerator} /></Route>
+              <Route path="/caption"><ProtectedRoute component={CaptionEnhancer} /></Route>
+              <Route path="/daily"><ProtectedRoute component={DailyActionMode} /></Route>
+              <Route path="/pack"><ProtectedRoute component={ContentPack} /></Route>
+              <Route path="/calendar"><ProtectedRoute component={ContentCalendar} /></Route>
+              <Route path="/insights"><ProtectedRoute component={Insights} /></Route>
+              <Route path="/pricing"><Pricing /></Route>
+              <Route path="/support"><ProtectedRoute component={Support} /></Route>
+              <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
+              <Route path="/saved"><ProtectedRoute component={Saved} /></Route>
+              <Route path="/referrals"><ProtectedRoute component={ReferralsPage} /></Route>
+              <Route path="/privacy"><Privacy /></Route>
+              <Route path="/terms"><Terms /></Route>
+              <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
+              <Route path="/coach"><ProtectedRoute component={ContentCoach} /></Route>
+              
+              <Route path="/vault"><ProtectedRoute component={VaultBank} /></Route>
+              <Route path="/inspiration"><ProtectedRoute component={SwipeVault} /></Route>
+              <Route path="/brand-voice"><ProtectedRoute component={BrandVoice} /></Route>
+              
+              {/* SEO Niche Pages */}
+              <Route path="/for/fitness-creators"><NicheLanding niche="fitness" /></Route>
+              <Route path="/for/finance-creators"><NicheLanding niche="finance" /></Route>
+              <Route path="/for/tech-creators"><NicheLanding niche="tech" /></Route>
+              <Route path="/for/food-bloggers"><NicheLanding niche="food" /></Route>
+  
+              {/* SEO Tool Pages */}
+              <Route path="/tools/:tool">{(params) => <ToolLanding tool={params.tool} />}</Route>
+  
+              {/* SEO Blog */}
+              <Route path="/blog/:slug">{(params) => <BlogPost slug={params.slug} />}</Route>
+  
+              {/* SEO Comparison */}
+              <Route path="/vs/:slug">{(params) => <Comparison slug={params.slug} />}</Route>
+  
+              <Route path="/ghostwriter"><ProtectedRoute component={Ghostwriter} /></Route>
+              <Route path="/predictor"><ProtectedRoute component={Predictor} /></Route>
+              <Route path="/hashtags"><ProtectedRoute component={Hashtags} /></Route>
+              <Route path="/repurpose"><ProtectedRoute component={Repurpose} /></Route>
+              <Route path="/ab-test"><ProtectedRoute component={ABTest} /></Route>
+              <Route path="/hook-scorer"><ProtectedRoute component={HookScorer} /></Route>
+              <Route path="/creator/:code"><CreatorProfile /></Route>
+              <Route path="/team"><ProtectedRoute component={TeamPage} /></Route>
+              <Route path="/review/:shareId"><Review /></Route>
+              
+              <Route><NotFound /></Route>
+            </Switch>
+          </React.Suspense>
+        </ErrorBoundary>
       </QueryClientProvider>
     </ClerkProvider>
   );

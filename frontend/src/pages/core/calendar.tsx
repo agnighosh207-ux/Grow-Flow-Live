@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { useQueryClient } from "@tanstack/react-query";
+import { PageSkeleton } from "@/components/shared/Skeleton";
 
 interface CalendarItem {
   id: number;
@@ -96,6 +97,8 @@ export default function CalendarPage() {
       setLoading(false);
     }
   };
+
+  if (loading && Object.keys(items).length === 0) return <PageSkeleton />;
 
   const addItem = async () => {
     if (!selectedDay || !newItem.idea) return;

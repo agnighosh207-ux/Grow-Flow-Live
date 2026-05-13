@@ -1366,6 +1366,20 @@ export default function Generate() {
   });
 
   useEffect(() => {
+    document.title = "Generate Content — GrowFlow AI";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        const values = form.getValues();
+        if (values.idea.length >= 5 && !generateMutation.isPending) {
+          form.handleSubmit(handleGenerate)();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [form, generateMutation.isPending]);
+
+  useEffect(() => {
     if (!generateMutation.isPending) { setLoadingMsgIdx(0); return; }
     const interval = setInterval(() => {
       setLoadingMsgIdx(i => (i + 1) % LOADING_MESSAGES.length);
@@ -1524,9 +1538,9 @@ export default function Generate() {
     setAnalysisLoading(false);
     setRetryCount(0);
     
-    const mutationData = { data: { ...rest, idea: ideaWithNiche } } as any;
+    const mutationData = { data: { ...rest, idea: ideaWithNiche } };
     lastSubmittedValues.current = mutationData;
-    generateMutation.mutate(mutationData);
+    generateMutation.mutate(mutationData as any);
   }
 
   function handleTemplate(template: typeof TEMPLATES[number]) {
@@ -1561,12 +1575,12 @@ export default function Generate() {
     variationMutation.mutate({
       data: {
         idea: generatedContent.idea,
-        contentType: generatedContent.contentType as any,
-        tone: generatedContent.tone as any,
-        language: form.getValues().language as any,
+        contentType: generatedContent.contentType as "Educational" | "Story" | "Viral",
+        tone: generatedContent.tone as "Casual" | "Professional" | "Aggressive",
+        language: form.getValues().language,
         platform
       }
-    });
+    } as any);
   }
 
   function handleCopyAll() {
@@ -1971,7 +1985,10 @@ export default function Generate() {
                           ) : (
                             <div className="flex items-center gap-3 relative z-10">
                                <Zap className="w-5 h-5 fill-white" />
-                               <span className="tracking-widest uppercase">{isFirstTime ? "Generate Your First Content →" : "Generate High-Authority Campaign"}</span>
+                               <div className="flex flex-col items-center">
+                                 <span className="tracking-widest uppercase">{isFirstTime ? "Generate Your First Content →" : "Generate High-Authority Campaign"}</span>
+                                 <span className="text-[10px] text-white/30 font-black tracking-[0.2em] mt-1 hidden md:block">CTRL + ENTER</span>
+                               </div>
                             </div>
                           )}
                         </Button>

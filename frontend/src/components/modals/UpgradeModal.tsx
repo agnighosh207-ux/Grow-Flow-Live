@@ -15,8 +15,9 @@ function loadRazorpay(): Promise<boolean> {
     if (window.Razorpay) { resolve(true); return; }
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    const timeout = setTimeout(() => resolve(false), 10000); // 10 second timeout
+    script.onload = () => { clearTimeout(timeout); resolve(true); };
+    script.onerror = () => { clearTimeout(timeout); resolve(false); };
     document.body.appendChild(script);
   });
 }
@@ -166,10 +167,10 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
       console.log("[UpgradeModal] Razorpay loaded:", loaded, "window.Razorpay:", !!window.Razorpay);
 
       if (!loaded || !window.Razorpay) {
-        toast({ 
-          variant: "destructive", 
-          title: "Payment Gateway Error", 
-          description: "Could not load Razorpay. Please disable any ad-blockers and try again, or use the Pricing page." 
+        toast({
+          variant: "destructive",
+          title: "Payment gateway unavailable",
+          description: "Razorpay could not load. Please check your internet connection and try again, or disable any ad blockers."
         });
         setPaymentState("idle");
         return;
@@ -237,7 +238,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
     } catch (err: any) {
       console.error("Checkout error:", err);
       toast({ variant: "destructive", title: "Checkout Error", description: err.message || "Failed to start checkout. Please try again." });
-      setPaymentState("idle");
+      setPaymentState("error");
     }
   };
 
@@ -308,20 +309,21 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={handleClose}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 16 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative w-full max-w-5xl max-h-[95vh] rounded-3xl border border-white/10 shadow-2xl flex flex-col overflow-hidden"
+        <div className="fixed inset-0 z-[1000] overflow-y-auto bg-black/60 backdrop-blur-sm">
+          <div className="min-h-full flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0"
+              onClick={handleClose}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative w-full max-w-5xl max-h-[90vh] rounded-3xl border border-white/10 shadow-2xl flex flex-col overflow-hidden"
             style={{
               background: "linear-gradient(135deg, rgba(15,8,35,0.97) 0%, rgba(20,10,45,0.97) 100%)",
               backdropFilter: "blur(24px)",
@@ -687,6 +689,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
             </div>
           </motion.div>
           <NPSModal open={showNPS} onClose={() => { setShowNPS(false); handleClose(); }} trigger="upgrade" />
+          </div>
         </div>
       )}
     </AnimatePresence>

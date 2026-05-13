@@ -67,6 +67,14 @@ router.post("/analyze", requireAuth, requirePlanOrTrial("coach"), enforceGenerat
         return g.createdAt && new Date(g.createdAt) > weekAgo;
     }).length;
 
+    if (generations.length === 0) {
+      res.status(400).json({ 
+        error: "NO_HISTORY", 
+        message: "You haven't generated any content yet! Create some posts first so the coach can analyze your style and give you advice." 
+      });
+      return;
+    }
+
     // 4. Build Prompts
     const systemPrompt = `You are a personal content growth coach. Analyze this creator's content history and give them a brutally honest, specific weekly growth report. Focus on patterns you see in their content, what is working, what is repetitive, and give 3 specific actionable tasks for this week. Be direct, not generic. Sound like a high-paid coach, not a chatbot. Return ONLY JSON.`;
     
@@ -110,7 +118,7 @@ Analyze the data and return a JSON object with the following structure:
       ],
       userPlan: isPaid ? "INFINITY" : "FREE", 
       userId,
-      language: user.languagePreference || "English", // Fixed: Pass language to engine
+      language: user.languagePreference || "English",
       maxTokens: 1500,
     });
 
@@ -118,6 +126,7 @@ Analyze the data and return a JSON object with the following structure:
     const parsed = extractJson(content);
 
     if (!parsed || typeof parsed.weeklyScore !== 'number') {
+       console.error("Coach AI malformed response:", content);
        throw new Error("AI_RESPONSE_MALFORMED");
     }
 
@@ -137,7 +146,12 @@ Analyze the data and return a JSON object with the following structure:
   } catch (err: any) {
     console.error("COACH ANALYZE ERROR:", err);
     await refundGenerationCredit(userId, req.user?.planTier);
-    res.status(503).json({ error: "Coach is temporarily unavailable." });
+    
+    const message = err.message === "AI engine exhausted all providers." 
+      ? "AI systems are currently overloaded. Please try again in a few minutes."
+      : "Coach is temporarily unavailable.";
+      
+    res.status(503).json({ error: message });
   }
 });
 

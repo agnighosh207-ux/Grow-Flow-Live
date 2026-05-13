@@ -255,7 +255,7 @@ export default function ContentPack() {
   };
 
   return (
-    <PageWrapper maxWidth="xl" className="pb-16">
+    <PageWrapper maxWidth="xl" className="pb-24 md:pb-8">
       <FeatureGuideBanner 
         toolKey="pack" 
         title="Viral Content Packs" 

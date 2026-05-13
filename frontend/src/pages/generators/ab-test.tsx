@@ -53,7 +53,7 @@ export default function ABTestPage() {
   };
 
   return (
-    <PageWrapper maxWidth="xl" className="space-y-16 pb-32">
+    <PageWrapper maxWidth="xl" className="space-y-16 pb-24 md:pb-8">
       <FeatureGuideBanner 
         toolKey="ab-test" 
         title="Hook A/B Duel" 

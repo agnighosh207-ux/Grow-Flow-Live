@@ -52,11 +52,12 @@ export default function ContentCoachPage() {
     try {
       const { data } = await api.post("/coach/analyze", { refresh });
       setReport(data);
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "We couldn't generate your report right now. Please try again later.";
       toast({
         variant: "destructive",
         title: "Coach unavailable",
-        description: "We couldn't generate your report right now. Please try again later."
+        description: msg
       });
     } finally {
       setLoading(false);

@@ -10,19 +10,30 @@ import { db, paymentsTable } from "@workspace/db";
 const router = Router();
 
 function getRazorpayClient() {
-  const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
+  const appStatus = process.env.APP_STATUS || "";
+  const isProd = 
+    process.env.NODE_ENV === "production" || 
+    appStatus === "PRODUCTION" || 
+    appStatus === "BETA" ||
+    !!process.env.RAILWAY_ENVIRONMENT;
+
   const keyId = isProd 
     ? (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID)
-    : (process.env.RAZORPAY_TEST_KEY_ID || process.env.RAZORPAY_KEY_ID);
+    : (process.env.RAZORPAY_TEST_KEY_ID && !process.env.RAZORPAY_TEST_KEY_ID.includes("...") 
+        ? process.env.RAZORPAY_TEST_KEY_ID 
+        : (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID));
+  
   const keySecret = isProd
     ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
-    : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET);
+    : (process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...") 
+        ? process.env.RAZORPAY_TEST_KEY_SECRET 
+        : (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET));
 
-  if (!keyId || !keySecret) {
-    throw new Error("Razorpay keys not configured. Contact support.");
+  if (!keyId || !keySecret || keyId.includes("...") || keySecret.includes("...")) {
+    throw new Error("Razorpay keys not configured or contain placeholders. Check environment variables.");
   }
 
-  return new Razorpay({ key_id: keyId as string, key_secret: keySecret as string });
+  return new Razorpay({ key_id: keyId, key_secret: keySecret });
 }
 
 router.post("/tip/create", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
@@ -62,10 +73,18 @@ router.post("/tip/verify", requireAuth, async (req: AuthenticatedRequest, res: R
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     
-    const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
+    const appStatus = process.env.APP_STATUS || "";
+    const isProd = 
+      process.env.NODE_ENV === "production" || 
+      appStatus === "PRODUCTION" || 
+      appStatus === "BETA" ||
+      !!process.env.RAILWAY_ENVIRONMENT;
+
     const keySecret = isProd
       ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
-      : (process.env.RAZORPAY_TEST_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET);
+      : (process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...") 
+          ? process.env.RAZORPAY_TEST_KEY_SECRET 
+          : (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET));
 
     const expectedSig = crypto
       .createHmac("sha256", keySecret!)

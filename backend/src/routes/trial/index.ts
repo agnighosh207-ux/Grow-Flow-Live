@@ -8,22 +8,18 @@ import { Response } from "express";
 const router: IRouter = Router();
 
 router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-    if (!user) {
-      res.json({ ideas: 0, strategy: 0, hooks: 0, limit: 0, isPaid: false });
-      return;
-    }
-    res.json({
-      ideas: 0,
-      strategy: 0,
-      hooks: 0,
-      limit: user.generationsRemaining,
-      isPaid: isPaidOrTrial(user),
-    });
-  } catch {
-    res.status(500).json({ error: "Failed to fetch trial status." });
+  const user = (req as any).user;
+  if (!user) {
+    res.json({ ideas: 0, strategy: 0, hooks: 0, limit: 0, isPaid: false });
+    return;
   }
+  res.json({
+    ideas: 0,
+    strategy: 0,
+    hooks: 0,
+    limit: user.generationsRemaining,
+    isPaid: isPaidOrTrial(user),
+  });
 });
 
 router.post("/use", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {

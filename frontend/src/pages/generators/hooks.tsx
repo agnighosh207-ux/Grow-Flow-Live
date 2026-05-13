@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -45,6 +45,10 @@ function HooksGeneratorInner() {
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
 
+  useEffect(() => {
+    document.title = "Viral Hooks Generator — GrowFlow AI";
+  }, []);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { topic: "", tone: "Aggressive", language: "English" }
@@ -65,7 +69,13 @@ function HooksGeneratorInner() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    generateMutation.mutate({ data: { ...values } as any });
+    generateMutation.mutate({ 
+      data: { 
+        topic: values.topic,
+        tone: values.tone,
+        language: values.language
+      } as any
+    });
   }
 
   const handleCopy = (hook: string, index: number) => {
@@ -78,7 +88,7 @@ function HooksGeneratorInner() {
   const isLoading = generateMutation.isPending;
 
   return (
-    <PageWrapper maxWidth="md" className="pb-16">
+    <PageWrapper maxWidth="md" className="pb-24 md:pb-8">
       <FeatureGuideBanner 
         toolKey="hooks" 
         title="Viral Hooks Generator" 
@@ -247,12 +257,13 @@ function HooksGeneratorInner() {
             key="empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-16 space-y-3"
+            className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[200px]"
           >
-            <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center mx-auto">
-              <Zap className="w-7 h-7 text-teal-400/60" />
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+              <Sparkles className="w-5 h-5 text-white/20" />
             </div>
-            <p className="text-white/35 text-sm">Enter your topic and generate 10 psychologically-targeted hooks.</p>
+            <p className="text-white/25 text-sm font-medium">Your generated content will appear here</p>
+            <p className="text-white/15 text-xs mt-1">Fill in the details above and hit Generate</p>
           </motion.div>
         )}
       </AnimatePresence>

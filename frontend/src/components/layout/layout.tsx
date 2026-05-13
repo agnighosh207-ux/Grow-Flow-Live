@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBanner } from "@/components/banners/NotificationBanner";
+import { FeatureDiscoveryBanner } from "@/components/banners/FeatureDiscoveryBanner";
 import { NotificationPermissionModal } from "@/components/modals/NotificationPermissionModal";
 import { ReferralPopup } from "@/components/modals/ReferralPopup";
 import { FoundersBanner } from "@/components/banners/FoundersBanner";
@@ -564,7 +565,10 @@ function SidebarContent({
            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Interface Language</span>
             <select 
               value={i18n.language} 
-              onChange={e => i18n.changeLanguage(e.target.value)}
+              onChange={e => {
+                i18n.changeLanguage(e.target.value);
+                localStorage.setItem('i18nextLng', e.target.value); // explicit save
+              }}
               className="text-[10px] font-bold bg-transparent text-cyan-400 border-none outline-none cursor-pointer hover:text-cyan-300 transition-colors"
             >
               <option value="en" className="bg-zinc-950 text-white">English</option>
@@ -683,6 +687,35 @@ export function Layout({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
   const [discoverItem, setDiscoverItem] = useState(DISCOVERY_ITEMS[0]);
   
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      // Only show after user has been active for 30 seconds
+      setTimeout(() => {
+        if (!localStorage.getItem('install_dismissed')) {
+          setShowInstallBanner(true);
+        }
+      }, 30000);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      toast({ title: "GrowFlow AI installed! 🎉", description: "Find it on your home screen." });
+    }
+    setShowInstallBanner(false);
+    setInstallPrompt(null);
+  };
+
   useEffect(() => {
     // Session-based discovery rotation
     const sessionIdx = sessionStorage.getItem("discovery_idx");
@@ -791,6 +824,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
         {/* Mobile Layout */}
         <div className="md:hidden flex flex-1 flex-col min-h-0 overflow-x-hidden">
+          <FeatureDiscoveryBanner />
           <header className="h-16 border-b border-white/[0.06] bg-[#080316]/95 backdrop-blur-2xl flex items-center justify-between px-6 z-[60] sticky top-0">
             <Logo size="sm" />
             <div className="flex items-center gap-3">
@@ -816,7 +850,11 @@ export function Layout({ children }: { children: ReactNode }) {
                       {['en', 'hi', 'bn'].map(lang => (
                         <button 
                           key={lang}
-                          onClick={() => { i18n.changeLanguage(lang); setIsSheetOpen(false); }}
+                          onClick={() => { 
+                            i18n.changeLanguage(lang); 
+                            localStorage.setItem('i18nextLng', lang); // explicit save
+                            setIsSheetOpen(false); 
+                          }}
                           className={`text-xs font-bold uppercase tracking-widest ${i18n.language === lang ? 'text-cyan-400' : 'text-white/40'}`}
                         >
                           {lang === 'en' ? 'EN' : lang === 'hi' ? 'HI' : 'BN'}
@@ -870,7 +908,10 @@ export function Layout({ children }: { children: ReactNode }) {
                     key={item.path} 
                     href={navItem.path} 
                     className={`flex flex-col items-center gap-1 p-2 transition-all relative ${isActive ? "text-cyan-400" : "text-white/40"}`}
-                    onClick={() => localStorage.setItem(`visited_${navItem.path}`, "true")}
+                     onClick={() => {
+                        localStorage.setItem(`visited_${navItem.path}`, "true");
+                        setIsSheetOpen(false);
+                     }}
                   >
                     <Icon className={`w-5 h-5 ${item.path === "discover" && !isActive ? "text-cyan-400/60 animate-pulse" : ""}`} />
                     <span className="text-[9px] font-bold uppercase tracking-tighter">{navItem.label}</span>
@@ -887,6 +928,26 @@ export function Layout({ children }: { children: ReactNode }) {
       <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} trigger={feedbackTrigger} />
       <NotificationPermissionModal />
       <ReferralPopup />
+
+      {showInstallBanner && (
+        <div className="fixed bottom-24 inset-x-4 z-50 bg-[#0a051d] border border-cyan-500/30 rounded-2xl p-4 shadow-2xl flex items-center gap-3 md:hidden animate-in slide-in-from-bottom duration-500">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+            <span className="text-xl">⚡</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm">Add to Home Screen</p>
+            <p className="text-white/40 text-xs">Use GrowFlow like a native app</p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={handleInstall} className="bg-cyan-500 text-black text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform">
+              Install
+            </button>
+            <button onClick={() => { setShowInstallBanner(false); localStorage.setItem('install_dismissed', '1'); }} className="text-white/30 text-xs p-1">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Global Feedback Trigger */}
       {user && (

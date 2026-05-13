@@ -174,7 +174,7 @@ export default function CaptionEnhancer() {
   };
 
   return (
-    <PageWrapper maxWidth="sm" className="py-6 space-y-5">
+    <PageWrapper maxWidth="sm" className="pb-24 md:pb-8 space-y-5">
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
             <Wand2 className="w-6 h-6 text-emerald-400" />
@@ -306,7 +306,21 @@ export default function CaptionEnhancer() {
           </button>
         </motion.div>
 
-        <AnimatePresence>
+        {!loading && !result && (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[200px]"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+              <Sparkles className="w-5 h-5 text-white/20" />
+            </div>
+            <p className="text-white/25 text-sm font-medium">Your enhanced caption will appear here</p>
+            <p className="text-white/15 text-xs mt-1">Paste your caption above and hit Enhance</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
           {result && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
               {result.diagnosis && (

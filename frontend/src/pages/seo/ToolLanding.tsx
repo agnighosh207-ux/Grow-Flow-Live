@@ -6,52 +6,48 @@ import { Sparkles, ArrowRight, Zap, Target, Flame } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface ToolConfig {
-  name: string;
-  slug: string;
-  h1: string;
+  title: string;
   description: string;
-  benefit: string;
-  targetPath: string;
+  toolPath: string;
+  features: string[];
 }
 
 const TOOL_DATA: Record<string, ToolConfig> = {
   "instagram-caption-generator": {
-    name: "Instagram Caption Generator",
-    slug: "instagram-caption-generator",
-    h1: "AI Instagram Caption Generator for Indian Creators",
-    description: "Stop wasting hours on captions. Generate viral, high-engagement Instagram captions in Hinglish, Hindi, or English that drive saves and shares.",
-    benefit: "Used by 5,000+ creators in Mumbai, Delhi, and Bangalore to go viral.",
-    targetPath: "/caption",
+    title: "Free AI Instagram Caption Generator for Indian Creators",
+    description: "Generate viral Instagram captions in seconds. Supports Hindi, English, and Hinglish. Used by 10,000+ Indian creators.",
+    toolPath: "/generate",
+    features: ["Platform-optimized captions", "Hinglish & Hindi support", "Built-in hashtag suggestions", "Multiple tone options"],
   },
   "youtube-hook-generator": {
-    name: "YouTube Hook Generator",
-    slug: "youtube-hook-generator",
-    h1: "Viral YouTube Hook Generator — Boost Your CTR Instantly",
-    description: "The first 3 seconds decide if your video fails or flies. Generate irresistible YouTube hooks and titles that keep people watching.",
-    benefit: "Perfect for YouTube Shorts and Long-form creators seeking higher retention.",
-    targetPath: "/hooks",
+    title: "AI YouTube Hook Generator — Get More Views in 2026",
+    description: "Generate scroll-stopping YouTube hooks that get clicks. Trained on viral Indian YouTube content.",
+    toolPath: "/hooks",
+    features: ["Tested hook formulas", "Platform-specific optimization", "A/B test multiple hooks", "Hindi & English hooks"],
   },
   "linkedin-post-generator": {
-    name: "LinkedIn Post Generator",
-    slug: "linkedin-post-generator",
-    h1: "AI LinkedIn Post Generator for Professionals & Founders",
-    description: "Build authority and attract clients with high-impact LinkedIn content. Turn your thoughts into polished, professional posts in seconds.",
-    benefit: "Engineered for maximum reach and meaningful networking.",
-    targetPath: "/generate",
+    title: "AI LinkedIn Post Generator for Indian Professionals",
+    description: "Generate professional LinkedIn posts that build authority and drive profile visits.",
+    toolPath: "/generate",
+    features: ["Professional tone calibration", "Thought leadership templates", "Industry-specific content", "CTA optimization"],
   },
   "viral-hook-generator-india": {
-    name: "Viral Hook Generator India",
-    slug: "viral-hook-generator-india",
-    h1: "Free Viral Hook Generator for Indian Social Media Creators",
-    description: "Hook your audience with cultural nuances. Our AI understands Indian trends, slang, and audience behavior to create hooks that stick.",
-    benefit: "Specially tuned for the Indian creator economy — Instagram, YT Shorts, and X.",
-    targetPath: "/hooks",
+    title: "Viral Hook Generator for Indian Social Media Creators",
+    description: "Create hooks that stop the scroll on Instagram, YouTube, and Twitter. Designed for Indian content styles.",
+    toolPath: "/hooks",
+    features: ["Bollywood-style emotional hooks", "Hinglish hooks", "Cricket & pop culture references", "Regional content support"],
   }
 };
 
 export default function ToolLandingPage({ tool }: { tool: string }) {
   const config = TOOL_DATA[tool as keyof typeof TOOL_DATA];
   const [, navigate] = useLocation();
+
+  React.useEffect(() => {
+    if (config) {
+      document.title = config.title;
+    }
+  }, [config]);
 
   if (!config) return <div>Tool not found</div>;
 
@@ -75,7 +71,7 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
             transition={{ delay: 0.1 }}
             className="text-5xl md:text-6xl font-black text-white italic tracking-tight leading-[0.95]"
           >
-            {config.h1}
+            {config.title}
           </motion.h1>
           
           <motion.p
@@ -84,7 +80,7 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
             transition={{ delay: 0.2 }}
             className="text-lg text-white/50 font-medium"
           >
-            {config.description} {config.benefit}
+            {config.description}
           </motion.p>
 
           <motion.div
@@ -95,7 +91,7 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
           >
             <Button 
               size="lg" 
-              onClick={() => navigate(config.targetPath)}
+              onClick={() => navigate(config.toolPath)}
               className="h-14 px-10 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-lg shadow-glow transition-all"
             >
               USE THE TOOL FREE →
@@ -124,17 +120,12 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
       {/* SEO Content Blocks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
         <div className="space-y-6">
-          <h2 className="text-3xl font-black text-white italic">Why use GrowFlow's {config.name}?</h2>
+          <h2 className="text-3xl font-black text-white italic">Why use GrowFlow?</h2>
           <p className="text-white/40 leading-relaxed">
             Most AI tools are built for US-based audiences. GrowFlow is the first AI content generator designed specifically for the Indian creator economy. We understand context, slang, and cultural nuances that make content go viral in India.
           </p>
           <ul className="space-y-4">
-            {[
-              "Support for Hinglish and local slang",
-              "Emotion-driven hook algorithms",
-              "Platform-native formatting",
-              "Trend-aware suggestions"
-            ].map(item => (
+            {config.features.map(item => (
               <li key={item} className="flex items-center gap-3 text-white/70 font-medium">
                 <Target className="w-5 h-5 text-cyan-500" />
                 {item}

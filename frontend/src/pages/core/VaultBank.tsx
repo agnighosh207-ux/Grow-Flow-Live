@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { PageSkeleton } from "@/components/shared/Skeleton";
 
 export default function VaultBankPage() {
   const { getToken } = useAuth();
@@ -45,6 +46,8 @@ export default function VaultBankPage() {
       return res.json();
     }
   });
+
+  if (foldersLoading && itemsLoading) return <PageSkeleton />;
 
   const createFolderMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -132,20 +135,22 @@ export default function VaultBankPage() {
             </button>
 
             {foldersLoading ? (
-              [1, 2, 3].map(i => <div key={i} className="h-11 bg-white/5 rounded-xl animate-pulse m-1" />)
-            ) : folders?.map((f: any) => (
-              <button
-                key={f.id}
-                onClick={() => setActiveFolder(f.id)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all font-bold text-sm ${activeFolder === f.id ? 'bg-cyan-500/10 text-cyan-400' : 'text-white/50 hover:bg-white/5'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <Folder size={18} style={{ color: f.color }} />
-                  {f.name}
-                </div>
-                <span className="text-[10px] opacity-40">{f.itemCount}</span>
-              </button>
-            ))}
+               [1, 2, 3].map(i => <div key={i} className="h-11 bg-white/5 rounded-xl animate-pulse m-1" />)
+            ) : (
+              folders?.map((f: any) => (
+                <button
+                  key={f.id}
+                  onClick={() => setActiveFolder(f.id)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all font-bold text-sm ${activeFolder === f.id ? 'bg-cyan-500/10 text-cyan-400' : 'text-white/50 hover:bg-white/5'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Folder size={18} style={{ color: f.color }} />
+                    {f.name}
+                  </div>
+                  <span className="text-[10px] opacity-40">{f.itemCount}</span>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
@@ -161,7 +166,9 @@ export default function VaultBankPage() {
           <AnimatePresence mode="popLayout">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {itemsLoading ? (
-                [1, 2, 3, 4].map(i => <div key={i} className="h-64 rounded-[32px] bg-white/5 animate-pulse" />)
+                <div className="col-span-full py-12 flex justify-center">
+                  <RefreshCw className="w-8 h-8 animate-spin text-cyan-500" />
+                </div>
               ) : items?.map((item: any, i: number) => (
                 <motion.div
                   key={item.id}

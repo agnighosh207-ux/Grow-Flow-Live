@@ -4,6 +4,7 @@ import { db, usersTable, referralsTable } from "@workspace/db";
 import crypto from "crypto";
 import { requireAuth } from "../../middlewares/planMiddleware";
 import { ensureReferralCode } from "../../utils/referral";
+import { logger } from "../../lib/logger";
 
 const router: IRouter = Router();
 
@@ -23,7 +24,7 @@ router.post("/claim", requireAuth, async (req: any, res): Promise<void> => {
   const normalizedCode = code.trim().toUpperCase();
 
   try {
-    console.log(`[REFERRAL_ROUTE] User ${req.userId} attempting to claim code: ${normalizedCode}`);
+    logger.info({ userId: req.userId, code: normalizedCode }, `[REFERRAL_ROUTE] User attempting to claim code`);
     
     await db.transaction(async (tx) => {
       const [referrer] = await tx.select({ id: usersTable.id })
@@ -55,10 +56,10 @@ router.post("/claim", requireAuth, async (req: any, res): Promise<void> => {
       }).onConflictDoNothing();
     });
 
-    console.log(`[REFERRAL_ROUTE] User ${req.userId} successfully claimed code: ${normalizedCode}`);
+    logger.info({ userId: req.userId, code: normalizedCode }, `[REFERRAL_ROUTE] User successfully claimed code`);
     res.json({ success: true, message: "Referral code applied! Bonus will be granted after subscription." });
   } catch (err: any) {
-    console.error(`[REFERRAL_ROUTE_ERROR] Claim failed for ${req.userId}:`, err.message);
+    logger.error({ err: err.message, userId: req.userId }, `[REFERRAL_ROUTE_ERROR] Claim failed`);
     res.status(400).json({ error: err.message });
   }
 });
@@ -70,7 +71,7 @@ router.post("/popup-seen", requireAuth, async (req: any, res): Promise<void> => 
       .where(eq(usersTable.id, req.userId));
     res.json({ success: true });
   } catch (err) {
-    console.error("[REFERRAL_ROUTE_ERROR] popup-seen failure:", err);
+    logger.error({ err, userId: req.userId }, "[REFERRAL_ROUTE_ERROR] popup-seen failure");
     res.status(500).json({ error: "Failed to update status" });
   }
 });
@@ -81,7 +82,7 @@ router.post("/popup-seen", requireAuth, async (req: any, res): Promise<void> => 
  */
 router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
   try {
-    console.log(`[REFERRAL_ROUTE] Fetching info for user ${req.userId}`);
+    logger.info({ userId: req.userId }, `[REFERRAL_ROUTE] Fetching info for user`);
     
     // Ensure code exists (aggressive persistence check)
     const code = await ensureReferralCode(req.userId);
@@ -101,7 +102,7 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
         appUrl = "https://" + appUrl.replace(/^\/+/, "");
       }
     }
-    const shareableLink = `${appUrl}/?ref=${code}`;
+    const shareableLink = `https://growflowai.space/sign-up?ref=${code}`;
 
     const [referralStats] = await db
       .select({ 
@@ -144,7 +145,7 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
     });
 
   } catch (err) {
-    console.error(`[REFERRAL_ROUTE_CRITICAL] Info endpoint failed for ${req.userId}:`, err);
+    logger.error({ err, userId: req.userId }, `[REFERRAL_ROUTE_CRITICAL] Info endpoint failed`);
     // Provide a valid fallback to prevent frontend "---" or crash
     res.status(500).json({ 
       error: "INTERNAL_ERROR",

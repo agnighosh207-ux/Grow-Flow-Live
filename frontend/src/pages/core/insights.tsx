@@ -5,6 +5,7 @@ import { BarChart3, Crown, TrendingUp, Zap, Linkedin, Twitter, Star } from "luci
 import { SiInstagram, SiYoutube } from "react-icons/si";
 import { PlanGate } from "@/components/shared/PlanGate";
 import { useGetContentStats, useGetContentHistory } from "@workspace/api-client-react";
+import { PageSkeleton } from "@/components/shared/Skeleton";
 
 const PLATFORM_CONFIG: Record<string, { icon: React.ReactNode; label: string; color: string; bar: string }> = {
   instagram: { icon: <SiInstagram className="w-4 h-4 text-pink-400" />, label: "Instagram", color: "text-pink-400", bar: "bg-pink-500" },
@@ -85,6 +86,9 @@ export default function Insights() {
       .then(data => setInsightStats(data))
       .catch(() => null);
   }, []);
+
+  const { isLoading: statsLoading } = useGetContentStats();
+  if (statsLoading && !insightStats) return <PageSkeleton />;
 
   const history = historyData?.items ?? [];
   const totalGenerations = stats?.totalGenerations ?? history.length;

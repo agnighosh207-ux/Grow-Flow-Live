@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+// Triggering restart for env sync...
 import path from "path";
 import { fileURLToPath } from "node:url";
 
@@ -32,9 +33,36 @@ app.get("/api/health", (_req, res) => {
 
 // ─── 2. Standard middleware ──────────────────────────────────────────────────
 app.set("trust proxy", 1);
-app.use(helmet({ 
-  contentSecurityPolicy: false,
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://checkout.razorpay.com",
+        "https://cdn.razorpay.com",
+        "'unsafe-inline'",
+      ],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: [
+        "'self'",
+        "https://api.clerk.com",
+        "https://growflowai.space",
+        "https://api.growflowai.space",
+        "wss://growflowai.space",
+      ],
+      frameSrc: ["https://checkout.razorpay.com", "https://api.razorpay.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
 }));
 app.use(compression());
 
@@ -101,11 +129,12 @@ app.use(
 
 // ─── 5. Body parsing ────────────────────────────────────────────────────────
 app.use(express.json({
+  limit: '10kb',
   verify: (req, res, buf) => {
     (req as any).rawBody = buf;
   }
 }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // ─── 6. Auth (with timeout protection) ──────────────────────────────────────
 app.use(clerkMiddleware());
@@ -215,7 +244,7 @@ if (isProd) {
   // Structure: backend/dist/index.mjs -> ../../frontend/dist/public
   const frontendPath = path.resolve(currentDir, "../../frontend/dist/public");
   
-  console.log(`[BOOT] Production mode: Serving frontend from ${frontendPath}`);
+  logger.info(`[BOOT] Production mode: Serving frontend from ${frontendPath}`);
   
   // Static assets (hashed files) can be cached for a long time
   app.use(express.static(frontendPath, {
@@ -237,7 +266,7 @@ if (isProd) {
     const indexPath = path.join(frontendPath, "index.html");
     res.sendFile(indexPath, (err) => {
       if (err) {
-        console.error(`[ERROR] Failed to send index.html from ${indexPath}:`, err.message);
+        logger.error({ err: err.message, indexPath }, `[ERROR] Failed to send index.html`);
         res.status(200).send(`
           <html>
             <body style="background: #050111; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
@@ -253,43 +282,58 @@ if (isProd) {
     });
   });
 } else {
-  console.log("[BOOT] Development mode: API only server. Start frontend separately.");
+  logger.info("[BOOT] Development mode: API only server. Start frontend separately.");
 }
 
-// ─── DEBUG ──────────────────────────────────────────────────────────────────
 if (process.env.NODE_ENV === "development") {
-  app.get("/api/debug-db", (req: any, res, next) => {
-    if (!req.user?.isAdmin) {
-      res.status(403).json({ error: "Forbidden" });
-      return;
-    }
-    next();
-  }, async (req, res) => {
+  app.get("/api/debug-ping", (req, res) => {
+    res.json({ message: "pong" });
+  });
+
+  app.get("/api/diag/env", (req, res) => {
+    const scrubbedEnv = Object.keys(process.env).reduce((acc: any, key) => {
+      const val = process.env[key] || "";
+      acc[key] = val.length > 8 ? `${val.substring(0, 4)}...${val.substring(val.length - 4)}` : "***";
+      return acc;
+    }, {});
+    res.json(scrubbedEnv);
+  });
+
+  app.get("/api/diag/db-check", async (req, res) => {
     try {
       const { db, usersTable } = await import("@workspace/db");
       const { sql } = await import("drizzle-orm");
       const countResult = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
       res.json({ success: true, count: countResult[0].count });
     } catch (err: any) {
-      res.status(500).json({ success: false, error: err.message });
+      res.status(500).json({ success: false, error: err.message, stack: err.stack });
     }
   });
 }
 
 // ─── 12. Error handler (RECOVERY MODE: Exposing errors) ──────────────────────
 app.use((err: any, req: any, res: any, _next: any) => {
-  const isDev = process.env.NODE_ENV === "development";
-  const errorDetails = {
-    error: "Internal Server Error",
-    message: isDev ? (err.message || "Unknown error") : "Something went wrong. Please try again.",
+  const isDev = process.env.NODE_ENV === "development" || !!process.env.RAILWAY_ENVIRONMENT;
+  
+  // Log the full error object for server logs
+  logger.error({ 
+    err: err.message, 
+    stack: err.stack,
     path: req.path,
     method: req.method,
-    stack: isDev ? err.stack : undefined, // ONLY expose stack in dev
-    timestamp: new Date().toISOString()
-  };
+    body: req.body,
+    userId: (req as any).userId
+  }, "SYSTEMIC_FAILURE_DETECTED");
 
-  logger.error(errorDetails, "SYSTEMIC_FAILURE_DETECTED");
-  console.error("[GLOBAL_ERROR_RECOVERY]", errorDetails);
+  const errorDetails = {
+    error: "Internal Server Error",
+    message: err.message || "Something went wrong.",
+    path: req.path,
+    method: req.method,
+    code: err.code, // Useful for DB errors like 23505
+    timestamp: new Date().toISOString(),
+    stack: isDev ? err.stack : undefined
+  };
 
   if (!res.headersSent) {
     res.status(500).json(errorDetails);

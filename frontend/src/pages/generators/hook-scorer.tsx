@@ -87,7 +87,7 @@ export default function HookScorerPage() {
   };
 
   return (
-    <PageWrapper maxWidth="xl" className="space-y-12 pb-32">
+    <PageWrapper maxWidth="xl" className="space-y-12 pb-24 md:pb-8">
       <FeatureGuideBanner 
         toolKey="hook-scorer" 
         title="Hook Intelligence Scorer" 

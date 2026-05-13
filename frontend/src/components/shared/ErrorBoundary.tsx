@@ -1,0 +1,36 @@
+import React from "react";
+
+interface Props { children: React.ReactNode; }
+interface State { hasError: boolean; error?: Error; }
+
+export class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#060312] flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="text-4xl mb-4">⚡</div>
+            <h2 className="text-white font-bold text-xl mb-2">Something went wrong</h2>
+            <p className="text-white/40 text-sm mb-6">This page encountered an error. Please refresh to try again.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-cyan-500 text-black font-bold px-6 py-2 rounded-xl hover:bg-cyan-400 transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}

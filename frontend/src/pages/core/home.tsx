@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Sparkles, Zap, Globe, Clock, ArrowRight, Star, TrendingUp,
   CalendarDays, BarChart3, Layers, Check, Shield, Lock, Users,
-  Play, Linkedin as LinkedinIcon
+  Play, Linkedin as LinkedinIcon, Loader2, Copy, ChevronUp
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/layout/Logo";
@@ -12,6 +12,7 @@ import { SiInstagram, SiYoutube, SiX } from "react-icons/si";
 import { MagneticButton } from "@/components/shared/MagneticButton";
 import { Hover3DCard } from "@/components/shared/Hover3DCard";
 import { Brain } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const TAGLINES = [
   "Built for creators worldwide",
@@ -163,9 +164,9 @@ function Leaderboard() {
   if (loading || creators.length === 0) return null;
 
   return (
-    <section className="relative z-10 py-24 px-4 overflow-hidden border-t border-white/[0.04]">
+    <section className="relative z-10 py-12 md:py-24 px-4 overflow-hidden border-t border-white/[0.04]">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
+        <div className="text-center mb-7 md:mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">Creators crushing it with GrowFlow AI</h2>
           <p className="text-white/40 max-w-xl mx-auto">Real creators, real growth, real consistency. See who's dominating the content game this month.</p>
         </div>
@@ -218,6 +219,15 @@ function Leaderboard() {
 }
 
 export default function Home() {
+  const { toast } = useToast();
+  const [showStickyNav, setShowStickyNav] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setShowStickyNav(window.scrollY > 600);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const [taglineIdx, setTaglineIdx] = useState(0);
   const [activePlatform, setActivePlatform] = useState(0);
   const [totalGenerations, setTotalGenerations] = useState(54280);
@@ -225,6 +235,28 @@ export default function Home() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [newReview, setNewReview] = useState({ name: "", role: "", text: "", stars: 0 });
   const [hoveredStar, setHoveredStar] = useState(0);
+  const [demoIdea, setDemoIdea] = useState("");
+  const [demoResult, setDemoResult] = useState("");
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  const handleDemoGenerate = async () => {
+    if (!demoIdea.trim() || demoLoading) return;
+    setDemoLoading(true);
+    setDemoResult("");
+    try {
+      const res = await fetch("/api/content/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idea: demoIdea.slice(0, 120) })
+      });
+      const data = await res.json();
+      setDemoResult(data.caption || data.content || "Could not generate. Please try again.");
+    } catch {
+      setDemoResult("Something went wrong. Sign up to try the full version!");
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -263,6 +295,28 @@ export default function Home() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="min-h-screen bg-[#060312] text-foreground overflow-x-hidden selection:bg-cyan-500/30 font-sans"
     >
+      <AnimatePresence>
+        {showStickyNav && (
+          <motion.div
+            initial={{ y: -60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -60, opacity: 0 }}
+            className="fixed top-0 inset-x-0 z-50 border-b border-white/[0.07] hidden md:flex items-center justify-between px-6 py-3"
+            style={{ background: "rgba(6,3,18,0.95)", backdropFilter: "blur(20px)" }}
+          >
+            <Logo size="sm" />
+            <div className="flex items-center gap-6 text-sm text-white/40">
+              <Link href="/pricing"><span className="hover:text-white/70 transition-colors cursor-pointer">Pricing</span></Link>
+              <Link href="/support"><span className="hover:text-white/70 transition-colors cursor-pointer">Support</span></Link>
+            </div>
+            <Link href="/sign-up">
+              <Button className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-full px-5 py-2 text-sm h-9">
+                Get Started Free
+              </Button>
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="fixed inset-0 pointer-events-none z-0" style={{ transform: "translateZ(0)" }}>
         <div className="absolute top-[-15%] left-[-15%] w-[55%] h-[55%] bg-cyan-700/25 blur-[140px] rounded-full will-change-transform" />
@@ -271,9 +325,9 @@ export default function Home() {
         <div className="absolute top-[60%] left-[10%] w-[30%] h-[30%] bg-blue-700/10 blur-[100px] rounded-full will-change-transform" />
         
         {/* Floating God-Level Icons */}
-        <motion.div className="absolute top-[10%] right-[10%] opacity-10 animate-float" style={{ animationDelay: '1s' }}><Brain className="w-48 h-48 text-[var(--accent-cyan)]" /></motion.div>
-        <motion.div className="absolute bottom-[10%] left-[5%] opacity-10 animate-float" style={{ animationDelay: '2.5s' }}><Zap className="w-64 h-64 text-purple-500" /></motion.div>
-        <motion.div className="absolute top-[50%] left-[2%] opacity-10 animate-float" style={{ animationDelay: '4s' }}><Sparkles className="w-32 h-32 text-pink-500" /></motion.div>
+        <motion.div className="absolute top-[10%] right-[5%] opacity-10 animate-float hidden md:block" style={{ animationDelay: '1s' }}><Brain className="w-24 h-24 md:w-48 md:h-48 text-[var(--accent-cyan)]" /></motion.div>
+        <motion.div className="absolute bottom-[10%] left-[2%] opacity-10 animate-float hidden md:block" style={{ animationDelay: '2.5s' }}><Zap className="w-32 h-32 md:w-64 md:h-64 text-purple-500" /></motion.div>
+        <motion.div className="absolute top-[50%] left-[1%] opacity-10 animate-float hidden lg:block" style={{ animationDelay: '4s' }}><Sparkles className="w-20 h-20 md:w-32 md:h-32 text-pink-500" /></motion.div>
 
         <div
           className="absolute inset-0 opacity-[0.03]"
@@ -360,7 +414,7 @@ export default function Home() {
         </div>
       </div>
 
-      <main className="relative z-10 flex flex-col items-center justify-center px-4 pt-20 pb-16 text-center max-w-6xl mx-auto">
+      <main className="relative z-10 flex flex-col items-center justify-center px-4 pt-10 pb-8 md:pt-20 md:pb-16 text-center max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -375,7 +429,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.05 }}
-          className="text-5xl md:text-7xl lg:text-[88px] font-bold tracking-tight mb-6 leading-[1.05]"
+          className="text-4xl sm:text-5xl md:text-7xl lg:text-[88px] font-bold tracking-tight mb-4 md:mb-6 leading-[1.05]"
         >
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#F1F5F9] via-[#00F2FF] to-[#F1F5F9] animate-gradient-xy glow-text-intense inline-block hover:scale-[1.02] transition-transform duration-300 cursor-default">
             Stop writing.<br />
@@ -416,7 +470,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.18 }}
-          className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mb-16"
+          className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-8 md:mb-16"
         >
           <MagneticButton>
             <Link href="/sign-up">
@@ -445,7 +499,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.25 }}
-          className="w-[95%] sm:w-full max-w-5xl mx-auto mt-6"
+          className="w-full max-w-5xl mx-auto mt-4 md:mt-6"
         >
           {/* God Tier Cinematic Hero Console */}
           <div className="relative min-h-[550px] sm:min-h-[650px] w-[110%] -ml-[5%] md:w-full md:ml-0 rounded-[20px] sm:rounded-[40px] overflow-hidden border border-[#00F2FF]/15 shadow-[0_0_150px_rgba(0,242,255,0.05),inset_0_0_40px_rgba(0,242,255,0.05)] flex flex-col items-center justify-center bg-[#050B0D]/90 mt-16 group py-16 sm:py-20" style={{ transform: "translateZ(0)" }}>
@@ -528,12 +582,12 @@ export default function Home() {
                       <div className="w-1.5 h-4 bg-[#00F2FF] rounded-sm ml-1 animate-pulse" />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 mb-5">
+                    <div className="flex items-center gap-2 mb-5 overflow-x-auto scrollbar-hide flex-nowrap pb-2 -mx-4 px-4">
                       {PLATFORMS.map((platform, i) => {
                         const Icon = platform.icon;
                         const isActive = activePlatform === i;
                         return (
-                          <div key={platform.name} onClick={() => setActivePlatform(i)} className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all duration-500 ${isActive ? "bg-[#101C20] shadow-[0_0_15px_rgba(0,242,255,0.1)] " + platform.border + " " + platform.color : "border-transparent text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-white/5"}`}>
+                          <div key={platform.name} onClick={() => setActivePlatform(i)} className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all duration-500 shrink-0 ${isActive ? "bg-[#101C20] shadow-[0_0_15px_rgba(0,242,255,0.1)] " + platform.border + " " + platform.color : "border-transparent text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-white/5"}`}>
                             <Icon className="w-3.5 h-3.5" />
                             {platform.name}
                           </div>
@@ -572,6 +626,8 @@ export default function Home() {
         </motion.div>
       </main>
 
+      <div className="relative z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
       <section className="relative z-10 py-14 px-4 border-y border-white/[0.04]"
         style={{ background: "rgba(255,255,255,0.01)" }}
       >
@@ -585,16 +641,51 @@ export default function Home() {
               transition={{ delay: i * 0.08 }}
               className="text-center"
             >
-              <div className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-teal-400 mb-1">{s.value}</div>
+              <div className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-teal-400 mb-1">
+                <motion.span
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.1 }}
+                >
+                  {s.value}
+                </motion.span>
+              </div>
               <div className="text-xs text-white/35 font-medium">{s.label}</div>
             </motion.div>
           ))}
         </div>
       </section>
 
-      <section className="relative z-10 py-24 px-4">
+      <section className="relative z-10 py-8 md:py-10 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em] mb-6">
+            Content created for creators in these niches
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
+            {[
+              { label: "Fitness & Health", emoji: "💪" },
+              { label: "Finance & Investing", emoji: "📈" },
+              { label: "Tech & Coding", emoji: "💻" },
+              { label: "Food & Recipes", emoji: "🍕" },
+              { label: "Fashion & Lifestyle", emoji: "✨" },
+              { label: "Education & Study", emoji: "📚" },
+              { label: "Comedy & Memes", emoji: "😂" },
+              { label: "Travel & Vlogs", emoji: "✈️" },
+              { label: "Motivation & Self-help", emoji: "🔥" },
+              { label: "Gaming & Esports", emoji: "🎮" },
+            ].map(({ label, emoji }) => (
+              <span key={label} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-white/8 bg-white/[0.02] text-white/35 hover:text-white/50 hover:border-white/15 transition-all">
+                {emoji} {label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 py-12 md:py-24 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
+          <div className="text-center mb-8 md:mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
               <Play className="w-3 h-3 text-cyan-400 fill-cyan-400" /> How it works
             </div>
@@ -602,7 +693,35 @@ export default function Home() {
             <p className="text-white/40 text-base max-w-md mx-auto">No learning curve. No complex settings. Just type and create.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+          <div className="md:hidden flex flex-col items-center gap-0">
+            {STEPS.map((step, i) => (
+              <div key={step.num} className="w-full">
+                <Hover3DCard className="h-full">
+                  <div
+                    className={`hyper-hover-card relative rounded-2xl border ${step.border} p-7 text-center overflow-hidden h-full`}
+                    style={{ background: "rgba(255,255,255,0.02)" }}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${step.bg} to-transparent pointer-events-none`} />
+                    <div className="relative">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/5 border border-white/8 mb-4 mx-auto">
+                        <step.icon className={`w-5 h-5 ${step.color}`} />
+                      </div>
+                      <div className="text-[10px] font-bold text-white/20 tracking-[0.2em] mb-2">{step.num}</div>
+                      <h3 className="font-bold text-white text-lg mb-2">{step.title}</h3>
+                      <p className="text-white/45 text-sm leading-relaxed">{step.desc}</p>
+                    </div>
+                  </div>
+                </Hover3DCard>
+                {i < STEPS.length - 1 && (
+                  <div className="flex justify-center w-full py-2">
+                    <div className="w-px h-6 bg-gradient-to-b from-cyan-500/40 to-transparent" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:grid grid-cols-3 gap-6 relative">
             <div className="hidden md:block absolute top-14 left-[33%] right-[33%] h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/50 to-pink-500/30" />
             {STEPS.map((step, i) => {
               const Icon = step.icon;
@@ -638,9 +757,112 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 py-20 px-4">
+      {/* ─── LIVE DEMO SECTION ─────────────────────────────────── */}
+      <section className="relative z-10 py-12 md:py-20 px-4 border-y border-white/[0.04]"
+        style={{ background: "rgba(0,242,255,0.015)" }}
+      >
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25 mb-4 text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              Try it live — no signup needed
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">See it work in real time</h2>
+            <p className="text-white/40 text-sm">Type any topic and watch AI generate content instantly.</p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 overflow-hidden"
+            style={{ background: "rgba(10,5,30,0.8)", backdropFilter: "blur(20px)" }}
+          >
+            {/* Input area */}
+            <div className="p-4 md:p-6 border-b border-white/[0.06]">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={demoIdea}
+                  onChange={e => setDemoIdea(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !demoLoading && demoIdea.trim() && handleDemoGenerate()}
+                  placeholder="e.g. Why I quit my 9-5 to become a creator..."
+                  maxLength={120}
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all"
+                />
+                <button
+                  onClick={handleDemoGenerate}
+                  disabled={demoLoading || !demoIdea.trim()}
+                  className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-5 py-3 rounded-xl text-sm transition-all flex items-center gap-2 flex-shrink-0"
+                >
+                  {demoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                  <span className="hidden sm:inline">{demoLoading ? "Generating..." : "Generate"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Output area */}
+            <div className="p-4 md:p-6">
+              {!demoResult && !demoLoading && (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-3">
+                    <Sparkles className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <p className="text-white/30 text-sm">Your generated content will appear here</p>
+                  <div className="flex gap-2 mt-4 flex-wrap justify-center">
+                    {["Why I deleted Instagram for 30 days", "5 habits that changed my life", "How I went from 0 to 10K followers"].map(s => (
+                      <button key={s} onClick={() => setDemoIdea(s)}
+                        className="text-[10px] px-3 py-1.5 rounded-full border border-white/10 text-white/35 hover:text-white/60 hover:border-white/20 transition-all">
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {demoLoading && (
+                <div className="space-y-3 py-4">
+                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-full" />
+                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-4/5" />
+                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-full" />
+                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-3/4" />
+                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-full" />
+                </div>
+              )}
+              {demoResult && !demoLoading && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Instagram Caption</span>
+                    <button onClick={() => { navigator.clipboard.writeText(demoResult); toast({ title: "Copied!" }); }}
+                      className="text-[10px] text-white/30 hover:text-white/60 flex items-center gap-1 transition-colors">
+                      <Copy className="w-3 h-3" /> Copy
+                    </button>
+                  </div>
+                  <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">{demoResult}</p>
+                  <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
+                    <p className="text-xs text-white/25">Want all platforms + hooks + strategy?</p>
+                    <Link href="/sign-up">
+                      <button className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors">
+                        Get full access free <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {demoResult && (
+            <div className="mt-4 text-center">
+              <p className="text-xs text-white/25 mb-3">This is just Instagram. GrowFlow AI also generates:</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {["Twitter Thread", "YouTube Hook", "LinkedIn Post", "30 Content Ideas", "7-Day Strategy"].map(t => (
+                  <span key={t} className="text-[10px] px-3 py-1 rounded-full border border-white/10 text-white/30">{t} ✓</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="relative z-10 py-10 md:py-20 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-7 md:mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
               <Zap className="w-3 h-3 text-teal-400 fill-teal-400" /> What you get
             </div>
@@ -761,9 +983,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 py-24 px-4">
+      <section className="relative z-10 py-12 md:py-24 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
+          <div className="text-center mb-8 md:mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
               <TrendingUp className="w-3 h-3 text-cyan-400" /> Creator stories
             </div>
@@ -943,11 +1165,11 @@ export default function Home() {
 
       <Leaderboard />
 
-      <section className="relative z-10 py-16 px-4 border-y border-white/[0.04]"
+      <section className="relative z-10 py-10 md:py-16 px-4 border-y border-white/[0.04]"
         style={{ background: "rgba(255,255,255,0.01)" }}
       >
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
+          <div className="text-center mb-7 md:mb-8">
             <p className="text-xs text-white/25 font-semibold uppercase tracking-[0.2em]">You're in good hands</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -971,13 +1193,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative z-10 py-24 px-4 overflow-hidden">
+      <section className="relative z-10 py-12 md:py-24 px-4 overflow-hidden">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="text-center mb-7 md:mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">What you'd pay for these tools separately</h2>
             <p className="text-white/40">GrowFlow AI replaces your entire content team for a fraction of the cost.</p>
@@ -1008,11 +1230,17 @@ export default function Home() {
             ))}
           </div>
 
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-xs font-bold text-white/20 uppercase tracking-widest">vs</span>
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="text-center p-8 rounded-3xl border border-[#00F2FF]/30 bg-[#00F2FF]/5 shadow-[0_0_50px_rgba(0,242,255,0.1)] mb-6"
+            className="text-center p-8 rounded-3xl border border-[#00F2FF]/30 bg-[#00F2FF]/5 shadow-[0_0_50px_rgba(0,242,255,0.1)] mb-6 mt-4 md:mt-0"
           >
             <div className="text-white/40 text-sm mb-2 line-through font-medium">Total: ₹50,700/mo</div>
             <div className="text-2xl md:text-4xl font-bold text-[#00F2FF] mb-2">
@@ -1038,7 +1266,7 @@ export default function Home() {
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Ready to grow faster?</h2>
               <p className="text-white/45 mb-4 leading-relaxed">
-                Join 2,400+ creators who stopped wasting time and started posting content that actually performs.
+                Join creators who generated {totalGenerations.toLocaleString()}+ pieces of content with GrowFlow AI
               </p>
               <p className="text-sm text-white/30 mb-8">Free plan available · No credit card required · 7-day trial on paid plans</p>
               <div className="flex flex-wrap gap-2 justify-center mb-8">
@@ -1092,6 +1320,20 @@ export default function Home() {
               >
                 📧 growflowhelp@gmail.com
               </a>
+              <div className="flex items-center gap-4 mt-3">
+                <a href="https://instagram.com/growflowai" target="_blank" rel="noopener noreferrer"
+                  className="text-white/20 hover:text-pink-400 transition-colors">
+                  <SiInstagram className="w-4 h-4" />
+                </a>
+                <a href="https://twitter.com/growflowai" target="_blank" rel="noopener noreferrer"
+                  className="text-white/20 hover:text-white/60 transition-colors">
+                  <SiX className="w-4 h-4" />
+                </a>
+                <a href="mailto:growflowhelp@gmail.com"
+                  className="text-white/20 hover:text-cyan-400 transition-colors text-xs">
+                  📧 Support
+                </a>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-xs text-white/35">
               <Link href="/pricing"><span className="hover:text-white/60 transition-colors cursor-pointer">Pricing</span></Link>
@@ -1100,7 +1342,7 @@ export default function Home() {
               <Link href="/privacy"><span className="hover:text-white/60 transition-colors cursor-pointer">Privacy Policy</span></Link>
             </div>
           </div>
-          <div className="pt-6 border-t border-white/[0.04] flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-2">
             <span className="text-xs text-white/20">© 2026 GrowFlow AI. All rights reserved.</span>
             <div className="flex items-center gap-4 text-xs text-white/20">
               <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> Secured by Razorpay</span>
@@ -1108,6 +1350,13 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-40 w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/10 transition-all md:block hidden"
+          aria-label="Back to top"
+        >
+          <ChevronUp className="w-4 h-4" />
+        </button>
       </footer>
     </motion.div>
   );

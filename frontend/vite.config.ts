@@ -22,16 +22,30 @@ export default defineConfig({
   root: path.resolve(import.meta.dirname),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
+    sourcemap: false,
+    chunkSizeWarningLimit: 1200,
     emptyOutDir: true,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          clerk: ['@clerk/react'],
-          motion: ['framer-motion'],
-          query: ['@tanstack/react-query'],
-          charts: ['recharts'],
-          icons: ['lucide-react'],
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-ui': [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-tabs', 
+            '@radix-ui/react-select', 
+            '@radix-ui/react-dropdown-menu', 
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-label'
+          ],
+          'vendor-clerk': ['@clerk/clerk-react'],
+          'vendor-charts': ['recharts'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
+          'vendor-icons': ['lucide-react', 'react-icons'],
         }
       }
     }

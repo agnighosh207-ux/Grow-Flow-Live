@@ -13,26 +13,37 @@ import { createSubscription } from "../../services/payment-service";
 import { getRazorpayPlanId } from "../../utils/planRouter";
 import Razorpay from "razorpay";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const router: IRouter = Router();
 
 function getRazorpay() {
-  const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
-  
-  // Try to find the most appropriate key
-  const keyId = isProd 
-    ? (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID)
-    : (process.env.RAZORPAY_TEST_KEY_ID && !process.env.RAZORPAY_TEST_KEY_ID.includes("...") ? process.env.RAZORPAY_TEST_KEY_ID : (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID));
-    
-  const keySecret = isProd 
-    ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
-    : (process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...") ? process.env.RAZORPAY_TEST_KEY_SECRET : (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET));
+  const appStatus = process.env.APP_STATUS || "";
+  const isProd = 
+    process.env.NODE_ENV === "production" || 
+    appStatus === "PRODUCTION" || 
+    appStatus === "BETA" ||
+    !!process.env.RAILWAY_ENVIRONMENT;
 
-  if (!keyId || !keySecret || keyId.includes("...") || keySecret.includes("...")) {
-    logger.error({ keyId: !!keyId, keySecret: !!keySecret }, "[Razorpay] Missing or invalid API keys");
+  const keyId = isProd 
+    ? process.env.RAZORPAY_LIVE_KEY_ID 
+    : (process.env.RAZORPAY_TEST_KEY_ID?.includes("...") || !process.env.RAZORPAY_TEST_KEY_ID 
+        ? process.env.RAZORPAY_LIVE_KEY_ID 
+        : process.env.RAZORPAY_TEST_KEY_ID);
+
+  const keySecret = isProd 
+    ? process.env.RAZORPAY_LIVE_KEY_SECRET 
+    : (process.env.RAZORPAY_TEST_KEY_SECRET?.includes("...") || !process.env.RAZORPAY_TEST_KEY_SECRET 
+        ? process.env.RAZORPAY_LIVE_KEY_SECRET 
+        : process.env.RAZORPAY_TEST_KEY_SECRET);
+
+  logger.info({ isProd, hasKeyId: !!keyId, hasSecret: !!keySecret, appStatus }, "[Razorpay] Key selection");
+
+  if (!keyId || !keySecret) {
+    logger.error("[Razorpay] CRITICAL: No valid keys found");
     return { rzp: null, keyId: null };
   }
-  
+
   return { rzp: new Razorpay({ key_id: keyId, key_secret: keySecret }), keyId };
 }
 
@@ -303,7 +314,16 @@ const PLAN_CONFIG = {
   },
 };
 
-router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+const subscriptionCreateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  keyGenerator: (req: any, res: any) => req.userId || ipKeyGenerator(req, res),
+  message: { error: "Too many payment attempts. Please wait before trying again." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const user = (req as any).user;
     const { planType, couponCode, billingPeriod, currency = "INR" } = req.body as {
@@ -315,6 +335,12 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
 
     logger.info({ userId: req.userId, planType, billingPeriod, currency }, "[SUBSCRIPTION] Create request received");
     
+    if (!user) {
+      logger.error({ userId: req.userId }, "[SUBSCRIPTION] User object missing from request");
+      res.status(500).json({ error: "user_context_missing", message: "User data could not be synchronized. Please try logging out and back in." });
+      return;
+    }
+
     if (!planType) {
       res.status(400).json({ error: "planType is required" });
       return;
@@ -326,7 +352,9 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
     let razorpayPlanId: string;
     try {
       razorpayPlanId = getRazorpayPlanId(effectivePlan, billing, currency);
+      logger.info({ userId: req.userId, planId: razorpayPlanId }, "[SUBSCRIPTION] Resolved Plan ID");
     } catch (err: any) {
+      logger.error({ userId: req.userId, err: err.message, effectivePlan, billing }, "[SUBSCRIPTION] Plan Resolution Failed");
       res.status(400).json({ error: err.message });
       return;
     }
@@ -335,10 +363,16 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       ? ((PLAN_CONFIG as any).USD[effectivePlan][billing] || (PLAN_CONFIG as any).USD[effectivePlan]['monthly'])
       : ((PLAN_CONFIG as any)[effectivePlan][billing] || (PLAN_CONFIG as any)[effectivePlan]['monthly']);
 
+    if (!config) {
+      logger.error({ userId: req.userId, effectivePlan, billing }, "[SUBSCRIPTION] Pricing config missing for combination");
+      res.status(500).json({ error: "pricing_not_configured", message: "Pricing configuration for this plan is missing." });
+      return;
+    }
+
     // --- FIX: Race Condition ---
     // Prevent overwriting active paid subscriptions to avoid orphaned payments
-    // This MUST happen before calling the external createSubscription service.
     if (user.razorpaySubscriptionId && user.subscriptionStatus === "active") {
+      logger.warn({ userId: req.userId }, "[SUBSCRIPTION] Blocked: Already has active subscription");
       res.status(400).json({ 
         error: "subscription_active", 
         message: "You already have an active subscription. Please manage it in Settings." 
@@ -348,28 +382,52 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
 
     const { rzp, keyId } = getRazorpay();
     if (!rzp) {
+      logger.error({ userId: req.userId }, "[SUBSCRIPTION] Razorpay client init failed");
       res.status(503).json({ error: "Payment gateway not configured" });
       return;
     }
 
-    const subscription = await createSubscription(
-      req.userId, 
-      razorpayPlanId,
-      effectivePlan.toUpperCase(), 
-      user.email || undefined,
-      config.totalCount
-    );
+    let subscription;
+    try {
+      subscription = await createSubscription(
+        req.userId, 
+        razorpayPlanId,
+        effectivePlan.toUpperCase(), 
+        user.email || undefined,
+        config.totalCount
+      );
+    } catch (rzpErr: any) {
+      const rzpDesc = rzpErr?.error?.description || rzpErr?.message || String(rzpErr);
+      logger.error({ userId: req.userId, rzpErr: rzpErr?.error || rzpErr }, "[SUBSCRIPTION] Razorpay API Call Failed");
+      res.status(502).json({ 
+        error: "gateway_error", 
+        message: `Razorpay failed: ${rzpDesc}`,
+        details: rzpErr?.error || rzpErr
+      });
+      return;
+    }
 
-    await db.update(usersTable)
-      .set({
-        razorpaySubscriptionId: subscription.id,
-        subscriptionStatus: "pending", 
-        planType: effectivePlan,
-        couponCode: couponCode || null,
-        billingPeriod: billing,
-        subscriptionAmount: config.amount,
-      } as any)
-      .where(eq(usersTable.id, req.userId));
+    try {
+      await db.update(usersTable)
+        .set({
+          razorpaySubscriptionId: subscription.id,
+          subscriptionStatus: "pending", 
+          planType: effectivePlan,
+          couponCode: couponCode || null,
+          billingPeriod: billing,
+          subscriptionAmount: config.amount,
+        } as any)
+        .where(eq(usersTable.id, req.userId));
+    } catch (dbErr: any) {
+      logger.error({ userId: req.userId, dbErr: dbErr.message }, "[SUBSCRIPTION] DB Update Failed after Razorpay success");
+      // Note: Subscription was created but DB failed. This is a critical desync.
+      res.status(500).json({ 
+        error: "internal_error", 
+        message: "Subscription created but failed to link to your account. Please contact support.",
+        subscriptionId: subscription.id
+      });
+      return;
+    }
 
     res.json({
       subscriptionId: subscription.id,
@@ -383,15 +441,12 @@ router.post("/create", requireAuth, async (req: AuthenticatedRequest, res: Respo
       ghostMode: false
     });
   } catch (err: any) {
-    const errorMsg = err?.error?.description || err?.message || "Failed to create subscription";
     logger.error({ 
       userId: req.userId,
-      error: err?.error || err,
-      razorpayError: err?.error?.description,
-      planType: req.body.planType,
-      billingPeriod: req.body.billingPeriod
-    }, "Subscription create error");
-    res.status(500).json({ error: errorMsg });
+      error: err.message,
+      stack: err.stack
+    }, "Unexpected error in subscription create");
+    res.status(500).json({ error: err.message || "Internal server error" });
   }
 });
 
@@ -403,7 +458,7 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
-  const [currentUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+  const currentUser = (req as any).user;
   if (!currentUser) {
     res.status(404).json({ error: "User not found" });
     return;
@@ -432,10 +487,18 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
-  const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
+  const appStatus = process.env.APP_STATUS || "";
+  const isProd = 
+    process.env.NODE_ENV === "production" || 
+    appStatus === "PRODUCTION" || 
+    appStatus === "BETA" ||
+    !!process.env.RAILWAY_ENVIRONMENT;
+
   const keySecret = isProd 
     ? process.env.RAZORPAY_LIVE_KEY_SECRET
-    : process.env.RAZORPAY_TEST_KEY_SECRET;
+    : (process.env.RAZORPAY_TEST_KEY_SECRET?.includes("...") || !process.env.RAZORPAY_TEST_KEY_SECRET 
+        ? process.env.RAZORPAY_LIVE_KEY_SECRET 
+        : process.env.RAZORPAY_TEST_KEY_SECRET);
 
   if (!keySecret) {
     res.status(503).json({ error: "Payment gateway not configured" });
@@ -603,12 +666,20 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
     return;
   }
 
-  const isProd = process.env.NODE_ENV === "production" && process.env.APP_STATUS !== "BETA";
+  const appStatus = process.env.APP_STATUS || "";
+  const isProd = 
+    process.env.NODE_ENV === "production" || 
+    appStatus === "PRODUCTION" || 
+    appStatus === "BETA" ||
+    !!process.env.RAILWAY_ENVIRONMENT;
+
   const keySecret = isProd 
     ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
-    : (process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...") ? process.env.RAZORPAY_TEST_KEY_SECRET : (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET));
+    : (process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...") 
+        ? process.env.RAZORPAY_TEST_KEY_SECRET 
+        : (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET));
 
-  if (!keySecret) {
+  if (!keySecret || keySecret.includes("...")) {
     res.status(503).json({ error: "Payment gateway not configured" });
     return;
   }
@@ -651,6 +722,51 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
 
 
 
+const HARDCODED_COUPONS: Record<string, { credits: number; days: number; description: string; discount?: number; type?: 'percent' | 'flat' }> = {
+  'LAUNCH50': { credits: 50, days: 0, description: "Launch special: 50 bonus credits", discount: 50, type: 'percent' },
+  'FRIEND15': { credits: 0, days: 15, description: "Friend referral: 15 Infinity days", discount: 15, type: 'percent' },
+  'BETA100': { credits: 100, days: 0, description: "Beta tester reward: 100 credits", discount: 100, type: 'percent' },
+};
+
+async function validateCouponCode(code: string) {
+  const normalized = code.trim().toUpperCase();
+  
+  // 1. Check DB first
+  const [dbCoupon] = await db.select().from(couponsTable).where(eq(couponsTable.code, normalized));
+  if (dbCoupon && dbCoupon.isActive) {
+    if (dbCoupon.expiry && new Date(dbCoupon.expiry) < new Date()) {
+      return { valid: false, reason: 'Coupon expired' };
+    }
+    if (dbCoupon.maxUses && dbCoupon.usesCount >= dbCoupon.maxUses) {
+      return { valid: false, reason: 'Coupon usage limit reached' };
+    }
+    return { 
+      valid: true, 
+      discount: dbCoupon.discountPercent, 
+      type: 'percent' as const, 
+      source: 'db' as const, 
+      coupon: dbCoupon,
+      credits: dbCoupon.discountPercent > 0 ? 0 : 25, 
+      days: 7,
+      description: `Applied ${dbCoupon.code} successfully!`
+    };
+  }
+  
+  // 2. Fall back to hardcoded
+  const hardcoded = HARDCODED_COUPONS[normalized];
+  if (hardcoded) {
+    return { 
+      valid: true, 
+      ...hardcoded, 
+      source: 'hardcoded' as const,
+      discount: hardcoded.discount || 0,
+      type: hardcoded.type || 'percent'
+    };
+  }
+  
+  return { valid: false, reason: 'Invalid coupon code' };
+}
+
 router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { rzp } = getRazorpay();
   const user = (req as any).user;
@@ -658,8 +774,9 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
   const canCancel = user.subscriptionStatus === "active" || user.subscriptionStatus === "trial";
   
   if (rzp && user.razorpaySubscriptionId && canCancel) {
+    let cancelResponse;
     try {
-      await rzp.subscriptions.cancel(user.razorpaySubscriptionId, true);
+      cancelResponse = await rzp.subscriptions.cancel(user.razorpaySubscriptionId, true);
     } catch (e: any) {
       logger.error({ error: e }, "Razorpay cancel error");
       res.status(502).json({ 
@@ -668,17 +785,35 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
       });
       return;
     }
+
+    const periodEnd = (cancelResponse as any)?.current_end 
+      ? new Date((cancelResponse as any).current_end * 1000) 
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); 
+
     await db.update(usersTable)
-      .set({ subscriptionStatus: "canceled" })
+      .set({ 
+        subscriptionStatus: "canceled",
+        planExpiry: periodEnd
+      })
       .where(eq(usersTable.id, req.userId));
       
     // Trigger churn sequence day 1
     import("../../services/emailSequences").then(({ sendSequenceEmail }) => {
       sendSequenceEmail(req.userId, "churn", 1);
     }).catch((e) => logger.error({ err: e.message }, "Failed to trigger churn email"));
-  }
 
-  res.json({ success: true, message: "Subscription will end at period close." });
+    res.json({ 
+      accessUntil: periodEnd.toISOString()
+    });
+    
+    if (user.email) {
+      import("../../services/email").then(({ sendCancellationEmail }) => {
+        sendCancellationEmail(user.email, periodEnd).catch(() => {});
+      }).catch(() => {});
+    }
+  } else {
+    res.status(400).json({ error: "No active subscription to cancel" });
+  }
   invalidateAuthCache(req.userId);
 });
 
@@ -711,20 +846,14 @@ router.get("/validate-coupon", requireAuth, async (req: AuthenticatedRequest, re
     res.status(400).json({ error: "No code provided" });
     return;
   }
-  const [coupon] = await db.select().from(couponsTable).where(eq(couponsTable.code, code));
-  if (!coupon || !coupon.isActive) {
-    res.status(404).json({ error: "Invalid or inactive coupon code" });
+  
+  const result = await validateCouponCode(code);
+  if (!result.valid) {
+    res.status(400).json({ error: result.reason });
     return;
   }
-  if (coupon.expiry && new Date(coupon.expiry) < new Date()) {
-    res.status(400).json({ error: "Coupon code has expired" });
-    return;
-  }
-  if (coupon.maxUses && coupon.usesCount >= coupon.maxUses) {
-    res.status(400).json({ error: "Coupon usage limit reached" });
-    return;
-  }
-  res.json({ success: true, discountPercent: coupon.discountPercent });
+  
+  res.json({ success: true, discountPercent: result.discount });
 });
 
 router.post("/apply-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -734,35 +863,9 @@ router.post("/apply-coupon", requireAuth, async (req: AuthenticatedRequest, res:
     return;
   }
   
-  const [dbCoupon] = await db.select().from(couponsTable).where(eq(couponsTable.code, code.trim().toUpperCase()));
-  
-  let coupon: { credits: number; days: number; description: string } | null = null;
-  
-  if (dbCoupon && dbCoupon.isActive) {
-    if (dbCoupon.expiry && new Date(dbCoupon.expiry) < new Date()) {
-        res.status(400).json({ error: "Coupon code has expired" });
-        return;
-    }
-    if (dbCoupon.maxUses && dbCoupon.usesCount >= dbCoupon.maxUses) {
-        res.status(400).json({ error: "Coupon usage limit reached" });
-        return;
-    }
-    coupon = { 
-        credits: dbCoupon.discountPercent > 0 ? 0 : 25, // Fallback for DB coupons if not specified
-        days: 7, 
-        description: `Applied ${dbCoupon.code} successfully!` 
-    };
-  } else {
-    const VALID_COUPONS: Record<string, { credits: number; days: number; description: string }> = {
-      "LAUNCH50": { credits: 50, days: 0, description: "Launch special: 50 bonus credits" },
-      "FRIEND15": { credits: 0, days: 15, description: "Friend referral: 15 Infinity days" },
-      "BETA100": { credits: 100, days: 0, description: "Beta tester reward: 100 credits" },
-    };
-    coupon = VALID_COUPONS[code.trim().toUpperCase()] || null;
-  }
-
-  if (!coupon) {
-    res.status(400).json({ error: "Invalid or expired coupon code" });
+  const result = await validateCouponCode(code);
+  if (!result.valid) {
+    res.status(400).json({ error: result.reason });
     return;
   }
   
@@ -773,22 +876,22 @@ router.post("/apply-coupon", requireAuth, async (req: AuthenticatedRequest, res:
   }
   
   const updates: any = { couponCode: code.trim().toUpperCase() };
-  if (coupon.credits > 0) updates.generationsRemaining = sql`${usersTable.generationsRemaining} + ${coupon.credits}`;
-  if (coupon.days > 0) {
+  if (result.credits && result.credits > 0) updates.generationsRemaining = sql`${usersTable.generationsRemaining} + ${result.credits}`;
+  if (result.days && result.days > 0) {
     const base = new Date();
-    updates.trialEndsAt = new Date(base.getTime() + coupon.days * 24 * 60 * 60 * 1000);
+    updates.trialEndsAt = new Date(base.getTime() + result.days * 24 * 60 * 60 * 1000);
     updates.subscriptionStatus = "trial";
   }
   
   await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId));
   
-  if (dbCoupon) {
+  if (result.source === 'db' && result.coupon) {
     await db.update(couponsTable)
       .set({ usesCount: sql`${couponsTable.usesCount} + 1` })
-      .where(eq(couponsTable.code, dbCoupon.code));
+      .where(eq(couponsTable.code, result.coupon.code));
   }
 
-  res.json({ success: true, message: coupon.description });
+  res.json({ success: true, message: result.description });
   invalidateAuthCache(req.userId);
 });
 
@@ -855,7 +958,7 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
     const updatedUsers = await db.update(usersTable)
       .set(updates)
       .where(eq(usersTable.razorpaySubscriptionId, subscriptionId))
-      .returning({ id: usersTable.id, email: usersTable.email, planType: usersTable.planType });
+      .returning({ id: usersTable.id, email: usersTable.email, planType: usersTable.planType, billingPeriod: usersTable.billingPeriod });
 
     if (event.event === "subscription.charged" && updatedUsers.length > 0) {
       const payload = event?.payload?.payment?.entity;
@@ -910,9 +1013,16 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
         grantReferralReward(u.id).catch((err: any) => logger.error({ err: String(err), userId: u.id }, "grantReferralReward webhook error"));
         
         if (u.email) {
-          import("../../services/email").then(({ sendRenewalEmail }) => {
-             sendRenewalEmail(u.email!, u.planType === 'infinity' ? 'Infinity' : u.planType === 'creator' ? 'Creator' : 'Starter');
-          }).catch((err: any) => logger.error({ err: String(err), email: u.email }, "sendRenewalEmail error"));
+          const planName = u.planType === 'infinity' ? 'Infinity' : u.planType === 'creator' ? 'Creator' : 'Starter';
+          const chargedAmount = payload.amount;
+          const billingPeriod = u.billingPeriod || 'monthly';
+          
+          import("../../services/email").then(({ sendPaymentSuccessEmail, sendRenewalEmail }) => {
+             // For simplicity, we call both or we can just call success if it's new. 
+             // sendPaymentSuccessEmail is more detailed as requested.
+             sendPaymentSuccessEmail(u.email!, planName, chargedAmount, billingPeriod).catch(() => {});
+             sendRenewalEmail(u.email!, planName).catch(() => {});
+          }).catch((err: any) => logger.error({ err: String(err), email: u.email }, "Email sending error in webhook"));
         }
       }
     } else if (newStatus === "past_due" && updatedUsers.length > 0) {

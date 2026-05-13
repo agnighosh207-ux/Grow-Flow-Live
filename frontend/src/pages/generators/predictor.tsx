@@ -84,7 +84,7 @@ export default function PredictorPage() {
     const offset = circumference - (score / 100) * circumference;
 
     return (
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center justify-center">
         <svg width={center * 2} height={center * 2} className="transform -rotate-90">
           <circle cx={center} cy={center} r={radius} stroke="currentColor" strokeWidth={strokeWidth} fill="transparent" className="text-muted/10" />
           <motion.circle
@@ -102,7 +102,7 @@ export default function PredictorPage() {
   };
 
   return (
-    <PageWrapper maxWidth="lg" className="py-10">
+    <PageWrapper maxWidth="lg" className="pb-24 md:pb-8 space-y-10">
       <FeatureGuideBanner 
         toolKey="predictor" 
         title="Viral Predictor" 
@@ -210,6 +210,20 @@ export default function PredictorPage() {
             </CardContent>
           </Card>
 
+          {!loading && !result && (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[400px]"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                <Sparkles className="w-5 h-5 text-white/20" />
+              </div>
+              <p className="text-white/25 text-sm font-medium">Your prediction analysis will appear here</p>
+              <p className="text-white/15 text-xs mt-1">Paste your content above and hit Predict Performance</p>
+            </motion.div>
+          )}
           <AnimatePresence>
             {result && (
               <motion.div

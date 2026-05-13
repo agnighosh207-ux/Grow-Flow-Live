@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
   Sparkles, TrendingUp, BarChart3, CalendarDays, Flame, Wand2,
   Shield, Clock, ChevronRight, Crown, Lock, AlertTriangle,
-  IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users
+  IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown
 } from "lucide-react";
 import { MagneticButton } from "@/components/shared/MagneticButton";
 import { Hover3DCard } from "@/components/shared/Hover3DCard";
@@ -24,7 +24,7 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string; badge?: string }[] =
   { key: "monthly", label: "Monthly" },
   { key: "quarterly", label: "3-Month", badge: "Save 10%" },
   { key: "half-yearly", label: "6-Month", badge: "Save 20%" },
-  { key: "yearly", label: "Yearly" },
+  { key: "yearly", label: "Yearly", badge: "-20%" },
 ];
 
 const BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
@@ -311,73 +311,60 @@ export default function PricingPage() {
 
           <div className="text-center">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-4 py-1.5 mb-5">
-                <Zap className="w-3.5 h-3.5" />
-                Simple, Transparent Pricing
-              </span>
-              <h1 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">
+              <div className="flex flex-col items-center gap-6 mb-8">
+                {/* Promo Badge */}
+                <span className="inline-flex items-center gap-2 text-[10px] font-black tracking-widest uppercase text-white/40 bg-white/5 border border-white/10 rounded-full px-5 py-2">
+                   Save up to 20% with yearly | Most popular among serious creators
+                </span>
+
+                {/* Currency Toggle */}
+                <div className="bg-[#0A051A] border border-white/10 rounded-2xl p-1 flex gap-1">
+                  <button
+                    onClick={() => setCurrency("INR")}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "INR" ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/20" : "text-white/30 hover:text-white/50"}`}
+                  >
+                    <span className="w-4 h-3 bg-cyan-400/20 rounded-sm flex items-center justify-center text-[8px]">IN</span>
+                    INR
+                  </button>
+                  <button
+                    onClick={() => setCurrency("USD")}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "USD" ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/20" : "text-white/30 hover:text-white/50"}`}
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    USD
+                  </button>
+                </div>
+              </div>
+
+              <h1 className="text-4xl sm:text-6xl font-black mb-4 tracking-tighter">
                 Pick your{" "}
-                <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-pink-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-cyan-400 via-emerald-400 to-cyan-500 bg-clip-text text-transparent">
                   growth plan
                 </span>
               </h1>
-              <p className="text-white/60 text-lg max-w-xl mx-auto">
+              <p className="text-white/40 text-lg max-w-xl mx-auto font-medium">
                 Start free with 5 monthly generations. Upgrade when you're ready to scale.
-              </p>
-              <p className="text-white/80 font-medium text-sm mt-3 bg-cyan-500/10 inline-block px-4 py-2 rounded-lg border border-cyan-500/20">
-                Content in your audience’s language = higher engagement 🚀
-              </p>
-              <p className="text-white/35 text-sm mt-3">
-                Built to help you grow faster, not just generate content.
               </p>
             </motion.div>
           </div>
         </div>
 
-        {/* Currency + Billing Toggle */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-1 flex gap-1">
-            <button
-              onClick={() => setCurrency("INR")}
-              className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${currency === "INR" ? "bg-cyan-600 text-white" : "text-white/50 hover:text-white"}`}
-            >
-              🇮🇳 INR
-            </button>
-            <button
-              onClick={() => setCurrency("USD")}
-              className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${currency === "USD" ? "bg-cyan-600 text-white" : "text-white/50 hover:text-white"}`}
-            >
-              🌍 USD
-            </button>
-          </div>
-          <div className="flex flex-col items-center">
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-1.5 text-xs text-emerald-400 font-semibold text-center mb-4">
-              🎉 Save up to 20% with yearly — most popular among serious creators
-            </div>
-            <div className="relative bg-white/5 border border-white/10 rounded-xl p-1 flex gap-1 flex-wrap justify-center">
+        <div className="flex items-center justify-center mb-12">
+          <div className="flex items-center justify-center">
+            <div className="inline-flex flex-wrap items-center justify-center bg-white/5 border border-white/10 rounded-2xl p-1 gap-1">
               {BILLING_OPTIONS.map((opt) => (
                 <button
                   key={opt.key}
                   onClick={() => setBilling(opt.key)}
-                  className={`relative px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-all duration-200 ${
-                    opt.key === 'yearly' 
-                      ? `font-bold ${billing === 'yearly' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-white/50 hover:text-white/70'}`
-                      : `font-medium ${billing === opt.key ? "text-white" : "text-white/50 hover:text-white/70"}`
+                  className={`px-3 md:px-5 py-2.5 rounded-xl text-[10px] md:text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+                    billing === opt.key
+                      ? (opt.key === 'yearly' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/10 text-white shadow-sm")
+                      : "text-white/40 hover:text-white/60"
                   }`}
                 >
-                  {billing === opt.key && opt.key !== 'yearly' && (
-                    <motion.div
-                      layoutId="billingPill"
-                      className="absolute inset-0 bg-cyan-600 rounded-lg"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                    />
-                  )}
-                  <span className="relative z-10">
-                    {opt.label}
-                    {opt.key === 'yearly' && <span className="text-emerald-400 ml-1">-20%</span>}
-                  </span>
-                  {opt.badge && opt.key !== 'yearly' && (
-                    <span className="relative z-10 ml-1 sm:ml-1.5 text-[9px] sm:text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full px-1 sm:px-1.5 py-0.5 font-semibold">
+                  {opt.label}
+                  {opt.badge && (
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${billing === opt.key ? (opt.key === 'yearly' ? 'bg-emerald-500/10' : 'bg-emerald-500/20 text-emerald-400') : 'bg-emerald-500/10 text-emerald-400/50'}`}>
                       {opt.badge}
                     </span>
                   )}
@@ -388,324 +375,320 @@ export default function PricingPage() {
         </div>
 
         {/* Plan Cards */}
-        <div className="flex overflow-x-auto pb-8 sm:grid sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-16 snap-x snap-mandatory scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-
-          {/* Free / Explorer */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="w-full min-w-[280px] sm:min-w-0 snap-start"
-          >
-            <Hover3DCard className="h-full">
-              <div className="hyper-hover-card rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex flex-col h-full">
-                <div className="mb-6">
-                  <p className="text-xs font-semibold tracking-widest uppercase text-white/40 mb-2">Explorer</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black">{formatPrice(0)}</span>
-                    <span className="text-white/40 text-sm">/ forever</span>
-                  </div>
-                  <p className="text-white/50 text-sm mt-1">Try it all before you commit</p>
-                </div>
-
-                <div className="space-y-2.5 flex-1 mb-6">
-                  {[
-                    "5 free monthly generations",
-                    "All 4 platforms unlocked",
-                    "Basic English Output",
-                    "Full content history",
-                  ].map((f) => (
-                    <div key={f} className="flex items-start gap-2.5">
-                      <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                      <span className="text-white/70 text-sm">{f}</span>
-                    </div>
-                  ))}
-                  <div className="pt-2 border-t border-white/10 mt-1">
-                    <p className="text-white/30 text-xs italic">No credit card required</p>
-                  </div>
-                </div>
-
-                <MagneticButton>
-                  <Button
-                    variant="outline"
-                    className="w-full border-white/20 text-white/60 hover:bg-white/5"
-                    onClick={() => navigate(sub ? "/generate" : "/sign-in")}
-                  >
-                    {sub ? "Start Exploring" : "Start Exploring Free"}
-                  </Button>
-                </MagneticButton>
-              </div>
-            </Hover3DCard>
-          </motion.div>
-
-          {/* Starter */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="w-full min-w-[280px] sm:min-w-0 snap-start"
-          >
-            <Hover3DCard className="h-full">
-              <div className="hyper-hover-card rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/30 to-teal-950/20 p-6 flex flex-col h-full">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className="text-xs font-semibold tracking-widest uppercase text-emerald-400">Starter</p>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    {billing === "monthly" && (
-                        <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.starter)}</span>
-                    )}
+        <div className="overflow-x-auto pb-4 -mx-4 px-4 md:overflow-visible md:mx-0 md:px-0 mb-16">
+          <div className="flex gap-4 min-w-max md:min-w-0 md:grid md:grid-cols-4 items-start">
+            {/* Explorer */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="w-[280px] md:w-auto flex-shrink-0"
+            >
+              <Hover3DCard className="h-full">
+                <div className="hyper-hover-card rounded-2xl border border-white/5 bg-white/[0.02] p-6 flex flex-col h-full">
+                  <div className="mb-6">
+                    <p className="text-xs font-semibold tracking-widest uppercase text-white/20 mb-2">Explorer</p>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-emerald-100">{formatPrice(starterPrice)}</span>
-                      <span className="text-white/40 text-sm">/ mo</span>
-                      {billing === "monthly" && (
-                        <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
-                      )}
+                      <span className="text-4xl font-black text-white">₹0</span>
+                      <span className="text-white/40 text-sm">/ forever</span>
                     </div>
+                    <p className="text-white/40 text-xs mt-1">Try it all before you commit</p>
                   </div>
-                  {billing !== "monthly" && (
-                    <p className="text-white/40 text-xs mt-1">
-                      {formatPrice(totals.starter[billing])} billed {billingLabel(billing)}
-                      {" "}·{" "}
-                      <span className="text-emerald-400">Save {formatPrice((prices.starter.monthly * getBillingMonths(billing)) - totals.starter[billing])}</span>
-                    </p>
-                  )}
-                  <p className="text-white/40 text-[11px] mt-0.5">Introductory pricing for early users</p>
-                  <p className="text-white/55 text-sm mt-1">For creators just getting started</p>
-                </div>
 
-                <div className="space-y-2.5 flex-1 mb-6">
-                  {[
-                    "25 content generations / month",
-                    "1 Regeneration per topic",
-                    "All 4 platforms unlocked",
-                    "English + 1 Premium Language",
-                    "Idea Generator + Strategy Planner",
-                    "Viral Hooks Generator",
-                    "Improve Competitor Content",
-                    "Saved Favorites & History",
-                  ].map((f) => (
-                    <div key={f} className="flex items-start gap-2.5">
-                      <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                      <span className="text-white/70 text-sm">{f}</span>
-                    </div>
-                  ))}
-                  <div className="pt-2 border-t border-emerald-500/10 mt-1">
-                    <p className="text-emerald-400/60 text-xs">✦ Perfect to try before upgrading</p>
-                  </div>
-                  <div className="rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2 flex items-start gap-2 mt-2">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                    <p className="text-amber-300/80 text-[11px] leading-relaxed">
-                      Basic tools only. No viral score or multi-variation.
-                    </p>
-                  </div>
-                </div>
-
-                <MagneticButton>
-                  <Button
-                    className={`w-full border transition-all ${
-                      getPlanState("starter") === "current"
-                        ? "bg-emerald-600/30 border-emerald-500/40 text-emerald-300 cursor-default"
-                        : getPlanState("starter") === "downgrade"
-                        ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
-                        : "bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 text-emerald-200 hover:text-white"
-                    }`}
-                    onClick={() => handlePlanClick("starter")}
-                  >
-                    {getPlanState("starter") === "current" ? "✓ Current Plan" : getPlanState("starter") === "downgrade" ? "Lower Plan" : "Get Starter →"}
-                    {getPlanState("starter") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
-                  </Button>
-                </MagneticButton>
-              </div>
-            </Hover3DCard>
-          </motion.div>
-
-          {/* Creator */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="w-full min-w-[280px] sm:min-w-0 snap-start"
-          >
-            <Hover3DCard className="h-full">
-              <div className="hyper-hover-card relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)] h-full">
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                    <Flame className="w-3.5 h-3.5 text-yellow-300" />
-                    MOST POPULAR
-                  </span>
-                </div>
-
-                <div className="mb-6 mt-2">
-                  <p className="text-xs font-semibold tracking-widest uppercase text-cyan-400 mb-2">Creator</p>
-                  <div className="flex flex-col gap-1">
-                    {billing === "monthly" && (
-                        <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.creator)}</span>
-                    )}
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-white">{formatPrice(creatorPrice)}</span>
-                      <span className="text-white/40 text-sm">/ mo</span>
-                      {billing === "monthly" && (
-                        <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
-                      )}
-                    </div>
-                  </div>
-                  {billing !== "monthly" && (
-                    <p className="text-white/40 text-xs mt-1">
-                      {formatPrice(totals.creator[billing])} billed {billingLabel(billing)}
-                      {" "}·{" "}
-                      <span className="text-emerald-400">Save {formatPrice((prices.creator.monthly * getBillingMonths(billing)) - totals.creator[billing])}</span>
-                    </p>
-                  )}
-                  <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">{currency === "INR" ? "Best for Indian creators 🇮🇳" : "Best for global growth 🌍"}</p>
-                </div>
-
-                <div className="space-y-2.5 flex-1 mb-4">
-                  {[
-                    "150 content generations / month",
-                    "3 Regenerations per topic",
-                    "Multi-Variation (3 outputs per gen)",
-                    "Viral Score™ enabled",
-                    "Trend Engine (Live Insights)",
-                    "All 4 platforms",
-                    "Hooks, CTAs & hashtags",
-                    "Idea Generator + 7-Day Strategy",
-                    "🌍 Multi-language content (Hindi, Hinglish, Bengali)",
-                    "Improve Competitor Content",
-                    "Download as .txt",
-                  ].map((f) => (
-                    <div key={f} className="flex items-start gap-2.5">
-                      <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
-                      <span className="text-white/75 text-sm">{f}</span>
-                    </div>
-                  ))}
-
-                  <div className="pt-3 border-t border-white/8 mt-1 space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-2">Unlock more with Infinity</p>
+                  <div className="space-y-2.5 flex-1 mb-6">
                     {[
-                      { icon: Wand2, label: "AI Writing Styles", color: "text-cyan-400/60" },
-                      { icon: CalendarDays, label: "Content Calendar", color: "text-blue-400/60" }
-                    ].map(({ icon: Icon, label, color }) => (
-                      <div key={label} className="flex items-center gap-2 opacity-60">
-                        <Lock className="w-3 h-3 text-white/20 shrink-0" />
-                        <Icon className={`w-3 h-3 ${color} shrink-0`} />
-                        <span className="text-white/35 text-xs line-through">{label}</span>
+                      "5 free monthly generations",
+                      "All 4 platforms unlocked",
+                      "Basic English Output",
+                      "Full content history",
+                    ].map((f) => (
+                      <div key={f} className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                        <span className="text-white/70 text-sm">{f}</span>
                       </div>
                     ))}
-                    <button
-                      onClick={() => handlePlanClick("infinity")}
-                      className="mt-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 font-medium"
+                  </div>
+
+                  <p className="text-[10px] text-white/20 mb-4 text-center italic">No credit card required</p>
+
+                  <Link href="/sign-up" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full py-6 bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold rounded-xl"
                     >
-                      Unlock with Infinity →
-                    </button>
-                  </div>
+                      Start Exploring
+                    </Button>
+                  </Link>
                 </div>
-
-                <MagneticButton>
-                  <Button
-                    className={`w-full border transition-all ${
-                      getPlanState("creator") === "current"
-                        ? "bg-cyan-600/30 border-cyan-500/40 text-cyan-300 cursor-default"
-                        : getPlanState("creator") === "downgrade"
-                        ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
-                        : "shine-effect bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
-                    }`}
-                    onClick={() => handlePlanClick("creator")}
-                  >
-                    {getPlanState("creator") === "current" ? "✓ Current Plan" : getPlanState("creator") === "downgrade" ? "Lower Plan" : "Get Creator →"}
-                    {getPlanState("creator") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
-                  </Button>
-                </MagneticButton>
-              </div>
-            </Hover3DCard>
-          </motion.div>
-
-          {/* Infinity */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="w-full min-w-[280px] sm:min-w-0 snap-start"
-          >
-            <Hover3DCard className="h-full">
-              <div className="hyper-hover-card relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col h-full">
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                    <Crown className="w-3.5 h-3.5" />
-                    UNLIMITED POWER
-                  </span>
-                </div>
-
-                <div className="mb-6 mt-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className="text-xs font-semibold tracking-widest uppercase text-teal-300">Infinity</p>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    {billing === "monthly" && (
-                        <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.infinity)}</span>
-                    )}
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">
-                        {formatPrice(infinityPrice)}
-                      </span>
-                      <span className="text-white/40 text-sm">/ mo</span>
-                      {billing === "monthly" && (
-                        <span className="text-xs text-teal-400 ml-2 font-semibold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">(Launching Offer)</span>
-                      )}
+              </Hover3DCard>
+            </motion.div>
+            {/* Starter */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              className="w-[300px] md:w-auto flex-shrink-0"
+            >
+              <Hover3DCard className="h-full">
+                <div className="hyper-hover-card rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/30 to-teal-950/20 p-6 flex flex-col h-full">
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-xs font-semibold tracking-widest uppercase text-emerald-400">Starter</p>
                     </div>
-                  </div>
-                  {billing !== "monthly" && (
-                    <p className="text-white/40 text-xs mt-1">
-                      {formatPrice(totals.infinity[billing])} billed {billingLabel(billing)}
-                      {" "}·{" "}
-                      <span className="text-emerald-400">Save {formatPrice((prices.infinity.monthly * getBillingMonths(billing)) - totals.infinity[billing])}</span>
-                    </p>
-                  )}
-                  <p className="text-white/60 text-sm mt-1">For agencies & super users</p>
-                  <p className="text-[11px] text-teal-400/70 font-medium mt-0.5">Introductory pricing for early users</p>
-                </div>
-
-                <div className="space-y-2.5 flex-1 mb-6">
-                  <p className="text-[11px] text-teal-400 font-semibold uppercase tracking-wider mb-1.5">
-                    Everything in Creator, plus:
-                  </p>
-                  {[
-                    { label: "Unlimited generations*", icon: InfinityIcon, desc: "Fair usage limits apply" },
-                    { label: "Unlimited Regenerations", icon: RefreshCw },
-                    { label: "AI Writing Styles", icon: Wand2 },
-                    { label: "Trending Topics Feed", icon: TrendingUp },
-                    { label: "Content Calendar", icon: CalendarDays },
-                    { label: "Performance Insights", icon: BarChart3 },
-                    { label: "Priority AI (2× faster)", icon: Zap },
-                    { label: "Priority Support", icon: Shield },
-                  ].map(({ label, icon: Icon, desc }) => (
-                    <div key={label} className="flex items-start gap-2.5">
-                      <Icon className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
-                      <div>
-                        <span className="text-white/85 text-sm">{label}</span>
-                        {desc && <p className="text-white/40 text-[10px] m-0">{desc}</p>}
+                    <div className="flex flex-col gap-1">
+                      {billing === "monthly" && (
+                          <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.starter)}</span>
+                      )}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black text-emerald-100">{formatPrice(starterPrice)}</span>
+                        <span className="text-white/40 text-sm">/ mo</span>
+                        {billing === "monthly" && (
+                          <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                    {billing !== "monthly" && (
+                      <p className="text-white/40 text-xs mt-1">
+                        {formatPrice(totals.starter[billing])} billed {billingLabel(billing)}
+                        {" "}·{" "}
+                        <span className="text-emerald-400">Save {formatPrice((prices.starter.monthly * getBillingMonths(billing)) - totals.starter[billing])}</span>
+                      </p>
+                    )}
+                    <p className="text-white/40 text-[11px] mt-0.5">Introductory pricing for early users</p>
+                    <p className="text-white/55 text-sm mt-1">For creators just getting started</p>
+                  </div>
 
-                <MagneticButton>
-                  <Button
-                    className={`w-full border transition-all ${
-                      getPlanState("infinity") === "current"
-                        ? "bg-teal-600/30 border-teal-500/40 text-teal-300 cursor-default"
-                        : "shine-effect bg-gradient-to-r from-teal-600/80 to-pink-600/80 hover:from-teal-500 hover:to-pink-500 border border-white/20 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)]"
-                    }`}
-                    onClick={() => handlePlanClick("infinity")}
-                  >
-                    {getPlanState("infinity") === "current" ? "✓ Current Plan" : "Unlock Infinity →"}
-                    {getPlanState("infinity") !== "current" && <ChevronRight className="w-4 h-4 ml-1" />}
-                  </Button>
-                </MagneticButton>
-                <p className="text-center text-white/35 text-xs mt-2.5">Cancel anytime</p>
+                  <div className="space-y-2.5 flex-1 mb-6">
+                    {[
+                      "25 content generations / month",
+                      "1 Regeneration per topic",
+                      "All 4 platforms unlocked",
+                      "English + 1 Premium Language",
+                      "Idea Generator + Strategy Planner",
+                      "Viral Hooks Generator",
+                      "Improve Competitor Content",
+                      "Saved Favorites & History",
+                    ].map((f) => (
+                      <div key={f} className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                        <span className="text-white/70 text-sm">{f}</span>
+                      </div>
+                    ))}
+                    <div className="pt-2 border-t border-emerald-500/10 mt-1">
+                      <p className="text-emerald-400/60 text-xs">✦ Perfect to try before upgrading</p>
+                    </div>
+                    <div className="rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2 flex items-start gap-2 mt-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-amber-300/80 text-[11px] leading-relaxed">
+                        Basic tools only. No viral score or multi-variation.
+                      </p>
+                    </div>
+                  </div>
+
+                  <MagneticButton>
+                    <Button
+                      className={`w-full border transition-all ${
+                        getPlanState("starter") === "current"
+                          ? "bg-emerald-600/30 border-emerald-500/40 text-emerald-300 cursor-default"
+                          : getPlanState("starter") === "downgrade"
+                          ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
+                          : "bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 text-emerald-200 hover:text-white"
+                      }`}
+                      onClick={() => handlePlanClick("starter")}
+                    >
+                      {getPlanState("starter") === "current" ? "✓ Current Plan" : getPlanState("starter") === "downgrade" ? "Lower Plan" : "Get Starter →"}
+                      {getPlanState("starter") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
+                    </Button>
+                  </MagneticButton>
+                </div>
+              </Hover3DCard>
+            </motion.div>
+
+            {/* Creator */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="w-[300px] md:w-auto flex-shrink-0 -translate-y-2 md:-translate-y-4 relative"
+            >
+              <div className="absolute -top-3.5 inset-x-0 flex justify-center z-10">
+                <span className="bg-gradient-to-r from-cyan-500 to-teal-500 text-black text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">
+                  ⚡ Most Popular
+                </span>
               </div>
-            </Hover3DCard>
-          </motion.div>
+              <Hover3DCard className="h-full">
+                <div className="hyper-hover-card relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)] h-full">
+                  <div className="mb-6 mt-2">
+                    <p className="text-xs font-semibold tracking-widest uppercase text-cyan-400 mb-2">Creator</p>
+                    <div className="flex flex-col gap-1">
+                      {billing === "monthly" && (
+                          <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.creator)}</span>
+                      )}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black text-white">{formatPrice(creatorPrice)}</span>
+                        <span className="text-white/40 text-sm">/ mo</span>
+                        {billing === "monthly" && (
+                          <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
+                        )}
+                      </div>
+                    </div>
+                    {billing !== "monthly" && (
+                      <p className="text-white/40 text-xs mt-1">
+                        {formatPrice(totals.creator[billing])} billed {billingLabel(billing)}
+                        {" "}·{" "}
+                        <span className="text-emerald-400">Save {formatPrice((prices.creator.monthly * getBillingMonths(billing)) - totals.creator[billing])}</span>
+                      </p>
+                    )}
+                    <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">{currency === "INR" ? "Best for Indian creators 🇮🇳" : "Best for global growth 🌍"}</p>
+                  </div>
+
+                  <div className="space-y-2.5 flex-1 mb-4">
+                    {[
+                      "150 content generations / month",
+                      "3 Regenerations per topic",
+                      "Multi-Variation (3 outputs per gen)",
+                      "Viral Score™ enabled",
+                      "Trend Engine (Live Insights)",
+                      "All 4 platforms",
+                      "Hooks, CTAs & hashtags",
+                      "Idea Generator + 7-Day Strategy",
+                      "🌍 Multi-language content (Hindi, Hinglish, Bengali)",
+                      "Improve Competitor Content",
+                      "Download as .txt",
+                    ].map((f) => (
+                      <div key={f} className="flex items-start gap-2.5">
+                        <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                        <span className="text-white/75 text-sm">{f}</span>
+                      </div>
+                    ))}
+
+                    <div className="pt-3 border-t border-white/8 mt-1 space-y-1.5">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-2">Unlock more with Infinity</p>
+                      {[
+                        { icon: Wand2, label: "AI Writing Styles", color: "text-cyan-400/60" },
+                        { icon: CalendarDays, label: "Content Calendar", color: "text-blue-400/60" }
+                      ].map(({ icon: Icon, label, color }) => (
+                        <div key={label} className="flex items-center gap-2 opacity-60">
+                          <Lock className="w-3 h-3 text-white/20 shrink-0" />
+                          <Icon className={`w-3 h-3 ${color} shrink-0`} />
+                          <span className="text-white/35 text-xs line-through">{label}</span>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => handlePlanClick("infinity")}
+                        className="mt-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 font-medium"
+                      >
+                        Unlock with Infinity →
+                      </button>
+                    </div>
+                  </div>
+
+                  <MagneticButton>
+                    <Button
+                      className={`w-full border transition-all ${
+                        getPlanState("creator") === "current"
+                          ? "bg-cyan-600/30 border-cyan-500/40 text-cyan-300 cursor-default"
+                          : getPlanState("creator") === "downgrade"
+                          ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
+                          : "shine-effect bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
+                      }`}
+                      onClick={() => handlePlanClick("creator")}
+                    >
+                      {getPlanState("creator") === "current" ? "✓ Current Plan" : getPlanState("creator") === "downgrade" ? "Lower Plan" : "Get Creator →"}
+                      {getPlanState("creator") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
+                    </Button>
+                  </MagneticButton>
+                </div>
+              </Hover3DCard>
+            </motion.div>
+
+            {/* Infinity */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="w-[300px] md:w-auto flex-shrink-0"
+            >
+              <Hover3DCard className="h-full">
+                <div className="hyper-hover-card relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col h-full">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                      <Crown className="w-3.5 h-3.5" />
+                      UNLIMITED POWER
+                    </span>
+                  </div>
+
+                  <div className="mb-6 mt-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-xs font-semibold tracking-widest uppercase text-teal-300">Infinity</p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      {billing === "monthly" && (
+                          <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.infinity)}</span>
+                      )}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">
+                          {formatPrice(infinityPrice)}
+                        </span>
+                        <span className="text-white/40 text-sm">/ mo</span>
+                        {billing === "monthly" && (
+                          <span className="text-xs text-teal-400 ml-2 font-semibold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">(Launching Offer)</span>
+                        )}
+                      </div>
+                    </div>
+                    {billing !== "monthly" && (
+                      <p className="text-white/40 text-xs mt-1">
+                        {formatPrice(totals.infinity[billing])} billed {billingLabel(billing)}
+                        {" "}·{" "}
+                        <span className="text-emerald-400">Save {formatPrice((prices.infinity.monthly * getBillingMonths(billing)) - totals.infinity[billing])}</span>
+                      </p>
+                    )}
+                    <p className="text-white/60 text-sm mt-1">For agencies & super users</p>
+                    <p className="text-[11px] text-teal-400/70 font-medium mt-0.5">Introductory pricing for early users</p>
+                  </div>
+
+                  <div className="space-y-2.5 flex-1 mb-6">
+                    <p className="text-[11px] text-teal-400 font-semibold uppercase tracking-wider mb-1.5">
+                      Everything in Creator, plus:
+                    </p>
+                    {[
+                      { label: "Unlimited generations*", icon: InfinityIcon, desc: "Fair usage limits apply" },
+                      { label: "Unlimited Regenerations", icon: RefreshCw },
+                      { label: "AI Writing Styles", icon: Wand2 },
+                      { label: "Trending Topics Feed", icon: TrendingUp },
+                      { label: "Content Calendar", icon: CalendarDays },
+                      { label: "Performance Insights", icon: BarChart3 },
+                      { label: "Priority AI (2× faster)", icon: Zap },
+                      { label: "Priority Support", icon: Shield },
+                    ].map(({ label, icon: Icon, desc }) => (
+                      <div key={label} className="flex items-start gap-2.5">
+                        <Icon className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
+                        <div>
+                          <span className="text-white/85 text-sm">{label}</span>
+                          {desc && <p className="text-white/40 text-[10px] m-0">{desc}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <MagneticButton>
+                    <Button
+                      className={`w-full border transition-all ${
+                        getPlanState("infinity") === "current"
+                          ? "bg-teal-600/30 border-teal-500/40 text-teal-300 cursor-default"
+                          : "shine-effect bg-gradient-to-r from-teal-600/80 to-pink-600/80 hover:from-teal-500 hover:to-pink-500 border border-white/20 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)]"
+                      }`}
+                      onClick={() => handlePlanClick("infinity")}
+                    >
+                      {getPlanState("infinity") === "current" ? "✓ Current Plan" : "Unlock Infinity →"}
+                      {getPlanState("infinity") !== "current" && <ChevronRight className="w-4 h-4 ml-1" />}
+                    </Button>
+                  </MagneticButton>
+                  <p className="text-center text-white/35 text-xs mt-2.5">Cancel anytime</p>
+                </div>
+              </Hover3DCard>
+            </motion.div>
+          </div>
         </div>
 
         {/* Agency Section */}
@@ -991,15 +974,39 @@ export default function PricingPage() {
             </div>
           </motion.div>
         </div>
-      </div>
 
       <UpgradeModal
         open={upgradeModal.open}
         onClose={() => setUpgradeModal({ ...upgradeModal, open: false })}
         targetPlan={upgradeModal.plan}
-        billingPeriod={upgradeModal.billing === "yearly" ? "yearly" : "monthly"}
+        billingPeriod={upgradeModal.billing}
         currency={upgradeModal.currency}
       />
-    </div>
+        {/* FAQ Section */}
+        <div className="max-w-2xl mx-auto mt-16">
+          <h3 className="text-center text-xl font-bold text-white mb-6">Frequently Asked Questions</h3>
+          <div className="space-y-3">
+            {[
+              { q: "Can I cancel anytime?", a: "Yes. Cancel from Settings anytime. You keep access until your billing period ends." },
+              { q: "Is there a free trial?", a: "Yes — 5 free generations with no credit card. Paid plans include a 7-day trial." },
+              { q: "Which payment methods are accepted?", a: "UPI, all Indian debit/credit cards, net banking, and wallets via Razorpay." },
+              { q: "What happens when I hit my generation limit?", a: "You'll see an upgrade prompt. Your previous content stays saved. No data is lost." },
+              { q: "Can I switch plans?", a: "Yes. Upgrade or downgrade anytime from Settings. Changes apply from your next billing date." },
+              { q: "Do you support Hindi and regional languages?", a: "Yes. GrowFlow AI supports English, Hindi, Hinglish, Bengali, Tamil, Telugu, and more." },
+            ].map(({ q, a }) => (
+              <details key={q} className="group rounded-xl border border-white/8 bg-white/[0.02] overflow-hidden">
+                <summary className="flex items-center justify-between px-5 py-4 cursor-pointer text-sm font-semibold text-white/80 hover:text-white transition-colors list-none">
+                  {q}
+                  <ChevronDown className="w-4 h-4 text-white/30 group-open:rotate-180 transition-transform duration-200" />
+                </summary>
+                <div className="px-5 pb-4 text-sm text-white/45 leading-relaxed border-t border-white/5 pt-3">
+                  {a}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </div>
+  </div>
   );
 }

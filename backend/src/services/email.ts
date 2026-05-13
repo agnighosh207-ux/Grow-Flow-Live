@@ -31,7 +31,12 @@ export const emailLayout = (title: string, content: string) => `
       <h2>${title}</h2>
       ${content}
     </div>
-    <div class="footer">&copy; ${new Date().getFullYear()} GrowFlow AI. All rights reserved.</div>
+    <div class="footer">
+      &copy; ${new Date().getFullYear()} GrowFlow AI. All rights reserved.<br/>
+      <a href="https://growflowai.space/settings?tab=notifications" style="color: #475569;">Manage email preferences</a>
+      &nbsp;|&nbsp;
+      <a href="https://growflowai.space/privacy" style="color: #475569;">Privacy Policy</a>
+    </div>
   </div>
 </body>
 </html>
@@ -406,5 +411,57 @@ export async function sendReviewFeedbackNotification(email: string, contentTitle
     });
   } catch (error) {
     logger.error({ email, error: String(error) }, "Review notification email failure");
+  }
+}
+
+export async function sendPaymentSuccessEmail(email: string, planName: string, amount: number, billingPeriod: string) {
+  if (!resend) return;
+  try {
+    const html = emailLayout(
+      "Payment Successful ✅",
+      `
+        <p>Your payment of <strong>₹${(amount / 100).toLocaleString('en-IN')}</strong> has been received.</p>
+        <p>Your <strong>${planName}</strong> plan (${billingPeriod}) is now active.</p>
+        <p>You can start generating unlimited content right away.</p>
+        <div style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:16px; margin:20px 0;">
+          <p style="margin:0; color:#94a3b8; font-size:13px;">Plan: ${planName}</p>
+          <p style="margin:4px 0 0; color:#94a3b8; font-size:13px;">Billing: ${billingPeriod}</p>
+          <p style="margin:4px 0 0; color:#94a3b8; font-size:13px;">Amount: ₹${(amount / 100).toLocaleString('en-IN')}</p>
+        </div>
+        <div style="text-align:center;"><a href="https://growflowai.space/generate" class="btn">Start Generating Now</a></div>
+      `
+    );
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Payment Confirmed — GrowFlow AI ${planName}`,
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Payment success email failed");
+  }
+}
+
+export async function sendCancellationEmail(email: string, accessUntil: Date) {
+  if (!resend) return;
+  try {
+    const html = emailLayout(
+      "Subscription Cancelled",
+      `
+        <p>Your GrowFlow AI subscription has been cancelled.</p>
+        <p>You'll continue to have full access until <strong>${accessUntil.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.</p>
+        <p>After this date, your account will revert to the free plan.</p>
+        <p>We're sorry to see you go. If there's anything we can improve, please <a href="https://growflowai.space/support" style="color:#00F2FF;">let us know</a>.</p>
+        <p>You can resubscribe anytime at <a href="https://growflowai.space/pricing" style="color:#00F2FF;">growflowai.space/pricing</a></p>
+      `
+    );
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "GrowFlow AI Subscription Cancelled",
+      html,
+    });
+  } catch (error) {
+    logger.error({ email, error: String(error) }, "Cancellation email failed");
   }
 }

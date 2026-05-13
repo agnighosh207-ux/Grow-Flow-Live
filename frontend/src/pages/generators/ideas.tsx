@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/react";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
@@ -64,6 +64,11 @@ function IdeasGeneratorInner() {
   const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    document.title = "Content Idea Generator — GrowFlow AI";
+  }, []);
+
   const { toast } = useToast();
   const { getToken } = useAuth();
   const [, navigate] = useLocation();
@@ -114,7 +119,7 @@ function IdeasGeneratorInner() {
   }
 
   return (
-    <PageWrapper maxWidth="md" className="pb-16">
+    <PageWrapper maxWidth="md" className="pb-24 md:pb-8">
       <FeatureGuideBanner 
         toolKey="ideas" 
         title="Idea Generator" 
@@ -143,7 +148,7 @@ function IdeasGeneratorInner() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-white/70 text-sm font-medium">Your Niche</label>
-            <Select value={niche} onValueChange={(v) => setNiche(v as any)}>
+            <Select value={niche} onValueChange={(v) => setNiche(v as typeof NICHES[number])}>
               <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-yellow-500/40 rounded-xl text-base min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
@@ -211,7 +216,7 @@ function IdeasGeneratorInner() {
             key="ideas"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="space-y-3"
+            className="space-y-3 mb-8 md:mb-14"
           >
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className={`w-4 h-4 ${nicheColor}`} />
@@ -307,12 +312,13 @@ function IdeasGeneratorInner() {
             key="empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-16 space-y-3"
+            className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[200px]"
           >
-            <div className="w-16 h-16 rounded-2xl bg-yellow-500/10 border border-yellow-500/15 flex items-center justify-center mx-auto">
-              <Lightbulb className="w-7 h-7 text-yellow-400/60" />
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+              <Sparkles className="w-5 h-5 text-white/20" />
             </div>
-            <p className="text-white/40 text-sm">Select your niche, enter your goal, and hit Generate.</p>
+            <p className="text-white/25 text-sm font-medium">Your generated content will appear here</p>
+            <p className="text-white/15 text-xs mt-1">Fill in the details above and hit Generate</p>
           </motion.div>
         )}
       </AnimatePresence>

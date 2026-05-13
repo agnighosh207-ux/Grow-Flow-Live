@@ -29,6 +29,36 @@ import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+
+const demoLimiter = rateLimit({ windowMs: 60*1000, limit: 5, keyGenerator: (req, res) => ipKeyGenerator(req, res) });
+
+router.post("/demo", demoLimiter, async (req, res) => {
+  try {
+    const { idea } = req.body;
+    if (!idea || typeof idea !== "string" || idea.length > 120) {
+      res.status(400).json({ error: "Invalid input" });
+      return;
+    }
+    const sanitized = idea.replace(/[`"\\<>]/g, "").trim();
+    const result = await generateContent({
+      messages: [
+        { role: "system", content: "You are an Instagram content expert. Generate ONE compelling Instagram caption (150-200 words) with 5 relevant hashtags. Be authentic, engaging and optimized for Indian creators. Return only the caption and hashtags, nothing else." },
+        { role: "user", content: `Topic: ${sanitized}\nGenerate an Instagram caption:` },
+      ],
+      userPlan: "FREE",
+      userId: "anonymous",
+      maxTokens: 400,
+    });
+    
+    const caption = result.choices[0]?.message?.content || "";
+    res.json({ caption });
+  } catch (err) {
+    logger.error({ err }, "Demo generation failed");
+    res.status(500).json({ error: "Generation failed" });
+  }
+});
+
 function sanitizeInput(text: string, maxLength: number = 500): string {
   if (!text) return "";
   return text
@@ -216,7 +246,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
     if (err.name === 'AbortError' || err.message === 'ABORTED') {
       throw err; // Propagate aborts
     }
-    console.error("AI ENGINE CRITICAL FAILURE:", err);
+    logger.error({ err, userId }, "AI ENGINE CRITICAL FAILURE");
     throw new Error(`AI Engine Failure: ${err?.message || "Unknown error"}`);
   }
 }
@@ -326,7 +356,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
       }
     }
   } catch (err: any) {
-    console.error("AI Generation Fast Error:", err);
+    logger.error({ err, userId: req.userId }, "AI Generation Fast Error");
     await refundGenerationCredit(req.userId, user?.planTier);
     res.status(503).json({ error: "AI is temporarily unavailable. Please try again in a moment." });
     return;
@@ -354,8 +384,10 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     if (user?.email) {
       // Use the updated count from the user object (which was fetched after middleware decrement)
       const currentRemaining = user?.generationsRemaining ?? 0;
-      if (currentRemaining <= 2) {
-        sendCreditWarningEmail(user.email!, currentRemaining, planTier === "INFINITY").catch(e => console.error("Email warning error:", e));
+      if (currentRemaining <= 2 && planTier !== "INFINITY") {
+        sendCreditWarningEmail(user.email!, currentRemaining, false).catch(e => 
+          logger.error({ e }, "Credit warning email failed")
+        );
       }
     }
 
@@ -384,7 +416,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
       feature: "content_generate"
     }).catch(() => {});
   } catch (err: any) {
-    console.error("ROUTE ERROR (/content/generate):", err);
+    logger.error({ err, userId: req.userId }, "ROUTE ERROR (/content/generate)");
     await refundGenerationCredit(req.userId, user?.planTier);
     const httpStatus = err?.status || 500;
     const message = err?.message || "An unexpected error occurred during generation.";
@@ -644,7 +676,7 @@ router.get("/history", requireAuth, async (req: any, res): Promise<void> => {
 
     res.json({ items: history, nextCursor });
   } catch (err) {
-    console.error("History fetch error:", err);
+    logger.error({ err, userId: req.userId }, "History fetch error");
     res.status(500).json({ error: "Failed to fetch history" });
   }
 });
@@ -682,7 +714,7 @@ router.get("/history/:id", requireAuth, async (req: any, res): Promise<void> => 
       feature: "content_view"
     }).catch(() => {});
   } catch (err) {
-    console.error("History item fetch error:", err);
+    logger.error({ err, userId: req.userId }, "History item fetch error");
     res.status(500).json({ error: "Failed to fetch history item" });
   }
 });
@@ -795,7 +827,7 @@ router.get("/stats", requireAuth, async (req: AuthenticatedRequest, res: Respons
     };
     res.json(statsResponse);
   } catch (err) {
-    console.error("Stats fetch error:", err);
+    logger.error({ err, userId: req.userId }, "Stats fetch error");
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });

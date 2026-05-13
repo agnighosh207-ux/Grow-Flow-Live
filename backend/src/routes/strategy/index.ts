@@ -47,6 +47,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
 
     let systemPrompt = `You are a senior content strategist. Create a ${duration}-day growth arc strategy for ${sanitizedNiche}.
 Be extremely concise and punchy. Avoid fluff. Every word must add value. 
+Be concise and actionable. Avoid repetition. Use bullet points.
 CONTEXT: ${goalContext}
 STRATEGIC FOCUS: ${improvementFocus}
 PLATFORMS: Primary = ${platforms.primary}, Secondary = ${platforms.secondary}.
@@ -81,7 +82,7 @@ Return ONLY a JSON object:
       userPlan: req.user?.planType || "free",
       userId: req.userId,
       language,
-      maxTokens: 4000,
+      maxTokens: 3500,
       forceJsonMode: true,
       signal: abortController.signal, // --- H-21 FIX: Pass AbortSignal ---
     });

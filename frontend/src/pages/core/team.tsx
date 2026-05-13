@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@clerk/react";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { PageSkeleton } from "@/components/shared/Skeleton";
 
 interface TeamMember {
   id: string;
@@ -79,16 +80,7 @@ export default function TeamPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="relative">
-          <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
-          <div className="absolute inset-0 blur-xl bg-cyan-400/20 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-20 px-4">

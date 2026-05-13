@@ -6,6 +6,7 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton } from "@/components/shared/Skeleton";
 
 export default function ReferralsPage() {
   const { data: referral, isLoading } = useReferralInfo();
@@ -64,14 +65,7 @@ export default function ReferralsPage() {
     },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="flex h-96 flex-col items-center justify-center space-y-4">
-        <div className="w-10 h-10 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-white/40 text-xs animate-pulse uppercase tracking-widest font-bold">Synchronizing Referral Protocol...</p>
-      </div>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   // Handle case where API failed or returned an error code
   const isErrorCode = referral?.referralCode === "ERROR" || !referral?.referralCode || referral.referralCode === "---";
@@ -232,8 +226,27 @@ export default function ReferralsPage() {
             </div>
 
             {referralCount === 0 && (
-              <div className="mt-8 px-6 py-3 bg-cyan-500/5 border border-cyan-500/10 rounded-2xl text-center shimmer">
-                <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Awaiting First Signal</p>
+              <div className="mt-8 p-6 bg-cyan-500/5 border border-dashed border-cyan-500/20 rounded-2xl text-center space-y-3">
+                <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Guidance: Awaiting First Signal</p>
+                <p className="text-xs text-white/40 leading-relaxed">
+                  Share your unique link with other creators. Once they sign up, you'll instantly see your first conversion here.
+                </p>
+                <div className="pt-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(referralLink);
+                      setCopied(true);
+                      toast({ title: "Link copied!" });
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="h-9 px-4 bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-black uppercase tracking-widest border border-white/10 rounded-xl"
+                  >
+                    {copied ? <CheckCircle className="w-3.5 h-3.5 mr-2 text-cyan-400" /> : <Copy className="w-3.5 h-3.5 mr-2" />}
+                    {copied ? "Link Copied" : "Copy Your Link"}
+                  </Button>
+                </div>
               </div>
             )}
           </motion.div>

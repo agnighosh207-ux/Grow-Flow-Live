@@ -48,6 +48,12 @@ export default function NicheLandingPage({ niche }: { niche: string }) {
   const config = NICHE_DATA[niche as keyof typeof NICHE_DATA];
   const [, navigate] = useLocation();
 
+  React.useEffect(() => {
+    if (config) {
+      document.title = `AI Content Generator for ${config.name} Creators — GrowFlow AI`;
+    }
+  }, [config]);
+
   if (!config) return <div>Niche not found</div>;
 
   return (

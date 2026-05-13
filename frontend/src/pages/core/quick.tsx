@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Copy, ArrowRight, Loader2, Zap, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,10 +8,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 
 export default function QuickGeneratePage() {
+  const { toast } = useToast();
   const [idea, setIdea] = useState("");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const { toast } = useToast();
+
+  useEffect(() => {
+    document.title = "Quick Flow — GrowFlow AI";
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        if (idea.length >= 5 && !generating) {
+          handleQuickGenerate();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [idea, generating]);
 
   const handleQuickGenerate = async () => {
     if (!idea) return;
@@ -67,14 +81,19 @@ export default function QuickGeneratePage() {
               <Button 
                 onClick={handleQuickGenerate}
                 disabled={generating || !idea}
-                className="w-full h-16 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-cyan-600/20"
+                className="w-full h-16 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-cyan-600/20 flex flex-col gap-0.5"
               >
-                {generating ? <Loader2 className="animate-spin" /> : "INSTANT GENERATE ✨"}
+                {generating ? <Loader2 className="animate-spin" /> : (
+                  <>
+                    <span>INSTANT GENERATE ✨</span>
+                    <span className="text-[9px] opacity-30 font-bold uppercase tracking-tighter">Ctrl + Enter</span>
+                  </>
+                )}
               </Button>
            </div>
 
            <AnimatePresence>
-             {result && result.instagram && (
+             {result && result.content?.instagram && (
                <motion.div 
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}
@@ -83,12 +102,12 @@ export default function QuickGeneratePage() {
                  <div className="p-6 rounded-[2.5rem] bg-white/5 border border-white/10 space-y-4">
                     <div className="flex items-center justify-between">
                        <span className="text-[10px] font-black text-pink-400 uppercase tracking-widest">Instagram Optimized</span>
-                       <Button variant="ghost" size="sm" onClick={() => copyText(result.instagram.caption)} className="h-8 rounded-lg bg-white/5 text-[10px] font-black">
+                       <Button variant="ghost" size="sm" onClick={() => copyText(result.content.instagram.caption)} className="h-8 rounded-lg bg-white/5 text-[10px] font-black">
                           <Copy className="w-3 h-3 mr-2" /> COPY
                        </Button>
                     </div>
                     <p className="text-base font-medium text-white/90 leading-relaxed whitespace-pre-wrap">
-                       {result.instagram.caption}
+                       {result.content.instagram.caption}
                     </p>
                  </div>
 

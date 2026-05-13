@@ -4,6 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import enCommon from '../locales/en/common.json';
 import hiCommon from '../locales/hi/common.json';
+import bnCommon from '../locales/bn/common.json';
 
 i18n
   .use(LanguageDetector)
@@ -12,12 +13,15 @@ i18n
     resources: {
       en: { common: enCommon },
       hi: { common: hiCommon },
+      bn: { common: bnCommon },
     },
     fallbackLng: 'en',
     ns: ['common'],
     defaultNS: 'common',
-    interpolation: {
-      escapeValue: false,
+    interpolation: { escapeValue: false },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage'],
     },
   });
 

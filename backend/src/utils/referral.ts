@@ -1,6 +1,7 @@
-import { eq, and, sql, isNull } from "drizzle-orm";
-import { db, usersTable, referralsTable } from "@workspace/db";
 import crypto from "crypto";
+import { logger } from "../lib/logger";
+import { db, usersTable, referralsTable } from "@workspace/db";
+import { eq, and, isNull, sql } from "drizzle-orm";
 
 export function generateReferralCode(): string {
   return crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -24,7 +25,7 @@ export async function ensureReferralCode(userId: string, tx?: any): Promise<stri
 
     // 2. Generate and attempt to persist a new code
     const code = generateReferralCode();
-    console.log(`[REFERRAL_DEBUG] Generating new code ${code} for user ${userId}`);
+    logger.info(`[REFERRAL_DEBUG] Generating new code ${code} for user ${userId}`);
 
     const [updated] = await client.update(usersTable)
       .set({ referralCode: code })
@@ -35,12 +36,12 @@ export async function ensureReferralCode(userId: string, tx?: any): Promise<stri
       .returning({ referralCode: usersTable.referralCode });
     
     if (updated?.referralCode) {
-      console.log(`[REFERRAL_DEBUG] Successfully persisted code ${code} for user ${userId}`);
+      logger.info(`[REFERRAL_DEBUG] Successfully persisted code ${code} for user ${userId}`);
       return updated.referralCode;
     }
 
     // 3. If update failed (e.g. concurrent request already set it), re-fetch
-    console.warn(`[REFERRAL_DEBUG] Update returned no result for ${userId}, performing re-fetch.`);
+    logger.warn(`[REFERRAL_DEBUG] Update returned no result for ${userId}, performing re-fetch.`);
     const [retryUser] = await client.select({ referralCode: usersTable.referralCode })
       .from(usersTable)
       .where(eq(usersTable.id, userId));
@@ -52,7 +53,7 @@ export async function ensureReferralCode(userId: string, tx?: any): Promise<stri
     throw new Error("Persist failed: No code returned after update or retry.");
 
   } catch (err) {
-    console.error(`[REFERRAL_CRITICAL_FAILURE] Error in ensureReferralCode for user ${userId}:`, err);
+    logger.error({ err, userId }, `[REFERRAL_CRITICAL_FAILURE] Error in ensureReferralCode`);
     
     // Attempt one last emergency fetch
     try {
@@ -60,12 +61,12 @@ export async function ensureReferralCode(userId: string, tx?: any): Promise<stri
         .from(usersTable).where(eq(usersTable.id, userId));
       if (finalFetch?.referralCode) return finalFetch.referralCode;
     } catch (e) {
-      console.error(`[REFERRAL_CRITICAL_FAILURE] Emergency fetch also failed for ${userId}`, e);
+      logger.error({ err: e, userId }, `[REFERRAL_CRITICAL_FAILURE] Emergency fetch also failed`);
     }
 
     // Return a temporary code to prevent UI crash, but log it as a desync event
     const tempCode = `ERR-${generateReferralCode()}`;
-    console.error(`[REFERRAL_DESYNC] Returning temporary code ${tempCode} for user ${userId}. THIS WILL NOT BE PERSISTED.`);
+    logger.error({ userId, tempCode }, `[REFERRAL_DESYNC] Returning temporary code. THIS WILL NOT BE PERSISTED.`);
     return tempCode;
   }
 }
@@ -79,7 +80,7 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
     }).from(usersTable).where(eq(usersTable.id, referredUserId));
 
     if (!referredUser?.referralUsedCode) {
-      console.log(`[REFERRAL_REWARD] User ${referredUserId} did not use a referral code. Skipping reward.`);
+      logger.info({ referredUserId }, `[REFERRAL_REWARD] User did not use a referral code. Skipping reward.`);
       return;
     }
 
@@ -92,12 +93,12 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
       .where(eq(usersTable.referralCode, referredUser.referralUsedCode));
 
     if (!referrerUser) {
-      console.warn(`[REFERRAL_REWARD] Referrer with code ${referredUser.referralUsedCode} not found for user ${referredUserId}`);
+      logger.warn({ referredUserId, code: referredUser.referralUsedCode }, `[REFERRAL_REWARD] Referrer with code not found`);
       return;
     }
 
     if (referrerUser.id === referredUserId) {
-      console.error(`[REFERRAL_REWARD] Potential fraud: Self-referral detected for ${referredUserId}`);
+      logger.error({ referredUserId }, `[REFERRAL_REWARD] Potential fraud: Self-referral detected`);
       return;
     }
 
@@ -115,7 +116,7 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
         .returning({ id: referralsTable.id });
 
       if (!updatedReferral) {
-        console.log(`[REFERRAL_REWARD] No pending referral found or already rewarded for ${referredUserId}`);
+        logger.info({ referredUserId }, `[REFERRAL_REWARD] No pending referral found or already rewarded`);
         return;
       }
 
@@ -146,10 +147,10 @@ export async function grantReferralReward(referredUserId: string): Promise<void>
           .set({ trialEndsAt: new Date(referrerTrialBase.getTime() + fifteenDays) })
           .where(eq(usersTable.id, referrerUser.id));
       }
-      console.log(`[REFERRAL_REWARD] Successfully granted rewards for referral: ${referrerUser.id} -> ${referredUserId}`);
+      logger.info({ referrerId: referrerUser.id, referredUserId }, `[REFERRAL_REWARD] Successfully granted rewards for referral`);
     });
   } catch (err) {
-    console.error("[REFERRAL_REWARD_ERROR] Failed to grant referral reward:", err);
+    logger.error({ err, referredUserId }, "[REFERRAL_REWARD_ERROR] Failed to grant referral reward");
     throw err;
   }
 }

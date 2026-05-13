@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { PageSkeleton, EmptyState } from "@/components/shared/Skeleton";
 
 const TABS = [
   { key: "all", label: "All", icon: <BarChart2 className="w-3.5 h-3.5" /> },
@@ -51,24 +52,7 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
-function StatSkeleton() {
-  return (
-    <div className="rounded-2xl border border-white/6 p-5 animate-pulse" style={{ background: "rgba(255,255,255,0.025)" }}>
-      <div className="flex items-center gap-4"><div className="w-11 h-11 rounded-xl bg-white/6" /><div className="space-y-2"><div className="h-3 w-20 bg-white/6 rounded" /><div className="h-6 w-12 bg-white/8 rounded" /></div></div>
-    </div>
-  );
-}
 
-function CardSkeleton() {
-  return (
-    <div className="rounded-2xl border border-white/6 p-5 animate-pulse" style={{ background: "rgba(255,255,255,0.025)" }}>
-      <div className="flex gap-2 mb-4"><div className="h-5 w-20 bg-white/6 rounded-full" /><div className="h-5 w-16 bg-white/6 rounded-full" /></div>
-      <div className="space-y-2 mb-6"><div className="h-3.5 w-full bg-white/6 rounded" /><div className="h-3.5 w-4/5 bg-white/6 rounded" /></div>
-      <div className="h-px bg-white/6 mb-4" />
-      <div className="flex justify-between"><div className="h-3 w-20 bg-white/6 rounded" /></div>
-    </div>
-  );
-}
 
 function DetailView({ item, onClose }: { item: any; onClose: () => void }) {
   const content = item.content;
@@ -237,7 +221,9 @@ export default function History() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {statsLoading
-          ? Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-24 rounded-2xl bg-white/5 animate-pulse" />
+            ))
           : STAT_CARDS.map((card) => (
             <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: STAT_CARDS.indexOf(card) * 0.04 }}
               className={`rounded-2xl border border-white/6 p-4 bg-gradient-to-br ${card.accent} to-transparent`} style={{ background: "rgba(255,255,255,0.025)" }}
@@ -268,28 +254,15 @@ export default function History() {
 
       {/* Items Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
-        </div>
+        <PageSkeleton />
       ) : items.length === 0 ? (
-        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-          className="rounded-3xl border border-white/6 p-14 text-center flex flex-col items-center justify-center bg-white/[0.02] backdrop-blur-xl"
-        >
-          <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-            <HistoryIcon className="w-10 h-10 text-white/10" />
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2">No history yet</h3>
-          <p className="text-white/40 text-sm max-w-xs mb-8 leading-relaxed">
-            Generate your first piece of content to see it here. History is kept for 15 days.
-          </p>
-          <Button 
-            size="lg" 
-            className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black px-8 rounded-2xl" 
-            onClick={() => setLocation("/generate")}
-          >
-            → Go Generate
-          </Button>
-        </motion.div>
+        <EmptyState
+          icon={Clock}
+          title="No history yet"
+          description="Your generated content will appear here. Generate something to get started."
+          action={() => setLocation("/generate")}
+          actionLabel="Generate your first content →"
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <AnimatePresence>

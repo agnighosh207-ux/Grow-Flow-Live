@@ -56,8 +56,8 @@ export function WeeklyReportCard() {
       return data;
     },
     enabled: isLoaded && !!user && shouldShowReport(user.id),
-    staleTime: 1000 * 60 * 60 * 24, // 24 hours
-    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 1000 * 60 * 60 * 24, // Keep for 24 hours in cache
   });
 
   useEffect(() => {

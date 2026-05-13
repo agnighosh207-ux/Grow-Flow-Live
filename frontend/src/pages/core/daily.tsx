@@ -258,7 +258,7 @@ export default function DailyActionMode() {
   }
 
   const plan = data?.plan;
-  const streak = data?.streak ?? 0;
+  const streak = typeof data?.streak === 'number' && !isNaN(data.streak) ? data.streak : 0;
   const completed = data?.completedToday ?? false;
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" });
 

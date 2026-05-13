@@ -73,6 +73,10 @@ export default function GhostwriterPage() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    document.title = "AI Ghostwriter — GrowFlow AI";
+  }, []);
+
+  useEffect(() => {
     fetchProfile();
   }, []);
 
@@ -152,7 +156,7 @@ export default function GhostwriterPage() {
   };
 
   return (
-    <PageWrapper maxWidth="xl" className="space-y-10">
+    <PageWrapper maxWidth="xl" className="pb-24 md:pb-8 space-y-10">
       <FeatureGuideBanner 
         toolKey="ghostwriter" 
         title="AI Ghostwriter" 
@@ -409,12 +413,18 @@ export default function GhostwriterPage() {
                     </label>
                     <span className="text-[10px] font-bold text-muted-foreground italic">Try: "The future of AI in 2025"</span>
                   </div>
-                  <Textarea 
-                    placeholder="Tell the Ghostwriter what to write about... be as specific as you want." 
-                    className="min-h-[120px] md:min-h-[160px] text-base md:text-xl font-medium bg-transparent border-none focus-visible:ring-0 p-0 placeholder:text-white/10 resize-none"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Textarea 
+                      placeholder="Tell the Ghostwriter what to write about... be as specific as you want." 
+                      className="min-h-[120px] md:min-h-[160px] text-base md:text-xl font-medium bg-transparent border-none focus-visible:ring-0 p-0 placeholder:text-white/10 resize-none"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                    />
+                    <div className="absolute bottom-0 right-0 flex items-center gap-3">
+                       <span className="text-[10px] font-black text-white/10 uppercase tracking-widest">{topic.length} characters</span>
+                       <span className="text-[10px] font-black text-white/10 uppercase tracking-widest">{topic.trim() ? topic.trim().split(/\s+/).length : 0} words</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-white/5">
@@ -466,7 +476,21 @@ export default function GhostwriterPage() {
             </Card>
           </motion.div>
 
-          <AnimatePresence>
+            {!writing && !output && (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[400px]"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                  <Sparkles className="w-5 h-5 text-white/20" />
+                </div>
+                <p className="text-white/25 text-sm font-medium">Your ghostwritten content will appear here</p>
+                <p className="text-white/15 text-xs mt-1">Configure your focus and target on the left and hit Manifest Content</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
             {output && (
               <motion.div
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}

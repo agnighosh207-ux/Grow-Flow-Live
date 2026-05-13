@@ -5,12 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Bookmark, Heart, RefreshCw, Wand2, Trash2,
-  Loader2, Instagram, Linkedin, Twitter, Calendar,
-} from "lucide-react";
+import { Bookmark, Heart, RefreshCw, Wand2, Trash2, Loader2, Instagram, Linkedin, Twitter, Calendar } from "lucide-react";
 import { SiYoutube } from "react-icons/si";
 import { useAuth } from "@clerk/react";
+import { PageSkeleton, EmptyState } from "@/components/shared/Skeleton";
 
 interface SavedItem {
   id: number;
@@ -103,32 +101,15 @@ export default function Saved() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-36 rounded-xl bg-white/3 border border-white/5 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
-          ))}
-        </div>
+        <PageSkeleton />
       ) : (!items || items.length === 0) ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="rounded-3xl border border-white/6 p-14 text-center flex flex-col items-center justify-center bg-white/[0.02] backdrop-blur-xl"
-        >
-          <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-            <Heart className="w-10 h-10 text-white/10" />
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2">Nothing saved yet</h3>
-          <p className="text-white/40 text-sm max-w-xs mb-8 leading-relaxed">
-            Tap the heart icon on any generated content to save it here.
-          </p>
-          <Button 
-            size="lg" 
-            onClick={() => navigate("/generate")}
-            className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-black px-8 rounded-2xl"
-          >
-            → Go Generate
-          </Button>
-        </motion.div>
+        <EmptyState
+          icon={Bookmark}
+          title="Nothing saved yet"
+          description="Save your favourite generated content here by clicking the bookmark icon after generating."
+          action={() => navigate("/generate")}
+          actionLabel="Start generating →"
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4">
           <AnimatePresence initial={false}>

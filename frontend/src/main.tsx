@@ -12,7 +12,11 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     dsn: import.meta.env.VITE_SENTRY_DSN,
     integrations: [
       Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
+      Sentry.replayIntegration({
+        maskAllText: true,
+        blockAllMedia: true,
+        maskAllInputs: true,
+      }),
     ],
     tracesSampleRate: 1.0, 
     replaysSessionSampleRate: 0.1, 
@@ -52,3 +56,13 @@ window.fetch = async (...args) => {
 };
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('[SW] Registered:', reg.scope);
+    }).catch(err => {
+      console.error('[SW] Registration failed:', err);
+    });
+  });
+}

@@ -115,12 +115,14 @@ export default function AdminDashboard() {
 
   const isAdmin = subData?.isAdmin === true || user?.primaryEmailAddress?.emailAddress === "agnighosh207@gmail.com";
 
+  const syncPerformed = useRef(false);
   useEffect(() => {
-    if (!isLoaded || isSubPending) return;
+    if (!isLoaded || isSubPending || syncPerformed.current) return;
     
     // BUG 9 FIX: Explicitly sync auth cache on admin load
     const syncAuth = async () => {
       try {
+        syncPerformed.current = true;
         const token = await getToken();
         await fetch("/api/auth/sync", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
         // Invalidate sub data to reflect admin status
@@ -130,15 +132,18 @@ export default function AdminDashboard() {
       }
     };
     syncAuth();
+  }, [isLoaded, isSubPending, getToken, queryClient]);
 
+  // Redirect guard
+  useEffect(() => {
+    if (!isLoaded || isSubPending) return;
+    
     // Only redirect if we are SURE they aren't admin after loading
     if (!user || (!isAdmin && !isSubPending)) {
-      const isActuallyAdminEmail = user?.primaryEmailAddress?.emailAddress === "agnighosh207@gmail.com";
-      if (!isActuallyAdminEmail) {
-        setLocation("/");
-      }
+      toast({ variant: "destructive", title: "Access Denied", description: "Admin privileges required." });
+      setLocation("/");
     }
-  }, [isLoaded, user, isSubPending, subData, isAdmin, getToken, setLocation, queryClient]);
+  }, [isLoaded, user, isSubPending, isAdmin, setLocation, toast]);
 
   const { data: stats, isLoading: isStatsLoading } = useQuery<AdminStats>({
     queryKey: ["admin_stats"],
@@ -386,7 +391,15 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={invalidateAll} 
+              className="h-12 w-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-cyan-400 transition-all"
+            >
+              <RefreshCw className={`w-5 h-5 ${isStatsLoading || isRevenueLoading ? 'animate-spin text-cyan-400' : ''}`} />
+            </Button>
             <div className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all ${stats?.maintenanceMode ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/5 border-emerald-500/20'}`}>
               <div className="text-right">
                 <p className={`text-xs font-black uppercase ${stats?.maintenanceMode ? 'text-red-400' : 'text-emerald-400'}`}>
@@ -553,8 +566,8 @@ export default function AdminDashboard() {
                   <div className="p-8 border-b border-white/5 bg-white/[0.02] rounded-t-3xl">
                     <h3 className="text-2xl font-black">{debouncedSearch ? `Search Results (${searchResults?.length || 0})` : "Recent Command Log (100 Users)"}</h3>
                   </div>
-                  <div className="w-full">
-                    <table className="w-full text-left">
+                  <div className="w-full overflow-x-auto scrollbar-hide pb-4">
+                    <table className="w-full text-left min-w-[800px]">
                       <thead>
                         <tr className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-black border-b border-white/5">
                           <th className="px-8 py-6">User Identity</th>
@@ -700,8 +713,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden">
-                    <table className="w-full text-left">
+                  <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden overflow-x-auto scrollbar-hide">
+                    <table className="w-full text-left min-w-[700px]">
                       <thead>
                         <tr className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-black border-b border-white/5">
                           <th className="px-8 py-6">At-Risk Creator</th>

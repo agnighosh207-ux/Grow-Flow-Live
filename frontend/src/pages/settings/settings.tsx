@@ -136,10 +136,31 @@ export default function SettingsPage() {
   const { user } = useUser();
   const { getToken } = useAuth();
   const { signOut } = useClerk();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  
+  // Tab Management
+  const queryParams = new URLSearchParams(window.location.search);
+  const initialTab = queryParams.get("tab") || "profile";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [window.location.search]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.pushState({}, "", url.toString());
+  };
+
   const { data: sub, refetch: refetchSub } = useSubscriptionStatus();
   const { data: referral } = useReferralInfo();
-  const { toast } = useToast();
-  const [, navigate] = useLocation();
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -256,21 +277,6 @@ export default function SettingsPage() {
     }
   }
 
-  async function requestBrowserNotif() {
-    if (typeof Notification === "undefined") return;
-    const result = await Notification.requestPermission();
-    setBrowserNotifPermission(result);
-    if (result === "granted") {
-      toast({ title: "Notifications on!", description: "We'll ping you for trial alerts and weekly wins." });
-      try {
-        new Notification("You're in! 🎉", {
-          body: "We'll let you know when your trial is ending and drop weekly tips your way.",
-          icon: "/favicon.ico",
-        });
-      } catch {}
-    }
-  }
-
   async function updatePref(key: keyof NotificationPrefs, value: boolean) {
     const updated = { ...prefs, [key]: value };
     setPrefs(updated);
@@ -356,6 +362,21 @@ export default function SettingsPage() {
     }
   }
 
+  async function requestBrowserNotif() {
+    if (typeof Notification === "undefined") return;
+    const result = await Notification.requestPermission();
+    setBrowserNotifPermission(result);
+    if (result === "granted") {
+      toast({ title: "Notifications on!", description: "We'll ping you for trial alerts and weekly wins." });
+      try {
+        new Notification("You're in! \ud83c\udf89", {
+          body: "We'll let you know when your trial is ending and drop weekly tips your way.",
+          icon: "/favicon.ico",
+        });
+      } catch {}
+    }
+  }
+
   const activePlanLabel = sub?.planType === "infinity" ? "Infinity" : sub?.planType === "creator" ? "Creator" : sub?.planType === "starter" ? "Starter" : "Active";
   const trialPlanLabel = sub?.planType === "infinity" ? "Infinity Trial" : sub?.planType === "creator" ? "Creator Trial" : "Starter Trial";
   const planConfig = {
@@ -394,524 +415,542 @@ export default function SettingsPage() {
         <p className="text-white/40 text-sm">Manage your account, subscription, and preferences.</p>
       </div>
 
-      {/* Account Info */}
-      <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-        <div className="px-5 py-4 border-b border-white/6 flex items-center gap-2">
-          <User className="w-4 h-4 text-white/40" />
-          <h2 className="text-white/80 font-semibold text-sm">Account</h2>
-        </div>
-        <div className="p-5 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="relative group cursor-pointer" onClick={() => setShowAvatarPicker(true)}>
-              {user?.imageUrl ? (
-                <img src={user.imageUrl} alt="" className="w-14 h-14 rounded-full border border-white/20 object-cover" />
-              ) : (
-                <div className="w-14 h-14 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-lg text-white/40 font-bold">
-                  {(user?.fullName || "U").charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-5 h-5 text-white/80" />
-              </div>
-            </div>
-            <div>
-              <p className="text-white font-semibold text-lg">{user?.fullName || "User"}</p>
-              {memberSince && <p className="text-white/50 text-xs mt-0.5">Member since {memberSince}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3">
-            <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
-              <Mail className="w-4 h-4 text-white/30 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Email Address</p>
-                <p className="text-white/80 text-sm truncate">{user?.primaryEmailAddress?.emailAddress ?? "—"}</p>
-              </div>
-              <span className="text-[10px] text-white/25 font-medium border border-white/8 rounded px-1.5 py-0.5">Managed by Clerk</span>
-            </div>
-
-            {user?.username && (
-              <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
-                <User className="w-4 h-4 text-white/30 shrink-0" />
-                <div>
-                  <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Username</p>
-                  <p className="text-white/80 text-sm">@{user.username}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {sub?.plan === "blocked" && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-red-500/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4"
-          style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(10,4,28,0.95) 100%)" }}
-        >
-          <div className="flex items-start gap-3 flex-1">
-            <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/20 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
-            </div>
-            <div>
-              <p className="text-red-300 font-semibold text-sm">Payment failed</p>
-              <p className="text-white/45 text-xs mt-0.5 leading-relaxed">
-                We couldn't process your payment. Update your payment method to restore full access.
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            onClick={handleRetryPayment}
-            disabled={retryLoading}
-            className="bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 hover:border-red-500/50 font-semibold text-xs rounded-lg shrink-0 transition-all"
+      {/* Tab Navigation */}
+      <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10 overflow-x-auto scrollbar-hide flex-nowrap -mx-4 px-4 md:mx-0 md:px-0">
+        {[
+          { id: "profile", label: "Profile", icon: Users },
+          { id: "account", label: "Account", icon: Settings },
+          { id: "notifications", label: "Notifications", icon: Bell },
+          { id: "billing", label: "Billing", icon: CreditCard },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all flex-shrink-0 ${
+              activeTab === tab.id
+                ? "bg-white/10 text-white shadow-sm"
+                : "text-white/40 hover:text-white/60"
+            }`}
           >
-            {retryLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <><RefreshCcw className="w-3.5 h-3.5 mr-1.5" /> Update payment method</>
-            )}
-          </Button>
-        </motion.div>
-      )}
+            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "text-cyan-400" : "text-white/20"}`} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Subscription */}
-      <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-        <div className="px-5 py-4 border-b border-white/6 flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-white/40" />
-          <h2 className="text-white/80 font-semibold text-sm">Subscription</h2>
-        </div>
-        <div className="p-5 space-y-4">
-          <div className={`flex items-center gap-3 rounded-xl border ${plan.bg} px-4 py-3`}>
-            <span className={plan.color}>{plan.icon}</span>
-            <div className="flex-1">
-              <p className={`font-semibold text-sm ${plan.color}`}>{plan.label} Plan</p>
-              {sub?.plan === "trial" && sub.trialDaysLeft !== null && (
-                <p className="text-cyan-300/60 text-xs mt-0.5">{sub.trialDaysLeft} day{sub.trialDaysLeft !== 1 ? "s" : ""} remaining in trial</p>
-              )}
-              {sub?.plan === "active" && (
-                <p className="text-emerald-300/60 text-xs mt-0.5">Unlimited generations active</p>
-              )}
-              {sub?.plan === "free" && (
-                <p className="text-white/40 text-xs mt-0.5">{sub.monthlyGenerationsUsed}/{sub.generationLimit} free generations used</p>
-              )}
-            </div>
-            {(sub?.plan === "free" || sub?.plan === "blocked" || sub?.plan === "trial") && (
-              <Button
-                size="sm"
-                onClick={() => navigate("/pricing")}
-                className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs rounded-lg shrink-0 shadow shadow-cyan-900/30"
-              >
-                <Zap className="w-3 h-3 mr-1.5" /> Upgrade
-              </Button>
-            )}
-          </div>
-
-          {sub?.plan === "active" && (
-            <div className="flex items-center justify-between pt-1">
-              <div>
-                <p className="text-white/60 text-sm font-medium">Cancel Subscription</p>
-                <p className="text-white/35 text-xs mt-0.5">Your access continues until the end of the billing period.</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={cancelLoading}
-                onClick={handleCancelSubscription}
-                className="text-red-400/70 hover:text-red-400 hover:bg-red-500/10 border border-white/8 hover:border-red-500/20 text-xs rounded-lg shrink-0"
-              >
-                {cancelLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Cancel"}
-              </Button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Public Profile */}
-      <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-        <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-cyan-400/70" />
-            <h2 className="text-white/80 font-semibold text-sm">Public Profile</h2>
-          </div>
-          {profileSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
-        </div>
-        <div className="p-5 space-y-5">
-           <p className="text-white/40 text-xs leading-relaxed">
-            Customize how you appear to other creators and on the public leaderboard.
-          </p>
-          <div className="space-y-4">
-             <div className="space-y-1.5">
-                <label className="text-white/60 text-xs font-medium">Username (Vanity URL)</label>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                   <div className="bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white/40 text-sm font-mono shrink-0">
-                      growflowai.space/profile/
-                   </div>
-                   <input
-                    type="text"
-                    value={profile.username}
-                    onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
-                    placeholder="yourname"
-                    className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 font-mono"
-                  />
-                </div>
-             </div>
-             <div className="space-y-1.5">
-                <label className="text-white/60 text-xs font-medium">Display Name</label>
-                <input
-                  type="text"
-                  value={profile.displayName}
-                  onChange={e => setProfile(p => ({ ...p, displayName: e.target.value }))}
-                  placeholder="The Creator"
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
-                />
-             </div>
-             <div className="flex items-start justify-between gap-4 py-2">
-                <div className="flex items-start gap-3">
-                  <Trophy className="w-4 h-4 mt-0.5 text-amber-400/70" />
-                  <div>
-                    <p className="text-white/80 text-sm font-medium">Show on Leaderboard</p>
-                    <p className="text-white/35 text-xs mt-0.5">Opt-in to compete with other creators and build authority.</p>
-                  </div>
-                </div>
-                <ToggleSwitch
-                  checked={profile.showOnLeaderboard}
-                  onChange={(v) => setProfile(p => ({ ...p, showOnLeaderboard: v }))}
-                />
-             </div>
-             {profile.username && (
-               <a 
-                href={`/profile/${profile.username}`} 
-                target="_blank" 
-                className="inline-flex items-center gap-1.5 text-cyan-400 text-xs font-bold uppercase tracking-widest hover:text-cyan-300 transition-colors"
-               >
-                 View My Public Profile <RefreshCcw className="w-3 h-3" />
-               </a>
-             )}
-             <Button
-                onClick={saveProfile}
-                disabled={profileSaving}
-                className="w-full bg-white text-black hover:bg-zinc-200 font-bold rounded-xl text-sm transition-all"
-              >
-                {profileSaving ? "Saving..." : "Update Profile"}
-              </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Content Preferences */}
-      <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-        <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-white/40" />
-            <h2 className="text-white/80 font-semibold text-sm">Content Preferences</h2>
-          </div>
-          {contentPrefsSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
-        </div>
-        <div className="p-5 space-y-5">
-          <p className="text-white/40 text-xs leading-relaxed">
-            Set your default content style. The AI will automatically personalize generated content based on these preferences.
-          </p>
-          {!contentPrefsLoaded ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="space-y-1.5">
-                  <div className="h-3 w-20 bg-white/5 rounded animate-pulse" />
-                  <div className="h-10 w-full bg-white/3 rounded-xl animate-pulse" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-white/60 text-xs font-medium">Your Niche</label>
-                <input
-                  type="text"
-                  value={contentPrefs.niche}
-                  onChange={e => setContentPrefs(p => ({ ...p, niche: e.target.value }))}
-                  placeholder="e.g. Fitness, Finance, Tech, Marketing..."
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-white/60 text-xs font-medium">Default Tone</label>
-                <select
-                  value={contentPrefs.tonePreference}
-                  onChange={e => setContentPrefs(p => ({ ...p, tonePreference: e.target.value }))}
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 appearance-none"
-                >
-                  <option value="" className="bg-[#0f0a1e]">Select your preferred tone</option>
-                  {TONE_OPTIONS.filter(t => t !== "").map(t => (
-                    <option key={t} value={t} className="bg-[#0f0a1e]">{t}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-white/60 text-xs font-medium">Preferred Platform</label>
-                <select
-                  value={contentPrefs.platformPreference}
-                  onChange={e => setContentPrefs(p => ({ ...p, platformPreference: e.target.value }))}
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 appearance-none"
-                >
-                  <option value="" className="bg-[#0f0a1e]">Select your preferred platform</option>
-                  {PLATFORM_OPTIONS.filter(p => p !== "").map(p => (
-                    <option key={p} value={p} className="bg-[#0f0a1e]">{p}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <LanguageSelector
-                  value={contentPrefs.languagePreference}
-                  onChange={(v) => setContentPrefs(p => ({ ...p, languagePreference: v }))}
-                  isFreeUser={sub?.plan === "free"}
-                  label="Language Preference"
-                  onUpgradeRequired={() => toast({ title: "\ud83d\udd12 Premium Languages", description: "Upgrade your plan to use regional languages.", variant: "destructive" })}
-                />
-                <p className="text-white/30 text-[11px] leading-relaxed">Your preferred content language. All generators will default to this language.</p>
-              </div>
-              <Button
-                onClick={saveContentPrefs}
-                disabled={contentPrefsSaving}
-                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl text-sm disabled:opacity-50 transition-all"
-              >
-                {contentPrefsSaving ? (
-                  <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> Saving...</>
-                ) : (
-                  "Save Preferences"
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Your Rewards / Referral Program */}
-      <section className="rounded-2xl border border-cyan-500/15 overflow-hidden" style={{ background: "rgba(139,92,246,0.03)" }}>
-        <div className="px-5 py-4 border-b border-cyan-500/10 flex items-center gap-2">
-          <Gift className="w-4 h-4 text-cyan-400/70" />
-          <h2 className="text-white/80 font-semibold text-sm">Your Rewards</h2>
-          <span className="ml-auto text-[10px] font-semibold text-cyan-300 bg-cyan-500/15 border border-cyan-500/20 rounded-full px-2 py-0.5">+15 Days Infinity/ref</span>
-        </div>
-        <div className="p-5 space-y-4">
-          <p className="text-white/40 text-xs leading-relaxed">
-            <span className="text-white/60">Refer a friend and both of you get 15 days of Infinity Access for free.</span>
-          </p>
-
-          {referral ? (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-6 pb-24 md:pb-8"
+        >
+          {activeTab === "profile" && (
             <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
-                   <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Total Friends Referred</p>
-                   <div className="flex items-center justify-center gap-1.5">
-                     <Users className="w-3.5 h-3.5 text-cyan-400" />
-                     <p className="text-white font-bold text-lg">{referral.successfulReferrals}</p>
-                   </div>
-                </div>
-                <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
-                   <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Current Expiry Date</p>
-                   <div className="flex items-center justify-center gap-1.5">
-                     <Crown className="w-3.5 h-3.5 text-cyan-400" />
-                     <p className="text-white font-bold text-sm">
-                       {sub?.trialEndsAt ? format(new Date(sub.trialEndsAt), "MMM d, yyyy") : (sub?.trialDaysLeft ? `${sub.trialDaysLeft} Days Left` : "N/A")}
-                     </p>
-                   </div>
-                </div>
-              </div>
-
-              {referral.referralCode === "ERROR" ? (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-4 h-4 text-red-400" />
-                    <p className="text-red-400 text-xs font-bold uppercase tracking-widest">Protocol Linking Failure</p>
+              {/* Public Profile */}
+              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-cyan-400/70" />
+                    <h2 className="text-white/80 font-semibold text-sm">Public Profile</h2>
                   </div>
-                  <Button size="sm" onClick={() => window.location.reload()} className="h-7 px-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[10px] font-black uppercase">Retry</Button>
+                  {profileSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
                 </div>
-              ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      const message = encodeURIComponent(
-                        `Hey, I found this tool GrowFlow AI that turns 1 idea into multiple content posts instantly.\n\nTry it here: ${referral.shareableLink}\n\nYou also get bonus access if you join.`
-                      );
-                      window.open(`https://wa.me/?text=${message}`, "_blank");
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white transition-opacity hover:opacity-90"
-                    style={{
-                      background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
-                      boxShadow: "0 4px 20px rgba(37,211,102,0.18)",
-                    }}
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.528 5.845L0 24l6.336-1.508A11.956 11.956 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.488-5.19-1.345l-.37-.22-3.803.906.92-3.717-.241-.382A9.955 9.955 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-                    Invite on WhatsApp
-                  </button>
-
-                  <div className="space-y-2">
-                    <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Your Referral Code</p>
-                    <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-cyan-500/15 px-4 py-3">
-                      <span className="flex-1 text-cyan-300 font-mono font-bold text-base tracking-widest">{referral.referralCode}</span>
-                      <button
-                        onClick={() => copyToClipboard(referral.referralCode, "code")}
-                        className="text-white/30 hover:text-cyan-300 transition-colors p-1 rounded-lg hover:bg-cyan-500/10"
-                      >
-                        {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                      </button>
+                <div className="p-5 space-y-5">
+                  <p className="text-white/40 text-xs leading-relaxed">
+                    Customize how you appear to other creators and on the public leaderboard.
+                  </p>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-white/60 text-xs font-medium">Username (Vanity URL)</label>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <div className="bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white/40 text-sm font-mono shrink-0">
+                          growflowai.space/profile/
+                        </div>
+                        <input
+                          type="text"
+                          value={profile.username}
+                          onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
+                          placeholder="yourname"
+                          className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 font-mono"
+                        />
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Shareable Link</p>
-                    <div className="flex items-center gap-2 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
-                      <span className="flex-1 text-white/50 text-xs truncate font-mono">{referral.shareableLink}</span>
-                      <button
-                        onClick={() => copyToClipboard(referral.shareableLink, "link")}
-                        className="text-white/30 hover:text-cyan-300 transition-colors p-1 rounded-lg hover:bg-cyan-500/10 shrink-0"
-                      >
-                        {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                      </button>
+                    <div className="space-y-1.5">
+                      <label className="text-white/60 text-xs font-medium">Display Name</label>
+                      <input
+                        type="text"
+                        value={profile.displayName}
+                        onChange={e => setProfile(p => ({ ...p, displayName: e.target.value }))}
+                        placeholder="The Creator"
+                        className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
+                      />
                     </div>
+                    <div className="flex items-start justify-between gap-4 py-2">
+                      <div className="flex items-start gap-3">
+                        <Trophy className="w-4 h-4 mt-0.5 text-amber-400/70" />
+                        <div>
+                          <p className="text-white/80 text-sm font-medium">Show on Leaderboard</p>
+                          <p className="text-white/35 text-xs mt-0.5">Opt-in to compete with other creators and build authority.</p>
+                        </div>
+                      </div>
+                      <ToggleSwitch
+                        checked={profile.showOnLeaderboard}
+                        onChange={(v) => setProfile(p => ({ ...p, showOnLeaderboard: v }))}
+                      />
+                    </div>
+                    {profile.username && (
+                      <a 
+                        href={`/profile/${profile.username}`} 
+                        target="_blank" 
+                        className="inline-flex items-center gap-1.5 text-cyan-400 text-xs font-bold uppercase tracking-widest hover:text-cyan-300 transition-colors"
+                      >
+                        View My Public Profile <RefreshCcw className="w-3 h-3" />
+                      </a>
+                    )}
+                    <Button
+                      onClick={saveProfile}
+                      disabled={profileSaving}
+                      className="w-full bg-white text-black hover:bg-zinc-200 font-bold rounded-xl text-sm transition-all"
+                    >
+                      {profileSaving ? "Saving..." : "Update Profile"}
+                    </Button>
                   </div>
-                </>
-              )}
+                </div>
+              </section>
+
+              {/* Content Preferences */}
+              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-white/40" />
+                    <h2 className="text-white/80 font-semibold text-sm">Content Preferences</h2>
+                  </div>
+                  {contentPrefsSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
+                </div>
+                <div className="p-5 space-y-5">
+                  <p className="text-white/40 text-xs leading-relaxed">
+                    Set your default content style. The AI will automatically personalize generated content based on these preferences.
+                  </p>
+                  {!contentPrefsLoaded ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="space-y-1.5">
+                          <div className="h-3 w-20 bg-white/5 rounded animate-pulse" />
+                          <div className="h-10 w-full bg-white/3 rounded-xl animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-white/60 text-xs font-medium">Your Niche</label>
+                        <input
+                          type="text"
+                          value={contentPrefs.niche}
+                          onChange={e => setContentPrefs(p => ({ ...p, niche: e.target.value }))}
+                          placeholder="e.g. Fitness, Finance, Tech, Marketing..."
+                          className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-white/60 text-xs font-medium">Default Tone</label>
+                        <select
+                          value={contentPrefs.tonePreference}
+                          onChange={e => setContentPrefs(p => ({ ...p, tonePreference: e.target.value }))}
+                          className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 appearance-none"
+                        >
+                          <option value="" className="bg-[#0f0a1e]">Select your preferred tone</option>
+                          {TONE_OPTIONS.filter(t => t !== "").map(t => (
+                            <option key={t} value={t} className="bg-[#0f0a1e]">{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-white/60 text-xs font-medium">Preferred Platform</label>
+                        <select
+                          value={contentPrefs.platformPreference}
+                          onChange={e => setContentPrefs(p => ({ ...p, platformPreference: e.target.value }))}
+                          className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 appearance-none"
+                        >
+                          <option value="" className="bg-[#0f0a1e]">Select your preferred platform</option>
+                          {PLATFORM_OPTIONS.filter(p => p !== "").map(p => (
+                            <option key={p} value={p} className="bg-[#0f0a1e]">{p}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <LanguageSelector
+                          value={contentPrefs.languagePreference}
+                          onChange={(v) => setContentPrefs(p => ({ ...p, languagePreference: v }))}
+                          isFreeUser={sub?.plan === "free"}
+                          label="Language Preference"
+                          onUpgradeRequired={() => toast({ title: "\ud83d\udd12 Premium Languages", description: "Upgrade your plan to use regional languages.", variant: "destructive" })}
+                        />
+                        <p className="text-white/30 text-[11px] leading-relaxed">Your preferred content language. All generators will default to this language.</p>
+                      </div>
+                      <Button
+                        onClick={saveContentPrefs}
+                        disabled={contentPrefsSaving}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl text-sm disabled:opacity-50 transition-all"
+                      >
+                        {contentPrefsSaving ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> Saving...</>
+                        ) : (
+                          "Save Preferences"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </section>
             </>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 space-y-3">
-              <Loader2 className="w-6 h-6 text-cyan-500 animate-spin" />
-              <p className="text-white/20 text-[10px] font-black uppercase tracking-widest">Re-Establishing Secure Link...</p>
-            </div>
           )}
-        </div>
-      </section>
 
-      {/* Notification Preferences */}
-      <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-        <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-white/40" />
-            <h2 className="text-white/80 font-semibold text-sm">Notifications</h2>
-          </div>
-          {prefsSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
-        </div>
-        <div className="p-5 space-y-5">
-          {!prefsLoaded ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="h-3.5 w-32 bg-white/5 rounded animate-pulse" />
-                    <div className="h-2.5 w-48 bg-white/3 rounded animate-pulse" />
-                  </div>
-                  <div className="w-11 h-6 bg-white/5 rounded-full animate-pulse" />
-                </div>
-              ))}
-            </div>
-          ) : (
+          {activeTab === "account" && (
             <>
-              {/* Browser notification control */}
-              <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/6">
-                <div className="flex items-start gap-3">
-                  <Bell className="w-4 h-4 mt-0.5 shrink-0 text-cyan-400" />
-                  <div>
-                    <p className="text-white/80 text-sm font-medium">Browser Notifications</p>
-                    <p className="text-white/35 text-xs mt-0.5 leading-relaxed">
-                      {browserNotifPermission === "granted"
-                        ? "You're all set — we'll ping you for trial alerts and important updates."
-                        : browserNotifPermission === "denied"
-                        ? "Blocked in your browser settings. Allow it from your browser's address bar."
-                        : "Get pinged when your trial is ending, payment fails, or we drop something new."}
-                    </p>
-                  </div>
+              {/* Account Info */}
+              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <div className="px-5 py-4 border-b border-white/6 flex items-center gap-2">
+                  <User className="w-4 h-4 text-white/40" />
+                  <h2 className="text-white/80 font-semibold text-sm">Account</h2>
                 </div>
-                {browserNotifPermission === "granted" ? (
-                  <span className="text-emerald-400 text-xs font-semibold whitespace-nowrap mt-1">Enabled ✓</span>
-                ) : browserNotifPermission === "denied" ? (
-                  <span className="text-white/20 text-xs whitespace-nowrap mt-1">Blocked</span>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={requestBrowserNotif}
-                    className="bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/20 hover:border-cyan-500/30 text-xs h-7 px-3 rounded-lg font-medium shrink-0"
-                  >
-                    Enable
-                  </Button>
-                )}
-              </div>
-
-              {[
-                {
-                  key: "emailNotifications" as const,
-                  label: "Account Emails",
-                  desc: "Billing receipts, security alerts, and important account updates — you probably want these on.",
-                  icon: Shield,
-                  iconColor: "text-blue-400",
-                },
-                {
-                  key: "weeklyDigest" as const,
-                  label: "Weekly Trend Digest Emails",
-                  desc: "Receive a weekly email with curated content trends and audio patterns specific to your niche.",
-                  icon: Mail,
-                  iconColor: "text-emerald-400",
-                },
-                {
-                  key: "productUpdates" as const,
-                  label: "Product Updates",
-                  desc: "When we ship new features or improvements, we'll let you know. No fluff, just the good stuff.",
-                  icon: Zap,
-                  iconColor: "text-cyan-400",
-                },
-                {
-                  key: "marketingEmails" as const,
-                  label: "Tips & Inspiration",
-                  desc: "Occasional content creation tips, creator stories, and ideas to spark your next post.",
-                  icon: Bell,
-                  iconColor: "text-amber-400",
-                },
-              ].map(({ key, label, desc, icon: Icon, iconColor }) => (
-                <div key={key} className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconColor}`} />
+                <div className="p-5 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative group cursor-pointer" onClick={() => setShowAvatarPicker(true)}>
+                      {user?.imageUrl ? (
+                        <img src={user.imageUrl} alt="" className="w-14 h-14 rounded-full border border-white/20 object-cover" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-lg text-white/40 font-bold">
+                          {(user?.fullName || "U").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="w-5 h-5 text-white/80" />
+                      </div>
+                    </div>
                     <div>
-                      <p className="text-white/80 text-sm font-medium">{label}</p>
-                      <p className="text-white/35 text-xs mt-0.5 leading-relaxed">{desc}</p>
+                      <p className="text-white font-semibold text-lg">{user?.fullName || "User"}</p>
+                      {memberSince && <p className="text-white/50 text-xs mt-0.5">Member since {memberSince}</p>}
                     </div>
                   </div>
-                  <ToggleSwitch
-                    checked={prefs[key]}
-                    onChange={(v) => updatePref(key, v)}
-                    disabled={prefsSaving}
-                  />
+
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
+                      <Mail className="w-4 h-4 text-white/30 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Email Address</p>
+                        <p className="text-white/80 text-sm truncate">{user?.primaryEmailAddress?.emailAddress ?? "—"}</p>
+                      </div>
+                      <span className="text-[10px] text-white/25 font-medium border border-white/8 rounded px-1.5 py-0.5">Managed by Clerk</span>
+                    </div>
+
+                    {user?.username && (
+                      <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
+                        <User className="w-4 h-4 text-white/30 shrink-0" />
+                        <div>
+                          <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Username</p>
+                          <p className="text-white/80 text-sm">@{user.username}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
+              </section>
+
+              {/* Danger Zone */}
+              <section className="rounded-2xl border border-red-500/15 overflow-hidden" style={{ background: "rgba(239,68,68,0.03)" }}>
+                <div className="px-5 py-4 border-b border-red-500/10 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400/60" />
+                  <h2 className="text-red-400/80 font-semibold text-sm">Danger Zone</h2>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-white/70 text-sm font-medium">Delete Account</p>
+                      <p className="text-white/35 text-xs mt-0.5 leading-relaxed max-w-xs">
+                        Permanently delete your account and all associated data. This cannot be undone.
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowDeleteModal(true)}
+                      className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/15 hover:border-red-500/30 text-xs rounded-lg shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete Account
+                    </Button>
+                  </div>
+                </div>
+              </section>
             </>
           )}
-        </div>
-      </section>
 
-      {/* Danger Zone */}
-      <section className="rounded-2xl border border-red-500/15 overflow-hidden" style={{ background: "rgba(239,68,68,0.03)" }}>
-        <div className="px-5 py-4 border-b border-red-500/10 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-400/60" />
-          <h2 className="text-red-400/80 font-semibold text-sm">Danger Zone</h2>
-        </div>
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-white/70 text-sm font-medium">Delete Account</p>
-              <p className="text-white/35 text-xs mt-0.5 leading-relaxed max-w-xs">
-                Permanently delete your account and all associated data. This cannot be undone.
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDeleteModal(true)}
-              className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/15 hover:border-red-500/30 text-xs rounded-lg shrink-0"
-            >
-              <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete Account
-            </Button>
-          </div>
-        </div>
-      </section>
+          {activeTab === "notifications" && (
+            <>
+              {/* Notification Preferences */}
+              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-white/40" />
+                    <h2 className="text-white/80 font-semibold text-sm">Notifications</h2>
+                  </div>
+                  {prefsSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
+                </div>
+                <div className="p-5 space-y-5">
+                  {!prefsLoaded ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <div className="h-3.5 w-32 bg-white/5 rounded animate-pulse" />
+                            <div className="h-2.5 w-48 bg-white/3 rounded animate-pulse" />
+                          </div>
+                          <div className="w-11 h-6 bg-white/5 rounded-full animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Browser notification control */}
+                      <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/6">
+                        <div className="flex items-start gap-3">
+                          <Bell className="w-4 h-4 mt-0.5 shrink-0 text-cyan-400" />
+                          <div>
+                            <p className="text-white/80 text-sm font-medium">Browser Notifications</p>
+                            <p className="text-white/35 text-xs mt-0.5 leading-relaxed">
+                              {browserNotifPermission === "granted"
+                                ? "You're all set — we'll ping you for trial alerts and important updates."
+                                : browserNotifPermission === "denied"
+                                ? "Blocked in your browser settings. Allow it from your browser's address bar."
+                                : "Get pinged when your trial is ending, payment fails, or we drop something new."}
+                            </p>
+                          </div>
+                        </div>
+                        {browserNotifPermission === "granted" ? (
+                          <span className="text-emerald-400 text-xs font-semibold whitespace-nowrap mt-1">Enabled ✓</span>
+                        ) : browserNotifPermission === "denied" ? (
+                          <span className="text-white/20 text-xs whitespace-nowrap mt-1">Blocked</span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={requestBrowserNotif}
+                            className="bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/20 hover:border-cyan-500/30 text-xs h-7 px-3 rounded-lg font-medium shrink-0"
+                          >
+                            Enable
+                          </Button>
+                        )}
+                      </div>
+
+                      {[
+                        {
+                          key: "emailNotifications" as const,
+                          label: "Account Emails",
+                          desc: "Billing receipts, security alerts, and important account updates — you probably want these on.",
+                          icon: Shield,
+                          iconColor: "text-blue-400",
+                        },
+                        {
+                          key: "weeklyDigest" as const,
+                          label: "Weekly Trend Digest Emails",
+                          desc: "Receive a weekly email with curated content trends and audio patterns specific to your niche.",
+                          icon: Mail,
+                          iconColor: "text-emerald-400",
+                        },
+                        {
+                          key: "productUpdates" as const,
+                          label: "Product Updates",
+                          desc: "When we ship new features or improvements, we'll let you know. No fluff, just the good stuff.",
+                          icon: Zap,
+                          iconColor: "text-cyan-400",
+                        },
+                        {
+                          key: "marketingEmails" as const,
+                          label: "Tips & Inspiration",
+                          desc: "Occasional content creation tips, creator stories, and ideas to spark your next post.",
+                          icon: Bell,
+                          iconColor: "text-amber-400",
+                        },
+                      ].map(({ key, label, desc, icon: Icon, iconColor }) => (
+                        <div key={key} className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconColor}`} />
+                            <div>
+                              <p className="text-white/80 text-sm font-medium">{label}</p>
+                              <p className="text-white/35 text-xs mt-0.5 leading-relaxed">{desc}</p>
+                            </div>
+                          </div>
+                          <ToggleSwitch
+                            checked={prefs[key]}
+                            onChange={(v) => updatePref(key, v)}
+                            disabled={prefsSaving}
+                          />
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+
+          {activeTab === "billing" && (
+            <>
+              {/* Subscription */}
+              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <div className="px-5 py-4 border-b border-white/6 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-white/40" />
+                  <h2 className="text-white/80 font-semibold text-sm">Subscription</h2>
+                </div>
+                <div className="p-5 space-y-4">
+                  {sub?.plan === "blocked" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border border-red-500/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4 mb-4"
+                      style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(10,4,28,0.95) 100%)" }}
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/20 flex items-center justify-center shrink-0">
+                          <AlertTriangle className="w-5 h-5 text-red-400" />
+                        </div>
+                        <div>
+                          <p className="text-red-300 font-semibold text-sm">Payment failed</p>
+                          <p className="text-white/45 text-xs mt-0.5 leading-relaxed">
+                            We couldn't process your payment. Update your payment method to restore full access.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={handleRetryPayment}
+                        disabled={retryLoading}
+                        className="bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 hover:border-red-500/50 font-semibold text-xs rounded-lg shrink-0 transition-all"
+                      >
+                        {retryLoading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <><RefreshCcw className="w-3.5 h-3.5 mr-1.5" /> Update payment method</>
+                        )}
+                      </Button>
+                    </motion.div>
+                  )}
+
+                  <div className={`flex items-center gap-3 rounded-xl border ${plan.bg} px-4 py-3`}>
+                    <span className={plan.color}>{plan.icon}</span>
+                    <div className="flex-1">
+                      <p className={`font-semibold text-sm ${plan.color}`}>{plan.label} Plan</p>
+                      {sub?.plan === "trial" && sub.trialEndsAt && (
+                        <p className="text-cyan-300/60 text-xs mt-0.5">Ends {format(new Date(sub.trialEndsAt), "MMM d, yyyy")}</p>
+                      )}
+                      {sub?.plan === "active" && (
+                        <p className="text-emerald-300/60 text-xs mt-0.5">Unlimited generations active</p>
+                      )}
+                      {sub?.plan === "free" && (
+                        <p className="text-white/40 text-xs mt-0.5">{sub.monthlyGenerationsUsed}/{sub.generationLimit} free generations used</p>
+                      )}
+                    </div>
+                    {(sub?.plan === "free" || sub?.plan === "blocked" || sub?.plan === "trial") && (
+                      <Button
+                        size="sm"
+                        onClick={() => navigate("/pricing")}
+                        className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs rounded-lg shrink-0 shadow shadow-cyan-900/30"
+                      >
+                        <Zap className="w-3 h-3 mr-1.5" /> Upgrade
+                      </Button>
+                    )}
+                  </div>
+
+                  {sub?.plan === "active" && (
+                    <div className="flex items-center justify-between pt-1">
+                      <div>
+                        <p className="text-white/60 text-sm font-medium">Cancel Subscription</p>
+                        <p className="text-white/35 text-xs mt-0.5">Your access continues until the end of the billing period.</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={cancelLoading}
+                        onClick={handleCancelSubscription}
+                        className="text-red-400/70 hover:text-red-400 hover:bg-red-500/10 border border-white/8 hover:border-red-500/20 text-xs rounded-lg shrink-0"
+                      >
+                        {cancelLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Cancel"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Your Rewards / Referral Program */}
+              <section className="rounded-2xl border border-cyan-500/15 overflow-hidden" style={{ background: "rgba(139,92,246,0.03)" }}>
+                <div className="px-5 py-4 border-b border-cyan-500/10 flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-cyan-400/70" />
+                  <h2 className="text-white/80 font-semibold text-sm">Your Rewards</h2>
+                  <span className="ml-auto text-[10px] font-semibold text-cyan-300 bg-cyan-500/15 border border-cyan-500/20 rounded-full px-2 py-0.5">+15 Days Infinity/ref</span>
+                </div>
+                <div className="p-5 space-y-4">
+                  <p className="text-white/40 text-xs leading-relaxed">
+                    <span className="text-white/60">Refer a friend and both of you get 15 days of Infinity Access for free.</span>
+                  </p>
+
+                  {referral ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
+                           <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Total Friends Referred</p>
+                           <div className="flex items-center justify-center gap-1.5">
+                             <Users className="w-3.5 h-3.5 text-cyan-400" />
+                             <p className="text-white font-bold text-lg">{referral.successfulReferrals}</p>
+                           </div>
+                        </div>
+                        <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
+                           <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Current Expiry Date</p>
+                           <div className="flex items-center justify-center gap-1.5">
+                             <Crown className="w-3.5 h-3.5 text-cyan-400" />
+                             <p className="text-white font-bold text-sm">
+                               {sub?.trialEndsAt ? format(new Date(sub.trialEndsAt), "MMM d, yyyy") : (sub?.trialDaysLeft ? `${sub.trialDaysLeft} Days Left` : "N/A")}
+                             </p>
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 pt-2">
+                        <p className="text-white/40 text-[10px] font-black uppercase tracking-widest text-center">Share Your Magic Link</p>
+                        <div className="flex items-center gap-2 bg-black/40 border border-white/8 rounded-xl p-1.5">
+                          <input 
+                            readOnly 
+                            value={referral.shareableLink} 
+                            className="bg-transparent border-none focus:ring-0 text-white/50 text-xs flex-1 px-2 font-mono truncate"
+                          />
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(referral.shareableLink);
+                              setCopiedLink(true);
+                              toast({ title: "Link copied!" });
+                              setTimeout(() => setCopiedLink(false), 2000);
+                            }}
+                            className="h-8 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold uppercase transition-all"
+                          >
+                            {copiedLink ? "Copied" : "Copy Link"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-4 text-center">
+                      <p className="text-white/20 text-xs italic">Loading referral status...</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+
     </div>
   );
 }

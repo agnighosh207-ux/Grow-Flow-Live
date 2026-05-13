@@ -104,7 +104,7 @@ export default function CreatorProfilePage() {
   }, [practiceMode, result, activeTab]);
 
   return (
-    <PageWrapper maxWidth="2xl" className="pb-32">
+    <PageWrapper maxWidth="2xl" className="pb-24 md:pb-8">
       <PageHeader 
         icon={<Fingerprint className="w-8 h-8" />} 
         iconBg="bg-indigo-500/10" 
@@ -423,21 +423,16 @@ export default function CreatorProfilePage() {
                    </div>
                 </motion.div>
               ) : (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="h-full min-h-[600px] flex flex-col items-center justify-center text-center space-y-10"
+                  className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[400px]"
                 >
-                   <div className="relative">
-                      <div className="absolute inset-0 bg-purple-500/20 blur-[120px] rounded-full" />
-                      <div className="p-16 rounded-[4.5rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl relative animate-in zoom-in duration-1000">
-                         <User className="h-32 w-32 text-white/5 animate-pulse" />
-                      </div>
-                   </div>
-                   <div className="space-y-4 max-w-sm">
-                      <h3 className="text-3xl font-black text-white/40 italic">Identity Matrix Offline</h3>
-                      <p className="text-muted-foreground font-medium text-lg leading-relaxed">Configure your persona on the left to synthesize your cross-platform branding architecture.</p>
-                   </div>
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                    <Sparkles className="w-5 h-5 text-white/20" />
+                  </div>
+                  <p className="text-white/25 text-sm font-medium">Your brand suite will appear here</p>
+                  <p className="text-white/15 text-xs mt-1">Configure your persona and hit Build Brand Suite</p>
                 </motion.div>
               )}
            </AnimatePresence>

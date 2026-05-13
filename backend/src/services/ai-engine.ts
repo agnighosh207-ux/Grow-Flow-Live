@@ -5,7 +5,12 @@ import { z } from "zod";
 import { LANGUAGE_INSTRUCTIONS } from "../lib/languages";
 import { redis } from "../lib/redis";
 
-const isProduction = process.env.NODE_ENV === "production" || process.env.APP_STATUS === "PRODUCTION";
+const appStatus = process.env.APP_STATUS || "";
+const isProduction = 
+  process.env.NODE_ENV === "production" || 
+  appStatus === "PRODUCTION" || 
+  appStatus === "BETA" ||
+  !!process.env.RAILWAY_ENVIRONMENT;
 
 const logger = pino({
   ...(isProduction ? {} : {
@@ -100,14 +105,18 @@ export const validateAIConfig = () => {
   }
 };
 
-const clientPool = new Map<string, OpenAI>();
+const providerClients = new Map<string, OpenAI>();
 
-function getClient(apiKey: string, baseURL: string): OpenAI {
-  const cacheKey = `${apiKey}-${baseURL}`;
-  if (!clientPool.has(cacheKey)) {
-    clientPool.set(cacheKey, new OpenAI({ apiKey, baseURL }));
+function getClient(baseURL: string, apiKey: string): OpenAI {
+  if (!providerClients.has(baseURL)) {
+    providerClients.set(baseURL, new OpenAI({ 
+      apiKey: apiKey, 
+      baseURL: baseURL,
+      timeout: 30000,
+      maxRetries: 0,
+    }));
   }
-  return clientPool.get(cacheKey)!;
+  return providerClients.get(baseURL)!;
 }
 
 export const generateContent = async ({
@@ -202,7 +211,7 @@ export const generateContent = async ({
     if (attemptCount >= MAX_PROVIDER_ATTEMPTS) break;
     attemptCount++;
 
-    const client = getClient(provider.apiKey, provider.baseURL);
+    const client = getClient(provider.baseURL, provider.apiKey);
 
     // Each provider gets up to 2 attempts if JSON parsing fails
     for (let attempt = 0; attempt < 2; attempt++) {

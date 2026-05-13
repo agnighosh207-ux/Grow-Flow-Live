@@ -139,8 +139,8 @@ export default function HashtagsPage() {
   };
 
   return (
-    <div className="pb-24 relative overflow-x-hidden min-h-screen">
-      <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-12 space-y-12">
+    <PageWrapper maxWidth="xl" className="pb-24 md:pb-8 relative overflow-x-hidden min-h-screen">
+      <div className="relative z-10 py-12 space-y-12">
         
         <div className="text-center space-y-6 max-w-3xl mx-auto mb-16">
           <motion.div 
@@ -301,7 +301,7 @@ export default function HashtagsPage() {
                                   <TooltipProvider key={tag.tag}>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Badge className={`px-5 py-3 rounded-2xl border text-base font-bold flex items-center gap-3 transition-all cursor-default hover:scale-105 shadow-lg ${getCompColor(tag.competitionLevel)}`}>
+                                        <Badge className={`px-5 py-3 rounded-2xl border text-base font-bold flex items-center gap-3 transition-all cursor-default hover:scale-105 shadow-lg break-all whitespace-normal ${getCompColor(tag.competitionLevel)}`}>
                                           #{tag.tag}
                                           <span className="text-[9px] font-black uppercase opacity-40 px-2 py-0.5 rounded-full bg-black/20">{tag.category}</span>
                                         </Badge>
@@ -402,22 +402,17 @@ export default function HashtagsPage() {
                         </div>
                       </motion.div>
                     ) : (
-                      <motion.div 
-                        key="placeholder"
+                      <motion.div
+                        key="empty"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="h-full min-h-[600px] flex flex-col items-center justify-center text-center space-y-10"
+                        className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[400px]"
                       >
-                        <div className="relative">
-                           <div className="absolute inset-0 bg-pink-500/20 blur-[120px] rounded-full" />
-                           <div className="p-16 rounded-[4rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl relative">
-                              <Hash className="h-32 w-32 text-white/5 animate-pulse" />
-                           </div>
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                          <Sparkles className="w-5 h-5 text-white/20" />
                         </div>
-                        <div className="space-y-4 max-w-sm">
-                           <h3 className="text-3xl font-black text-white/40 italic">Algorithm Scan Idle</h3>
-                           <p className="text-muted-foreground font-medium text-lg leading-relaxed">Enter your strategic topic on the left to initiate hashtag intelligence gathering.</p>
-                        </div>
+                        <p className="text-white/25 text-sm font-medium">Your hashtags will appear here</p>
+                        <p className="text-white/15 text-xs mt-1">Enter your topic on the left and hit Generate</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -630,6 +625,6 @@ export default function HashtagsPage() {
           </AnimatePresence>
         </Tabs>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

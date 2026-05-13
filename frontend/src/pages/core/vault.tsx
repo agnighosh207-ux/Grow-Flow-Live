@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, PageSkeleton, EmptyState } from "@/components/shared/Skeleton";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 
 interface VaultItem {
@@ -76,6 +76,8 @@ export default function SwipeVaultPage() {
       setLoading(false);
     }
   };
+
+  if (loading && items.length === 0) return <PageSkeleton />;
 
   const handleSave = (item: VaultItem) => {
     const isSaved = savedItems.find(i => i.id === item.id);
@@ -332,28 +334,8 @@ export default function SwipeVaultPage() {
           </div>
 
           {loading ? (
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="break-inside-avoid mb-6 rounded-3xl border border-white/6 p-6 space-y-4 bg-white/[0.02] animate-pulse">
-                  <div className="flex justify-between items-center">
-                    <div className="h-4 w-24 bg-white/5 rounded-full" />
-                    <div className="h-4 w-16 bg-white/5 rounded-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-6 w-full bg-white/10 rounded-lg" />
-                    <div className="h-6 w-4/5 bg-white/10 rounded-lg" />
-                  </div>
-                  <div className="h-16 w-full bg-white/5 rounded-xl" />
-                  <div className="flex gap-2">
-                    <div className="h-5 w-12 bg-white/5 rounded-full" />
-                    <div className="h-5 w-12 bg-white/5 rounded-full" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 pt-2">
-                    <div className="h-9 bg-white/5 rounded-lg" />
-                    <div className="h-9 bg-white/10 rounded-lg" />
-                  </div>
-                </div>
-              ))}
+            <div className="flex justify-center py-20">
+              <RefreshCw className="w-8 h-8 animate-spin text-cyan-500" />
             </div>
           ) : (
             <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">

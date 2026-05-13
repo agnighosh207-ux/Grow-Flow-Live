@@ -15,7 +15,7 @@ import { Link } from "wouter";
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   subject: z.string().min(3, "Subject must be at least 3 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
+  message: z.string().min(10, "Message must be at least 10 characters").max(500, "Message must be under 500 characters"),
 });
 
 const FAQ_ITEMS = [
@@ -88,11 +88,20 @@ export default function Support() {
         }),
       });
       if (!res.ok) throw new Error("Failed");
+      
       setSubmitted(true);
-      toast({ title: "Message sent successfully!", description: "We'll get back to you within 24 hours." });
+      toast({ title: "Message sent! ✅", description: "We'll get back to you within 24 hours." });
+      
+      // Reset form fields
+      form.reset({
+        email: values.email,
+        subject: "",
+        message: ""
+      });
+      
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
-      toast({ variant: "destructive", title: "Failed to send message", description: "Please check your network and try again." });
+      toast({ variant: "destructive", title: "Failed to send", description: "Please try again or email us directly at growflowhelp@gmail.com." });
     } finally {
       setLoading(false);
     }
@@ -238,8 +247,15 @@ export default function Support() {
                           <Textarea
                             placeholder="Describe your issue or question in detail..."
                             className="resize-none h-32 bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-blue-500/40 rounded-xl text-sm"
+                            maxLength={500}
                             {...field}
                           />
+                          <div className="flex justify-between items-center mt-1">
+                            <p className="text-xs text-white/20">Be as detailed as possible — we read every message.</p>
+                            <span className={`text-xs ${(field.value || "").length > 450 ? 'text-amber-400' : 'text-white/20'}`}>
+                              {(field.value || "").length}/500
+                            </span>
+                          </div>
                         </FormControl>
                         <FormMessage className="text-red-400 text-xs" />
                       </FormItem>

@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
 import { extractJson } from "../services/ai-engine";
 import { db, contentGenerationsTable, usersTable, securityLogsTable } from "@workspace/db";
@@ -52,7 +52,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
   const updateData: any = { violationCount: newViolations };
 
   // Strike 100 = BAN (Very high to avoid false positives, only catch bots)
-  if (newViolations >= 100) {
+  if (newViolations >= 10) {
     logger.error({ userId }, "USER FLAG BANNED");
     isBanned = true;
     updateData.isBanned = true;
@@ -69,7 +69,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
       eventType: "SYSTEM_BAN",
       ipAddress: req.ip || req.connection?.remoteAddress || "unknown",
       userAgent: req.get("User-Agent") || "unknown",
-      metadata: { reason: "5+ Rate Limit Violations", tier }
+      metadata: { reason: "10+ Rate Limit Violations", tier }
     });
   }
 
@@ -83,7 +83,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
     .where(eq(usersTable.id, userId as string))
     .returning({ violationCount: usersTable.violationCount });
 
-  if (updatedUser && updatedUser.violationCount >= 100 && !isBanned) {
+  if (updatedUser && updatedUser.violationCount >= 10 && !isBanned) {
     // Catch-all in case multiple requests hit exactly at the threshold
     await db.update(usersTable).set({ isBanned: true }).where(eq(usersTable.id, userId as string));
     isBanned = true;
@@ -108,7 +108,7 @@ const createLimiter = (windowMs: number, prefix: string) => {
     max: (req: any) => getQuotaForTier(req.rateLimitUser?.planTier || "FREE"),
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req: any) => req.rateLimitUser?.id || req.ip || "unknown",
+    keyGenerator: (req: any, res: any) => req.rateLimitUser?.id || ipKeyGenerator(req, res),
     handler: handleRateLimitReached,
     store: redisClient ? new RedisStore({
       // @ts-ignore
