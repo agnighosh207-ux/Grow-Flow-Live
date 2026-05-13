@@ -232,6 +232,11 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
         toast({ variant: "destructive", title: "Payment Failed", description: response.error.description });
       });
       
+      console.log("[UpgradeModal] Final Razorpay Options:", {
+        keyLength: options.key?.length,
+        subId: options.subscription_id,
+        name: options.name,
+      });
       console.log("[UpgradeModal] Calling rzp.open()...");
       rzp.open();
       console.log("[UpgradeModal] rzp.open() called.");
@@ -309,13 +314,13 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[1000] overflow-y-auto bg-black/60 backdrop-blur-sm">
-          <div className="min-h-full flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-[50] overflow-y-auto bg-black/60 backdrop-blur-sm">
+          <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0"
+              className="fixed inset-0"
               onClick={handleClose}
             />
             <motion.div
@@ -323,7 +328,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative w-full max-w-5xl max-h-[90vh] rounded-3xl border border-white/10 shadow-2xl flex flex-col overflow-hidden"
+              className="relative w-full max-w-5xl rounded-3xl border border-white/10 shadow-2xl flex flex-col overflow-hidden"
             style={{
               background: "linear-gradient(135deg, rgba(15,8,35,0.97) 0%, rgba(20,10,45,0.97) 100%)",
               backdropFilter: "blur(24px)",
