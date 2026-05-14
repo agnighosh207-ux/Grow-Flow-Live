@@ -4,12 +4,29 @@ import { db, usersTable } from "@workspace/db";
 import { eq, and, isNotNull } from "drizzle-orm";
 import { sendWeeklyTrendDigest } from "../../services/email";
 import { generateContent, extractJson } from "../../services/ai-engine";
+import { redis } from "../../lib/redis";
 
 const router = Router();
 
-// Cache map: niche -> { timestamp, data }
-const digestCache = new Map<string, { timestamp: number, data: any }>();
-const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
+// Redis-backed cache helpers (survive server restarts)
+const DIGEST_TTL_SECONDS = 12 * 60 * 60; // 12 hours
+
+async function getCachedDigest(niche: string): Promise<any | null> {
+  if (!redis) return null;
+  try {
+    const cached = await redis.get(`digest:${niche}`);
+    return cached ? JSON.parse(cached) : null;
+  } catch { return null; }
+}
+
+async function setCachedDigest(niche: string, data: any): Promise<void> {
+  if (!redis) return;
+  try {
+    await redis.setex(`digest:${niche}`, DIGEST_TTL_SECONDS, JSON.stringify(data));
+  } catch (err) {
+    console.error("[TREND_ALERTS] Redis cache write failed:", err);
+  }
+}
 
 async function generateDigestForNiche(niche: string) {
   const systemPrompt = "You are a social media trend analyst. Search the web for the latest trending content formats, audio trends, and viral patterns right now.";
@@ -77,8 +94,8 @@ router.post("/generate-digest", async (req, res): Promise<void> => {
       try {
         const digest = await generateDigestForNiche(niche);
         
-        // Cache it while we are at it
-        digestCache.set(niche, { timestamp: Date.now(), data: digest });
+        // Persist to Redis
+        await setCachedDigest(niche, digest);
 
         for (const u of nicheUsers) {
           processed++;
@@ -111,16 +128,16 @@ router.get("/latest", requireAuth, requirePlanOrTrial("trend-alerts"), async (re
 
     const niche = user.niche || "General";
     
-    // Check cache
-    const cached = digestCache.get(niche);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      res.json(cached.data);
+    // Check Redis cache first
+    const cached = await getCachedDigest(niche);
+    if (cached) {
+      res.json(cached);
       return;
     }
 
-    // Generate fresh
+    // Generate fresh and cache
     const fresh = await generateDigestForNiche(niche);
-    digestCache.set(niche, { timestamp: Date.now(), data: fresh });
+    await setCachedDigest(niche, fresh);
     
     res.json(fresh);
   } catch (error) {

@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { Brain, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, Zap } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Brain, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, Zap, Send, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
-
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { useAuth } from "@clerk/react";
 
 interface CoachReport {
   weeklyScore: number;
@@ -23,17 +22,25 @@ interface CoachReport {
   nextWeekFocus: string;
 }
 
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+const SUGGESTED_QUESTIONS = [
+  "How do I grow faster?",
+  "What should I post this week?",
+  "Why am I not getting views?",
+];
+
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1 }
+  visible: { y: 0, opacity: 1 },
 };
 
 export default function ContentCoachPage() {
@@ -41,21 +48,23 @@ export default function ContentCoachPage() {
   const [loading, setLoading] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const { toast } = useToast();
+  const { getToken } = useAuth();
 
   const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
-
-  useEffect(() => {
-    localStorage.setItem("preferred_language", language);
-  }, [language]);
+  useEffect(() => { localStorage.setItem("preferred_language", language); }, [language]);
 
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
 
+  // ── Chat state ──────────────────────────────────────────────────────────────
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const saved = localStorage.getItem("coach_completed_tasks");
     if (saved) setCompletedTasks(JSON.parse(saved));
-    
-    // Fetch initial report
     fetchReport();
   }, []);
 
@@ -66,13 +75,35 @@ export default function ContentCoachPage() {
       setReport(data);
     } catch (err: any) {
       const msg = err.response?.data?.message || "We couldn't generate your report right now. Please try again later.";
-      toast({
-        variant: "destructive",
-        title: "Coach unavailable",
-        description: msg
-      });
+      toast({ variant: "destructive", title: "Coach unavailable", description: msg });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendMessage = async (overrideInput?: string) => {
+    const text = (overrideInput ?? input).trim();
+    if (!text || chatLoading) return;
+    setInput("");
+    const userMsg: ChatMessage = { role: "user", content: text };
+    setMessages(prev => [...prev, userMsg]);
+    setChatLoading(true);
+
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/coach/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ message: text, history: messages.slice(-10) }),
+      });
+      const data = await res.json();
+      const reply = data.reply || data.message || "Sorry, I couldn't respond right now. Please try again.";
+      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I couldn't respond right now. Please try again." }]);
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
   };
 
@@ -98,9 +129,9 @@ export default function ContentCoachPage() {
 
   return (
     <PageWrapper maxWidth="md" className="py-10">
-      <FeatureGuideBanner 
-        toolKey="coach" 
-        title="AI Content Coach" 
+      <FeatureGuideBanner
+        toolKey="coach"
+        title="AI Content Coach"
         icon={<Brain className="w-5 h-5 text-indigo-500" />}
         tagline="Get a personalized weekly audit of your content and a step-by-step growth action plan."
         whatYouGet={["Weekly performance score", "Top strengths & gaps", "3 specific tasks for next week"]}
@@ -108,31 +139,21 @@ export default function ContentCoachPage() {
         proTip="The coach analyzes your actual generation history to find patterns you might have missed yourself."
         planRequired="Infinity"
       />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
             <Brain className="h-10 w-10 text-indigo-500" />
             AI Content Coach
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Personalized weekly growth analysis and action plan.
-          </p>
+          <p className="text-muted-foreground mt-1">Personalized weekly growth analysis and action plan.</p>
         </div>
         <div className="flex flex-col items-end gap-3">
           <div className="w-full sm:w-48">
-            <LanguageSelector 
-              value={language} 
-              onChange={setLanguage} 
-              isFreeUser={isFreeUser}
-            />
+            <LanguageSelector value={language} onChange={setLanguage} isFreeUser={isFreeUser} />
           </div>
-          <Button 
-            onClick={() => fetchReport(true)} 
-            disabled={loading}
-            variant="outline"
-            className="group w-full sm:w-auto"
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+          <Button onClick={() => fetchReport(true)} disabled={loading} variant="outline" className="group w-full sm:w-auto">
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} />
             Refresh Report
           </Button>
           <span className="text-xs text-muted-foreground">Report refreshes every 24 hours</span>
@@ -141,48 +162,25 @@ export default function ContentCoachPage() {
 
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <Skeleton key={i} className="h-48 w-full rounded-xl" />
-          ))}
+          {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-48 w-full rounded-xl" />)}
         </div>
       )}
 
       {!loading && report && (
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-8"
-        >
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
           {/* Score & Highlights */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <motion.div variants={itemVariants} className={`p-8 rounded-3xl border flex flex-col items-center justify-center text-center ${getScoreBg(report.weeklyScore)}`}>
               <div className="relative h-32 w-32 flex items-center justify-center">
                 <svg className="h-full w-full transform -rotate-90">
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="58"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    fill="transparent"
-                    className="text-muted/10"
-                  />
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="58"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    fill="transparent"
+                  <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-muted/10" />
+                  <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent"
                     strokeDasharray={364.4}
                     strokeDashoffset={364.4 - (364.4 * report.weeklyScore) / 100}
                     className={`${getScoreColor(report.weeklyScore)} transition-all duration-1000 ease-out`}
                   />
                 </svg>
-                <span className={`absolute text-4xl font-black ${getScoreColor(report.weeklyScore)}`}>
-                  {report.weeklyScore}
-                </span>
+                <span className={`absolute text-4xl font-black ${getScoreColor(report.weeklyScore)}`}>{report.weeklyScore}</span>
               </div>
               <h3 className="mt-4 font-bold text-xl">Weekly Score</h3>
               <p className="text-sm text-muted-foreground mt-1">Based on consistency & quality</p>
@@ -193,27 +191,20 @@ export default function ContentCoachPage() {
                 <Card className="h-full border-emerald-500/20 bg-emerald-500/[0.02]">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-emerald-500">
-                      <CheckCircle2 className="h-5 w-5" />
-                      Your Biggest Strength
+                      <CheckCircle2 className="h-5 w-5" /> Your Biggest Strength
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-lg font-medium">{report.topStrength}</p>
-                  </CardContent>
+                  <CardContent><p className="text-lg font-medium">{report.topStrength}</p></CardContent>
                 </Card>
               </motion.div>
-
               <motion.div variants={itemVariants}>
                 <Card className="h-full border-amber-500/20 bg-amber-500/[0.02]">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-amber-500">
-                      <AlertTriangle className="h-5 w-5" />
-                      Your Biggest Gap
+                      <AlertTriangle className="h-5 w-5" /> Your Biggest Gap
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-lg font-medium">{report.biggestGap}</p>
-                  </CardContent>
+                  <CardContent><p className="text-lg font-medium">{report.biggestGap}</p></CardContent>
                 </Card>
               </motion.div>
             </div>
@@ -222,27 +213,22 @@ export default function ContentCoachPage() {
           {/* Action Plan */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Zap className="h-6 w-6 text-yellow-500 fill-yellow-500" />
-              This Week's Action Plan
+              <Zap className="h-6 w-6 text-yellow-500 fill-yellow-500" /> This Week's Action Plan
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {report.weeklyTasks.map((task, idx) => (
-                <motion.div 
-                  key={idx} 
-                  variants={itemVariants}
-                  whileHover={{ y: -5 }}
+                <motion.div
+                  key={idx} variants={itemVariants} whileHover={{ y: -5 }}
                   onClick={() => toggleTask(task.task)}
-                  className={`cursor-pointer group p-6 rounded-2xl border transition-all duration-300 ${completedTasks.includes(task.task) ? 'bg-muted/50 border-muted grayscale opacity-60' : 'bg-card hover:shadow-xl hover:border-indigo-500/50'}`}
+                  className={`cursor-pointer group p-6 rounded-2xl border transition-all duration-300 ${completedTasks.includes(task.task) ? "bg-muted/50 border-muted grayscale opacity-60" : "bg-card hover:shadow-xl hover:border-indigo-500/50"}`}
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <Badge variant="outline" className="bg-indigo-500/5 text-indigo-500 border-indigo-500/20">
-                      {task.platform}
-                    </Badge>
-                    <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${completedTasks.includes(task.task) ? 'bg-indigo-500 border-indigo-500' : 'border-muted-foreground/30'}`}>
+                    <Badge variant="outline" className="bg-indigo-500/5 text-indigo-500 border-indigo-500/20">{task.platform}</Badge>
+                    <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${completedTasks.includes(task.task) ? "bg-indigo-500 border-indigo-500" : "border-muted-foreground/30"}`}>
                       {completedTasks.includes(task.task) && <CheckCircle2 className="h-4 w-4 text-white" />}
                     </div>
                   </div>
-                  <h3 className={`font-bold text-lg mb-2 ${completedTasks.includes(task.task) ? 'line-through' : ''}`}>{task.task}</h3>
+                  <h3 className={`font-bold text-lg mb-2 ${completedTasks.includes(task.task) ? "line-through" : ""}`}>{task.task}</h3>
                   <p className="text-sm text-muted-foreground mb-4">{task.why}</p>
                   <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                     <span className="px-2 py-1 rounded-md bg-muted">⏳ {task.timeRequired}</span>
@@ -274,12 +260,9 @@ export default function ContentCoachPage() {
               <div className="p-8 rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white relative overflow-hidden group">
                 <Brain className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 group-hover:scale-110 transition-transform duration-700" />
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <ArrowRight className="h-6 w-6" />
-                  Your Main Objective
+                  <ArrowRight className="h-6 w-6" /> Your Main Objective
                 </h3>
-                <p className="text-lg leading-relaxed font-medium">
-                  "{report.nextWeekFocus}"
-                </p>
+                <p className="text-lg leading-relaxed font-medium">"{report.nextWeekFocus}"</p>
               </div>
             </motion.div>
           </div>
@@ -300,6 +283,77 @@ export default function ContentCoachPage() {
           </Button>
         </div>
       )}
+
+      {/* ── Chat Interface ─────────────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-3">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-indigo-400" /> Ask Your Coach
+        </h2>
+
+        <div className="rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden">
+          {/* Messages area */}
+          <div className="h-64 overflow-y-auto p-4 space-y-3">
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <p className="text-white/25 text-sm">Ask your AI coach anything about growing your content</p>
+                <div className="flex flex-wrap gap-2 mt-3 justify-center">
+                  {SUGGESTED_QUESTIONS.map(q => (
+                    <button
+                      key={q}
+                      onClick={() => sendMessage(q)}
+                      className="text-[10px] px-3 py-1.5 rounded-full border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 transition-all"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                  m.role === "user" ? "bg-cyan-500/20 text-white" : "bg-white/5 text-white/80"
+                }`}>
+                  {m.content}
+                </div>
+              </div>
+            ))}
+
+            {chatLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white/5 rounded-2xl px-4 py-3">
+                  <div className="flex gap-1.5 items-center">
+                    <span className="w-1.5 h-1.5 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input row */}
+          <div className="border-t border-white/5 p-3 flex gap-2">
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+              placeholder="Ask your coach..."
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-cyan-500/40 transition-colors"
+            />
+            <button
+              onClick={() => sendMessage()}
+              disabled={chatLoading || !input.trim()}
+              className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-black font-bold px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5" />
+              Send
+            </button>
+          </div>
+        </div>
+      </motion.div>
     </PageWrapper>
   );
 }

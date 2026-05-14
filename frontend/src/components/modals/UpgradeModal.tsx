@@ -162,9 +162,9 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
     try {
       const priceForCheckout = getPriceDisplay(plan, billingPeriod);
 
-      console.log("[UpgradeModal] Loading Razorpay script...");
+      if (import.meta.env.DEV) console.log("[UpgradeModal] Loading Razorpay script...");
       const loaded = await loadRazorpay();
-      console.log("[UpgradeModal] Razorpay loaded:", loaded, "window.Razorpay:", !!window.Razorpay);
+      if (import.meta.env.DEV) console.log("[UpgradeModal] Razorpay loaded:", loaded, "window.Razorpay:", !!window.Razorpay);
 
       if (!loaded || !window.Razorpay) {
         toast({
@@ -176,21 +176,21 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
         return;
       }
 
-      console.log("[UpgradeModal] Creating subscription on backend...", { plan, billingPeriod, currency });
+      if (import.meta.env.DEV) console.log("[UpgradeModal] Creating subscription on backend...", { plan, billingPeriod, currency });
       const data = await createSub.mutateAsync({ 
         planType: plan, 
         couponCode: discountPercent > 0 ? couponCode : undefined,
         billingPeriod: billingPeriod,
         currency: currency
       });
-      console.log("[UpgradeModal] Backend response received:", { hasSubId: !!data?.subscriptionId, keyId: data?.keyId });
+      if (import.meta.env.DEV) console.log("[UpgradeModal] Backend response received:", { hasSubId: !!data?.subscriptionId, keyId: data?.keyId });
 
       if (!data?.subscriptionId) {
         throw new Error("Failed to initialize subscription with payment provider.");
       }
 
       const razorpayKey = data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID;
-      console.log("[UpgradeModal] Initializing Razorpay with key:", razorpayKey?.substring(0, 8) + "...");
+      if (import.meta.env.DEV) console.log("[UpgradeModal] Initializing Razorpay with key:", razorpayKey?.substring(0, 8) + "...");
 
       const options = {
         key: razorpayKey,
@@ -232,14 +232,14 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
         toast({ variant: "destructive", title: "Payment Failed", description: response.error.description });
       });
       
-      console.log("[UpgradeModal] Final Razorpay Options:", {
+      if (import.meta.env.DEV) console.log("[UpgradeModal] Final Razorpay Options:", {
         keyLength: options.key?.length,
         subId: options.subscription_id,
         name: options.name,
       });
-      console.log("[UpgradeModal] Calling rzp.open()...");
+      if (import.meta.env.DEV) console.log("[UpgradeModal] Calling rzp.open()...");
       rzp.open();
-      console.log("[UpgradeModal] rzp.open() called.");
+      if (import.meta.env.DEV) console.log("[UpgradeModal] rzp.open() called.");
     } catch (err: any) {
       console.error("Checkout error:", err);
       toast({ variant: "destructive", title: "Checkout Error", description: err.message || "Failed to start checkout. Please try again." });

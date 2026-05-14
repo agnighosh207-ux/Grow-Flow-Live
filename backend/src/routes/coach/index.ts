@@ -155,4 +155,29 @@ Analyze the data and return a JSON object with the following structure:
   }
 });
 
+router.post("/chat", requireAuth, async (req: any, res): Promise<void> => {
+  const { message, history = [] } = req.body;
+  if (!message || typeof message !== "string") {
+    res.status(400).json({ error: "Message required" });
+    return;
+  }
+
+  const systemPrompt = `You are GrowCoach, an expert AI content strategist for Indian social media creators. You are embedded in the GrowFlow AI app. Give specific, actionable advice. Understand Indian creator culture — Hinglish, regional content, YouTube monetization for India, brand deals with Indian companies. Keep responses concise (max 150 words). Be encouraging but honest.`;
+
+  const chatMessages = [
+    { role: "system" as const, content: systemPrompt },
+    ...history.slice(-10).map((m: any) => ({ role: m.role as "user" | "assistant", content: String(m.content).slice(0, 500) })),
+    { role: "user" as const, content: message.slice(0, 500) },
+  ];
+
+  try {
+    const completion = await generateContent({ messages: chatMessages, maxTokens: 300, temperature: 0.7 });
+    const reply = completion.choices[0]?.message?.content || "I couldn't generate a response right now. Please try again.";
+    res.json({ reply });
+  } catch (err: any) {
+    console.error("Coach chat error:", err);
+    res.status(503).json({ error: "Coach unavailable right now. Please try again in a moment." });
+  }
+});
+
 export default router;
