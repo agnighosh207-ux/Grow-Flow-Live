@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState, useRef } from "react";
+﻿import { ReactNode, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBanner } from "@/components/banners/NotificationBanner";
 import { FeatureDiscoveryBanner } from "@/components/banners/FeatureDiscoveryBanner";
@@ -916,22 +916,38 @@ export function Layout({ children }: { children: ReactNode }) {
                     isPro={isPro}
                     onClick={() => setIsSheetOpen(false)}
                   />
-                  <div className="mt-auto border-t border-white/5 p-8 flex items-center justify-between">
-                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Language</span>
-                    <div className="flex gap-4">
-                      {['en', 'hi', 'bn'].map(lang => (
-                        <button 
-                          key={lang}
-                          onClick={() => { 
-                            i18n.changeLanguage(lang); 
-                            localStorage.setItem('i18nextLng', lang); // explicit save
-                            setIsSheetOpen(false); 
-                          }}
-                          className={`text-xs font-bold uppercase tracking-widest ${i18n.language === lang ? 'text-cyan-400' : 'text-white/40'}`}
-                        >
-                          {lang === 'en' ? 'EN' : lang === 'hi' ? 'HI' : 'BN'}
-                        </button>
-                      ))}
+                  <div className="mt-auto border-t border-white/5 p-6 space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {user?.imageUrl ? (
+                          <img src={user.imageUrl} alt={user.fullName || "User"} className="w-9 h-9 rounded-full border border-white/10 object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full border border-white/10 bg-white/5 flex-shrink-0 flex items-center justify-center text-sm text-white/40 font-bold">
+                            {(user?.fullName || "U").charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-white/80 truncate">{user?.fullName || "User"}</p>
+                          <p className="text-[10px] text-white/30 truncate">{user?.primaryEmailAddress?.emailAddress}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm"
+                        className="text-white/35 hover:text-red-400 hover:bg-red-500/10 text-xs px-3 h-8 flex items-center gap-1.5 flex-shrink-0 border border-white/8 rounded-xl"
+                        onClick={() => { setIsSheetOpen(false); signOut(); }}
+                      >
+                        <LogOut className="w-3.5 h-3.5" /> Sign Out
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Language</span>
+                      <div className="flex gap-4">
+                        {['en', 'hi', 'bn'].map(lang => (
+                          <button key={lang}
+                            onClick={() => { i18n.changeLanguage(lang); localStorage.setItem('i18nextLng', lang); setIsSheetOpen(false); }}
+                            className={`text-xs font-bold uppercase tracking-widest ${i18n.language === lang ? 'text-cyan-400' : 'text-white/40'}`}
+                          >{lang === 'en' ? 'EN' : lang === 'hi' ? 'HI' : 'BN'}</button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </SheetContent>

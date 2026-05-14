@@ -62,6 +62,8 @@ app.use(helmet({
         "https://checkout.razorpay.com",
         "https://cdn.razorpay.com",
       ],
+      // Clerk creates blob: workers for its background sync
+      workerSrc: ["'self'", "blob:"],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
@@ -75,15 +77,20 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: [
         "'self'",
-        // Clerk APIs
+        // Clerk APIs + avatars
         "https://api.clerk.com",
         "https://clerk.growflowai.space",
         "https://*.clerk.accounts.dev",
+        "https://img.clerk.com",
+        // Google Fonts (fetched by service worker)
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com",
+        // App domains
         "https://growflowai.space",
         "https://www.growflowai.space",
         "https://api.growflowai.space",
         "wss://growflowai.space",
-        // AI providers (for client-side if any)
+        // AI providers
         "https://api.groq.com",
       ],
       frameSrc: [
