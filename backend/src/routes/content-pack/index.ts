@@ -4,8 +4,7 @@ import { db, usersTable, contentGenerationsTable } from "@workspace/db";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
-import { generateContent, extractJson } from "../../services/ai-engine";
-import { fetchLiveContext } from "../../services/perplexity-search";
+import { generateContent, webSearch, extractJson } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
@@ -56,7 +55,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("content-pack"), enforc
 
   try {
     // 1. Fetch live web data for RAG (Retrieval Augmented Generation)
-    const liveContext = await fetchLiveContext(sanitizedNiche, sanitizedIdea);
+    const liveContext = await webSearch(`${sanitizedNiche} content: ${sanitizedIdea} — latest trends and viral data 2025`);
     if (abortController.signal.aborted) return;
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));

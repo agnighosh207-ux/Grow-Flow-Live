@@ -1,3 +1,5 @@
+import { logger } from "../lib/logger";
+
 /**
  * Razorpay Plan ID Router
  * Strictly maps tier and billing cycle combinations to environment-configured Plan IDs.
@@ -70,8 +72,13 @@ export function getRazorpayPlanId(tier: string, cycle: string, currency: string 
   const planId = process.env[envKey];
 
   if (!planId) {
-    console.error(`[CRITICAL] Missing Razorpay Plan ID for key: ${envKey}`);
-    throw new Error(`PLAN_NOT_CONFIGURED: Subscriptions for ${tier} (${cycle}) in ${normalizedCurrency} are temporarily unavailable.`);
+    logger.error({ 
+      envKey, 
+      tier, 
+      cycle,
+      availableKeys: Object.keys(process.env).filter(k => k.startsWith('RAZORPAY_PLAN_'))
+    }, `[CRITICAL] Missing Razorpay Plan ID`);
+    throw new Error(`PLAN_NOT_CONFIGURED: Missing env var "${envKey}". Go to Razorpay Dashboard → Products → Subscriptions → Plans → Create plan → copy ID → add to Railway env vars as ${envKey}`);
   }
 
   return planId;

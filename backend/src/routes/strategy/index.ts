@@ -4,8 +4,7 @@ import { enforceGenerationLimit, refundGenerationCredit } from "../../middleware
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { db, contentCalendarTable, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
-import { generateContent } from "../../services/ai-engine";
-import { fetchLiveContext } from "../../services/perplexity-search";
+import { generateContent, webSearch } from "../../services/ai-engine";
 
 const router: IRouter = Router();
 
@@ -42,7 +41,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
 
   try {
     // 1. Fetch live web data for RAG (Retrieval Augmented Generation)
-    const liveContext = await fetchLiveContext(sanitizedNiche as string, sanitizedGoal as string);
+    const liveContext = await webSearch(`${sanitizedNiche} content strategy: ${sanitizedGoal} — latest trends and viral data 2025`);
     if (abortController.signal.aborted) return;
 
     let systemPrompt = `You are a senior content strategist. Create a ${duration}-day growth arc strategy for ${sanitizedNiche}.

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BarChart2, Zap, Instagram, Twitter, Linkedin, Youtube, Check, X, Info, Copy, RefreshCw, History, ArrowRight, TrendingUp } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
@@ -14,6 +14,9 @@ import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
+
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 interface PredictionResult {
   overallScore: number;
@@ -44,6 +47,15 @@ export default function PredictorPage() {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
+
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
   const { data: history = [], isLoading: historyLoading } = useQuery({
     queryKey: ["predictor-history"],
     queryFn: () => api.get("/predictor/history").then(r => r.data),
@@ -57,7 +69,7 @@ export default function PredictorPage() {
     }
     setLoading(true);
     try {
-      const { data } = await api.post("/predictor/analyze", { content, platform, niche, contentType });
+      const { data } = await api.post("/predictor/analyze", { content, platform, niche, contentType, language });
       const newResult = { ...data, platform, timestamp: Date.now() };
       setResult(newResult);
       
@@ -151,7 +163,7 @@ export default function PredictorPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-bold">Platform</label>
                     <Select value={platform} onValueChange={setPlatform}>
@@ -195,6 +207,14 @@ export default function PredictorPage() {
                         <SelectItem value="Hook">Just a Hook</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold">Content Language</label>
+                    <LanguageSelector 
+                      value={language} 
+                      onChange={setLanguage} 
+                      isFreeUser={isFreeUser}
+                    />
                   </div>
                 </div>
 

@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+
 interface CoachReport {
   weeklyScore: number;
   topStrength: string;
@@ -39,6 +42,15 @@ export default function ContentCoachPage() {
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const { toast } = useToast();
 
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
+
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
   useEffect(() => {
     const saved = localStorage.getItem("coach_completed_tasks");
     if (saved) setCompletedTasks(JSON.parse(saved));
@@ -50,7 +62,7 @@ export default function ContentCoachPage() {
   const fetchReport = async (refresh = false) => {
     setLoading(true);
     try {
-      const { data } = await api.post("/coach/analyze", { refresh });
+      const { data } = await api.post("/coach/analyze", { refresh, language });
       setReport(data);
     } catch (err: any) {
       const msg = err.response?.data?.message || "We couldn't generate your report right now. Please try again later.";
@@ -106,12 +118,19 @@ export default function ContentCoachPage() {
             Personalized weekly growth analysis and action plan.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-end gap-3">
+          <div className="w-full sm:w-48">
+            <LanguageSelector 
+              value={language} 
+              onChange={setLanguage} 
+              isFreeUser={isFreeUser}
+            />
+          </div>
           <Button 
             onClick={() => fetchReport(true)} 
             disabled={loading}
             variant="outline"
-            className="group"
+            className="group w-full sm:w-auto"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             Refresh Report

@@ -15,6 +15,8 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 
 const formats = [
   { id: "instagram", label: "Instagram", icon: <Instagram className="h-5 w-5" />, limit: 150 },
@@ -36,9 +38,13 @@ export default function CreatorProfilePage() {
     achievement: "",
     targetAudience: "",
     tone: "professional" as const,
-    language: "English",
+    language: localStorage.getItem("preferred_language") || "English",
     formats: ["instagram", "twitter", "linkedin"] as string[]
   });
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", formData.language);
+  }, [formData.language]);
 
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -170,6 +176,15 @@ export default function CreatorProfilePage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Target Language</label>
+                <LanguageSelector 
+                  value={formData.language} 
+                  onChange={(l) => setFormData({...formData, language: l})} 
+                  isFreeUser={isFreeUser}
+                />
               </div>
 
               <div className="space-y-3">

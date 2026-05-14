@@ -9,6 +9,7 @@ import { Bookmark, Heart, RefreshCw, Wand2, Trash2, Loader2, Instagram, Linkedin
 import { SiYoutube } from "react-icons/si";
 import { useAuth } from "@clerk/react";
 import { PageSkeleton, EmptyState } from "@/components/shared/Skeleton";
+import { haptic } from "@/lib/utils";
 
 interface SavedItem {
   id: number;
@@ -48,16 +49,27 @@ export default function Saved() {
 
   const { getToken } = useAuth();
 
-  useEffect(() => {
-    (async () => {
+  // Pull to refresh logic
+  const [pullY, setPullY] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchSaved = async () => {
+    try {
       const token = await getToken();
-      fetch("/api/favorites/content", {
+      const res = await fetch("/api/favorites/content", {
         headers: token ? { "Authorization": `Bearer ${token}` } : {},
-      })
-      .then(r => r.json())
-      .then(data => { setItems(data.items ?? []); setLoading(false); })
-      .catch(() => setLoading(false));
-    })();
+      });
+      const data = await res.json();
+      setItems(data.items ?? []);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSaved();
   }, []);
 
   async function handleRemove(id: number) {
@@ -87,7 +99,31 @@ export default function Saved() {
 
   return (
     <PlanGate requiredPlan="starter" featureName="Saved Content" description="Save and revisit your favourite generated content — available on Starter (₹299/month) and above.">
-    <div className="space-y-8 pb-16 max-w-4xl mx-auto">
+    <div 
+      className="space-y-8 pb-16 max-w-4xl mx-auto min-h-screen"
+      onTouchStart={(e) => {
+        if (window.scrollY === 0) setPullY(e.touches[0].clientY);
+      }}
+      onTouchMove={(e) => {
+        if (pullY > 0) {
+          const y = e.touches[0].clientY;
+          if (y > pullY + 80 && !isRefreshing) {
+            setIsRefreshing(true);
+            haptic('heavy');
+            fetchSaved().then(() => {
+              setIsRefreshing(false);
+              setPullY(0);
+            });
+          }
+        }
+      }}
+      onTouchEnd={() => setPullY(0)}
+    >
+      {isRefreshing && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="w-6 h-6 animate-spin text-pink-500" />
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">

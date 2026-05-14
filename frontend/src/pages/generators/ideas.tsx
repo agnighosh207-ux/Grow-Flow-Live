@@ -60,7 +60,11 @@ interface ContentIdea {
 function IdeasGeneratorInner() {
   const [niche, setNiche] = useState<typeof NICHES[number]>("General");
   const [goal, setGoal] = useState("");
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
   const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);

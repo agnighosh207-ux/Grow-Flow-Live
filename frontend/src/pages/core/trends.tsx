@@ -11,6 +11,8 @@ import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 const NICHES = [
   { value: "General", emoji: "🌐", label: "General" },
@@ -178,12 +180,24 @@ export default function TrendEngine() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"limit" | "pro_feature">("limit");
 
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
+
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
   async function fetchAlerts() {
     setAlertsLoading(true);
     try {
       const token = await getToken();
       const res = await fetch("/api/trend-alerts/latest", {
-        headers: token ? { "Authorization": `Bearer ${token}` } : {}
+        headers: token ? { 
+          "Authorization": `Bearer ${token}`,
+          "X-Preferred-Language": language
+        } : {}
       });
       if (res.ok) {
         const data = await res.json();
@@ -211,7 +225,7 @@ export default function TrendEngine() {
           "Content-Type": "application/json",
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ niche }),
+        body: JSON.stringify({ niche, language }),
       });
       if (res.status === 402) {
         setUpgradeReason("limit");
@@ -363,27 +377,41 @@ export default function TrendEngine() {
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
         }}
       >
-        <div className="mb-5">
-          <p className="text-xs font-semibold text-white/35 uppercase tracking-wider mb-3">
-            Select Your Niche
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {NICHES.map((n) => (
-              <motion.button
-                key={n.value}
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setNiche(n.value)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 border ${
-                  niche === n.value
-                    ? "bg-red-500/20 text-red-300 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-                    : "bg-white/4 text-white/50 border-white/8 hover:bg-white/7 hover:text-white/70 hover:border-white/20"
-                }`}
-              >
-                <span>{n.emoji}</span>
-                {n.label}
-              </motion.button>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-5">
+          <div>
+            <p className="text-xs font-semibold text-white/35 uppercase tracking-wider mb-3">
+              Select Your Niche
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {NICHES.map((n) => (
+                <motion.button
+                  key={n.value}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setNiche(n.value)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 border ${
+                    niche === n.value
+                      ? "bg-red-500/20 text-red-300 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                      : "bg-white/4 text-white/50 border-white/8 hover:bg-white/7 hover:text-white/70 hover:border-white/20"
+                  }`}
+                >
+                  <span>{n.emoji}</span>
+                  {n.label}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-white/35 uppercase tracking-wider mb-3">
+              Output Language
+            </p>
+            <div className="w-full sm:w-64">
+              <LanguageSelector 
+                value={language} 
+                onChange={setLanguage} 
+                isFreeUser={isFreeUser}
+              />
+            </div>
           </div>
         </div>
 

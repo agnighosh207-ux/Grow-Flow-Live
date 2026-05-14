@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
@@ -79,7 +79,11 @@ function StrategyPlannerInner() {
   const [plan, setPlan] = useState<DayPlan[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
   const { toast } = useToast();
   const { getToken } = useAuth();
   const [, navigate] = useLocation();

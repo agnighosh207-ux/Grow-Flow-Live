@@ -410,3 +410,9 @@
   0%, 100% { opacity: 1; filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.5)); }
   50% { opacity: 0.8; filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.8)); }
 }
+
+@media (max-width: 768px) {
+  * { -webkit-tap-highlight-color: transparent; }
+  input, textarea, select { font-size: 16px !important; }
+  button { min-height: 44px; min-width: 44px; }
+}

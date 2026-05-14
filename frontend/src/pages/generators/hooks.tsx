@@ -38,6 +38,12 @@ const formSchema = z.object({
 });
 
 function HooksGeneratorInner() {
+  const [prefLang, setPrefLang] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", prefLang);
+  }, [prefLang]);
+
   const [hooks, setHooks] = useState<string[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { toast } = useToast();
@@ -51,10 +57,10 @@ function HooksGeneratorInner() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { topic: "", tone: "Aggressive", language: "English" }
+    defaultValues: { topic: "", tone: "Aggressive", language: prefLang }
   });
 
-  const language = form.watch("language");
+  const currentLanguage = form.watch("language");
 
 
 
@@ -159,8 +165,11 @@ function HooksGeneratorInner() {
 
             <div className="w-full sm:w-52">
               <LanguageSelector
-                value={language}
-                onChange={(v) => form.setValue("language", v)}
+                value={currentLanguage}
+                onChange={(v) => {
+                  form.setValue("language", v);
+                  setPrefLang(v);
+                }}
                 isFreeUser={isFreeUser}
                 onUpgradeRequired={() => toast({ title: "🔒 Premium Languages", description: "Upgrade to use regional languages!", variant: "destructive" })}
               />

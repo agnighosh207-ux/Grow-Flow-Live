@@ -619,9 +619,21 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
 router.post("/credits/topup", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const { pack: packKey } = req.body as { pack: "small" | "medium" | "large" };
   const PACKS: Record<string, { credits: number; amount: number; label: string }> = {
-    small:  { credits: 10,  amount: 4900,  label: "10 credits — ₹49" },
-    medium: { credits: 25,  amount: 9900,  label: "25 credits — ₹99" },
-    large:  { credits: 60,  amount: 19900, label: "60 credits — ₹199" },
+    small: {
+      credits: parseInt(process.env.RAZORPAY_TOPUP_SMALL_CREDITS || "10"),
+      amount: parseInt(process.env.RAZORPAY_TOPUP_SMALL_AMOUNT || "4900"),
+      label: `${process.env.RAZORPAY_TOPUP_SMALL_CREDITS || 10} credits — ₹${parseInt(process.env.RAZORPAY_TOPUP_SMALL_AMOUNT || "4900") / 100}`,
+    },
+    medium: {
+      credits: parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_CREDITS || "25"),
+      amount: parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_AMOUNT || "9900"),
+      label: `${process.env.RAZORPAY_TOPUP_MEDIUM_CREDITS || 25} credits — ₹${parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_AMOUNT || "9900") / 100}`,
+    },
+    large: {
+      credits: parseInt(process.env.RAZORPAY_TOPUP_LARGE_CREDITS || "60"),
+      amount: parseInt(process.env.RAZORPAY_TOPUP_LARGE_AMOUNT || "19900"),
+      label: `${process.env.RAZORPAY_TOPUP_LARGE_CREDITS || 60} credits — ₹${parseInt(process.env.RAZORPAY_TOPUP_LARGE_AMOUNT || "19900") / 100}`,
+    },
   };
   
   const pack = PACKS[packKey];

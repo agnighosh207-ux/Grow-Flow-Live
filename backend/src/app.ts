@@ -22,6 +22,20 @@ import { validateAIConfig } from "./services/ai-engine";
 
 validateAIConfig();
 
+function validateRazorpayConfig() {
+  const requiredKeys = [
+    'RAZORPAY_LIVE_KEY_ID', 'RAZORPAY_LIVE_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET',
+    'RAZORPAY_PLAN_STARTER_MONTHLY', 'RAZORPAY_PLAN_CREATOR_MONTHLY', 'RAZORPAY_PLAN_INFINITY_MONTHLY',
+  ];
+  const missing = requiredKeys.filter(k => !process.env[k]);
+  if (missing.length > 0) {
+    logger.error({ missing }, '[RAZORPAY] Missing required environment variables — subscriptions will fail');
+  } else {
+    logger.info('[RAZORPAY] All required keys present ✓');
+  }
+}
+validateRazorpayConfig();
+
 import { isShuttingDown } from "./lib/state.js";
 
 const app: Express = express();

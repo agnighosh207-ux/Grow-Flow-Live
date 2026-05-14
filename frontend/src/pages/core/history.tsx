@@ -143,6 +143,8 @@ function DetailView({ item, onClose }: { item: any; onClose: () => void }) {
   );
 }
 
+import { haptic } from "@/lib/utils";
+
 export default function History() {
   const [activeTab, setActiveTab] = useState("all");
   const [items, setItems] = useState<any[]>([]);
@@ -151,6 +153,10 @@ export default function History() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  // Pull to refresh logic
+  const [pullY, setPullY] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { data: stats, isLoading: statsLoading } = useGetContentStats({
     query: { queryKey: getGetContentStatsQueryKey(), staleTime: 120_000 },
@@ -202,7 +208,31 @@ export default function History() {
   ];
 
   return (
-    <div className="space-y-6 pb-16">
+    <div 
+      className="space-y-6 pb-16 min-h-screen"
+      onTouchStart={(e) => {
+        if (window.scrollY === 0) setPullY(e.touches[0].clientY);
+      }}
+      onTouchMove={(e) => {
+        if (pullY > 0) {
+          const y = e.touches[0].clientY;
+          if (y > pullY + 80 && !isRefreshing) {
+            setIsRefreshing(true);
+            haptic('heavy');
+            fetchHistory(activeTab).then(() => {
+              setIsRefreshing(false);
+              setPullY(0);
+            });
+          }
+        }
+      }}
+      onTouchEnd={() => setPullY(0)}
+    >
+      {isRefreshing && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+        </div>
+      )}
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5">History</h1>

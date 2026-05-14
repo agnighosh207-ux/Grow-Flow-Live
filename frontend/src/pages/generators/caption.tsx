@@ -132,7 +132,11 @@ export default function CaptionEnhancer() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EnhanceResult | null>(null);
   const [activeTab, setActiveTab] = useState<"full" | "micro">("full");
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
 

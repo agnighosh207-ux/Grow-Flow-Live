@@ -8,6 +8,21 @@ import { UpgradeModal } from "@/components/modals/UpgradeModal";
 import { FoundersBanner } from "@/components/banners/FoundersBanner";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
+
+declare global { interface Window { Razorpay: any; } }
+
+function loadRazorpay(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (window.Razorpay) { resolve(true); return; }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    const timeout = setTimeout(() => resolve(false), 10000); // 10 second timeout
+    script.onload = () => { clearTimeout(timeout); resolve(true); };
+    script.onerror = () => { clearTimeout(timeout); resolve(false); };
+    document.body.appendChild(script);
+  });
+}
 
 import {
   Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
@@ -138,6 +153,101 @@ function CellContent({ value, infinityLabel }: { value: boolean | string; infini
 }
 
 const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3 };
+
+function TopUpSection() {
+  const [loadingPack, setLoadingPack] = useState<string | null>(null);
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const PACKS = [
+    { key: "small",  credits: 10, price: "₹49",  popular: false, desc: "Quick boost" },
+    { key: "medium", credits: 25, price: "₹99",  popular: true,  desc: "Best value" },
+    { key: "large",  credits: 60, price: "₹199", popular: false, desc: "Power pack" },
+  ];
+
+  const handleTopup = async (packKey: string) => {
+    setLoadingPack(packKey);
+    try {
+      const loaded = await loadRazorpay();
+      if (!loaded) throw new Error("Razorpay could not load. Try disabling ad blockers.");
+      
+      const token = await getToken();
+      const res = await fetch("/api/subscription/credits/topup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ pack: packKey }),
+      });
+      const data = await res.json();
+      if (!data.orderId) throw new Error(data.error || "Failed to create order");
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: "INR",
+        name: "GrowFlow AI",
+        description: `Credit Top-Up: ${data.label}`,
+        order_id: data.orderId,
+        theme: { color: "#7c3aed" },
+        handler: async (response: any) => {
+          try {
+            const verifyRes = await fetch("/api/subscription/credits/verify-topup", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ ...response, credits: data.credits }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+              toast({ title: `✅ ${data.credits} credits added!`, description: "Your credits are ready to use." });
+            } else {
+              throw new Error(verifyData.error || "Verification failed");
+            }
+          } catch (err: any) {
+            toast({ variant: "destructive", title: "Top-up failed", description: err.message });
+          } finally {
+            setLoadingPack(null);
+          }
+        },
+        modal: { ondismiss: () => setLoadingPack(null) },
+      };
+      new window.Razorpay(options).open();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Error", description: err.message });
+      setLoadingPack(null);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto mt-10 mb-6">
+      <div className="text-center mb-5">
+        <h3 className="text-lg font-bold text-white">Need More Credits?</h3>
+        <p className="text-white/40 text-sm mt-1">One-time top-up. No subscription. Use anytime.</p>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {PACKS.map(pack => (
+          <div key={pack.key} className={`relative rounded-2xl border p-4 text-center transition-all ${pack.popular ? 'border-violet-500/50 bg-violet-500/5' : 'border-white/8 bg-white/[0.02] hover:border-white/15'}`}>
+            {pack.popular && (
+              <div className="absolute -top-2.5 inset-x-0 flex justify-center">
+                <span className="bg-violet-500 text-white text-[9px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider">Best Value</span>
+              </div>
+            )}
+            <div className="text-2xl font-black text-white mt-1">{pack.credits}</div>
+            <div className="text-[10px] text-white/40 mb-3">credits</div>
+            <button
+              onClick={() => handleTopup(pack.key)}
+              disabled={!!loadingPack}
+              className={`w-full py-2 rounded-xl text-sm font-bold transition-all ${pack.popular ? 'bg-violet-500 hover:bg-violet-400 text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 border border-white/10'} disabled:opacity-50`}
+            >
+              {loadingPack === pack.key ? "..." : pack.price}
+            </button>
+          </div>
+        ))}
+      </div>
+      <p className="text-center text-[10px] text-white/20 mt-3">Credits never expire · Secure payment via Razorpay</p>
+    </div>
+  );
+}
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("yearly");
@@ -984,6 +1094,9 @@ export default function PricingPage() {
         billingPeriod={upgradeModal.billing}
         currency={upgradeModal.currency}
       />
+      
+      <TopUpSection />
+
         {/* FAQ Section */}
         <div className="max-w-2xl mx-auto mt-16">
           <h3 className="text-center text-xl font-bold text-white mb-6">Frequently Asked Questions</h3>

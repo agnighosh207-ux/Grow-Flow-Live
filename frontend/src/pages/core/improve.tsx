@@ -13,6 +13,8 @@ import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -26,6 +28,15 @@ const itemVariants = {
 
 export default function CompetitorIntelPage() {
   const [activeTab, setActiveTab] = useState("single");
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
+
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
   const [content, setContent] = useState("");
   const [niche, setNiche] = useState("");
   const [platform, setPlatform] = useState("Instagram");
@@ -52,7 +63,8 @@ export default function CompetitorIntelPage() {
         competitorContent: content,
         yourNiche: niche,
         platform,
-        yourGoal: goal
+        yourGoal: goal,
+        language
       });
       setResult(data);
       // --- P-3 FIX: Invalidate cache to sync credit counter ---
@@ -89,7 +101,7 @@ export default function CompetitorIntelPage() {
     setBatchAnalyzing(true);
     try {
       const { data } = await api.post("/improve-competitor/batch", {
-        items: validItems, niche, platform
+        items: validItems, niche, platform, language
       });
       setBatchResults(data);
     } catch (err: any) {
@@ -170,7 +182,7 @@ export default function CompetitorIntelPage() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="space-y-3">
                           <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Theater of War</label>
                           <Select value={platform} onValueChange={setPlatform}>
@@ -184,6 +196,14 @@ export default function CompetitorIntelPage() {
                               <SelectItem value="YouTube">YouTube</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Target Language</label>
+                            <LanguageSelector 
+                              value={language} 
+                              onChange={setLanguage} 
+                              isFreeUser={isFreeUser}
+                            />
                         </div>
                         <div className="space-y-3">
                           <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Your Contextual Domain</label>

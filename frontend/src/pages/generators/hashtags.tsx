@@ -17,6 +17,9 @@ import { api } from "@/lib/api-client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -33,7 +36,15 @@ export default function HashtagsPage() {
   const [niche, setNiche] = useState("");
   const [platform, setPlatform] = useState("Instagram");
   const [strategy, setStrategy] = useState("mixed");
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
+
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -239,6 +250,15 @@ export default function HashtagsPage() {
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Target Language</label>
+                        <LanguageSelector 
+                          value={language} 
+                          onChange={setLanguage} 
+                          isFreeUser={isFreeUser}
+                        />
                       </div>
 
                       <div className="p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">

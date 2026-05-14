@@ -1,33 +1,15 @@
 import { Router, type IRouter } from "express";
-import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
-import { generateContent, extractJson } from "../../services/ai-engine";
+import { generateContent, webSearch, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
 import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
 
-// ─── Perplexity AI Direct Client (for 100% search routes) ─────────────────
-// Trends and Ideas use Perplexity DIRECTLY — it searches the live web AND
-// structures the output in a single call. NO Groq involved.
-let perplexityClient: OpenAI | null = null;
-try {
-  if (process.env.OPENROUTER_API_KEY) {
-    perplexityClient = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY,
-      defaultHeaders: {
-        "HTTP-Referer": "https://growflow.ai",
-        "X-Title": "GrowFlow AI",
-      },
-    });
-  }
-} catch (e) {
-  console.warn("Failed to initialize Perplexity client in trends:", e);
-}
+// ─── Direct Client Removed — Centralized via webSearch in ai-engine ──────
 
 const nicheContextMap: Record<string, string> = {
   Fitness: "body transformation, workout science, nutrition optimization, gym psychology, training methodologies (calisthenics, powerlifting, hypertrophy, functional), recovery protocols, biohacking",
@@ -100,7 +82,12 @@ router.post("/generate", requireAuth, requirePlanOrTrial("trends"), enforceGener
   const trendDrivers = nicheTrendDrivers[sanitizedNiche] || nicheTrendDrivers["General"];
   const currentYear = new Date().getFullYear();
 
-  const systemPrompt = `You are a social media trend intelligence analyst. Search the live web for breaking news and viral trends happening RIGHT NOW in the ${sanitizedNiche} space. Identify 8 content ideas that are EXPLODING in ${currentYear}. 
+  try {
+    if (abortController.signal.aborted) return;
+
+    const liveContext = await webSearch(`Latest viral ${sanitizedNiche} content trends on Instagram and YouTube in 2025: trending formats, hooks, and topics`, abortController.signal);
+
+    const finalSystemPrompt = `You are a viral trend analyst for ${sanitizedNiche} creators.${liveContext ? `\n\nLIVE WEB DATA:\n${liveContext}` : ""}\n\nBased on the live data above, generate trending content ideas.
 NICHE: ${sanitizedNiche}
 CONTENT TERRITORY: ${nicheContext}
 CURRENT CULTURAL DRIVERS: ${trendDrivers}
@@ -109,7 +96,7 @@ Output must be in ${language}.
 
 Return ONLY a valid JSON object with a "trends" key containing an array of 8 objects. No markdown.`;
 
-  const userPrompt = `Generate 8 trending content ideas for ${sanitizedNiche} in ${currentYear} based on live search results.
+    const userPrompt = `Generate 8 trending content ideas for ${sanitizedNiche} in ${currentYear} based on live search results.
 JSON schema:
 {
   "trends": [
@@ -124,52 +111,23 @@ JSON schema:
   ]
 }`;
 
-  try {
-    if (abortController.signal.aborted) return;
-
     let trends: any[] = [];
-    try {
-      if (!perplexityClient) throw new Error("Perplexity client not initialized (missing API key)");
-      const completion = await perplexityClient.chat.completions.create({
-        model: "perplexity/sonar",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: 2000,
-      }, {
-        // @ts-ignore
-        signal: abortController.signal
-      });
+    const resPayload = await generateContent({
+      messages: [
+        { role: "system", content: finalSystemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      language,
+      maxTokens: 2000,
+      forceJsonMode: true,
+      signal: abortController.signal
+    });
 
-      if (abortController.signal.aborted) return;
-      const raw = completion.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
-      const parsed = extractJson(raw);
-      trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
-    } catch (err: any) {
-      if (abortController.signal.aborted) return;
-      console.error("TRENDS DIRECT PERPLEXITY FAIL:", {
-        message: err.message,
-        status: err.status,
-        body: err.response?.data
-      });
-      console.warn("FALLING BACK TO ENGINE...");
-      const fallback = await generateContent({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        userPlan: req.user?.planType || "free",
-        userId: req.userId,
-        language,
-        maxTokens: 2000,
-        forceJsonMode: true,
-        signal: abortController.signal
-      });
-      const raw = fallback.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
-      const parsed = extractJson(raw);
-      trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
-    }
+    const raw = resPayload.choices[0]?.message?.content?.trim() ?? '{"trends": []}';
+    const parsed = extractJson(raw);
+    trends = parsed && Array.isArray(parsed.trends) ? parsed.trends : [];
 
     if (trends.length === 0) {
       res.status(503).json({ error: "Trends currently unavailable. Please try again." });

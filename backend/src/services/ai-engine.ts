@@ -1,295 +1,212 @@
 import OpenAI from "openai";
 import pino from "pino";
-import crypto from "crypto";
 import { z } from "zod";
 import { LANGUAGE_INSTRUCTIONS } from "../lib/languages";
-import { redis } from "../lib/redis";
 
-const appStatus = process.env.APP_STATUS || "";
-const isProduction = 
-  process.env.NODE_ENV === "production" || 
-  appStatus === "PRODUCTION" || 
-  appStatus === "BETA" ||
+const isProduction =
+  process.env.NODE_ENV === "production" ||
+  (process.env.APP_STATUS || "") === "PRODUCTION" ||
+  (process.env.APP_STATUS || "") === "BETA" ||
   !!process.env.RAILWAY_ENVIRONMENT;
 
 const logger = pino({
   ...(isProduction ? {} : {
-    transport: {
-      target: "pino-pretty",
-      options: {
-        colorize: true,
-        translateTime: "HH:MM:ss Z",
-        ignore: "pid,hostname",
-      },
-    },
+    transport: { target: "pino-pretty", options: { colorize: true, translateTime: "HH:MM:ss Z", ignore: "pid,hostname" } }
   })
 });
 
 export interface GenerateContentOptions {
   messages: any[];
-  userPlan: string;
-  userId?: string; 
+  userPlan?: string;
+  userId?: string;
   monthlyGenerationsUsed?: number;
   temperature?: number;
   maxTokens?: number;
   language?: string;
   zodSchema?: z.ZodSchema<any>;
   forceJsonMode?: boolean;
-  signal?: AbortSignal; // --- H-21 FIX: Support request cancellation ---
+  signal?: AbortSignal;
+  useWebSearch?: boolean; // NEW: explicitly request web search mode
 }
 
-// No longer needed as we use guardian.ts Redis rate limiting
-
-/**
- * Robust JSON extraction from AI string
- */
 export function extractJson(text: string): any {
   if (!text) return null;
-  
-  // Try direct parse first
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    // Attempt to extract from markdown blocks or braces
-    let jsonStr = text;
-    
-    // 1. Remove markdown code blocks if present
-    const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1];
-    } else {
-      // 2. Fallback to extracting anything between the first { and last }
-      const braceMatch = text.match(/\{[\s\S]*\}/);
-      if (braceMatch) {
-        jsonStr = braceMatch[0];
-      }
-    }
-
-    try {
-      return JSON.parse(jsonStr);
-    } catch (innerErr) {
-      // 3. Last ditch effort: basic cleaning of common LLM artifacts
-      const cleaned = jsonStr
-        .replace(/\\n/g, " ")
-        .replace(/\s+/g, " ")
-        .replace(/,\s*\}/g, "}") // trailing commas in objects
-        .replace(/,\s*\]/g, "]"); // trailing commas in arrays
-      
-      try {
-        return JSON.parse(cleaned);
-      } catch {
-        return null;
-      }
-    }
+  try { return JSON.parse(text); } catch {}
+  const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (codeBlock) { try { return JSON.parse(codeBlock[1]); } catch {} }
+  const brace = text.match(/\{[\s\S]*\}/);
+  if (brace) {
+    try { return JSON.parse(brace[0]); } catch {}
+    try { return JSON.parse(brace[0].replace(/,\s*([}\]])/g, '$1').replace(/\s+/g, ' ')); } catch {}
   }
+  return null;
 }
+
+// ── Single OpenRouter client for both Perplexity and Gemini ──────────────────
+const openRouterClient = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API || "",
+  defaultHeaders: {
+    "HTTP-Referer": "https://growflowai.space",
+    "X-Title": "GrowFlow AI",
+  },
+  timeout: 30000,
+  maxRetries: 0,
+});
+
+// ── Groq fallback clients ────────────────────────────────────────────────────
+const groqPrimary = new OpenAI({
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: process.env.GROQ_API_KEY || "",
+  timeout: 25000,
+  maxRetries: 0,
+});
+
+const groqSecondary = new OpenAI({
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: process.env.GROQ_API_KEY_SECONDARY || process.env.GROQ_API_KEY || "",
+  timeout: 25000,
+  maxRetries: 0,
+});
 
 export const validateAIConfig = () => {
-  const providers = [
-    { name: "Groq", key: process.env.GROQ_API_KEY },
-    { name: "Together AI", key: process.env.TOGETHER_AI_API_KEY },
-    { name: "Cerebras", key: process.env.CEREBRAS_API_KEY },
-    { name: "OpenRouter", key: process.env.OPENROUTER_API_KEY },
-    { name: "Gemini", key: process.env.GEMINI_API_KEY },
-    { name: "SambaNova", key: process.env.SAMBANOVA_API_KEY },
-  ];
-
-  const active = providers.filter(p => p.key && p.key.trim() !== "");
-  
-  if (active.length === 0) {
-    logger.error("[CRITICAL] No AI providers configured. At least one API key must be set in Environment Variables.");
-    // --- FIX: Do not crash in production so that the app can still serve non-AI routes and health checks ---
-    // throw new Error("No AI providers configured");
-  } else {
-    logger.info(`[AI] Initialized with providers: ${active.map(p => p.name).join(", ")}`);
-  }
+  const hasOpenRouter = !!(process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API);
+  const hasGroq = !!process.env.GROQ_API_KEY;
+  if (!hasOpenRouter) logger.error("[AI] CRITICAL: OPENROUTER_API_KEY missing — Perplexity and Gemini won't work");
+  if (!hasGroq) logger.error("[AI] CRITICAL: GROQ_API_KEY missing — fallback won't work");
+  if (hasOpenRouter && hasGroq) logger.info("[AI] Config OK: OpenRouter (Perplexity+Gemini) + Groq fallback ready ✓");
 };
 
-const providerClients = new Map<string, OpenAI>();
-
-function getClient(baseURL: string, apiKey: string): OpenAI {
-  if (!providerClients.has(baseURL)) {
-    providerClients.set(baseURL, new OpenAI({ 
-      apiKey: apiKey, 
-      baseURL: baseURL,
-      timeout: 30000,
-      maxRetries: 0,
-    }));
+// ── WEB SEARCH via Perplexity Sonar ─────────────────────────────────────────
+export async function webSearch(query: string, signal?: AbortSignal): Promise<string> {
+  try {
+    const response = await openRouterClient.chat.completions.create({
+      model: "perplexity/sonar",
+      messages: [
+        {
+          role: "system",
+          content: "You are a real-time web researcher. Fetch the most current trending data, statistics, and facts from the internet for the given query. Return ONLY dense factual summary in max 300 words. No formatting, no social media style."
+        },
+        { role: "user", content: query }
+      ],
+      max_tokens: 800,
+      temperature: 0.1,
+    }, { signal: signal as any });
+    return response.choices[0]?.message?.content || "";
+  } catch (err: any) {
+    logger.warn({ err: err.message }, "[PERPLEXITY] Web search failed — continuing without live data");
+    return "";
   }
-  return providerClients.get(baseURL)!;
 }
 
+// ── WRITING via Gemini 1.5 Flash → Groq fallback ────────────────────────────
 export const generateContent = async ({
   messages,
-  userPlan,
+  userPlan = "free",
   userId = "anonymous",
   temperature = 0.7,
   maxTokens = 1000,
-  monthlyGenerationsUsed = 0,
   language = "English",
   zodSchema,
   forceJsonMode,
-  signal, // --- H-21 FIX: Accept AbortSignal ---
+  signal,
+  useWebSearch = false,
 }: GenerateContentOptions) => {
   
-  // Guardian middleware handles rate limiting
-
-  let isInfinity = userPlan.toUpperCase() === "INFINITY";
-  const usage = monthlyGenerationsUsed || 0;
+  const langInstruction = LANGUAGE_INSTRUCTIONS[language as keyof typeof LANGUAGE_INSTRUCTIONS] || "";
   
-  if (isInfinity) {
-    if (usage >= 10000) {
-      // Non-blocking economy throttle for ultra-high usage
-      await new Promise(resolve => setTimeout(resolve, 5000));
-    } else if (usage >= 8000) {
-      isInfinity = false; // Economic fallback
+  // Apply language instruction to system message
+  let finalMessages = messages.map(m => {
+    if (typeof m.content === 'string' && m.content.length > 20000) {
+      return { ...m, content: m.content.substring(0, 20000) + "... [TRUNCATED]" };
+    }
+    return m;
+  });
+  
+  if (langInstruction) {
+    const sysIdx = finalMessages.findIndex(m => m.role === 'system');
+    if (sysIdx !== -1) {
+      // Add at END of system message so it overrides earlier instructions
+      finalMessages[sysIdx] = { 
+        ...finalMessages[sysIdx], 
+        content: `${finalMessages[sysIdx].content}\n\n⚠️ MANDATORY LANGUAGE OVERRIDE — HIGHEST PRIORITY:\n${langInstruction}\nThis language instruction OVERRIDES all previous tone/style instructions. The ENTIRE response must be in the specified language and script.`
+      };
+    } else {
+      finalMessages.unshift({ role: 'system', content: langInstruction });
+    }
+    // Also reinforce in the last user message
+    const lastUserIdx = finalMessages.map(m => m.role).lastIndexOf('user');
+    if (lastUserIdx !== -1) {
+      finalMessages[lastUserIdx] = {
+        ...finalMessages[lastUserIdx],
+        content: `${finalMessages[lastUserIdx].content}\n\n[LANGUAGE REMINDER: Write your ENTIRE response in ${language} only. Do NOT use English unless ${language} is English.]`
+      };
     }
   }
 
-  const providers = [
-    {
-      name: "Groq Primary",
-      apiKey: process.env.GROQ_API_KEY,
-      baseURL: "https://api.groq.com/openai/v1",
-      model: isInfinity ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant",
-    },
-    {
-      name: "Groq Secondary",
-      apiKey: process.env.GROQ_API_KEY_SECONDARY,
-      baseURL: "https://api.groq.com/openai/v1",
-      model: isInfinity ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant",
-    },
-    {
-      name: "Together AI",
-      apiKey: process.env.TOGETHER_AI_API_KEY,
-      baseURL: "https://api.together.xyz/v1",
-      model: isInfinity ? "meta-llama/Llama-3.3-70B-Instruct-Turbo" : "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-    },
-    {
-      name: "Cerebras",
-      apiKey: process.env.CEREBRAS_API_KEY,
-      baseURL: "https://api.cerebras.ai/v1",
-      model: isInfinity ? "llama-3.3-70b" : "llama3.1-8b",
-    },
-    {
-      name: "OpenRouter (Llama)",
-      apiKey: process.env.OPENROUTER_API_KEY,
-      baseURL: "https://openrouter.ai/api/v1",
-      model: isInfinity ? "meta-llama/llama-3.3-70b-instruct" : "meta-llama/llama-3.1-8b-instruct",
-    },
-    {
-      name: "Gemini",
-      apiKey: process.env.GEMINI_API_KEY,
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-      model: "gemini-2.0-flash",
-    },
-    {
-      name: "SambaNova",
-      apiKey: process.env.SAMBANOVA_API_KEY,
-      baseURL: "https://api.sambanova.ai/v1",
-      model: isInfinity ? "Meta-Llama-3.3-70B-Instruct" : "Meta-Llama-3.1-8B-Instruct",
-    }
-  ];
+  const jsonMode = (zodSchema || forceJsonMode) ? { response_format: { type: "json_object" as const } } : {};
 
-  // --- FIX: Distribute load across providers to prevent immediate rate-limit exhaustion ---
-  // Shuffle providers so we don't always hit the same one first
-  for (let i = providers.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [providers[i], providers[j]] = [providers[j], providers[i]];
+  // ── TIER 1: Gemini 1.5 Flash via OpenRouter ──────────────────────────────
+  try {
+    if (signal?.aborted) throw new Error("ABORTED");
+    const response = await openRouterClient.chat.completions.create({
+      model: "google/gemini-flash-1.5",
+      messages: finalMessages,
+      temperature,
+      max_tokens: maxTokens,
+      ...jsonMode,
+    }, { signal: signal as any });
+    
+    if (zodSchema) {
+      const parsed = extractJson(response.choices[0]?.message?.content || "");
+      if (!parsed) throw new Error("JSON_PARSE_FAILED");
+      const validated = zodSchema.safeParse(parsed);
+      if (!validated.success) throw new Error("SCHEMA_VALIDATION_FAILED");
+    }
+    logger.debug({ userId, model: "gemini-flash-1.5" }, "[AI] Generated via Gemini");
+    return response;
+  } catch (err: any) {
+    if (err.name === 'AbortError' || err.message === 'ABORTED') throw err;
+    logger.warn({ userId, err: err.message }, "[AI] Gemini failed, trying Groq primary");
   }
 
-  let lastError: any = null;
-  let attemptCount = 0;
-  const MAX_PROVIDER_ATTEMPTS = 7;
-  const TIMEOUT_MS = 12000; // 12 seconds per provider
-  const TOTAL_BUDGET_MS = 45000; // 45 seconds max for entire chain
-  const startTime = Date.now();
-
-  for (const provider of providers) {
-    if (Date.now() - startTime > TOTAL_BUDGET_MS) break; // Hard stop before Railway kills us
-    if (!provider.apiKey) continue;
-    if (attemptCount >= MAX_PROVIDER_ATTEMPTS) break;
-    attemptCount++;
-
-    const client = getClient(provider.baseURL, provider.apiKey);
-
-    // Each provider gets up to 2 attempts if JSON parsing fails
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        if (signal?.aborted) throw new Error("ABORTED"); // --- H-21 FIX: Check signal early ---
-
-        const langInstruction = LANGUAGE_INSTRUCTIONS[language as keyof typeof LANGUAGE_INSTRUCTIONS] || "";
-        // --- FIX: Prevent Context-Window Overflow ---
-        // Truncate any overly large message payload to prevent API draining/crashing
-        let finalMessages = messages.map(m => {
-          let content = m.content;
-          if (typeof content === 'string' && content.length > 20000) {
-            content = content.substring(0, 20000) + "... [TRUNCATED DUE TO SIZE]";
-          }
-          return { ...m, content };
-        });
-        
-        if (langInstruction) {
-          const systemMsgIdx = finalMessages.findIndex(m => m.role === 'system');
-          if (systemMsgIdx !== -1) {
-            finalMessages[systemMsgIdx].content = `${langInstruction}\n\n${finalMessages[systemMsgIdx].content}`;
-          } else {
-            finalMessages.unshift({ role: 'system', content: langInstruction });
-          }
-        }
-
-        // --- FIX: Feed back validation errors on retry ---
-        if (attempt > 0 && lastError) {
-          finalMessages.push({ 
-            role: 'user', 
-            content: `Your previous response had a validation error: ${lastError.message}. Please fix the JSON structure and return the corrected valid JSON object only.` 
-          });
-        }
-
-        const response = await client.chat.completions.create(
-          {
-            model: provider.model,
-            messages: finalMessages,
-            temperature: attempt > 0 ? 0.3 : temperature, // Reduce temp on retry for stability
-            max_tokens: maxTokens,
-            response_format: (zodSchema || forceJsonMode) ? { type: "json_object" } : undefined,
-          },
-          { 
-            timeout: TIMEOUT_MS, 
-            // @ts-ignore
-            signal // --- H-21 FIX: Pass AbortSignal to OpenAI client ---
-          }
-        );
-
-        const content = response.choices[0]?.message?.content || "";
-        
-        if (zodSchema) {
-          const parsed = extractJson(content);
-          if (!parsed) throw new Error("JSON_PARSE_FAILED");
-          
-          const validated = zodSchema.safeParse(parsed);
-          if (!validated.success) {
-             logger.warn({ errors: validated.error.errors }, "Zod validation failed");
-             throw new Error("SCHEMA_VALIDATION_FAILED");
-          }
-          return response; // We return the full response so caller can get content
-        }
-
-        return response;
-      } catch (err: any) {
-        if (err.name === 'AbortError' || err.message === 'ABORTED') throw err; // --- H-21 FIX: Propagate aborts ---
-        lastError = err;
-        logger.warn(`[AI-ENGINE] ${provider.name} attempt ${attempt + 1} failed: ${err.message}`);
-        
-        if (err.message === "JSON_PARSE_FAILED" || err.message === "SCHEMA_VALIDATION_FAILED") {
-          continue; // Try again with same provider (reduced temp)
-        }
-        break; // Network/API error, move to next provider
-      }
+  // ── TIER 2: Groq Primary fallback ────────────────────────────────────────
+  try {
+    if (signal?.aborted) throw new Error("ABORTED");
+    const isInfinity = userPlan?.toUpperCase() === "INFINITY";
+    const groqModel = isInfinity ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant";
+    const response = await groqPrimary.chat.completions.create({
+      model: groqModel,
+      messages: finalMessages,
+      temperature,
+      max_tokens: maxTokens,
+      ...jsonMode,
+    }, { signal: signal as any });
+    
+    if (zodSchema) {
+      const parsed = extractJson(response.choices[0]?.message?.content || "");
+      if (!parsed) throw new Error("JSON_PARSE_FAILED");
+      const validated = zodSchema.safeParse(parsed);
+      if (!validated.success) throw new Error("SCHEMA_VALIDATION_FAILED");
     }
-    await new Promise(resolve => setTimeout(resolve, 300));
+    logger.info({ userId, model: groqModel }, "[AI] Generated via Groq primary");
+    return response;
+  } catch (err: any) {
+    if (err.name === 'AbortError' || err.message === 'ABORTED') throw err;
+    logger.warn({ userId, err: err.message }, "[AI] Groq primary failed, trying Groq secondary");
   }
 
-  throw lastError || new Error("AI engine exhausted all providers.");
+  // ── TIER 3: Groq Secondary final fallback ────────────────────────────────
+  const isInfinity = userPlan?.toUpperCase() === "INFINITY";
+  const groqModel = isInfinity ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant";
+  const response = await groqSecondary.chat.completions.create({
+    model: groqModel,
+    messages: finalMessages,
+    temperature,
+    max_tokens: maxTokens,
+    ...jsonMode,
+  }, { signal: signal as any });
+  
+  logger.info({ userId, model: groqModel }, "[AI] Generated via Groq secondary");
+  return response;
 };
- 

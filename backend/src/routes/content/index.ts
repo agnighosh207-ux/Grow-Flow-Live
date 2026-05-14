@@ -20,7 +20,7 @@ import {
   GetContentStatsResponse,
 } from "@workspace/api-zod";
 // Note: zod is NOT a direct dependency of backend — use manual validation instead
-import { generateContent, extractJson } from "../../services/ai-engine";
+import { generateContent, webSearch, extractJson } from "../../services/ai-engine";
 import { requireAuth, getOrCreateUser, requirePlanOrTrial, requireActivePlan } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
@@ -71,6 +71,9 @@ function sanitizeInput(text: string, maxLength: number = 500): string {
 // requireAuth is now centralized in planMiddleware.ts (Flaw 20 fix)
 
 async function generateContentWithAI(idea: string, contentType: string, tone: string, niche: string = "General", platformPreference: string = "", language: string = "English", userId: string = "anonymous", userPlan: string = "free", signal?: AbortSignal, brandVoiceId?: string) {
+  // Fetch live context for all generations to ensure fresh, trending content
+  const liveContext = await webSearch(`${niche} ${contentType} viral content trends 2025`).catch(() => "");
+
   let voiceContext = "";
   if (brandVoiceId && brandVoiceId !== "none") {
     const [voice] = await db.select().from(brandVoicesTable).where(and(eq(brandVoicesTable.id, brandVoiceId), eq(brandVoicesTable.userId, userId)));
@@ -113,6 +116,7 @@ MANDATORY: Write all content using THIS specific brand voice. Ignore the generic
   };
 
   const systemPrompt = `You are a world-class content strategist and viral copywriter. You have built multiple audiences past 500K followers across platforms. Your content gets studied, screenshot, and reposted because it says something true in a way nobody has said it before.
+${liveContext ? `\nLIVE TRENDING DATA:\n${liveContext}\n\nUse this live data to make content timely and relevant.` : ""}
 
 === MANDATORY PRE-GENERATION ANALYSIS ===
 Before writing a single word of content, identify:

@@ -46,7 +46,9 @@ import {
   AlertTriangle,
   Shield,
   BookOpen,
-  Library
+  Library,
+  Grid3x3,
+  ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -56,6 +58,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/layout/Logo";
 import { MoreHorizontal } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 function ImpersonationBanner() {
@@ -105,43 +108,42 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Create",
+    label: "✨ Create",
     items: [
-      { path: "/generate", label: "generate", icon: Wand2, desc: "AI Content Campaign Generator" },
-      { path: "/ideas", label: "Idea Generator", icon: Lightbulb, desc: "Daily viral content concepts" },
-      { path: "/trends", label: "Trend Engine", icon: TrendingUp, desc: "Live viral trend detection" },
-      { path: "/hooks", label: "Viral Hooks", icon: MessageSquareQuote, desc: "100+ viral hook frameworks" },
-      { path: "/improve", label: "Competitor Intel", icon: Swords, desc: "Analyze competitor performance" },
-      { path: "/hashtags", label: "Hashtag Intel", icon: Flame, desc: "SEO-optimized tag intelligence" },
-      { path: "/bio", label: "Profile Suite", icon: User, desc: "Optimize your creator profile" },
-      { path: "/repurpose", label: "Content Repurposer", icon: RefreshCw, desc: "Turn one video into 10 posts" },
-      { path: "/caption", label: "Caption Enhancer", icon: Wand2, desc: "Polish your raw captions" },
-      { path: "/ghostwriter", label: "AI Ghostwriter", icon: PenTool, desc: "Write in your authentic voice" },
-      { path: "/predictor", label: "Performance Predictor", icon: BarChart2, desc: "Predict virality before posting" },
-
+      { path: "/generate", label: "AI Content Studio", icon: Wand2, desc: "Generate captions, threads, reels & more" },
+      { path: "/ideas", label: "Content Ideas", icon: Lightbulb, desc: "Fresh content ideas for your niche" },
+      { path: "/trends", label: "Live Trends", icon: TrendingUp, desc: "What's trending RIGHT NOW in your niche" },
+      { path: "/hooks", label: "Hook Writer", icon: MessageSquareQuote, desc: "Hooks that stop the scroll" },
+      { path: "/improve", label: "Beat Competitors", icon: Swords, desc: "See what works for your competitors" },
+      { path: "/hashtags", label: "Hashtag Finder", icon: Flame, desc: "Find hashtags that actually get views" },
+      { path: "/bio", label: "Bio Generator", icon: User, desc: "Write a bio that converts visitors" },
+      { path: "/repurpose", label: "Repurpose Content", icon: RefreshCw, desc: "Repurpose YouTube/Reels into 5 platforms" },
+      { path: "/caption", label: "Improve Caption", icon: Wand2, desc: "Make your captions 10x better" },
+      { path: "/ghostwriter", label: "Ghostwriter", icon: PenTool, desc: "AI that writes like YOU" },
+      { path: "/predictor", label: "Viral Score", icon: BarChart2, desc: "Know if it will go viral BEFORE you post" },
+      { path: "/hook-scorer", label: "Hook Scorer", icon: Target, desc: "Score your hook before posting" },
     ],
   },
   {
-    label: "Strategy",
+    label: "📈 Grow",
     items: [
-      { path: "/daily", label: "Daily Growth Plan", icon: Flame, desc: "Your 10-min growth ritual" },
-      { path: "/coach", label: "AI Content Coach", icon: Brain, desc: "Real-time AI content feedback" },
-      { path: "/strategy", label: "7-Day Strategy", icon: CalendarDays, desc: "Custom 7-day content roadmap" },
-      { path: "/calendar", label: "Content Calendar", icon: Calendar, pro: true, desc: "Plan and track your posting" },
-      { path: "/insights", label: "Analytics", icon: BarChart3, pro: true, desc: "Advanced performance metrics" },
+      { path: "/daily", label: "Daily Tasks", icon: Flame, desc: "Daily actions to grow faster" },
+      { path: "/coach", label: "AI Coach", icon: Brain, desc: "Chat with your AI growth coach" },
+      { path: "/strategy", label: "Strategy Planner", icon: CalendarDays, desc: "Get a full week of content planned" },
+      { path: "/calendar", label: "Post Calendar", icon: Calendar, pro: true, desc: "Drag & drop posting calendar" },
+      { path: "/insights", label: "My Analytics", icon: BarChart3, pro: true, desc: "Track your content performance" },
     ],
   },
   {
-    label: "Library",
+    label: "📚 Library",
     items: [
-      { path: "/vault", label: "Content Bank", icon: Library, desc: "Your personal content vault" },
-      { path: "/swipe-vault", label: "Swipe Vault", icon: BookOpen, desc: "Library of viral frameworks" },
-      { path: "/saved", label: "Saved", icon: Heart, desc: "Revisit your top generations" },
-      { path: "/history", label: "history", icon: History, desc: "Full archive of past work" },
+      { path: "/vault", label: "The Vault", icon: Library, desc: "My content & viral inspiration" },
+      { path: "/saved", label: "Bookmarks", icon: Heart, desc: "Revisit your top generations" },
+      { path: "/history", label: "History", icon: History, desc: "Full archive of past work" },
     ],
   },
   {
-    label: "Account",
+    label: "⚙️ Account",
     items: [
       { path: "/referrals", label: "Refer & Earn", icon: Zap, desc: "Earn credits for sharing" },
       { path: "/pricing", label: "Plans & Billing", icon: CreditCard, desc: "Manage your subscription" },
@@ -154,20 +156,20 @@ const NAV_GROUPS: NavGroup[] = [
 const DISCOVERY_ITEMS = [
   { path: "/ghostwriter", label: "Writer", icon: PenTool, desc: "Write in your voice" },
   { path: "/predictor", label: "Predict", icon: BarChart2, desc: "Predict virality" },
-
   { path: "/coach", label: "Coach", icon: Brain, desc: "AI Feedback" },
-  { path: "/swipe-vault", label: "Vault", icon: BookOpen, desc: "Viral Swipe" },
+  { path: "/vault", label: "Vault", icon: BookOpen, desc: "My Content" },
   { path: "/repurpose", label: "Repurpose", icon: RefreshCw, desc: "Video to Post" },
+  { path: "/hook-scorer", label: "Score It", icon: Target, desc: "Hook Scorer" },
 ];
 
 const SIDEBAR_NAV = NAV_GROUPS.flatMap((g) => g.items);
 
 const BOTTOM_NAV = [
-  { path: "/generate", label: "generate", icon: Wand2 },
-  { path: "/hooks", label: "Hooks", icon: MessageSquareQuote },
+  { path: "/generate", label: "Create", icon: Wand2 },
   { path: "/ideas", label: "Ideas", icon: Lightbulb },
-  { path: "discover", label: "Discover", icon: Sparkles },
-  { path: "menu", label: "Menu", icon: MoreHorizontal },
+  { path: "/hooks", label: "Hooks", icon: MessageSquareQuote },
+  { path: "/history", label: "History", icon: History },
+  { path: "discover", label: "More", icon: Grid3x3 },
 ];
 
 function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
@@ -281,6 +283,8 @@ function NavItem({
   showDot,
   badge,
   isAccountGroup,
+  desc,
+  collapsed = false,
 }: {
   path: string;
   label: string;
@@ -292,6 +296,8 @@ function NavItem({
   showDot?: boolean;
   badge?: ReactNode;
   isAccountGroup?: boolean;
+  desc?: string;
+  collapsed?: boolean;
 }) {
   const [isVisited, setIsVisited] = useState(true);
 
@@ -315,42 +321,67 @@ function NavItem({
     baseColorClass = "text-white/40 hover:bg-white/[0.06] hover:text-white/70";
   }
 
+  const innerSpan = (
+    <span
+      className={`group flex items-center rounded-lg transition-all duration-150 cursor-pointer relative
+        ${collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2"}
+        ${isActive
+          ? "bg-cyan-600/20 text-white font-medium"
+          : isLocked
+          ? "text-white/25 hover:bg-white/3 hover:text-white/40"
+          : baseColorClass
+        }
+      `}
+    >
+      {isActive && (
+        <motion.span
+          layoutId="activeNavIndicator"
+          className="absolute left-0 inset-y-1 w-0.5 rounded-r-full bg-cyan-500 shadow-[0_0_10px_#00F2FF]"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+      <Icon
+        className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-cyan-400" : ""}`}
+      />
+      {!collapsed && <span className="text-sm flex-1 truncate">{label}</span>}
+      {!collapsed && badge}
+      {!collapsed && showNewBadge && (
+        <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+          NEW
+        </span>
+      )}
+      {!collapsed && isLocked && <Lock className="w-3 h-3 text-cyan-500/40 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />}
+      {!collapsed && pro && isPro && (
+        <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0">
+          PRO
+        </span>
+      )}
+    </span>
+  );
+
   return (
     <Link key={path} href={path} onClick={handleVisit}>
-      <span
-        className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 cursor-pointer relative
-          ${isActive
-            ? "bg-cyan-600/20 text-white font-medium"
-            : isLocked
-            ? "text-white/25 hover:bg-white/3 hover:text-white/40"
-            : baseColorClass
-          }
-        `}
-      >
-        {isActive && (
-          <motion.span
-            layoutId="activeNavIndicator"
-            className="absolute left-0 inset-y-1 w-0.5 rounded-r-full bg-cyan-500 shadow-[0_0_10px_#00F2FF]"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          />
-        )}
-        <Icon
-          className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-cyan-400" : ""}`}
-        />
-        <span className="text-sm flex-1 truncate">{label}</span>
-        {badge}
-        {showNewBadge && (
-          <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
-            NEW
-          </span>
-        )}
-        {isLocked && <Lock className="w-3 h-3 text-cyan-500/40 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />}
-        {pro && isPro && (
-          <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0">
-            PRO
-          </span>
-        )}
-      </span>
+      {(desc || collapsed) ? (
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {innerSpan}
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-zinc-900 border border-white/10 text-xs max-w-[180px]">
+              {collapsed ? (
+                <div className="flex flex-col gap-1">
+                  <p className="font-bold text-white">{label}</p>
+                  {desc && <p className="text-white/40 text-[10px]">{desc}</p>}
+                </div>
+              ) : (
+                <p>{desc}</p>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        innerSpan
+      )}
     </Link>
   );
 }
@@ -411,6 +442,8 @@ function SidebarContent({
   signOut,
   location,
   onClick,
+  collapsed = false,
+  toggleSidebar,
 }: {
   isPro: boolean;
   sub: any;
@@ -418,6 +451,8 @@ function SidebarContent({
   signOut: () => void;
   location: string;
   onClick?: () => void;
+  collapsed?: boolean;
+  toggleSidebar?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const { getToken } = useAuth();
@@ -437,32 +472,40 @@ function SidebarContent({
 
   return (
     <>
-      <div className="px-5 py-4 flex items-center gap-2">
-        <Logo size="sm" />
-        <span className="text-[10px] font-semibold text-white/40 bg-white/10 border border-white/10 rounded px-1.5 py-0.5 ml-auto shadow-sm">
-          v2.0
-        </span>
+      <div className={`px-5 py-4 flex items-center gap-2 ${collapsed ? "justify-center px-0" : ""}`}>
+        <Logo size="sm" showText={!collapsed} />
+        {!collapsed && (
+          <span className="text-[10px] font-semibold text-white/40 bg-white/10 border border-white/10 rounded px-1.5 py-0.5 ml-auto shadow-sm">
+            v2.0
+          </span>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-1 space-y-6" data-lenis-prevent>
-        <StreakBanner streak={streak} completedToday={!!streakData?.completedToday} />
+        {!collapsed && <StreakBanner streak={streak} completedToday={!!streakData?.completedToday} />}
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
-            <p className="text-[11px] font-semibold text-white/20 uppercase tracking-widest mb-1.5 border-l-2 border-white/10 pl-2 ml-3">
-              {group.label}
-            </p>
+            {!collapsed ? (
+              <p className="text-[11px] font-semibold text-white/20 uppercase tracking-widest mb-1.5 border-l-2 border-white/10 pl-2 ml-3">
+                {group.label}
+              </p>
+            ) : (
+              <div className="border-t border-white/5 my-2" />
+            )}
             <div className="space-y-0.5">
-              {group.items.map(({ path, label, icon, pro }) => (
+              {group.items.map(({ path, label, icon, pro, desc }) => (
                 <NavItem
                   key={path}
                   path={path}
                   label={t(label)}
                   icon={icon}
                   pro={pro}
+                  desc={desc}
+                  collapsed={collapsed}
                   isPro={isPro}
                   isActive={location === path}
                   onClick={onClick}
-                  isAccountGroup={group.label === "Account"}
+                  isAccountGroup={group.label === "⚙️ Account"}
                   showDot={
                     path === "/pricing" &&
                     sub?.plan === "free" &&
@@ -495,6 +538,7 @@ function SidebarContent({
                   isPro={true}
                   isActive={location === "/admin"}
                   onClick={onClick}
+                  collapsed={collapsed}
                 />
               </div>
             </div>
@@ -504,7 +548,7 @@ function SidebarContent({
       })()}
       </div>
 
-      {sub && (sub.plan === "free" || sub.plan === "blocked") && (!sub.planType || sub.planType === "free") && (
+      {sub && (sub.plan === "free" || sub.plan === "blocked") && (!sub.planType || sub.planType === "free") && !collapsed && (
         <Link href="/pricing">
           <div id="tour-upgrade" className="mx-3 mb-3 p-3 rounded-xl cursor-pointer group pulse-glow transition-all duration-300 hover:scale-[1.02]"
             style={{
@@ -525,7 +569,7 @@ function SidebarContent({
         </Link>
       )}
 
-      {sub && sub.plan === "trial" && (
+      {sub && sub.plan === "trial" && !collapsed && (
         <div className="mx-3 mb-3 p-3 rounded-xl"
           style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.15)" }}>
           <div className="flex items-center justify-between mb-1">
@@ -542,7 +586,7 @@ function SidebarContent({
         </div>
       )}
 
-      {sub && (sub.plan === "active" || sub.plan === "pending" || sub.plan === "past_due") && sub.planType !== "free" && (
+      {sub && (sub.plan === "active" || sub.plan === "pending" || sub.plan === "past_due") && sub.planType !== "free" && !collapsed && (
         <div className="mx-3 mb-3 px-3 py-2.5 rounded-lg flex items-center justify-between"
           style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <div>
@@ -559,26 +603,28 @@ function SidebarContent({
         </div>
       )}
 
-      {sub && <CreditCounter sub={sub} />}
+      {sub && !collapsed && <CreditCounter sub={sub} />}
 
       <div className="border-t border-white/[0.06] px-4 py-3">
-        <div className="flex items-center justify-between mb-3 px-2">
-           <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Interface Language</span>
-            <select 
-              value={i18n.language} 
-              onChange={e => {
-                i18n.changeLanguage(e.target.value);
-                localStorage.setItem('i18nextLng', e.target.value); // explicit save
-              }}
-              className="text-[10px] font-bold bg-transparent text-cyan-400 border-none outline-none cursor-pointer hover:text-cyan-300 transition-colors"
-            >
-              <option value="en" className="bg-zinc-950 text-white">English</option>
-              <option value="hi" className="bg-zinc-950 text-white">Hindi</option>
-              <option value="bn" className="bg-zinc-950 text-white">Bengali</option>
-            </select>
-        </div>
+        {!collapsed && (
+          <div className="flex items-center justify-between mb-3 px-2">
+             <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Interface Language</span>
+              <select 
+                value={i18n.language} 
+                onChange={e => {
+                  i18n.changeLanguage(e.target.value);
+                  localStorage.setItem('i18nextLng', e.target.value); // explicit save
+                }}
+                className="text-[10px] font-bold bg-transparent text-cyan-400 border-none outline-none cursor-pointer hover:text-cyan-300 transition-colors"
+              >
+                <option value="en" className="bg-zinc-950 text-white">English</option>
+                <option value="hi" className="bg-zinc-950 text-white">Hindi</option>
+                <option value="bn" className="bg-zinc-950 text-white">Bengali</option>
+              </select>
+          </div>
+        )}
 
-        <div className="flex items-center gap-2.5 mb-2.5">
+        <div className={`flex items-center gap-2.5 mb-2.5 ${collapsed ? "justify-center" : ""}`}>
           {user?.imageUrl ? (
             <img
               src={user.imageUrl}
@@ -590,25 +636,39 @@ function SidebarContent({
               {(user?.fullName || "U").charAt(0).toUpperCase()}
             </div>
           )}
-          <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-xs font-semibold text-white/80 leading-none truncate">
-              {user?.fullName || "User"}
-            </span>
-            <span className="text-[10px] text-white/30 truncate mt-0.5">
-              {user?.primaryEmailAddress?.emailAddress}
-            </span>
-          </div>
+          {!collapsed && (
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-xs font-semibold text-white/80 leading-none truncate">
+                {user?.fullName || "User"}
+              </span>
+              <span className="text-[10px] text-white/30 truncate mt-0.5">
+                {user?.primaryEmailAddress?.emailAddress}
+              </span>
+            </div>
+          )}
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-white/35 hover:text-white/70 hover:bg-white/5 text-xs px-2 h-8"
+          className={`w-full justify-start text-white/35 hover:text-white/70 hover:bg-white/5 text-xs px-2 h-8 ${collapsed ? "justify-center px-0" : ""}`}
           onClick={() => signOut()}
         >
-          <LogOut className="w-3.5 h-3.5 mr-2" />
-          Sign Out
+          <LogOut className={`w-3.5 h-3.5 ${collapsed ? "" : "mr-2"}`} />
+          {!collapsed && "Sign Out"}
         </Button>
       </div>
+
+      <button
+        onClick={toggleSidebar}
+        className="flex items-center justify-center w-full p-3 border-t border-white/5 text-white/30 hover:text-white/60 transition-colors"
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {collapsed 
+          ? <ChevronRight className="w-4 h-4" />
+          : <ChevronLeft className="w-4 h-4" />
+        }
+        {!collapsed && <span className="text-xs ml-2">Collapse</span>}
+      </button>
     </>
   );
 }
@@ -632,7 +692,7 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
               const Icon = item.icon;
               const isLocked = item.pro && !isPro;
               const visited = typeof window !== "undefined" ? localStorage.getItem(`visited_${item.path}`) : "true";
-              const isNew = !visited && !isLocked && group.label !== "Account" && item.path !== "/generate";
+              const isNew = !visited && !isLocked && group.label !== "⚙️ Account" && item.path !== "/generate";
 
               return (
                 <div
@@ -688,6 +748,19 @@ export function Layout({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation();
   const [discoverItem, setDiscoverItem] = useState(DISCOVERY_ITEMS[0]);
   
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
@@ -779,48 +852,45 @@ export function Layout({ children }: { children: ReactNode }) {
       <div className="flex-1 flex min-h-0 relative h-full">
         {/* Desktop Layout */}
         <div className="hidden md:flex flex-1 h-full min-h-0">
-          <ResizablePanelGroup direction="horizontal" autoSaveId="growflow-main-layout" className="h-full">
-            <ResizablePanel
-              defaultSize={20}
-              minSize={15}
-              maxSize={30}
-              className="bg-[#080316]/60 backdrop-blur-3xl border-r border-white/[0.06] flex flex-col z-30 h-full"
-            >
-              <SidebarContent
-                user={user}
-                location={location}
-                sub={sub}
-                isPro={isPro}
-                signOut={signOut}
-              />
-            </ResizablePanel>
-            
-            <ResizableHandle withHandle className="bg-white/[0.05] hover:bg-cyan-500/20 transition-colors z-40" />
-            
-            <ResizablePanel defaultSize={80} className="flex flex-col min-h-0 h-full min-w-0">
-              <div className="flex flex-col h-full overflow-hidden">
-                <TopBanner />
-                <FoundersBanner />
-                
-                <main className="flex-1 overflow-y-auto relative custom-scrollbar h-full">
-                  <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={location}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="pb-32 relative overflow-x-hidden min-h-screen"
-                    >
-                      <ReferralRewardNotifier />
-                      {children}
-                    </motion.div>
-                  </AnimatePresence>
-                </main>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+          <div 
+            className={`hidden md:flex flex-col border-r border-white/[0.06] bg-[#080316]/60 backdrop-blur-3xl transition-all duration-300 ease-in-out flex-shrink-0 z-30 h-full ${
+              sidebarCollapsed ? 'w-[70px]' : 'w-[260px]'
+            }`}
+          >
+            <SidebarContent
+              user={user}
+              location={location}
+              sub={sub}
+              isPro={isPro}
+              signOut={signOut}
+              collapsed={sidebarCollapsed}
+              toggleSidebar={toggleSidebar}
+            />
+          </div>
+          
+          <div className="flex-1 flex flex-col min-h-0 h-full min-w-0 transition-all duration-300">
+            <div className="flex flex-col h-full overflow-hidden">
+              <TopBanner />
+              <FoundersBanner />
+              
+              <main className="flex-1 overflow-y-auto relative custom-scrollbar h-full">
+                <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={location}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="pb-32 relative overflow-x-hidden min-h-screen"
+                  >
+                    <ReferralRewardNotifier />
+                    {children}
+                  </motion.div>
+                </AnimatePresence>
+              </main>
+            </div>
+          </div>
         </div>
 
         {/* Mobile Layout */}

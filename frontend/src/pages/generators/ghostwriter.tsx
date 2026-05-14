@@ -19,6 +19,9 @@ import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+
 interface VoiceProfile {
   sentenceStyle: string;
   vocabularyLevel: string;
@@ -79,6 +82,15 @@ export default function GhostwriterPage() {
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
+
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
 
   const fetchProfile = async () => {
     try {
@@ -143,7 +155,8 @@ export default function GhostwriterPage() {
         topic,
         platform,
         length,
-        useVoice
+        useVoice,
+        language
       });
       setOutput(data);
       fetchHistory(); // Refresh history after writing
@@ -427,7 +440,7 @@ export default function GhostwriterPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-white/5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4 border-t border-white/5">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Platform Target</label>
                     <Select value={platform} onValueChange={setPlatform}>
@@ -441,6 +454,15 @@ export default function GhostwriterPage() {
                         <SelectItem value="YouTube Description">YouTube Description</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Output Language</label>
+                    <LanguageSelector 
+                      value={language} 
+                      onChange={setLanguage} 
+                      isFreeUser={isFreeUser}
+                    />
                   </div>
 
                   <div className="space-y-3">

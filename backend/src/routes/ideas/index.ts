@@ -1,33 +1,15 @@
 import { Router, type IRouter } from "express";
-import OpenAI from "openai";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
-import { generateContent, extractJson } from "../../services/ai-engine";
+import { generateContent, webSearch, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
 import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
 
-// ─── Perplexity AI Direct Client (for 100% search routes) ─────────────────
-// Ideas use Perplexity DIRECTLY — it searches the live web AND
-// structures the output in a single call. NO Groq involved.
-let perplexityClient: OpenAI | null = null;
-try {
-  if (process.env.OPENROUTER_API_KEY) {
-    perplexityClient = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY,
-      defaultHeaders: {
-        "HTTP-Referer": "https://growflow.ai",
-        "X-Title": "GrowFlow AI",
-      },
-    });
-  }
-} catch (e) {
-  console.warn("Failed to initialize Perplexity client:", e);
-}
+// ─── Direct Client Removed — Centralized via webSearch in ai-engine ──────
 
 const nicheContextMap: Record<string, string> = {
   Fitness: "body transformation, training optimization, nutrition science, gym culture, injury prevention, performance metrics, workout psychology, recovery",
@@ -89,7 +71,12 @@ router.post("/generate", requireAuth, requirePlanOrTrial("ideas"), enforceGenera
   const painPoint = nichePainPoints[sanitizedNiche as string] || nichePainPoints["General"];
   const currentYear = new Date().getFullYear();
 
-  const systemPrompt = `You are a content strategist. Search the live web for trending topics and viral patterns in the ${sanitizedNiche} space. 
+  try {
+    if (abortController.signal.aborted) return;
+
+    const liveContext = await webSearch(`Trending ${sanitizedNiche} content ideas on social media right now 2025 — viral formats, hooks, topic angles`, abortController.signal);
+
+    const finalSystemPrompt = `You are a content strategist. Search the live web for trending topics and viral patterns in the ${sanitizedNiche} space.${liveContext ? `\n\nLIVE WEB DATA:\n${liveContext}` : ""}
 Generate 10 high-performing content ideas for ${sanitizedNiche} in ${currentYear}.
 NICHE: ${sanitizedNiche}
 NICHE CONTEXT: ${nicheContext}
@@ -100,7 +87,7 @@ Output must be in ${language}.
 
 Return ONLY a JSON object.`;
 
-  const userPrompt = `Generate 10 ideas based on live trending data for "${sanitizedGoal}". Return ONLY a JSON object:
+    const userPrompt = `Generate 10 ideas based on live trending data for "${sanitizedGoal}". Return ONLY a JSON object:
 {
   "ideas": [
     {
@@ -114,48 +101,23 @@ Return ONLY a JSON object.`;
   ]
 }`;
 
-  try {
-    if (abortController.signal.aborted) return;
-
     let ideas: any[] = [];
-    try {
-      if (!perplexityClient) throw new Error("Perplexity client not initialized (missing API key)");
-      const completion = await perplexityClient.chat.completions.create({
-        model: "perplexity/sonar",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        max_tokens: 2500,
-      }, {
-        // @ts-ignore
-        signal: abortController.signal
-      });
-      
-      if (abortController.signal.aborted) return;
-      const content = completion.choices[0]?.message?.content || "{}";
-      const parsed = extractJson(content);
-      ideas = parsed && Array.isArray(parsed.ideas) ? parsed.ideas : [];
-    } catch (err: any) {
-      if (abortController.signal.aborted) return;
-      console.warn("IDEAS DIRECT PERPLEXITY FAIL, FALLING BACK TO ENGINE:", err.message);
-      const fallback = await generateContent({
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        userPlan: req.user?.planType || "free",
-        userId: req.userId,
-        language,
-        maxTokens: 2500,
-        forceJsonMode: true,
-        signal: abortController.signal
-      });
-      if (abortController.signal.aborted) return;
-      const content = fallback.choices[0]?.message?.content || "{}";
-      const parsed = extractJson(content);
-      ideas = parsed && Array.isArray(parsed.ideas) ? parsed.ideas : [];
-    }
+    const resPayload = await generateContent({
+      messages: [
+        { role: "system", content: finalSystemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      userPlan: req.user?.planType || "free",
+      userId: req.userId,
+      language,
+      maxTokens: 2500,
+      forceJsonMode: true,
+      signal: abortController.signal
+    });
+
+    const content = resPayload.choices[0]?.message?.content || "{}";
+    const parsed = extractJson(content);
+    ideas = parsed && Array.isArray(parsed.ideas) ? parsed.ideas : [];
 
     if (ideas.length === 0) {
       res.status(503).json({ error: "Ideas currently unavailable. Please try again." });

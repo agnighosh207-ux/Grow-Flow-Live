@@ -22,6 +22,7 @@ import {
   TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2, AlertCircle, Lightbulb, Share2,
   PenTool, CalendarDays, Package2, GitBranch, ArrowRightLeft, BarChart3, Info, Trophy
 } from "lucide-react";
+import { haptic } from "@/lib/utils";
 import { SiInstagram, SiYoutube } from "react-icons/si";
 import { motion, AnimatePresence } from "framer-motion";
 import * as htmlToImage from "html-to-image";
@@ -500,28 +501,12 @@ interface ContentAnalysis {
 }
 
 function ContentSkeleton() {
-  const platforms = ["Instagram", "YouTube Shorts", "X / Twitter Thread", "LinkedIn"];
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      {platforms.map((p) => (
-        <div
-          key={p}
-          className="rounded-[32px] border border-white/5 overflow-hidden bg-white/[0.02] p-8"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <Skeleton className="w-8 h-8 rounded-xl bg-white/10" />
-            <Skeleton className="h-4 w-32 bg-white/10" />
-          </div>
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-full bg-white/5" />
-            <Skeleton className="h-4 w-[90%] bg-white/5" />
-            <Skeleton className="h-4 w-[80%] bg-white/5" />
-            <div className="pt-4">
-              <Skeleton className="h-10 w-24 bg-white/10 rounded-xl" />
-            </div>
-          </div>
-        </div>
-      ))}
+    <div className="space-y-3 p-4">
+      <div className="h-10 bg-white/5 rounded-xl animate-pulse" />
+      <div className="h-10 bg-white/5 rounded-xl animate-pulse" />
+      <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
+      <div className="h-12 bg-white/5 rounded-xl animate-pulse w-2/3 mx-auto" />
     </div>
   );
 }
@@ -1403,7 +1388,7 @@ export default function Generate() {
       contentType: prefillType,
       tone: prefillTone,
       niche: "General",
-      language: "English",
+      language: localStorage.getItem("preferred_language") || "English",
     }
   });
   
@@ -1531,6 +1516,13 @@ export default function Generate() {
       });
     }
   }, [user, sub]);
+
+  const watchLanguage = form.watch("language");
+  useEffect(() => {
+    if (watchLanguage) {
+      localStorage.setItem("preferred_language", watchLanguage);
+    }
+  }, [watchLanguage]);
 
   // Restore last used settings
   useEffect(() => {
@@ -2129,8 +2121,8 @@ export default function Generate() {
                     name="idea"
                     render={({ field }) => (
                       <FormItem>
-                        <div className="flex items-center justify-between px-2 mb-4">
-                           <FormLabel className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">{t("your_idea")}</FormLabel>
+                        <div className="flex items-center justify-between px-2 mb-3">
+                           <FormLabel className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1">{t("your_idea")}</FormLabel>
                            <UsageCounter />
                         </div>
                         <FormControl>
@@ -2138,7 +2130,7 @@ export default function Generate() {
                             <Textarea
                               {...field}
                               placeholder={t("ideaPlaceholder")}
-                              className="min-h-[140px] md:min-h-[180px] p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
+                              className="min-h-[80px] md:min-h-[120px] p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
                             />
                             
                             <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl bg-white/5 text-[9px] md:text-[10px] text-white/20 font-black uppercase tracking-widest border border-white/5">
@@ -2284,14 +2276,14 @@ export default function Generate() {
                     )}
                   />
 
-                  <div className="space-y-8 md:space-y-10">
+                  <div className="space-y-3 md:space-y-10">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-2">
                       <FormField
                         control={form.control}
                         name="niche"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Niche</FormLabel>
+                            <FormLabel className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1">Niche</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
@@ -2310,7 +2302,7 @@ export default function Generate() {
                         name="contentType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Style</FormLabel>
+                            <FormLabel className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1">Style</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
@@ -2329,7 +2321,7 @@ export default function Generate() {
                         name="tone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Tone</FormLabel>
+                            <FormLabel className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1">Tone</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
@@ -2348,7 +2340,7 @@ export default function Generate() {
                         name="language"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Language</FormLabel>
+                            <FormLabel className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1">Language</FormLabel>
                             <LanguageSelector
                               value={field.value}
                               onChange={field.onChange}
@@ -2413,11 +2405,12 @@ export default function Generate() {
                        </div>
                     </div>
 
-                    <div className="pt-4">
+                    <div className="pt-4 sticky bottom-0 md:static bg-gradient-to-t from-[#060312] to-transparent z-20 pb-4">
                         <Button
                           type="submit"
                           disabled={isLoading}
-                          className={`w-full h-14 md:h-16 rounded-[24px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black text-base shadow-2xl shadow-cyan-500/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 group overflow-hidden relative ${isFirstTime ? 'animate-pulse scale-[1.02] shadow-[0_0_25px_rgba(6,182,212,0.4)]' : ''}`}
+                          onClick={() => { haptic('medium'); }}
+                          className={`w-full h-12 text-base font-bold rounded-[24px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white shadow-2xl shadow-cyan-500/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 group overflow-hidden relative ${isFirstTime ? 'animate-pulse scale-[1.02] shadow-[0_0_25px_rgba(6,182,212,0.4)]' : ''}`}
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                           {isLoading ? (

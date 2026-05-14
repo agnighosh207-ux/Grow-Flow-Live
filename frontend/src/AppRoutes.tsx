@@ -47,8 +47,8 @@ const Saved = React.lazy(() => import("@/pages/core/saved"));
 const ContentCalendar = React.lazy(() => import("@/pages/core/calendar"));
 const Insights = React.lazy(() => import("@/pages/core/insights"));
 const TrendEngine = React.lazy(() => import("@/pages/core/trends"));
-const Privacy = React.lazy(() => import("@/pages/legal/privacy"));
-const Terms = React.lazy(() => import("@/pages/legal/terms"));
+const PrivacyPolicy = React.lazy(() => import("@/pages/legal/PrivacyPolicy"));
+const TermsAndConditions = React.lazy(() => import("@/pages/legal/TermsAndConditions"));
 const NotFound = React.lazy(() => import("@/pages/legal/not-found"));
 const ImproveCompetitorContent = React.lazy(() => import("@/pages/core/improve"));
 const BioGenerator = React.lazy(() => import("@/pages/generators/bio"));
@@ -58,16 +58,16 @@ const DailyActionMode = React.lazy(() => import("@/pages/core/daily"));
 const AdminDashboard = React.lazy(() => import("@/pages/settings/admin"));
 const ReferralsPage = React.lazy(() => import("@/pages/settings/referrals"));
 const ContentCoach = React.lazy(() => import("@/pages/core/coach"));
-const SwipeVault = React.lazy(() => import("@/pages/core/vault"));
+const ContentVault = React.lazy(() => import("@/pages/core/vault"));
 const Ghostwriter = React.lazy(() => import("@/pages/generators/ghostwriter"));
 const Predictor = React.lazy(() => import("@/pages/generators/predictor"));
 const Hashtags = React.lazy(() => import("@/pages/generators/hashtags"));
 const Repurpose = React.lazy(() => import("@/pages/generators/repurpose"));
+const HookScorer = React.lazy(() => import("@/pages/generators/hook-scorer"));
 
 const CreatorProfile = React.lazy(() => import("@/pages/public/CreatorProfile"));
 const TeamPage = React.lazy(() => import("@/pages/core/team"));
 const BrandVoice = React.lazy(() => import("@/pages/core/BrandVoice"));
-const VaultBank = React.lazy(() => import("@/pages/core/VaultBank"));
 const NicheLanding = React.lazy(() => import("@/pages/seo/NicheLanding"));
 const ToolLanding = React.lazy(() => import("@/pages/seo/ToolLanding"));
 const BlogPost = React.lazy(() => import("@/pages/seo/BlogPost"));
@@ -221,13 +221,13 @@ export function ClerkProviderWithRoutes() {
               <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
               <Route path="/saved"><ProtectedRoute component={Saved} /></Route>
               <Route path="/referrals"><ProtectedRoute component={ReferralsPage} /></Route>
-              <Route path="/privacy"><Privacy /></Route>
-              <Route path="/terms"><Terms /></Route>
+              <Route path="/privacy-policy"><PrivacyPolicy /></Route>
+              <Route path="/terms-and-conditions"><TermsAndConditions /></Route>
               <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
               <Route path="/coach"><ProtectedRoute component={ContentCoach} /></Route>
               
-              <Route path="/vault"><ProtectedRoute component={VaultBank} /></Route>
-              <Route path="/swipe-vault"><ProtectedRoute component={SwipeVault} /></Route>
+              <Route path="/vault"><ProtectedRoute component={() => <ContentVault initialTab="my-content" />} /></Route>
+              <Route path="/swipe-vault"><ProtectedRoute component={() => <ContentVault initialTab="inspiration" />} /></Route>
               <Route path="/brand-voice"><ProtectedRoute component={BrandVoice} /></Route>
               
               {/* SEO Niche Pages */}
@@ -249,6 +249,7 @@ export function ClerkProviderWithRoutes() {
               <Route path="/predictor"><ProtectedRoute component={Predictor} /></Route>
               <Route path="/hashtags"><ProtectedRoute component={Hashtags} /></Route>
               <Route path="/repurpose"><ProtectedRoute component={Repurpose} /></Route>
+              <Route path="/hook-scorer"><ProtectedRoute component={HookScorer} /></Route>
 
               <Route path="/creator/:code"><CreatorProfile /></Route>
               <Route path="/team"><ProtectedRoute component={TeamPage} /></Route>

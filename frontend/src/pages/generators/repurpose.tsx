@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RefreshCw, Sparkles, Copy, Download, ArrowRight, ArrowLeft, Instagram, Linkedin, Twitter, Youtube, FileText, Mail, CheckCircle2, Zap, Brain, ChevronRight, Share2, Layers, Smartphone, MousePointer2 } from "lucide-react";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,9 @@ import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
+
 const formats = [
   { id: "instagram_caption", label: "Instagram", icon: <Instagram className="h-6 w-6" />, color: "from-pink-500 to-rose-500 shadow-pink-500/20" },
   { id: "linkedin_post", label: "LinkedIn", icon: <Linkedin className="h-6 w-6" />, color: "from-blue-600 to-indigo-600 shadow-blue-600/20" },
@@ -32,7 +35,15 @@ export default function RepurposePage() {
   const [targetFormats, setTargetFormats] = useState<string[]>([]);
   const [tone, setTone] = useState("Professional");
   const [niche, setNiche] = useState("");
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+
+  useEffect(() => {
+    localStorage.setItem("preferred_language", language);
+  }, [language]);
+
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
+
   const [repurposing, setRepurposing] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -193,6 +204,15 @@ export default function RepurposePage() {
                                 className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base"
                               />
                            </div>
+                        </div>
+
+                        <div className="space-y-3 pt-4">
+                           <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Output Language</label>
+                           <LanguageSelector 
+                             value={language} 
+                             onChange={setLanguage} 
+                             isFreeUser={isFreeUser}
+                           />
                         </div>
                      </div>
 
