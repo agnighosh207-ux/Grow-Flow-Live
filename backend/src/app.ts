@@ -53,20 +53,43 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
+        "'unsafe-inline'",
+        // Clerk JS CDN (live & dev)
+        "https://clerk.growflowai.space",
+        "https://*.clerk.accounts.dev",
+        "https://cdn.jsdelivr.net",
+        // Razorpay
         "https://checkout.razorpay.com",
         "https://cdn.razorpay.com",
-        "'unsafe-inline'",
       ],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "data:",
+      ],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: [
         "'self'",
+        // Clerk APIs
         "https://api.clerk.com",
+        "https://clerk.growflowai.space",
+        "https://*.clerk.accounts.dev",
         "https://growflowai.space",
+        "https://www.growflowai.space",
         "https://api.growflowai.space",
         "wss://growflowai.space",
+        // AI providers (for client-side if any)
+        "https://api.groq.com",
       ],
-      frameSrc: ["https://checkout.razorpay.com", "https://api.razorpay.com"],
+      frameSrc: [
+        "https://checkout.razorpay.com",
+        "https://api.razorpay.com",
+      ],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },

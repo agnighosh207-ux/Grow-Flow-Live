@@ -12,6 +12,8 @@ out-tsc/
 .env.local
 .env.production
 .env.*.local
+# Allow frontend production env (publishable keys only — safe to commit)
+!frontend/.env.production
 
 # IDE
 .vscode/*
