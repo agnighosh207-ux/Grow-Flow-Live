@@ -14,8 +14,12 @@ const providers = [
   { name: "OpenAI", apiKey: openaiApiKey, baseURL: "https://api.openai.com/v1", modelMap: (m: string) => m }
 ];
 
+// Fall back to a non-functional placeholder when no key is set.
+// The actual provider selection happens in the fallback engine below.
+const sdkFallbackKey = process.env.OPENAI_SDK_PLACEHOLDER || "placeholder-prevents-sdk-init-error";
+
 export const openai = new OpenAI({ 
-  apiKey: openaiApiKey || "dummy-key-to-prevent-sdk-crash",
+  apiKey: openaiApiKey || sdkFallbackKey,
   timeout: 12000,
   maxRetries: 0
 }) as any;

@@ -14,7 +14,7 @@ export default function TermsAndConditions() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         <div className="mb-10">
           <Link href="/">
-            <div><Logo size="md" /></div>
+            <div className="cursor-pointer"><Logo size="md" /></div>
           </Link>
         </div>
 
@@ -24,85 +24,102 @@ export default function TermsAndConditions() {
           </span>
         </Link>
 
-        <h1 className="text-3xl font-bold text-white mb-2">Terms & Conditions</h1>
-        <p className="text-white/40 text-sm mb-10">Last updated: April 2026</p>
+        <div className="prose prose-invert max-w-3xl mx-auto px-4 py-12">
+          <h1 className="text-4xl font-bold text-white mb-2">Terms & Conditions</h1>
+          <p className="text-white/40 text-sm mb-10">Last updated: May 2026</p>
 
-        <div className="space-y-8 text-white/70 leading-relaxed font-normal">
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">1. Acceptance of Terms</h2>
-            <p className="text-[15px]">
-              By creating an account, accessing, or using GrowFlow AI ("Platform", "we", "us", or "our"), you agree to be bound by these Terms & Conditions. If you do not agree out of your own free will, you must cease use of the service immediately. These terms govern your access to our AI-powered SaaS solutions.
-            </p>
-          </section>
+          <div className="space-y-10 text-white/80 leading-relaxed">
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">1. Acceptance of Terms</h2>
+              <p>
+                By accessing or using GrowFlow AI ("the Service"), operated by GrowFlow AI ("we," "us," or "our"), you agree to be bound by these Terms and Conditions. If you disagree with any part of the terms, you do not have permission to access the Service.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">2. Use of Artificial Intelligence & Disclaimers</h2>
-            <p className="text-[15px] mb-3">GrowFlow AI utilizes large language models (LLMs) and generative artificial intelligence to produce content. By using the Platform, you acknowledge and agree that:</p>
-            <ul className="list-disc list-inside space-y-2 text-[15px] ml-1">
-              <li><strong className="text-white/85">AI Hallucinations:</strong> The AI may occasionally generate inaccurate, incomplete, or misleading information ("hallucinations").</li>
-              <li><strong className="text-white/85">User Verification:</strong> You are strictly responsible for reviewing, verifying, and editing any AI-generated outputs before publishing them on public domains, social networks, or using them in business operations.</li>
-              <li><strong className="text-white/85">No Liability for Content:</strong> GrowFlow AI assumes ZERO liability for the consequences of publishing generated text. Any defamation, copyright infringement, or harm caused by unverified AI outputs lies solely with the user.</li>
-            </ul>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">2. Description of Service</h2>
+              <p>
+                GrowFlow AI is an artificial intelligence-powered content generation platform designed to help creators, marketers, and businesses generate social media content, strategies, and performance predictions. We utilize advanced Large Language Models (LLMs) to provide these services.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">3. Payment & Billing Processing (Razorpay)</h2>
-            <p className="text-[15px] mb-3">All premium subscriptions, transactions, and payment authorizations are securely captured and processed by <strong>Razorpay</strong>, our official payment gateway partner. You agree to the following:</p>
-            <ul className="list-disc list-inside space-y-2 text-[15px] ml-1">
-              <li>You agree to provide current, complete, and accurate purchase and account information for all purchases made via Razorpay.</li>
-              <li><strong className="text-white/85">Recurring Billing:</strong> By subscribing to a Pro/Creator tier, you authorize Razorpay to charge your selected payment method on a recurring monthly equivalent basis until cancelled.</li>
-              <li>GrowFlow AI does not store, process, or directly transmit your credit card data. All compliance related to PCI-DSS is handled entirely by Razorpay.</li>
-            </ul>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">3. User Accounts and Registration</h2>
+              <p>
+                To use most features of the Service, you must register for an account using Clerk authentication. You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">4. Cancellation & Refund Policy</h2>
-            <ul className="list-disc list-inside space-y-2 text-[15px] ml-1">
-              <li>You may cancel your subscription at any time via your Account Settings. Your premium access will continue until the end of your current billing cycle.</li>
-              <li><strong className="text-white/85">No Refunds:</strong> Due to the high computational costs of AI generation, we do not offer refunds (partial or full) for unused time or accidental renewals once the payment has been successfully captured by Razorpay.</li>
-              <li>If you believe your card was charged fraudulently, you must contact Razorpay support and your bank immediately.</li>
-            </ul>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">4. Subscription Plans and Payment</h2>
+              <p>
+                We offer various subscription tiers (Starter, Creator, Infinity) as well as one-time credit top-ups. Payments are processed securely via <strong>Razorpay</strong>. 
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Pricing is listed in Indian Rupees (INR) and other supported currencies.</li>
+                <li>Subscriptions auto-renew at the end of each billing cycle (monthly or yearly) unless cancelled.</li>
+                <li>You authorize us to charge your chosen payment provider for these recurring fees.</li>
+              </ul>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">5. Acceptable Use Policy</h2>
-            <p className="text-[15px] mb-3">You agree not to use the GrowFlow AI platform to generate:</p>
-            <ul className="list-disc list-inside space-y-2 text-[15px] ml-1">
-              <li>Illegal, highly regulated, or hazardous content.</li>
-              <li>Spam, automated bot architectures without authorization, phishing, or malware execution payloads.</li>
-              <li>Content intended to harass, threaten, or discriminate against individuals or protected classes.</li>
-              <li>Misinformation designed to deceive the general public, including deepfakes or fake news articles.</li>
-            </ul>
-            <p className="mt-4 text-[15px]">Violation of this policy will result in immediate termination of your account without refund.</p>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">5. Refund Policy</h2>
+              <p>
+                We offer a <strong>7-day money-back guarantee</strong> for first-time paid subscribers. If you are not satisfied with the service within the first 7 days of your initial subscription, you may request a full refund, provided you have used fewer than 50 generations. For more details, see our <Link href="/refund-policy" className="text-cyan-400 hover:underline">Refund Policy</Link>.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">6. Content Ownership & Licensing</h2>
-            <p className="text-[15px]">
-              You retain all ownership rights over the raw input ideas you provide to the platform. Likewise, you own the final AI-generated outputs delivered to you, subject to the inherent limitations of copyright law regarding AI generations in your jurisdiction. By using the platform, you grant GrowFlow AI a temporary, limited license strictly necessary to process your data through the AI models to serve you.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">6. Intellectual Property</h2>
+              <p>
+                <strong>Your Content:</strong> You retain full ownership of the raw inputs you provide and the specific content generated by the AI for your account. You grant us a limited license to process this content to provide the Service.
+              </p>
+              <p>
+                <strong>Our Property:</strong> The GrowFlow AI platform, including its software, design, logos, and original code, is the exclusive property of GrowFlow AI and is protected by intellectual property laws.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">7. Legal Jurisdiction</h2>
-            <p className="text-[15px]">
-              These terms shall be governed by and construed in accordance with the laws of the jurisdiction in which GrowFlow AI operates, without regard to its conflict of law provisions. Any legal disputes arising from the use of the platform or Razorpay transactions shall be settled in the designated courts of that jurisdiction.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">7. Prohibited Uses</h2>
+              <p>You agree not to use the Service to:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Generate or spread spam, malware, or deceptive content.</li>
+                <li>Create content that promotes hate speech, violence, or discrimination.</li>
+                <li>Impersonate individuals or organizations without authorization.</li>
+                <li>Attempt to reverse engineer or scrape the platform.</li>
+              </ul>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">8. Contact Information</h2>
-            <p className="text-[15px]">
-              For legal inquiries or disputes regarding these terms, please contact us at <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 hover:text-cyan-300">growflowhelp@gmail.com</a>.
-            </p>
-          </section>
-        </div>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">8. Limitation of Liability</h2>
+              <p>
+                GrowFlow AI provides tools based on artificial intelligence. While we strive for high quality, AI can generate inaccurate or biased information. We are not liable for any damages resulting from your use of the content generated, including business losses or reputational damage.
+              </p>
+            </section>
 
-        <div className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-[13px] text-white/30 gap-4">
-          <span>© 2026 GrowFlow AI. All rights reserved.</span>
-          <div className="flex items-center gap-6">
-            <Link href="/terms-and-conditions"><span className="hover:text-white/60 transition-colors cursor-pointer">Terms of Service</span></Link>
-            <Link href="/privacy-policy"><span className="hover:text-white/60 transition-colors cursor-pointer">Privacy Policy</span></Link>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">9. Governing Law</h2>
+              <p>
+                These Terms shall be governed by and construed in accordance with the laws of <strong>India</strong>. Any disputes arising under these terms shall be subject to the exclusive jurisdiction of the courts in <strong>West Bengal, India</strong>.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">10. Contact Information</h2>
+              <p>
+                If you have any questions about these Terms, please contact us at:
+                <br />
+                <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 font-medium hover:underline">growflowhelp@gmail.com</a>
+              </p>
+            </section>
+          </div>
+
+          <div className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-[13px] text-white/30 gap-4">
+            <span>© 2026 GrowFlow AI. All rights reserved.</span>
+            <div className="flex items-center gap-6">
+              <Link href="/terms-and-conditions"><span className="hover:text-white/60 transition-colors cursor-pointer">Terms of Service</span></Link>
+              <Link href="/privacy-policy"><span className="hover:text-white/60 transition-colors cursor-pointer">Privacy Policy</span></Link>
+            </div>
           </div>
         </div>
       </div>

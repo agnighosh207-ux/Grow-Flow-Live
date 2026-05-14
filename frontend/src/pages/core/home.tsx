@@ -1335,11 +1335,12 @@ export default function Home() {
                 </a>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-xs text-white/35">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-12 gap-y-4 text-xs text-white/35">
               <Link href="/pricing"><span className="hover:text-white/60 transition-colors cursor-pointer">Pricing</span></Link>
-              <Link href="/terms"><span className="hover:text-white/60 transition-colors cursor-pointer">Terms of Service</span></Link>
-              <Link href="/support"><span className="hover:text-white/60 transition-colors cursor-pointer">Support</span></Link>
-              <Link href="/privacy"><span className="hover:text-white/60 transition-colors cursor-pointer">Privacy Policy</span></Link>
+              <Link href="/terms-and-conditions"><span className="hover:text-white/60 transition-colors cursor-pointer">Terms</span></Link>
+              <Link href="/privacy-policy"><span className="hover:text-white/60 transition-colors cursor-pointer">Privacy</span></Link>
+              <Link href="/refund-policy"><span className="hover:text-white/60 transition-colors cursor-pointer">Refund Policy</span></Link>
+              <Link href="/contact"><span className="hover:text-white/60 transition-colors cursor-pointer">Contact Us</span></Link>
             </div>
           </div>
           <div className="pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-2">

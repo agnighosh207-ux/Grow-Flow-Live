@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         <div className="mb-10">
           <Link href="/">
-            <div><Logo size="md" /></div>
+            <div className="cursor-pointer"><Logo size="md" /></div>
           </Link>
         </div>
 
@@ -24,78 +24,105 @@ export default function PrivacyPolicy() {
           </span>
         </Link>
 
-        <h1 className="text-3xl font-bold text-white mb-2">Privacy Policy</h1>
-        <p className="text-white/40 text-sm mb-10">Last updated: April 2026</p>
+        <div className="prose prose-invert max-w-3xl mx-auto px-4 py-12">
+          <h1 className="text-4xl font-bold text-white mb-2">Privacy Policy</h1>
+          <p className="text-white/40 text-sm mb-10">Last updated: May 2026</p>
 
-        <div className="space-y-8 text-white/70 leading-relaxed font-normal">
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">1. Introduction</h2>
-            <p className="text-[15px]">
-              GrowFlow AI ("we", "our", or "us") respects your privacy and is committed to protecting your personal data. This Privacy Policy informs you as to how we look after your personal data when you visit our platform and tells you about your privacy rights and how the law protects you.
-            </p>
-          </section>
+          <div className="space-y-10 text-white/80 leading-relaxed">
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">1. Information We Collect</h2>
+              <p>We collect information to provide a better experience to our users. This includes:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Identity Information:</strong> Email address, name, and profile data provided through our authentication partner, <strong>Clerk</strong>.</li>
+                <li><strong>Usage Data:</strong> Information about how you interact with our tools, including generation counts and feature usage.</li>
+                <li><strong>Generated Content:</strong> We store the content you generate and the prompts you provide so you can access them later in your Vault and History.</li>
+              </ul>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">2. Information We Collect</h2>
-            <p className="text-[15px] mb-3">We collect the minimum amount of data required to provide a seamless generative AI experience:</p>
-            <ul className="list-disc list-inside space-y-2 text-[15px] ml-1">
-              <li><strong className="text-white/85">Identity Data:</strong> First name, last name, email address, and profile picture (via Clerk Auth).</li>
-              <li><strong className="text-white/85">Content Data:</strong> The raw text inputs, prompts, and brand details you type into the generator to create content.</li>
-              <li><strong className="text-white/85">Financial Data:</strong> Processed securely by Razorpay. <strong className="text-red-300">We do not capture or store your credit card numbers.</strong></li>
-              <li><strong className="text-white/85">Technical Data:</strong> IP addresses, browser types, and usage analytics to optimize our systems.</li>
-            </ul>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">2. How We Use Information</h2>
+              <p>Your data is used for the following purposes:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Service Delivery:</strong> To power the AI generation tools and personalize your results.</li>
+                <li><strong>Billing:</strong> To manage subscriptions and process payments through Razorpay.</li>
+                <li><strong>Improvement:</strong> To analyze usage patterns and improve our AI engine's performance.</li>
+                <li><strong>Communication:</strong> To send important service updates or support responses via Resend.</li>
+              </ul>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">3. Artificial Intelligence & Your Data</h2>
-            <p className="text-[15px] mb-3">Our core service involves routing your text inputs (prompts) to Large Language Models (LLMs) such as OpenRouter, Gemini, and Groq.</p>
-            <ul className="list-disc list-inside space-y-2 text-[15px] ml-1">
-              <li><strong className="text-white/85">No Model Training:</strong> Your inputs and generated content are passed securely via API to our LLM providers. We strictly use commercial APIs that explicitly prohibit the use of your private prompts to train their foundational models.</li>
-              <li><strong className="text-white/85">Data Masking:</strong> You are responsible for not inputting highly sensitive, classified, or Personally Identifiable Information (PII) into the generator prompts.</li>
-            </ul>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">3. Data Storage and Infrastructure</h2>
+              <p>
+                Our primary database is hosted on <strong>Supabase (PostgreSQL)</strong>. Our servers are located in the <strong>Asia-Pacific (AP)</strong> region to ensure low latency for our core user base. We implement industry-standard encryption and security protocols to protect your data at rest and in transit.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">4. Payment Processing via Razorpay</h2>
-            <p className="text-[15px]">
-              All subscription upgrades and payments are handled exclusively by <strong>Razorpay</strong>. When you initialize a checkout, your session data is encrypted and transferred to Razorpay's secure servers. Razorpay processes your payment according to PCI-DSS compliance standards. GrowFlow AI only receives a webhook notification containing a status code (e.g., "payment.captured") and an obfuscated token so we can activate your Pro tier. For more details, you must review Razorpay's independent Privacy Policy.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">4. Third-Party Services</h2>
+              <p>We integrate with several trusted partners to deliver our Service:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Clerk:</strong> For secure authentication and user management.</li>
+                <li><strong>Razorpay:</strong> For secure payment processing (we do not store your credit card details).</li>
+                <li><strong>Resend:</strong> For transactional email delivery.</li>
+                <li><strong>OpenRouter / Groq:</strong> For processing AI generation requests (your prompts are sent to these providers but are not used for model training by us).</li>
+              </ul>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">5. Data Retention & Deletion</h2>
-            <p className="text-[15px]">
-              We retain your account data and generation history for as long as your account exists so you can access the "History" tab. You maintain the right to delete your data at any time. If you delete your account from the user settings, your generation history and identity tokens will be permanently scrubbed from our PostgreSQL databases within 30 days. Financial audit logs (webhooks) may be retained longer as legally mandated.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">5. Data Retention</h2>
+              <p>
+                We retain your account data as long as your account is active. If you choose to delete your account, all personal data, generation history, and saved items will be permanently scrubbed from our active databases within <strong>30 days</strong>.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">6. Security Measures</h2>
-            <p className="text-[15px]">
-              We have put in place appropriate security measures (including SSL/TLS encryption, JWT authorization, and row-level database security) to prevent your personal data from being accidentally lost, used, or accessed in an unauthorized way. However, no data transmission over the internet is completely invincible. Standard assumption of risk applies.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">6. Your Rights</h2>
+              <p>You have the right to:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Access all personal data we store about you.</li>
+                <li>Request the deletion of your account and all associated data.</li>
+                <li>Export your data in a portable format (available in your Account Settings).</li>
+                <li>Opt-out of non-essential communications.</li>
+              </ul>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">7. Cookies and Tracking</h2>
-            <p className="text-[15px]">
-              We use strictly necessary cookies to maintain your login session via Clerk. We do not use intrusive third-party ad-tracking cookies across our authenticated application space.
-            </p>
-          </section>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">7. Cookies</h2>
+              <p>
+                We use essential cookies strictly for maintaining your authenticated session via Clerk. We do not use third-party tracking or advertising cookies.
+              </p>
+            </section>
 
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3 tracking-tight">8. Contact Us</h2>
-            <p className="text-[15px]">
-              If you wish to exercise your data rights or have any questions about this Privacy Policy, please contact our privacy officer at <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 hover:text-cyan-300">growflowhelp@gmail.com</a>.
-            </p>
-          </section>
-        </div>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">8. Children's Privacy</h2>
+              <p>
+                GrowFlow AI is not intended for use by individuals under the age of 13. We do not knowingly collect personal information from children.
+              </p>
+            </section>
 
-        <div className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-[13px] text-white/30 gap-4">
-          <span>© 2026 GrowFlow AI. All rights reserved.</span>
-          <div className="flex items-center gap-6">
-            <Link href="/terms-and-conditions"><span className="hover:text-white/60 transition-colors cursor-pointer">Terms of Service</span></Link>
-            <Link href="/privacy-policy"><span className="hover:text-white/60 transition-colors cursor-pointer">Privacy Policy</span></Link>
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">9. Contact and Data Protection</h2>
+              <p>
+                If you have any privacy concerns or wish to exercise your rights, please contact our Data Protection Officer at:
+                <br />
+                <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 font-medium hover:underline">growflowhelp@gmail.com</a>
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-semibold text-white mb-4">10. Updates to This Policy</h2>
+              <p>
+                We may update this Privacy Policy from time to time. We will notify you of any significant changes by posting the new policy on this page and updating the "Last updated" date.
+              </p>
+            </section>
+          </div>
+
+          <div className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-[13px] text-white/30 gap-4">
+            <span>© 2026 GrowFlow AI. All rights reserved.</span>
+            <div className="flex items-center gap-6">
+              <Link href="/terms-and-conditions"><span className="hover:text-white/60 transition-colors cursor-pointer">Terms of Service</span></Link>
+              <Link href="/privacy-policy"><span className="hover:text-white/60 transition-colors cursor-pointer">Privacy Policy</span></Link>
+            </div>
           </div>
         </div>
       </div>

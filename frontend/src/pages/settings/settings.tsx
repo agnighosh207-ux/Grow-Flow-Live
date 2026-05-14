@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUser, useClerk, useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,7 +12,7 @@ import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import {
   Settings, User, CreditCard, Bell, AlertTriangle,
   Loader2, Crown, Zap, Shield, Mail,
-  Trash2, X, RefreshCcw, Gift, Copy, Check, Users, Sliders, Camera, Trophy
+  Trash2, X, RefreshCcw, Gift, Copy, Check, Users, Sliders, Camera, Trophy, Download, History
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -21,6 +21,8 @@ interface NotificationPrefs {
   productUpdates: boolean;
   weeklyDigest: boolean;
   marketingEmails: boolean;
+  emailReports: boolean;
+  streakReminders: boolean;
 }
 
 interface ContentPrefs {
@@ -79,7 +81,7 @@ function DeleteConfirmModal({ onConfirm, onClose, loading }: {
             </div>
             <div>
               <h3 className="text-white font-semibold">Delete Account</h3>
-              <p className="text-red-400/80 text-xs mt-0.5">This action is permanent and irreversible</p>
+              <p className="text-red-400/80 text-xs mt-0.5">7-day grace period before permanent removal</p>
             </div>
           </div>
           <button onClick={onClose} className="text-white/30 hover:text-white/60 transition-colors">
@@ -88,9 +90,9 @@ function DeleteConfirmModal({ onConfirm, onClose, loading }: {
         </div>
 
         <div className="space-y-2 text-white/60 text-sm">
-          <p>Deleting your account will permanently remove:</p>
+          <p>This will schedule your account for deletion. During the next 7 days:</p>
           <ul className="space-y-1 ml-3">
-            {["All generated content history", "Subscription and billing data", "Notification preferences", "Your account and profile"].map(item => (
+            {["Your subscription will be canceled", "You can cancel deletion any time", "After 7 days, all data will be permanently purged"].map(item => (
               <li key={item} className="flex items-center gap-2 text-white/50 text-xs">
                 <span className="w-1 h-1 rounded-full bg-red-400/60 shrink-0" />
                 {item}
@@ -124,7 +126,7 @@ function DeleteConfirmModal({ onConfirm, onClose, loading }: {
             onClick={onConfirm}
             className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-xl disabled:opacity-40"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete My Account"}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Schedule Deletion"}
           </Button>
         </div>
       </motion.div>
@@ -164,23 +166,13 @@ export default function SettingsPage() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  function copyToClipboard(text: string, type: "code" | "link") {
-    navigator.clipboard.writeText(text).then(() => {
-      if (type === "code") {
-        setCopiedCode(true);
-        setTimeout(() => setCopiedCode(false), 2000);
-      } else {
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 2000);
-      }
-    });
-  }
-
   const [prefs, setPrefs] = useState<NotificationPrefs>({
     emailNotifications: true,
     productUpdates: true,
     weeklyDigest: true,
     marketingEmails: false,
+    emailReports: true,
+    streakReminders: true,
   });
   const [browserNotifPermission, setBrowserNotifPermission] = useState<NotificationPermission>("default");
   const [prefsSaving, setPrefsSaving] = useState(false);
@@ -202,12 +194,17 @@ export default function SettingsPage() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [retryLoading, setRetryLoading] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [profile, setProfile] = useState({
     username: "",
     displayName: "",
     showOnLeaderboard: false,
     avatarUrl: "",
   });
+
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [scheduledDeletionAt, setScheduledDeletionAt] = useState<string | null>(null);
 
   const retrySub = useRetrySubscription();
 
@@ -233,6 +230,9 @@ export default function SettingsPage() {
         if (data.profile) {
           setProfile(data.profile);
         }
+        if (data.account?.scheduledDeletionAt) {
+          setScheduledDeletionAt(data.account.scheduledDeletionAt);
+        }
         setPrefsLoaded(true);
       })
       .catch(() => setPrefsLoaded(true));
@@ -255,12 +255,31 @@ export default function SettingsPage() {
     }
   }, []);
 
+  // Debounced Username Check
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (profile.username && profile.username.length >= 3) {
+        setCheckingUsername(true);
+        try {
+          const res = await secureFetch(`/api/settings/check-username?username=${encodeURIComponent(profile.username)}`);
+          const data = await res.json();
+          setUsernameAvailable(data.available);
+        } finally {
+          setCheckingUsername(false);
+        }
+      } else {
+        setUsernameAvailable(null);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [profile.username]);
+
   async function saveContentPrefs() {
     setContentPrefsSaving(true);
     try {
       const res = await secureFetch("/api/settings/preferences", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           niche: contentPrefs.niche || null,
           tonePreference: contentPrefs.tonePreference || null,
@@ -284,7 +303,6 @@ export default function SettingsPage() {
     try {
       await secureFetch("/api/settings/notifications", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [key]: value }),
       });
     } catch {
@@ -332,18 +350,56 @@ export default function SettingsPage() {
     setDeleteLoading(true);
     try {
       const res = await secureFetch("/api/settings/account", { method: "DELETE" });
+      const data = await res.json();
       if (!res.ok) throw new Error();
-      await signOut();
-      navigate("/");
+      
+      setScheduledDeletionAt(data.scheduledDeletionAt);
+      toast({ title: "Account deletion scheduled", description: "You have 7 days to cancel this action." });
+      refetchSub();
     } catch {
-      toast({ variant: "destructive", title: "Failed to delete account", description: "Please contact support." });
+      toast({ variant: "destructive", title: "Failed to schedule deletion", description: "Please contact support." });
     } finally {
       setDeleteLoading(false);
       setShowDeleteModal(false);
     }
   }
 
+  async function cancelDeletion() {
+    try {
+      const res = await secureFetch("/api/settings/cancel-deletion", { method: "POST" });
+      if (!res.ok) throw new Error();
+      setScheduledDeletionAt(null);
+      toast({ title: "Deletion cancelled", description: "Your account is safe." });
+      refetchSub();
+    } catch {
+      toast({ variant: "destructive", title: "Error", description: "Failed to cancel deletion." });
+    }
+  }
+
+  async function handleExportData() {
+    setExportLoading(true);
+    try {
+      const res = await secureFetch("/api/settings/export");
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `growflow-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      toast({ title: "Data export started", description: "Your JSON file is downloading." });
+    } catch {
+      toast({ variant: "destructive", title: "Export failed", description: "Please try again later." });
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
   async function saveProfile() {
+    if (usernameAvailable === false) {
+        toast({ variant: "destructive", title: "Username taken", description: "Please choose another one." });
+        return;
+    }
     setProfileSaving(true);
     try {
       const res = await secureFetch("/api/settings/profile", {
@@ -368,21 +424,13 @@ export default function SettingsPage() {
     setBrowserNotifPermission(result);
     if (result === "granted") {
       toast({ title: "Notifications on!", description: "We'll ping you for trial alerts and weekly wins." });
-      try {
-        new Notification("You're in! \ud83c\udf89", {
-          body: "We'll let you know when your trial is ending and drop weekly tips your way.",
-          icon: "/favicon.ico",
-        });
-      } catch {}
     }
   }
 
-  const activePlanLabel = sub?.planType === "infinity" ? "Infinity" : sub?.planType === "creator" ? "Creator" : sub?.planType === "starter" ? "Starter" : "Active";
-  const trialPlanLabel = sub?.planType === "infinity" ? "Infinity Trial" : sub?.planType === "creator" ? "Creator Trial" : "Starter Trial";
   const planConfig = {
     free: { label: "Free", color: "text-white/50", bg: "bg-white/5 border-white/10", icon: <User className="w-3.5 h-3.5" /> },
-    trial: { label: trialPlanLabel, color: "text-cyan-300", bg: "bg-cyan-500/10 border-cyan-500/20", icon: <Zap className="w-3.5 h-3.5" /> },
-    active: { label: activePlanLabel, color: "text-emerald-300", bg: "bg-emerald-500/10 border-emerald-500/20", icon: <Crown className="w-3.5 h-3.5" /> },
+    trial: { label: "Trial", color: "text-cyan-300", bg: "bg-cyan-500/10 border-cyan-500/20", icon: <Zap className="w-3.5 h-3.5" /> },
+    active: { label: "Pro", color: "text-emerald-300", bg: "bg-emerald-500/10 border-emerald-500/20", icon: <Crown className="w-3.5 h-3.5" /> },
     blocked: { label: "Expired", color: "text-red-300", bg: "bg-red-500/10 border-red-500/20", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
   };
   const plan = planConfig[sub?.plan as keyof typeof planConfig] ?? planConfig.free;
@@ -390,7 +438,7 @@ export default function SettingsPage() {
   const memberSince = user?.createdAt ? format(new Date(user.createdAt), "MMMM yyyy") : null;
 
   return (
-    <div className="space-y-6 pb-16 max-w-2xl mx-auto">
+    <div className="space-y-6 pb-16 max-w-2xl mx-auto px-4 sm:px-0">
       {showDeleteModal && (
         <DeleteConfirmModal
           onConfirm={handleDeleteAccount}
@@ -407,16 +455,40 @@ export default function SettingsPage() {
       />
       <AvatarPicker open={showAvatarPicker} onClose={() => setShowAvatarPicker(false)} />
 
-      <div>
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">
-          <Settings className="w-7 h-7 text-white/60" />
-          Settings
-        </h1>
-        <p className="text-white/40 text-sm">Manage your account, subscription, and preferences.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">
+            <Settings className="w-7 h-7 text-white/60" />
+            Settings
+          </h1>
+          <p className="text-white/40 text-sm">Manage your account and preferences.</p>
+        </div>
+        <Button 
+          onClick={handleExportData} 
+          disabled={exportLoading}
+          variant="outline" 
+          className="rounded-xl border-white/10 text-white/60 hover:text-white"
+        >
+          {exportLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+          Export Data
+        </Button>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10 overflow-x-auto scrollbar-hide flex-nowrap -mx-4 px-4 md:mx-0 md:px-0">
+      {scheduledDeletionAt && (
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex items-center gap-3 flex-1">
+            <History className="w-5 h-5 text-red-400" />
+            <p className="text-sm text-white/80">
+              Account scheduled for deletion on <span className="font-bold text-red-400">{format(new Date(scheduledDeletionAt), "MMM d, yyyy")}</span>
+            </p>
+          </div>
+          <Button size="sm" onClick={cancelDeletion} className="bg-red-600 hover:bg-red-500 text-white rounded-lg">
+            Cancel Deletion
+          </Button>
+        </div>
+      )}
+
+      <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10 overflow-x-auto">
         {[
           { id: "profile", label: "Profile", icon: Users },
           { id: "account", label: "Account", icon: Settings },
@@ -427,9 +499,7 @@ export default function SettingsPage() {
             key={tab.id}
             onClick={() => handleTabChange(tab.id)}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all flex-shrink-0 ${
-              activeTab === tab.id
-                ? "bg-white/10 text-white shadow-sm"
-                : "text-white/40 hover:text-white/60"
+              activeTab === tab.id ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
             }`}
           >
             <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "text-cyan-400" : "text-white/20"}`} />
@@ -439,518 +509,120 @@ export default function SettingsPage() {
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-6 pb-24 md:pb-8"
-        >
+        <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
           {activeTab === "profile" && (
-            <>
-              {/* Public Profile */}
-              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-cyan-400/70" />
-                    <h2 className="text-white/80 font-semibold text-sm">Public Profile</h2>
-                  </div>
-                  {profileSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
-                </div>
-                <div className="p-5 space-y-5">
-                  <p className="text-white/40 text-xs leading-relaxed">
-                    Customize how you appear to other creators and on the public leaderboard.
-                  </p>
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-white/60 text-xs font-medium">Username (Vanity URL)</label>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <div className="bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-white/40 text-sm font-mono shrink-0">
-                          growflowai.space/profile/
-                        </div>
-                        <input
-                          type="text"
-                          value={profile.username}
-                          onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
-                          placeholder="yourname"
-                          className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 font-mono"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-white/60 text-xs font-medium">Display Name</label>
+            <div className="space-y-6">
+              <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+                <h2 className="text-white/80 font-semibold text-sm mb-4">Public Profile</h2>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-white/60 text-xs font-medium">Username</label>
+                    <div className="relative">
                       <input
                         type="text"
-                        value={profile.displayName}
-                        onChange={e => setProfile(p => ({ ...p, displayName: e.target.value }))}
-                        placeholder="The Creator"
-                        className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
+                        value={profile.username}
+                        onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
+                        className={`w-full bg-black/20 border ${usernameAvailable === false ? 'border-red-500/50' : usernameAvailable === true ? 'border-emerald-500/50' : 'border-white/10'} rounded-xl px-3 py-2.5 text-white text-sm font-mono`}
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {checkingUsername ? <Loader2 className="w-4 h-4 animate-spin text-white/20" /> : usernameAvailable === true ? <Check className="w-4 h-4 text-emerald-500" /> : usernameAvailable === false ? <X className="w-4 h-4 text-red-500" /> : null}
+                      </div>
+                    </div>
+                    {usernameAvailable === false && <p className="text-[10px] text-red-400">Username already taken</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-white/60 text-xs font-medium">Display Name</label>
+                    <input
+                      type="text"
+                      value={profile.displayName}
+                      onChange={e => setProfile(p => ({ ...p, displayName: e.target.value }))}
+                      className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm"
+                    />
+                  </div>
+                  <Button onClick={saveProfile} disabled={profileSaving} className="w-full bg-white text-black font-bold rounded-xl">
+                    {profileSaving ? "Saving..." : "Update Profile"}
+                  </Button>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+                <h2 className="text-white/80 font-semibold text-sm mb-4">Default Style</h2>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-white/60 text-xs font-medium">Your Niche</label>
+                      <input 
+                        value={contentPrefs.niche} 
+                        onChange={e => setContentPrefs({ ...contentPrefs, niche: e.target.value })}
+                        className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm" 
                       />
                     </div>
-                    <div className="flex items-start justify-between gap-4 py-2">
-                      <div className="flex items-start gap-3">
-                        <Trophy className="w-4 h-4 mt-0.5 text-amber-400/70" />
-                        <div>
-                          <p className="text-white/80 text-sm font-medium">Show on Leaderboard</p>
-                          <p className="text-white/35 text-xs mt-0.5">Opt-in to compete with other creators and build authority.</p>
-                        </div>
-                      </div>
-                      <ToggleSwitch
-                        checked={profile.showOnLeaderboard}
-                        onChange={(v) => setProfile(p => ({ ...p, showOnLeaderboard: v }))}
-                      />
-                    </div>
-                    {profile.username && (
-                      <a 
-                        href={`/profile/${profile.username}`} 
-                        target="_blank" 
-                        className="inline-flex items-center gap-1.5 text-cyan-400 text-xs font-bold uppercase tracking-widest hover:text-cyan-300 transition-colors"
+                    <div className="space-y-1.5">
+                      <label className="text-white/60 text-xs font-medium">Default Tone</label>
+                      <select 
+                        value={contentPrefs.tonePreference} 
+                        onChange={e => setContentPrefs({ ...contentPrefs, tonePreference: e.target.value })}
+                        className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm appearance-none"
                       >
-                        View My Public Profile <RefreshCcw className="w-3 h-3" />
-                      </a>
-                    )}
-                    <Button
-                      onClick={saveProfile}
-                      disabled={profileSaving}
-                      className="w-full bg-white text-black hover:bg-zinc-200 font-bold rounded-xl text-sm transition-all"
-                    >
-                      {profileSaving ? "Saving..." : "Update Profile"}
-                    </Button>
+                        {TONE_OPTIONS.map(o => <option key={o} value={o}>{o || "Neutral"}</option>)}
+                      </select>
+                    </div>
                   </div>
+                  <Button onClick={saveContentPrefs} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl">Save Preferences</Button>
                 </div>
               </section>
-
-              {/* Content Preferences */}
-              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-white/40" />
-                    <h2 className="text-white/80 font-semibold text-sm">Content Preferences</h2>
-                  </div>
-                  {contentPrefsSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
-                </div>
-                <div className="p-5 space-y-5">
-                  <p className="text-white/40 text-xs leading-relaxed">
-                    Set your default content style. The AI will automatically personalize generated content based on these preferences.
-                  </p>
-                  {!contentPrefsLoaded ? (
-                    <div className="space-y-4">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="space-y-1.5">
-                          <div className="h-3 w-20 bg-white/5 rounded animate-pulse" />
-                          <div className="h-10 w-full bg-white/3 rounded-xl animate-pulse" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <label className="text-white/60 text-xs font-medium">Your Niche</label>
-                        <input
-                          type="text"
-                          value={contentPrefs.niche}
-                          onChange={e => setContentPrefs(p => ({ ...p, niche: e.target.value }))}
-                          placeholder="e.g. Fitness, Finance, Tech, Marketing..."
-                          className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-white/60 text-xs font-medium">Default Tone</label>
-                        <select
-                          value={contentPrefs.tonePreference}
-                          onChange={e => setContentPrefs(p => ({ ...p, tonePreference: e.target.value }))}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 appearance-none"
-                        >
-                          <option value="" className="bg-[#0f0a1e]">Select your preferred tone</option>
-                          {TONE_OPTIONS.filter(t => t !== "").map(t => (
-                            <option key={t} value={t} className="bg-[#0f0a1e]">{t}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-white/60 text-xs font-medium">Preferred Platform</label>
-                        <select
-                          value={contentPrefs.platformPreference}
-                          onChange={e => setContentPrefs(p => ({ ...p, platformPreference: e.target.value }))}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 appearance-none"
-                        >
-                          <option value="" className="bg-[#0f0a1e]">Select your preferred platform</option>
-                          {PLATFORM_OPTIONS.filter(p => p !== "").map(p => (
-                            <option key={p} value={p} className="bg-[#0f0a1e]">{p}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <LanguageSelector
-                          value={contentPrefs.languagePreference}
-                          onChange={(v) => setContentPrefs(p => ({ ...p, languagePreference: v }))}
-                          isFreeUser={sub?.plan === "free"}
-                          label="Language Preference"
-                          onUpgradeRequired={() => toast({ title: "\ud83d\udd12 Premium Languages", description: "Upgrade your plan to use regional languages.", variant: "destructive" })}
-                        />
-                        <p className="text-white/30 text-[11px] leading-relaxed">Your preferred content language. All generators will default to this language.</p>
-                      </div>
-                      <Button
-                        onClick={saveContentPrefs}
-                        disabled={contentPrefsSaving}
-                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl text-sm disabled:opacity-50 transition-all"
-                      >
-                        {contentPrefsSaving ? (
-                          <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> Saving...</>
-                        ) : (
-                          "Save Preferences"
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </section>
-            </>
-          )}
-
-          {activeTab === "account" && (
-            <>
-              {/* Account Info */}
-              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <div className="px-5 py-4 border-b border-white/6 flex items-center gap-2">
-                  <User className="w-4 h-4 text-white/40" />
-                  <h2 className="text-white/80 font-semibold text-sm">Account</h2>
-                </div>
-                <div className="p-5 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="relative group cursor-pointer" onClick={() => setShowAvatarPicker(true)}>
-                      {user?.imageUrl ? (
-                        <img src={user.imageUrl} alt="" className="w-14 h-14 rounded-full border border-white/20 object-cover" />
-                      ) : (
-                        <div className="w-14 h-14 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-lg text-white/40 font-bold">
-                          {(user?.fullName || "U").charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Camera className="w-5 h-5 text-white/80" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold text-lg">{user?.fullName || "User"}</p>
-                      {memberSince && <p className="text-white/50 text-xs mt-0.5">Member since {memberSince}</p>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
-                      <Mail className="w-4 h-4 text-white/30 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Email Address</p>
-                        <p className="text-white/80 text-sm truncate">{user?.primaryEmailAddress?.emailAddress ?? "—"}</p>
-                      </div>
-                      <span className="text-[10px] text-white/25 font-medium border border-white/8 rounded px-1.5 py-0.5">Managed by Clerk</span>
-                    </div>
-
-                    {user?.username && (
-                      <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/5 px-4 py-3">
-                        <User className="w-4 h-4 text-white/30 shrink-0" />
-                        <div>
-                          <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">Username</p>
-                          <p className="text-white/80 text-sm">@{user.username}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </section>
-
-              {/* Danger Zone */}
-              <section className="rounded-2xl border border-red-500/15 overflow-hidden" style={{ background: "rgba(239,68,68,0.03)" }}>
-                <div className="px-5 py-4 border-b border-red-500/10 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-400/60" />
-                  <h2 className="text-red-400/80 font-semibold text-sm">Danger Zone</h2>
-                </div>
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-white/70 text-sm font-medium">Delete Account</p>
-                      <p className="text-white/35 text-xs mt-0.5 leading-relaxed max-w-xs">
-                        Permanently delete your account and all associated data. This cannot be undone.
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowDeleteModal(true)}
-                      className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 border border-red-500/15 hover:border-red-500/30 text-xs rounded-lg shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete Account
-                    </Button>
-                  </div>
-                </div>
-              </section>
-            </>
+            </div>
           )}
 
           {activeTab === "notifications" && (
-            <>
-              {/* Notification Preferences */}
-              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <div className="px-5 py-4 border-b border-white/6 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-white/40" />
-                    <h2 className="text-white/80 font-semibold text-sm">Notifications</h2>
+            <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 space-y-6">
+              {[
+                { key: "emailReports" as const, label: "Weekly Growth Report", desc: "Get a summary of your reach and engagement wins every Monday." },
+                { key: "streakReminders" as const, label: "Streak Reminders", desc: "Don't lose your consistency. We'll nudge you if you haven't posted." },
+                { key: "productUpdates" as const, label: "Product Updates", desc: "New tools and feature improvements." },
+                { key: "emailNotifications" as const, label: "Security & Billing", desc: "Receipts and login alerts (Recommended)." },
+              ].map(({ key, label, desc }) => (
+                <div key={key} className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-white font-medium text-sm">{label}</p>
+                    <p className="text-white/30 text-xs mt-0.5">{desc}</p>
                   </div>
-                  {prefsSaving && <Loader2 className="w-3.5 h-3.5 text-white/30 animate-spin" />}
+                  <ToggleSwitch checked={prefs[key]} onChange={(v) => updatePref(key, v)} />
                 </div>
-                <div className="p-5 space-y-5">
-                  {!prefsLoaded ? (
-                    <div className="space-y-4">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <div className="h-3.5 w-32 bg-white/5 rounded animate-pulse" />
-                            <div className="h-2.5 w-48 bg-white/3 rounded animate-pulse" />
-                          </div>
-                          <div className="w-11 h-6 bg-white/5 rounded-full animate-pulse" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <>
-                      {/* Browser notification control */}
-                      <div className="flex items-start justify-between gap-4 pb-4 border-b border-white/6">
-                        <div className="flex items-start gap-3">
-                          <Bell className="w-4 h-4 mt-0.5 shrink-0 text-cyan-400" />
-                          <div>
-                            <p className="text-white/80 text-sm font-medium">Browser Notifications</p>
-                            <p className="text-white/35 text-xs mt-0.5 leading-relaxed">
-                              {browserNotifPermission === "granted"
-                                ? "You're all set — we'll ping you for trial alerts and important updates."
-                                : browserNotifPermission === "denied"
-                                ? "Blocked in your browser settings. Allow it from your browser's address bar."
-                                : "Get pinged when your trial is ending, payment fails, or we drop something new."}
-                            </p>
-                          </div>
-                        </div>
-                        {browserNotifPermission === "granted" ? (
-                          <span className="text-emerald-400 text-xs font-semibold whitespace-nowrap mt-1">Enabled ✓</span>
-                        ) : browserNotifPermission === "denied" ? (
-                          <span className="text-white/20 text-xs whitespace-nowrap mt-1">Blocked</span>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={requestBrowserNotif}
-                            className="bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/20 hover:border-cyan-500/30 text-xs h-7 px-3 rounded-lg font-medium shrink-0"
-                          >
-                            Enable
-                          </Button>
-                        )}
-                      </div>
+              ))}
+            </section>
+          )}
 
-                      {[
-                        {
-                          key: "emailNotifications" as const,
-                          label: "Account Emails",
-                          desc: "Billing receipts, security alerts, and important account updates — you probably want these on.",
-                          icon: Shield,
-                          iconColor: "text-blue-400",
-                        },
-                        {
-                          key: "weeklyDigest" as const,
-                          label: "Weekly Trend Digest Emails",
-                          desc: "Receive a weekly email with curated content trends and audio patterns specific to your niche.",
-                          icon: Mail,
-                          iconColor: "text-emerald-400",
-                        },
-                        {
-                          key: "productUpdates" as const,
-                          label: "Product Updates",
-                          desc: "When we ship new features or improvements, we'll let you know. No fluff, just the good stuff.",
-                          icon: Zap,
-                          iconColor: "text-cyan-400",
-                        },
-                        {
-                          key: "marketingEmails" as const,
-                          label: "Tips & Inspiration",
-                          desc: "Occasional content creation tips, creator stories, and ideas to spark your next post.",
-                          icon: Bell,
-                          iconColor: "text-amber-400",
-                        },
-                      ].map(({ key, label, desc, icon: Icon, iconColor }) => (
-                        <div key={key} className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3">
-                            <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconColor}`} />
-                            <div>
-                              <p className="text-white/80 text-sm font-medium">{label}</p>
-                              <p className="text-white/35 text-xs mt-0.5 leading-relaxed">{desc}</p>
-                            </div>
-                          </div>
-                          <ToggleSwitch
-                            checked={prefs[key]}
-                            onChange={(v) => updatePref(key, v)}
-                            disabled={prefsSaving}
-                          />
-                        </div>
-                      ))}
-                    </>
-                  )}
+          {activeTab === "account" && (
+            <div className="space-y-6">
+              <section className="rounded-2xl border border-red-500/15 bg-red-500/[0.02] p-5">
+                <h2 className="text-red-400/80 font-semibold text-sm mb-4">Danger Zone</h2>
+                <div className="flex items-center justify-between">
+                  <p className="text-white/40 text-xs max-w-[250px]">Once deleted, your content history and sub data will be purged after 7 days.</p>
+                  <Button variant="ghost" onClick={() => setShowDeleteModal(true)} className="text-red-400 hover:bg-red-500/10 border border-red-500/20">
+                    Delete Account
+                  </Button>
                 </div>
               </section>
-            </>
+            </div>
           )}
 
           {activeTab === "billing" && (
-            <>
-              {/* Subscription */}
-              <section className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <div className="px-5 py-4 border-b border-white/6 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-white/40" />
-                  <h2 className="text-white/80 font-semibold text-sm">Subscription</h2>
-                </div>
-                <div className="p-5 space-y-4">
-                  {sub?.plan === "blocked" && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-xl border border-red-500/30 p-4 flex flex-col sm:flex-row sm:items-center gap-4 mb-4"
-                      style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.07) 0%, rgba(10,4,28,0.95) 100%)" }}
-                    >
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/20 flex items-center justify-center shrink-0">
-                          <AlertTriangle className="w-5 h-5 text-red-400" />
-                        </div>
-                        <div>
-                          <p className="text-red-300 font-semibold text-sm">Payment failed</p>
-                          <p className="text-white/45 text-xs mt-0.5 leading-relaxed">
-                            We couldn't process your payment. Update your payment method to restore full access.
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={handleRetryPayment}
-                        disabled={retryLoading}
-                        className="bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 hover:border-red-500/50 font-semibold text-xs rounded-lg shrink-0 transition-all"
-                      >
-                        {retryLoading ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <><RefreshCcw className="w-3.5 h-3.5 mr-1.5" /> Update payment method</>
-                        )}
-                      </Button>
-                    </motion.div>
-                  )}
-
-                  <div className={`flex items-center gap-3 rounded-xl border ${plan.bg} px-4 py-3`}>
-                    <span className={plan.color}>{plan.icon}</span>
-                    <div className="flex-1">
-                      <p className={`font-semibold text-sm ${plan.color}`}>{plan.label} Plan</p>
-                      {sub?.plan === "trial" && sub.trialEndsAt && (
-                        <p className="text-cyan-300/60 text-xs mt-0.5">Ends {format(new Date(sub.trialEndsAt), "MMM d, yyyy")}</p>
-                      )}
-                      {sub?.plan === "active" && (
-                        <p className="text-emerald-300/60 text-xs mt-0.5">Unlimited generations active</p>
-                      )}
-                      {sub?.plan === "free" && (
-                        <p className="text-white/40 text-xs mt-0.5">{sub.monthlyGenerationsUsed}/{sub.generationLimit} free generations used</p>
-                      )}
-                    </div>
-                    {(sub?.plan === "free" || sub?.plan === "blocked" || sub?.plan === "trial") && (
-                      <Button
-                        size="sm"
-                        onClick={() => navigate("/pricing")}
-                        className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs rounded-lg shrink-0 shadow shadow-cyan-900/30"
-                      >
-                        <Zap className="w-3 h-3 mr-1.5" /> Upgrade
-                      </Button>
-                    )}
-                  </div>
-
-                  {sub?.plan === "active" && (
-                    <div className="flex items-center justify-between pt-1">
-                      <div>
-                        <p className="text-white/60 text-sm font-medium">Cancel Subscription</p>
-                        <p className="text-white/35 text-xs mt-0.5">Your access continues until the end of the billing period.</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={cancelLoading}
-                        onClick={handleCancelSubscription}
-                        className="text-red-400/70 hover:text-red-400 hover:bg-red-500/10 border border-white/8 hover:border-red-500/20 text-xs rounded-lg shrink-0"
-                      >
-                        {cancelLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Cancel"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Your Rewards / Referral Program */}
-              <section className="rounded-2xl border border-cyan-500/15 overflow-hidden" style={{ background: "rgba(139,92,246,0.03)" }}>
-                <div className="px-5 py-4 border-b border-cyan-500/10 flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-cyan-400/70" />
-                  <h2 className="text-white/80 font-semibold text-sm">Your Rewards</h2>
-                  <span className="ml-auto text-[10px] font-semibold text-cyan-300 bg-cyan-500/15 border border-cyan-500/20 rounded-full px-2 py-0.5">+15 Days Infinity/ref</span>
-                </div>
-                <div className="p-5 space-y-4">
-                  <p className="text-white/40 text-xs leading-relaxed">
-                    <span className="text-white/60">Refer a friend and both of you get 15 days of Infinity Access for free.</span>
+            <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 space-y-4">
+              <div className={`flex items-center gap-3 rounded-xl border ${plan.bg} px-4 py-3`}>
+                {plan.icon}
+                <div className="flex-1">
+                  <p className={`font-semibold text-sm ${plan.color}`}>{plan.label} Plan</p>
+                  <p className="text-white/30 text-xs mt-0.5">
+                    {sub?.plan === "free" ? `${sub.generationsUsed}/${sub.generationLimit} credits used` : "Subscription active"}
                   </p>
-
-                  {referral ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
-                           <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Total Friends Referred</p>
-                           <div className="flex items-center justify-center gap-1.5">
-                             <Users className="w-3.5 h-3.5 text-cyan-400" />
-                             <p className="text-white font-bold text-lg">{referral.successfulReferrals}</p>
-                           </div>
-                        </div>
-                        <div className="rounded-xl bg-black/20 border border-white/5 px-4 py-3 text-center">
-                           <p className="text-white/35 text-[10px] font-medium uppercase tracking-wider mb-1">Current Expiry Date</p>
-                           <div className="flex items-center justify-center gap-1.5">
-                             <Crown className="w-3.5 h-3.5 text-cyan-400" />
-                             <p className="text-white font-bold text-sm">
-                               {sub?.trialEndsAt ? format(new Date(sub.trialEndsAt), "MMM d, yyyy") : (sub?.trialDaysLeft ? `${sub.trialDaysLeft} Days Left` : "N/A")}
-                             </p>
-                           </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 pt-2">
-                        <p className="text-white/40 text-[10px] font-black uppercase tracking-widest text-center">Share Your Magic Link</p>
-                        <div className="flex items-center gap-2 bg-black/40 border border-white/8 rounded-xl p-1.5">
-                          <input 
-                            readOnly 
-                            value={referral.shareableLink} 
-                            className="bg-transparent border-none focus:ring-0 text-white/50 text-xs flex-1 px-2 font-mono truncate"
-                          />
-                          <button 
-                            onClick={() => {
-                              navigator.clipboard.writeText(referral.shareableLink);
-                              setCopiedLink(true);
-                              toast({ title: "Link copied!" });
-                              setTimeout(() => setCopiedLink(false), 2000);
-                            }}
-                            className="h-8 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold uppercase transition-all"
-                          >
-                            {copiedLink ? "Copied" : "Copy Link"}
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="py-4 text-center">
-                      <p className="text-white/20 text-xs italic">Loading referral status...</p>
-                    </div>
-                  )}
                 </div>
-              </section>
-            </>
+                <Button size="sm" onClick={() => navigate("/pricing")} className="bg-white/10 hover:bg-white/20 text-white border-white/10">Manage</Button>
+              </div>
+            </section>
           )}
         </motion.div>
       </AnimatePresence>
-
-
     </div>
   );
 }

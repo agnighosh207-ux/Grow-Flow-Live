@@ -212,6 +212,8 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     monthlyGenerationsUsed: Math.max(0, freeLimit - generationsRemaining),
     generationsRemaining: generationsRemaining,
     totalGenerationsUsed: totalGenerations,
+    currentStreak: user.currentStreak || 0,
+    totalGenerations: user.totalGenerations || 0,
   };
 }
 
@@ -269,6 +271,8 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Respon
     subscriptionStatus: user.subscriptionStatus,
     razorpaySubscriptionId: user.razorpaySubscriptionId,
     isAdmin: user.isAdmin,
+    currentStreak: user.currentStreak || 0,
+    totalGenerations: user.totalGenerations || 0,
   });
 });
 

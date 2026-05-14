@@ -20,6 +20,8 @@ export interface SubscriptionStatus {
   subscriptionStatus: string;
   razorpaySubscriptionId: string | null;
   isAdmin: boolean;
+  currentStreak: number;
+  totalGenerations: number;
 }
 
 async function fetchWithAuth(url: string, token: string, options?: RequestInit & { signal?: AbortSignal }) {
