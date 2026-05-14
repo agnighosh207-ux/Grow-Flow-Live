@@ -675,6 +675,7 @@ function SidebarContent({
 
 function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void }) {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   const handleNavigate = (path: string) => {
     localStorage.setItem(`visited_${path}`, "true");

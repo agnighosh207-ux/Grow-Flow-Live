@@ -20,7 +20,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
-import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 interface VoiceProfile {
   sentenceStyle: string;

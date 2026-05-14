@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
-import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 const formats = [
   { id: "instagram", label: "Instagram", icon: <Instagram className="h-5 w-5" />, limit: 150 },
@@ -52,6 +52,8 @@ export default function CreatorProfilePage() {
   const [practiceMode, setPracticeMode] = useState(false);
   const [practiceIndex, setPracticeIndex] = useState(0);
 
+  const { data: sub } = useSubscriptionStatus();
+  const isFreeUser = !sub?.planType || sub.planType === "free";
   const { toast } = useToast();
 
   const handleFormatToggle = (id: string) => {

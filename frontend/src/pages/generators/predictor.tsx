@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BarChart2, Zap, Instagram, Twitter, Linkedin, Youtube, Check, X, Info, Copy, RefreshCw, History, ArrowRight, TrendingUp } from "lucide-react";
+import { BarChart2, Zap, Instagram, Twitter, Linkedin, Youtube, Check, X, Info, Copy, RefreshCw, History, ArrowRight, TrendingUp, Sparkles } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";

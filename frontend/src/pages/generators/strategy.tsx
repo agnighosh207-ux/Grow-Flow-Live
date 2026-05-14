@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import {
   CalendarDays, Loader2, Wand2, Instagram, Linkedin, Twitter,
-  BookOpen, Flame, Repeat2, ChevronDown
+  BookOpen, Flame, Repeat2, ChevronDown, Sparkles
 } from "lucide-react";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";

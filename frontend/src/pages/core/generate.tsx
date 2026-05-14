@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGenerateContent, useGenerateVariations } from "@workspace/api-client-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,11 +17,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Loader2, Copy, RefreshCw, Check, Sparkles, Linkedin, Twitter, X,
-  Download, Hash, Zap, MessageCircle, Film, ChevronDown, ChevronUp, Crown, Heart,
-  TrendingUp, Users, BarChart2, Activity, Brain, Flame, Lock, Wand2, AlertCircle, Lightbulb, Share2,
-  PenTool, CalendarDays, Package2, GitBranch, ArrowRightLeft, BarChart3, Info, Trophy
+import { 
+  Sparkles, RefreshCw, Copy, History, Layout, Save, TrendingUp, MessageSquare, Target,
+  Brain, Zap, CheckCircle2, ChevronRight, Share2, Layers, Smartphone, MousePointer2,
+  Loader2, ArrowRightLeft, BarChart3, Flame, Activity, Check, Download, Hash, Wand2, X,
+  ChevronDown, ChevronUp, Crown, Heart, Users, BarChart2, Lock, AlertCircle, Lightbulb,
+  PenTool, CalendarDays, Package2, GitBranch, Info, Trophy, Twitter, Linkedin, MessageCircle
 } from "lucide-react";
 import { haptic } from "@/lib/utils";
 import { SiInstagram, SiYoutube } from "react-icons/si";
@@ -36,6 +38,8 @@ import { api } from "@/lib/api-client";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NPSModal, checkShouldShowNPS } from "@/components/modals/NPSModal";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";

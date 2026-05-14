@@ -2,8 +2,9 @@ import { useState } from "react";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { useAuth } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Loader2, TrendingUp, AlertCircle, CheckCircle2, Copy } from "lucide-react";
+import { Target, Loader2, TrendingUp, AlertCircle, CheckCircle2, Copy, Sparkles } from "lucide-react";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function HookScorerPage() {
   const { getToken } = useAuth();
@@ -40,7 +41,12 @@ export default function HookScorerPage() {
     score >= 80 ? "bg-emerald-500/10 border-emerald-500/20" : score >= 60 ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20";
 
   return (
-    <PageWrapper title="Hook Scorer" subtitle="Score your hook before posting — know if it'll stop the scroll">
+    <PageWrapper maxWidth="lg">
+      <PageHeader 
+        icon={<Target />} 
+        title="Hook Scorer" 
+        subtitle="Score your hook before posting — know if it'll stop the scroll"
+      />
       <div className="max-w-2xl mx-auto space-y-4">
         {/* Input */}
         <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 space-y-3">

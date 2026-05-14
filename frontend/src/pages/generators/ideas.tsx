@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Lightbulb, Loader2, Wand2, ArrowRight, Zap, Target, TrendingUp, ChevronRight } from "lucide-react";
+import { Sparkles, Lightbulb, Loader2, Wand2, ArrowRight, Zap, Target, TrendingUp, ChevronRight } from "lucide-react";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";

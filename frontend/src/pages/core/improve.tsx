@@ -14,7 +14,7 @@ import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
-import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 const containerVariants = {
   hidden: { opacity: 0 },

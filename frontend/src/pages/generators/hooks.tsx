@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy, Check, Zap } from "lucide-react";
+import { Loader2, Copy, Check, Zap, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";

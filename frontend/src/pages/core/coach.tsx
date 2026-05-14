@@ -12,7 +12,7 @@ import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
-import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
 
 interface CoachReport {
   weeklyScore: number;

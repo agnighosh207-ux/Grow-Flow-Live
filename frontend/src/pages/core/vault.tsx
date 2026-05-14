@@ -410,7 +410,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                     </p>
 
                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                      <Badge variant="ghost" className="text-[9px] font-black tracking-widest text-white/30 uppercase p-0">#{item.format}</Badge>
+                      <Badge variant="outline" className="text-[9px] font-black tracking-widest text-white/30 uppercase p-0">#{item.format}</Badge>
                       <Sheet>
                         <SheetTrigger asChild>
                           <Button size="sm" onClick={() => { setRemixingItem(item); setRemixData(null); }} className="h-9 px-6 bg-orange-500 hover:bg-orange-400 text-black font-black rounded-xl text-[10px] uppercase tracking-widest">
