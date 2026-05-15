@@ -69,7 +69,7 @@ function getTierFromPlanId(planId: string): "starter" | "creator" | "infinity" |
 
 function computePlan(user: any, totalGenerations: number, monthlyGenerations: number) {
   const now = new Date();
-  const planType = (user.planType || "free") as "free" | "starter" | "creator" | "infinity";
+  const planType = (user.planType || "free") as "free" | "starter" | "creator" | "infinity" | "agency";
   const generationsRemaining = typeof user.generationsRemaining === 'number' ? user.generationsRemaining : parseInt(user.generationsRemaining || '0');
   const dbGenerationsField = typeof user.totalGenerations === 'number' ? user.totalGenerations : parseInt(user.totalGenerations || '0');
   
@@ -134,6 +134,16 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
         totalGenerationsUsed: totalGenerations,
       };
     }
+    if (planType === "agency") {
+      return {
+        plan: "active" as const, planType,
+        canGenerate: generationsRemaining > 0,
+        trialDaysLeft: null, generationLimit: 1000,
+        monthlyGenerationsUsed: Math.max(0, 1000 - generationsRemaining),
+        generationsRemaining: generationsRemaining,
+        totalGenerationsUsed: totalGenerations,
+      };
+    }
   }
 
   // Handle trial period
@@ -143,7 +153,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     if (isTrialActive) {
       const msLeft = new Date(user.trialEndsAt).getTime() - now.getTime();
       const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
-      const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
+      const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999, agency: 1000 };
       const limit = tierLimits[planType] || 5;
 
       return {
@@ -157,7 +167,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     } else if (user.razorpaySubscriptionId) {
       // --- FIX: Trial Ends But User Still Shows as Trial in UI ---
       // If trial ended but status is still 'trial', they are now active paid users.
-      const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
+      const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999, agency: 1000 };
       const limit = tierLimits[planType] || 5;
       return {
         plan: "active" as const, planType,
@@ -173,7 +183,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
   // Handle pending status — user initiated payment but hasn't completed it yet
   // Preserve their planType so they don't appear downgraded
   if (user.subscriptionStatus === "pending" && planType !== "free") {
-    const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
+    const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999, agency: 1000 };
     const limit = tierLimits[planType] || 5;
     return {
       plan: "pending" as const, planType,
@@ -187,7 +197,7 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
 
   // Handle past_due — subscription payment failed but user is still a paying user
   if (user.subscriptionStatus === "past_due" && planType !== "free") {
-    const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999 };
+    const tierLimits: Record<string, number> = { starter: 25, creator: 150, infinity: 9999, agency: 1000 };
     const limit = tierLimits[planType] || 5;
     return {
       plan: "past_due" as const, planType,
@@ -300,6 +310,8 @@ const PLAN_CONFIG = {
   agency: {
     displayName: "Agency",
     monthly: { amount: 299900, period: "monthly" as const, interval: 1, totalCount: 120 },
+    quarterly: { amount: 839700, period: "monthly" as const, interval: 3, totalCount: 40 },
+    "half-yearly": { amount: 1619400, period: "monthly" as const, interval: 6, totalCount: 20 },
     yearly: { amount: 2879900, period: "yearly" as const, interval: 1, totalCount: 10 },
   },
   USD: {

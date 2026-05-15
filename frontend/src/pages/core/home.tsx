@@ -231,7 +231,7 @@ export default function Home() {
 
   const [taglineIdx, setTaglineIdx] = useState(0);
   const [activePlatform, setActivePlatform] = useState(0);
-  const [totalGenerations, setTotalGenerations] = useState(54280);
+  const [totalGenerations, setTotalGenerations] = useState(0);
   const [testimonials, setTestimonials] = useState(TESTIMONIALS);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [newReview, setNewReview] = useState({ name: "", role: "", text: "", stars: 0 });
@@ -294,7 +294,7 @@ export default function Home() {
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="min-h-screen bg-[#060312] text-foreground overflow-x-hidden selection:bg-violet-500/30 font-sans"
+      className="min-h-screen bg-[var(--bg)] text-foreground overflow-x-hidden selection:bg-violet-500/30 font-sans"
     >
       <AnimatePresence>
         {showStickyNav && (
@@ -303,7 +303,7 @@ export default function Home() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
             className="fixed top-0 inset-x-0 z-50 border-b border-white/[0.07] hidden md:flex items-center justify-between px-6 py-3"
-            style={{ background: "rgba(6,3,18,0.95)", backdropFilter: "blur(20px)" }}
+            style={{ background: "rgba(9,9,11,0.95)", backdropFilter: "blur(20px)" }}
           >
             <Logo size="sm" />
             <div className="flex items-center gap-6 text-sm text-white/40">
@@ -321,11 +321,11 @@ export default function Home() {
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ transform: "translateZ(0)" }}>
         <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(109,90,255,0.10) 0%, transparent 70%)' }} />
         <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(109,90,255,0.05) 0%, transparent 70%)' }} />
         <div className="absolute top-[30%] right-[-5%] w-[400px] h-[400px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(109,90,255,0.06) 0%, transparent 70%)' }} />
         <div className="absolute inset-0 opacity-[0.02]"
           style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
       </div>
@@ -373,7 +373,7 @@ export default function Home() {
           Create viral content
           <br />
           <span style={{
-            background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 60%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, #9b8aff 0%, #6d5aff 60%, #7c6aff 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',

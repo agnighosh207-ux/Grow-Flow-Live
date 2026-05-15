@@ -1,12 +1,11 @@
 import { Router, type IRouter } from "express";
-import { GenerateHooksBody, GenerateHooksResponse } from "@workspace/api-zod";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
-import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
-import crypto from "crypto";
+import { logger } from "../../lib/logger";
+import crypto from "node:crypto";
 
 const router: IRouter = Router();
 
@@ -139,16 +138,19 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
         tone: tone || "Professional",
         content: { hooks },
       });
-    } catch (e) { /* non-critical */ }
+    } catch (err) {
+      logger.error({ err, userId: req.userId }, "Failed to save hooks to history");
+    }
 
     res.json({ hooks });
     invalidateAuthCache(req.userId);
 
-    db.insert(featureUsageLogsTable).values({
+    await db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),
       userId: req.userId,
-      feature: "hooks"
-    }).catch(() => {});
+      feature: "hooks",
+      action: "GENERATE_HOOKS"
+    }).catch(err => logger.error({ err }, "Failed to log hooks usage"));
   } catch (err: any) {
     if (isAborted) return;
     console.error("HOOK GEN ERROR:", err);

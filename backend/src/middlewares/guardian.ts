@@ -51,7 +51,7 @@ const handleRateLimitReached = async (req: any, res: any) => {
 
   const updateData: any = { violationCount: newViolations };
 
-  // Strike 100 = BAN (Very high to avoid false positives, only catch bots)
+  // Strike 10 = BAN (Catches repeat abusers without too many false positives)
   if (newViolations >= 10) {
     logger.error({ userId }, "USER FLAG BANNED");
     isBanned = true;

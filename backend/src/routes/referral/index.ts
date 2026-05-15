@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, count, sql, inArray, desc } from "drizzle-orm";
 import { db, usersTable, referralsTable } from "@workspace/db";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { requireAuth } from "../../middlewares/planMiddleware";
 import { ensureReferralCode } from "../../utils/referral";
 import { logger } from "../../lib/logger";
@@ -94,14 +94,6 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
       .from(usersTable)
       .where(eq(usersTable.id, req.userId));
 
-    let appUrl = process.env.FRONTEND_URL || "https://growflowai.space";
-    // Force HTTPS for production domain
-    if (appUrl.includes("growflowai.space")) {
-      appUrl = appUrl.replace("http://", "https://");
-      if (!appUrl.startsWith("https://")) {
-        appUrl = "https://" + appUrl.replace(/^\/+/, "");
-      }
-    }
     const shareableLink = `https://growflowai.space/sign-up?ref=${code}`;
 
     const [referralStats] = await db

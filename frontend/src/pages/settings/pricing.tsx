@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
@@ -10,11 +9,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 
-declare global { interface Window { Razorpay: any; } }
+declare global { var Razorpay: any; }
 
 function loadRazorpay(): Promise<boolean> {
   return new Promise((resolve) => {
-    if (window.Razorpay) { resolve(true); return; }
+    if (globalThis.Razorpay) { resolve(true); return; }
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     const timeout = setTimeout(() => resolve(false), 10000); // 10 second timeout
@@ -25,13 +24,10 @@ function loadRazorpay(): Promise<boolean> {
 }
 
 import {
-  Check, X, Zap, Infinity as InfinityIcon, Star, ArrowLeft,
-  Sparkles, TrendingUp, BarChart3, CalendarDays, Flame, Wand2,
-  Shield, Clock, ChevronRight, Crown, Lock, AlertTriangle,
-  IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown
+  Gift, Check, X, Zap, Star, ArrowLeft,
+  Sparkles, TrendingUp, CalendarDays, Flame, Wand2,
+  Shield, IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown
 } from "lucide-react";
-import { MagneticButton } from "@/components/shared/MagneticButton";
-import { Hover3DCard } from "@/components/shared/Hover3DCard";
 
 type BillingPeriod = "monthly" | "quarterly" | "half-yearly" | "yearly";
 
@@ -128,8 +124,8 @@ const FEATURES: Feature[] = [
   { key: "coach", label: "AI Content Coach (Weekly Report)", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Personalized growth advice" },
   { key: "ghostwriter", label: "AI Ghostwriter (Your Voice)", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Learns your writing style" },
   { key: "trenddigest", label: "Weekly Trend Alert Email", free: false, starter: false, creator: false, infinity: true, section: "infinity", infinityLabel: "Fresh every Monday" },
-  { key: "priority", label: "Priority 70B AI Models (2× faster)", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
-  { key: "support", label: "VIP Priority Support", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
+  { key: "priority", label: "Priority AI Processing", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
+  { key: "support", label: "Priority Email Support", free: false, starter: false, creator: false, infinity: true, section: "infinity" },
 ];
 
 const INFINITY_EXCLUSIVES = [
@@ -179,7 +175,7 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
     try {
       if (import.meta.env.DEV) console.log("[TopUp] Loading Razorpay...");
       const loaded = await loadRazorpay();
-      if (!loaded || !window.Razorpay) {
+      if (!loaded || !globalThis.Razorpay) {
         throw new Error("Razorpay could not load. Please check your internet or disable ad blockers.");
       }
       
@@ -235,7 +231,7 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
       };
 
       if (import.meta.env.DEV) console.log("[TopUp] Opening Razorpay...");
-      const rzp = new window.Razorpay(options);
+      const rzp = new globalThis.Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
         console.error("Top-up failed:", response.error);
         toast({ variant: "destructive", title: "Payment Failed", description: response.error.description });
@@ -378,7 +374,7 @@ function TestimonialSection() {
         {TESTIMONIALS.map((t) => (
           <div key={t.name} className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 flex flex-col">
             <div className="flex items-center gap-1 mb-3">
-              {[...Array(t.rating)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+              {[...new Array(t.rating)].map((_, i) => <Star key={`star-${t.name}-${i}`} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
             </div>
             <p className="text-white/70 text-sm leading-relaxed mb-4 flex-1">"{t.content}"</p>
             <div className="flex flex-col">
@@ -396,7 +392,7 @@ export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("yearly");
   const [currency, setCurrency] = useState<"INR" | "USD">((): "INR" | "USD" => {
     try {
-      if (typeof window !== "undefined") {
+      if (typeof globalThis !== "undefined") {
         const stored = localStorage.getItem("pricing_currency");
         if (stored === "INR" || stored === "USD") return stored;
       }
@@ -569,7 +565,7 @@ export default function PricingPage() {
         {/* Back + Header */}
         <div className="mb-10">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => globalThis.history.back()}
             className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-sm mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -581,7 +577,7 @@ export default function PricingPage() {
               <p className="text-red-400 font-semibold text-sm">⚠️ Payment failed</p>
               <p className="text-white/50 text-xs mt-1">Your last payment could not be processed. Please update your payment method.</p>
               <button 
-                onClick={() => window.open("https://dashboard.razorpay.com", "_blank")}
+                onClick={() => globalThis.open("https://dashboard.razorpay.com", "_blank")}
                 className="mt-3 bg-red-500 hover:bg-red-400 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all"
               >
                 Update Payment Method →
@@ -1101,11 +1097,11 @@ export default function PricingPage() {
         onClose={() => setShowAgencyModal(false)}
         targetPlan="agency"
         reason="upgrade"
+        currency={currency}
+        billingPeriod={billing}
       />
-      
-      
 
-        {/* FAQ Section */}
+      {/* FAQ Section */}
         <div className="max-w-2xl mx-auto mt-16">
           <h3 className="text-center text-xl font-bold text-white mb-6">Frequently Asked Questions</h3>
           <div className="space-y-3">

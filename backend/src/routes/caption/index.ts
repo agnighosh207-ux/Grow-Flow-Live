@@ -2,10 +2,10 @@ import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
-import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
+import { sendCreditWarningEmail } from "../../services/email";
 import { generateContent } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 const router: IRouter = Router();
 
@@ -87,7 +87,7 @@ Return ONLY this JSON: {
     const raw = rawContentObj.choices[0]?.message?.content ?? "{}";
     let parsed;
     try {
-      const match = raw.match(/\{[\s\S]*\}/);
+      const match = /\{[\s\S]*\}/.exec(raw);
       parsed = JSON.parse(match ? match[0] : raw);
     } catch {
       await refundGenerationCredit(req.userId, req.user?.planTier); // --- H-19 FIX: Refund on parse failure ---

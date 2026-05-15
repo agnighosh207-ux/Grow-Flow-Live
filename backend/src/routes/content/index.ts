@@ -1,31 +1,23 @@
 import { Router, type IRouter, type Response } from "express";
 import { type AuthenticatedRequest } from "../../types";
-import { getAuth } from "@clerk/express";
 import { eq, desc, count, sql, and, gte, inArray, lt, isNull } from "drizzle-orm";
-import { db, contentGenerationsTable, usersTable, usageLogsTable, featureUsageLogsTable, securityLogsTable, sharingLinksTable, shareFeedbacksTable, brandVoicesTable } from "@workspace/db";
+import { db, contentGenerationsTable, usageLogsTable, featureUsageLogsTable, sharingLinksTable, brandVoicesTable } from "@workspace/db";
 import { nanoid } from "nanoid";
 import { logger } from "../../lib/logger";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import {
-  GenerateContentBody,
-  GenerateVariationsBody,
   GetContentHistoryQueryParams,
   GetHistoryItemParams,
   DeleteHistoryItemParams,
-  GenerateContentResponse,
-  GenerateVariationsResponse,
-  GetContentHistoryResponse,
-  GetHistoryItemResponse,
-  DeleteHistoryItemResponse,
   GetContentStatsResponse,
 } from "@workspace/api-zod";
 // Note: zod is NOT a direct dependency of backend — use manual validation instead
+import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 import { generateContent, webSearch, extractJson } from "../../services/ai-engine";
-import { requireAuth, getOrCreateUser, requirePlanOrTrial, requireActivePlan } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial, requireActivePlan } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { sendCreditWarningEmail } from "../../services/email";
-import { LANGUAGE_INSTRUCTIONS } from "../../lib/languages";
 
 const router: IRouter = Router();
 
@@ -68,10 +60,31 @@ function sanitizeInput(text: string, maxLength: number = 500): string {
     .trim();
 }
 
-// requireAuth is now centralized in planMiddleware.ts (Flaw 20 fix)
+interface GenerateContentOptions {
+  idea: string;
+  contentType: string;
+  tone: string;
+  niche?: string;
+  platformPreference?: string;
+  language?: string;
+  userId?: string;
+  userPlan?: string;
+  signal?: AbortSignal;
+  brandVoiceId?: string;
+}
 
-async function generateContentWithAI(idea: string, contentType: string, tone: string, niche: string = "General", platformPreference: string = "", language: string = "English", userId: string = "anonymous", userPlan: string = "free", signal?: AbortSignal, brandVoiceId?: string) {
-  // Fetch live context for all generations to ensure fresh, trending content
+async function generateContentWithAI({
+  idea,
+  contentType,
+  tone,
+  niche = "General",
+  platformPreference = "",
+  language = "English",
+  userId = "anonymous",
+  userPlan = "free",
+  signal,
+  brandVoiceId
+}: GenerateContentOptions) {
   const liveContext = await webSearch(`${niche} ${contentType} viral content trends 2025`).catch(() => "");
 
   let voiceContext = "";
@@ -232,10 +245,10 @@ Return ONLY valid JSON (no markdown, no code blocks):
       ],
       userPlan,
       userId,
-      language, // Fixed: Pass language to engine
+      language,
       maxTokens: 4000,
       forceJsonMode: true,
-      signal, // --- H-21 FIX: Pass AbortSignal ---
+      signal,
     });
 
     const rawContent = response.choices[0]?.message?.content || "{}";
@@ -245,10 +258,10 @@ Return ONLY valid JSON (no markdown, no code blocks):
       throw new Error("Failed to generate valid content JSON structure");
     }
 
-    return finalContent; // Return immediately
+    return finalContent;
   } catch (err: any) {
     if (err.name === 'AbortError' || err.message === 'ABORTED') {
-      throw err; // Propagate aborts
+      throw err;
     }
     logger.error({ err, userId }, "AI ENGINE CRITICAL FAILURE");
     throw new Error(`AI Engine Failure: ${err?.message || "Unknown error"}`);
@@ -258,8 +271,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
 router.post("/generate", requireAuth, enforceGenerationLimit, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
-  // Manual validation (zod is not a direct backend dependency)
-  const { idea, contentType, tone, language: bodyLanguage, brandVoiceId } = req.body || {};
+  const { idea, contentType, tone, brandVoiceId } = req.body || {};
   const validContentTypes = ['Educational', 'Story', 'Viral'];
   const validTones = ['Casual', 'Professional', 'Aggressive', 'Default', 'default'];
   if (!idea || typeof idea !== 'string' || idea.length < 3) {
@@ -275,25 +287,21 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     return;
   }
 
-  // Use the pre-fetched user from authSyncMiddleware (Identity Bridge)
   const user = (req as any).user;
   if (!user) {
     res.status(401).json({ error: "User context synchronization failed. Please refresh." });
     return;
   }
 
-  // Limit enforcement is now handled by the global enforceGenerationLimit middleware (Flaw 5 fix)
-  const isAdminUser = (req as any).user?.isAdmin === true;
+  const isAdminUser = user?.isAdmin === true;
   const status = isAdminUser ? "active" : (user?.subscriptionStatus ?? "free");
   const planTier = user?.planTier ?? "FREE";
-  const generationsRemaining = user?.generationsRemaining ?? 0;
-
 
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
 
   const savedNiche = user?.niche ?? null;
-  const savedTone = user?.tonePreference ?? null;
-  const savedPlatform = user?.platformPreference ?? null;
+  const savedTone = req.user?.preferredTone;
+  const savedPlatform = req.user?.preferredPlatform;
   const resolvedNiche = niche !== "General" ? niche : (savedNiche ?? niche);
   const resolvedTone = ((tone as string) !== "Default" && (tone as string) !== "default") ? tone : (savedTone ?? tone);
   const resolvedPlatform = (typeof req.body.platform === "string" ? req.body.platform : (savedPlatform ?? "all")).toLowerCase();
@@ -302,7 +310,6 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
 
   const planType = user?.planType ?? "free";
 
-  // Free users only get English
   if ((!planType || planType === "free") && language && language !== "English") {
     res.status(403).json({
       error: "language_locked",
@@ -318,20 +325,31 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     const abortController = new AbortController();
     req.on('close', () => abortController.abort());
 
-    content = await generateContentWithAI(idea, contentType, resolvedTone, resolvedNiche, resolvedPlatform, language, req.userId, user?.planType || "free", abortController.signal, brandVoiceId);
+    content = await generateContentWithAI({
+      idea,
+      contentType,
+      tone: resolvedTone,
+      niche: resolvedNiche,
+      platformPreference: resolvedPlatform,
+      language,
+      userId: req.userId,
+      userPlan: user?.planType || "free",
+      signal: abortController.signal,
+      brandVoiceId
+    });
     
-    // Add watermark for Free users
     if (status !== "active" && status !== "trial") {
-      if (content.instagram && content.instagram.caption) {
+      if (content?.instagram?.caption) {
         content.instagram.caption += "\n\n—\nGenerated with GrowFlow AI 🚀 growflowai.space";
       }
-      if (content.youtube && content.youtube.script) {
+      if (content?.youtube?.script) {
         content.youtube.script += "\n\nGenerated by GrowFlow AI";
       }
-      if (content.twitter && Array.isArray(content.twitter.tweets) && content.twitter.tweets.length > 0) {
-        content.twitter.tweets[content.twitter.tweets.length - 1] += "\n\nMade with @GrowFlowAI";
+      if (content?.twitter?.tweets && Array.isArray(content.twitter.tweets) && content.twitter.tweets.length > 0) {
+        const tweets = content.twitter.tweets;
+        tweets[tweets.length - 1] += "\n\nMade with @GrowFlowAI";
       }
-      if (content.linkedin && content.linkedin.post) {
+      if (content?.linkedin?.post) {
         content.linkedin.post += "\n\n—\nContent by GrowFlow AI | growflowai.space";
       }
     }
@@ -360,9 +378,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
       action: "GENERATE_CONTENT"
     });
 
-    // BUG 4 Fix: Move email warning after successful insert and use post-deduction value
     if (user?.email) {
-      // Use the updated count from the user object (which was fetched after middleware decrement)
       const currentRemaining = user?.generationsRemaining ?? 0;
       if (currentRemaining <= 2 && planTier !== "INFINITY") {
         sendCreditWarningEmail(user.email!, currentRemaining, false).catch(e => 
@@ -374,16 +390,14 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     res.json({
       id: savedGen.id,
       content,
-      idea, // Return idea for frontend analysis synchronization
-      contentType, // Return contentType for frontend analysis synchronization
-      niche: resolvedNiche, // Return niche for frontend analysis synchronization
-      // BUG 3 Fix: Return the actual remaining count (already decremented by middleware)
-      generationsRemaining: (req as any).user?.generationsRemaining ?? user?.generationsRemaining ?? 0,
+      idea,
+      contentType,
+      niche: resolvedNiche,
+      generationsRemaining: req.user?.generationsRemaining ?? user?.generationsRemaining ?? 0,
       plan: status,
     });
     invalidateAuthCache(req.userId);
 
-    // Trigger activation sequence day 0 if this is their first generation
     if ((user?.totalGenerations || 0) <= 1) {
       import("../../services/emailSequences").then(({ sendSequenceEmail }) => {
         sendSequenceEmail(req.userId, "activation", 0);
@@ -409,35 +423,6 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
   }
 });
 
-router.get("/insights/stats", requireAuth, async (req: any, res) => {
-  try {
-    const [thisWeek, lastWeek] = await Promise.all([
-      db.select({ count: sql<number>`COUNT(*)` })
-        .from(contentGenerationsTable)
-        .where(and(
-          eq(contentGenerationsTable.userId, req.userId),
-          gte(contentGenerationsTable.createdAt, sql`NOW() - INTERVAL '7 days'`)
-        )),
-      db.select({ count: sql<number>`COUNT(*)` })
-        .from(contentGenerationsTable)
-        .where(and(
-          eq(contentGenerationsTable.userId, req.userId),
-          gte(contentGenerationsTable.createdAt, sql`NOW() - INTERVAL '14 days'`),
-          lt(contentGenerationsTable.createdAt, sql`NOW() - INTERVAL '7 days'`)
-        )),
-    ]);
-
-    const currentCount = Number(thisWeek[0]?.count || 0);
-    const previousCount = Number(lastWeek[0]?.count || 0);
-    const delta = currentCount - previousCount;
-    const pct = previousCount > 0 ? Math.round((delta / previousCount) * 100) : 0;
-
-    res.json({ thisWeek: currentCount, lastWeek: previousCount, delta, pct });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch insights" });
-  }
-});
-
 router.post("/:id/share", requireAuth, async (req: any, res) => {
   try {
     const shareId = nanoid(8);
@@ -447,14 +432,13 @@ router.post("/:id/share", requireAuth, async (req: any, res) => {
       contentId: req.params.id,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
-    res.json({ shareUrl: `https://growflowai.space/review/${shareId}`, shareId });
+    res.json({ success: true, code: shareId, referralUrl: `https://growflowai.space/review/${shareId}` });
   } catch (err) {
     res.status(500).json({ error: "Failed to create share link" });
   }
 });
 
 router.post("/variations", requireAuth, requireActivePlan, enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  // Manual validation (zod is not a direct backend dependency)
   const { idea, contentType, tone, platform, language: bodyLanguage2 } = req.body || {};
   const validContentTypes2 = ['Educational', 'Story', 'Viral'];
   const validTones2 = ['Casual', 'Professional', 'Aggressive', 'Default', 'default'];
@@ -471,12 +455,10 @@ router.post("/variations", requireAuth, requireActivePlan, enforceGenerationLimi
     return;
   }
 
-  const user = (req as any).user;
+  const user = req.user;
   const planType = user?.planType ?? "free";
   const status = user?.subscriptionStatus ?? "free";
 
-
-  // Track regenerations per topic
   const [existingGeneration] = await db.select()
     .from(contentGenerationsTable)
     .where(
@@ -519,8 +501,6 @@ router.post("/variations", requireAuth, requireActivePlan, enforceGenerationLimi
 
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
   const language = bodyLanguage2 ?? "English";
-
-  const languageInstructionsPrompt = LANGUAGE_INSTRUCTIONS[language] || "";
 
   const variationSystemPrompt = `You are an elite viral content creator generating 3 completely distinct variations of the same content piece. Each variation must:
 - Use a COMPLETELY different angle, hook style, and narrative approach
@@ -570,7 +550,7 @@ Return ONLY this JSON:
       ],
       userPlan: planType.toUpperCase(),
       userId: req.userId,
-      language, // Fixed: Pass language to engine for variations
+      language,
       maxTokens: 4000,
       forceJsonMode: true,
     });
@@ -578,9 +558,10 @@ Return ONLY this JSON:
     const rawContent = response.choices[0]?.message?.content ?? "{}";
     try {
       variations = JSON.parse(rawContent);
-    } catch {
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch?.[0];
+    } catch (err) {
+      logger.error({ err, userId: req.userId }, "Failed to parse variations JSON");
+      const match = /\{[\s\S]*\}/.exec(rawContent);
+      const jsonString = match ? match[0] : null;
       if (jsonString) {
         variations = JSON.parse(jsonString as string);
       } else {
@@ -601,11 +582,12 @@ Return ONLY this JSON:
     }
     res.json({ variations: variations.variations ?? [] });
 
-    db.insert(featureUsageLogsTable).values({
+    await db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),
       userId: req.userId,
-      feature: "variations"
-    }).catch(() => {});
+      feature: "content_variations",
+      action: "GENERATE_VARIATIONS"
+    }).catch(err => logger.error({ err }, "Failed to log variations usage"));
   } catch (err: any) {
     res.status(500).json({ error: "Failed to save variation. Please try again." });
     return;
@@ -619,7 +601,6 @@ router.get("/history", requireAuth, async (req: any, res): Promise<void> => {
     const limit = Math.min(rawLimit, 200);
     const category = typeof req.query.category === "string" ? req.query.category : undefined;
 
-    // 15-day retention window — filter only, never delete.
     const fifteenDaysAgo = new Date();
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
@@ -649,7 +630,7 @@ router.get("/history", requireAuth, async (req: any, res): Promise<void> => {
       .select()
       .from(contentGenerationsTable)
       .where(and(...conditions))
-      .orderBy(desc(contentGenerationsTable.id)) // Consistent ordering for cursor
+      .orderBy(desc(contentGenerationsTable.id))
       .limit(limit);
 
     const nextCursor = history.length > 0 ? history[history.length - 1].id : null;
@@ -858,7 +839,30 @@ router.post("/analyze", requireAuth, requirePlanOrTrial("content_analyze"), enfo
   }
 
   const sanitizedIdea = idea.substring(0, 500);
-  const sanitizedNiche = (typeof niche === "string" ? niche : "General").substring(0, 50);
+  const sanitizedNiche = typeof niche === "string" ? niche.substring(0, 50) : "General";
+
+  const nicheContextMap: Record<string, string> = {
+    Fitness: "body transformation, training optimization, nutrition science, gym culture, injury prevention, performance metrics, workout psychology, recovery",
+    Finance: "wealth building, investment strategies, financial independence, tax optimization, passive income streams, debt elimination, compound growth, money psychology",
+    Tech: "AI tools, developer productivity, automation workflows, SaaS building, technical writing, open source, tech career growth, software architecture",
+    Motivation: "behavior change, habit formation, identity transformation, cognitive psychology, peak performance, mental resilience, self-discipline, goal architecture",
+    Business: "startup strategy, marketing systems, sales frameworks, team building, founder psychology, product-market fit, revenue scaling, operational leverage",
+    Lifestyle: "intentional design, minimalism vs maximalism, relationship design, travel intelligence, creative living, morning/evening systems, energy management",
+    General: "content creation, personal brand building, social media growth, creator monetization, audience psychology",
+  };
+
+  const nichePainPoints: Record<string, string> = {
+    Fitness: "People are overwhelmed by conflicting advice, secretly afraid they're doing it wrong, and frustrated by plateaus they can't explain.",
+    Finance: "People feel left behind financially, embarrassed by their money decisions, and scared of making the wrong move.",
+    Tech: "Developers and builders are drowning in tool overwhelm, fighting with their own workflows.",
+    Motivation: "People are stuck in a loop of starting and quitting, tired of generic advice that doesn't work for them.",
+    Business: "Founders and operators are grinding without traction, making decisions blindly.",
+    Lifestyle: "People feel like they're living someone else's life, constantly busy but never fulfilled.",
+    General: "Creators feel invisible despite putting in the work, unsure what content actually performs.",
+  };
+
+  const nicheContext = nicheContextMap[sanitizedNiche] || nicheContextMap["General"];
+  const painPoint = nichePainPoints[sanitizedNiche] || nichePainPoints["General"];
 
   const contentSample = platforms
     ? Object.values(platforms).filter(Boolean).slice(0, 2).join("\n\n---\n\n").slice(0, 800)

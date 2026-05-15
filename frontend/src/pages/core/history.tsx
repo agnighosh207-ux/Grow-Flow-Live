@@ -73,7 +73,7 @@ function DetailView({ item, onClose }: Readonly<{ item: any; onClose: () => void
         <div className="space-y-2">
           <span className="text-[9px] font-bold uppercase tracking-widest text-white/30">{title}</span>
           {data.map((item: any, i: number) => (
-            <div key={`history-data-${i}`} className="flex items-start gap-2">
+            <div key={`history-data-${item.id || i}`} className="flex items-start gap-2">
               <span className="text-[10px] text-white/20 mt-0.5 shrink-0">{i + 1}.</span>
               <p className="text-xs text-white/70 leading-relaxed">{typeof item === "string" ? item : JSON.stringify(item)}</p>
             </div>
@@ -262,11 +262,11 @@ export default function History() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statsLoading
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={`stat-skeleton-${i}`} className="h-24 rounded-2xl bg-white/5 animate-pulse" />
+          ? [1, 2, 3, 4].map((id) => (
+              <div key={`stat-skeleton-${id}`} className="h-24 rounded-2xl bg-white/5 animate-pulse" />
             ))
           : STAT_CARDS.map((card) => (
             <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: STAT_CARDS.indexOf(card) * 0.04 }}

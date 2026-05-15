@@ -180,9 +180,9 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
 
       if (import.meta.env.DEV) console.log("[UpgradeModal] Loading Razorpay script...");
       const loaded = await loadRazorpay();
-      if (import.meta.env.DEV) console.log("[UpgradeModal] Razorpay loaded:", loaded, "window.Razorpay:", !!window.Razorpay);
+      if (import.meta.env.DEV) console.log("[UpgradeModal] Razorpay loaded:", loaded, "window.Razorpay:", !!globalThis.Razorpay);
 
-      if (!loaded || !window.Razorpay) {
+      if (!loaded || !globalThis.Razorpay) {
         toast({
           variant: "destructive",
           title: "Payment gateway unavailable",
@@ -243,7 +243,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
         },
       };
 
-      const rzp = new window.Razorpay(options);
+      const rzp = new globalThis.Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
         console.error("Payment failed:", response.error);
         setPaymentState("error");
@@ -530,7 +530,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                           }`}
                         >
                           <div className="flex flex-col gap-0.5">
-                            <span>{p === "infinity" ? "Infinity" : p === "creator" ? "Creator" : "Starter"}</span>
+                            <span>{p === "agency" ? "Agency" : p === "infinity" ? "Infinity" : p === "creator" ? "Creator" : "Starter"}</span>
                             <span className="text-[10px] font-normal opacity-80">
                               {currency === "USD" 
                                 ? (p === "agency" ? "$39/mo" : p === "infinity" ? "$9.49/mo" : p === "creator" ? "$5.49/mo" : "$1.99/mo")

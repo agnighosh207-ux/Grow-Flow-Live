@@ -109,7 +109,7 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "✨ Create",
+    label: "Create",
     items: [
       { path: "/generate", label: "AI Content Studio", icon: Wand2, desc: "Generate captions, threads, reels & more" },
       { path: "/ideas", label: "Content Ideas", icon: Lightbulb, desc: "Fresh content ideas for your niche" },
@@ -126,7 +126,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "📈 Grow",
+    label: "Grow",
     items: [
       { path: "/daily", label: "Daily Tasks", icon: Flame, desc: "Daily actions to grow faster" },
       { path: "/coach", label: "AI Coach", icon: Brain, desc: "Chat with your AI growth coach" },
@@ -136,7 +136,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "📚 Library",
+    label: "Library",
     items: [
       { path: "/vault", label: "The Vault", icon: Library, desc: "My content & viral inspiration" },
       { path: "/saved", label: "Bookmarks", icon: Heart, desc: "Revisit your top generations" },
@@ -144,7 +144,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "⚙️ Account",
+    label: "Account",
     items: [
       { path: "/referrals", label: "Refer & Earn", icon: Zap, desc: "Earn credits for sharing" },
       { path: "/pricing", label: "Plans & Billing", icon: CreditCard, desc: "Manage your subscription" },
@@ -182,7 +182,7 @@ function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
     );
   if (plan === "trial")
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(124,58,237,0.15)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.2)' }}>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(109,90,255,0.15)', color: '#9b8aff', border: '1px solid rgba(109,90,255,0.2)' }}>
         <Zap className="w-2.5 h-2.5" /> Trial
       </span>
     );
@@ -191,18 +191,18 @@ function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
   if (isPaidStatus && planType && planType !== "free") {
     if (planType === "infinity")
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'linear-gradient(to right, rgba(124,58,237,0.2), rgba(124,58,237,0.1))', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.3)', boxShadow: '0 0 10px rgba(124,58,237,0.2)' }}>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'linear-gradient(to right, rgba(109,90,255,0.2), rgba(109,90,255,0.1))', color: '#9b8aff', border: '1px solid rgba(109,90,255,0.3)' }}>
           <Crown className="w-2.5 h-2.5" /> Infinity{plan !== "active" ? " ⏳" : ""}
         </span>
       );
     if (planType === "starter")
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(124,58,237,0.08)', color: 'rgba(167,139,250,0.7)', border: '1px solid rgba(124,58,237,0.2)' }}>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(109,90,255,0.08)', color: 'rgba(155,138,255,0.7)', border: '1px solid rgba(109,90,255,0.2)' }}>
           <Zap className="w-2.5 h-2.5" /> Starter{plan !== "active" ? " ⏳" : ""}
         </span>
       );
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(124,58,237,0.1)', color: 'rgba(167,139,250,0.9)', border: '1px solid rgba(124,58,237,0.4)' }}>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(109,90,255,0.1)', color: 'rgba(155,138,255,0.9)', border: '1px solid rgba(109,90,255,0.4)' }}>
         <Zap className="w-2.5 h-2.5" /> Creator{plan !== "active" ? " ⏳" : ""}
       </span>
     );
@@ -219,10 +219,10 @@ function CreditCounter({ sub }: { sub: any }) {
   
   if (sub.planType === "infinity" || sub.plan === "infinity") {
     return (
-      <div className="mx-3 mb-3 px-3 py-2 rounded-lg border" style={{ background: 'rgba(124,58,237,0.1)', borderColor: 'rgba(124,58,237,0.2)' }}>
+      <div className="mx-3 mb-3 px-3 py-2 rounded-lg border" style={{ background: 'rgba(109,90,255,0.1)', borderColor: 'rgba(109,90,255,0.2)' }}>
         <div className="flex justify-between items-center text-xs">
           <span className="text-white/60 font-medium">Credits Remaining</span>
-          <span className="font-bold flex items-center gap-1" style={{ color: '#a78bfa' }}><Sparkles className="w-3 h-3"/> Unlimited</span>
+          <span className="font-bold flex items-center gap-1" style={{ color: '#9b8aff' }}><Sparkles className="w-3 h-3"/> Unlimited</span>
         </div>
       </div>
     );
@@ -247,7 +247,7 @@ function CreditCounter({ sub }: { sub: any }) {
               className={`h-full rounded-full transition-all duration-500 ${remaining < 3 ? 'bg-red-500' : ''}`}
               style={{ 
                 width: `${percentage}%`,
-                ...(remaining >= 3 ? { background: '#7c3aed', boxShadow: '0 0 10px rgba(124,58,237,0.5)' } : {})
+                ...(remaining >= 3 ? { background: '#6d5aff', boxShadow: '0 0 8px rgba(109,90,255,0.4)' } : {})
               }}
           />
        </div>
@@ -318,7 +318,9 @@ function NavItem({
   };
 
   const isLocked = pro && !isPro;
-  const showNewBadge = !isVisited && !isLocked && !isAccountGroup && path !== "/generate";
+  // Only show NEW badge for tools in Create/Grow groups, not basic nav items
+  const CORE_PATHS = ["/generate", "/ideas", "/trends", "/hooks", "/improve"];
+  const showNewBadge = !isVisited && !isLocked && !isAccountGroup && !CORE_PATHS.includes(path);
 
   let baseColorClass = "text-white/55 hover:bg-white/[0.04] hover:text-white/90";
   if (isAccountGroup) {
@@ -341,24 +343,24 @@ function NavItem({
         <motion.span
           layoutId="activeNavIndicator"
           className="absolute left-0 inset-y-1 w-0.5 rounded-r-full"
-          style={{ background: '#7c3aed' }}
+          style={{ background: '#6d5aff' }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
       <Icon
         className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}
-        style={isActive ? { color: '#a78bfa' } : undefined}
+        style={isActive ? { color: '#9b8aff' } : undefined}
       />
       {!collapsed && <span className="text-sm flex-1 truncate">{label}</span>}
       {!collapsed && badge}
       {!collapsed && showNewBadge && (
-        <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
-          NEW
+        <span className="text-[9px] font-semibold bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full">
+          New
         </span>
       )}
-      {!collapsed && isLocked && <Lock className="w-3 h-3 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" style={{ color: 'rgba(124,58,237,0.4)' }} />}
+      {!collapsed && isLocked && <Lock className="w-3 h-3 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" style={{ color: 'rgba(109,90,255,0.4)' }} />}
       {!collapsed && pro && isPro && (
-        <span className="text-[9px] font-bold rounded-full px-1.5 py-0.5 flex-shrink-0" style={{ color: '#a78bfa', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
+        <span className="text-[9px] font-bold rounded-full px-1.5 py-0.5 flex-shrink-0" style={{ color: '#9b8aff', background: 'rgba(109,90,255,0.1)', border: '1px solid rgba(109,90,255,0.2)' }}>
           PRO
         </span>
       )}
@@ -430,7 +432,7 @@ function StreakBanner({ streak, completedToday }: { streak: number; completedTod
 
       {!completedToday && (
         <Link href="/daily">
-          <div className="flex items-center justify-between text-[10px] font-bold transition-colors cursor-pointer" style={{ color: '#a78bfa' }}>
+          <div className="flex items-center justify-between text-[10px] font-bold transition-colors cursor-pointer" style={{ color: '#9b8aff' }}>
              Complete today's plan <ArrowRight className="w-3 h-3 ml-1 transition-transform group-hover:translate-x-1" />
           </div>
         </Link>
@@ -492,7 +494,7 @@ function SidebarContent({
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
             {!collapsed ? (
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-1" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-[10px] font-medium uppercase tracking-wider px-3 mb-1" style={{ color: 'var(--text-muted)' }}>
                 {group.label}
               </p>
             ) : (
@@ -511,7 +513,7 @@ function SidebarContent({
                   isPro={isPro}
                   isActive={location === path}
                   onClick={onClick}
-                  isAccountGroup={group.label === "⚙️ Account"}
+                  isAccountGroup={group.label === "Account"}
                   showDot={
                     path === "/pricing" &&
                     sub?.plan === "free" &&
@@ -533,7 +535,7 @@ function SidebarContent({
           if (sub?.isAdmin) {
           return (
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-1" style={{ color: '#a78bfa' }}>
+              <p className="text-[10px] font-medium uppercase tracking-wider px-3 mb-1" style={{ color: '#9b8aff' }}>
                 Admin Control
               </p>
               <div className="space-y-0.5">
@@ -558,17 +560,17 @@ function SidebarContent({
         <Link href="/pricing">
           <div id="tour-upgrade" className="mx-3 mb-3 p-3 rounded-xl cursor-pointer group transition-all duration-300 hover:scale-[1.02]"
             style={{
-              background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(124,58,237,0.04) 100%)",
-              border: "1px solid rgba(124,58,237,0.25)",
+              background: "linear-gradient(135deg, rgba(109,90,255,0.12) 0%, rgba(109,90,255,0.04) 100%)",
+              border: "1px solid rgba(109,90,255,0.25)",
             }}>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-3.5 h-3.5" style={{ color: '#a78bfa' }} />
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#6d5aff' }} />
               <span className="text-xs font-semibold text-white/80">Unlock Full Power</span>
             </div>
             <p className="text-[11px] text-white/40 mb-2.5 leading-relaxed">
               Unlock all tools · Multi-language · Priority AI
             </p>
-            <div className="flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: '#a78bfa' }}>
+            <div className="flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: '#6d5aff' }}>
               Get unlimited access <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -595,7 +597,7 @@ function SidebarContent({
           </div>
           {sub.planType !== "infinity" && (
             <Link href="/pricing">
-              <span className="text-[10px] font-semibold cursor-pointer" style={{ color: '#a78bfa' }}>
+              <span className="text-[10px] font-semibold cursor-pointer" style={{ color: '#6d5aff' }}>
                 Upgrade
               </span>
             </Link>
@@ -608,14 +610,14 @@ function SidebarContent({
       <div className="border-t border-white/[0.06] px-4 py-3">
         {!collapsed && (
           <div className="flex items-center justify-between mb-3 px-2">
-             <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Interface Language</span>
+             <span className="text-[10px] font-medium text-white/20 uppercase tracking-wide">Interface Language</span>
               <select 
                 value={i18n.language} 
                 onChange={e => {
                   i18n.changeLanguage(e.target.value);
                   localStorage.setItem('i18nextLng', e.target.value); // explicit save
                 }}
-                className="text-[10px] font-bold bg-transparent border-none outline-none cursor-pointer transition-colors" style={{ color: '#a78bfa' }}
+                className="text-[10px] font-bold bg-transparent border-none outline-none cursor-pointer transition-colors" style={{ color: '#9b8aff' }}
               >
                 <option value="en" className="bg-zinc-950 text-white">English</option>
                 <option value="hi" className="bg-zinc-950 text-white">Hindi</option>
@@ -689,15 +691,15 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
       {NAV_GROUPS.map((group) => (
         <div key={group.label} className="space-y-4">
           <div className="flex items-center gap-3 px-1">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(124,58,237,0.6)' }}>{group.label}</h3>
-            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(124,58,237,0.2), transparent)' }} />
+            <h3 className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'rgba(109,90,255,0.6)' }}>{group.label}</h3>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(109,90,255,0.15), transparent)' }} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             {group.items.map((item) => {
               const Icon = item.icon;
               const isLocked = item.pro && !isPro;
               const visited = typeof window !== "undefined" ? localStorage.getItem(`visited_${item.path}`) : "true";
-              const isNew = !visited && !isLocked && group.label !== "⚙️ Account" && item.path !== "/generate";
+              const isNew = !visited && !isLocked && group.label !== "Account" && !["/generate", "/ideas", "/trends", "/hooks", "/improve"].includes(item.path);
               const isActive = item.path === location;
 
               return (
@@ -728,8 +730,8 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
                       {t(item.label)}
                     </span>
                     {isNew && (
-                      <span className="absolute -top-1.5 -right-1.5 text-[8px] font-black bg-gradient-to-r from-red-500 to-rose-600 text-white px-2 py-0.5 rounded-full shadow-[0_0_12px_rgba(239,68,68,0.4)]">
-                        NEW
+                      <span className="absolute -top-1.5 -right-1.5 text-[9px] font-medium bg-violet-500/25 text-violet-300 px-2 py-0.5 rounded-full">
+                        New
                       </span>
                     )}
                   </div>

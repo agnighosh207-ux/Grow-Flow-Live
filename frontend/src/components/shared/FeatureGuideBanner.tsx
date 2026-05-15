@@ -54,7 +54,7 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
   };
 
   return (
-    <>
+    <div key={toolKey}>
       {/* Reshow Toggle - Floating in top-right when dismissed */}
       {/* Reshow Toggle - Floating in bottom-right for better reach on mobile */}
       <AnimatePresence>
@@ -157,7 +157,7 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };
 

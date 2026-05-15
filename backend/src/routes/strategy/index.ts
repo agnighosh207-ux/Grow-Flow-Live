@@ -3,7 +3,8 @@ import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddlewar
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { db, contentCalendarTable, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
-import crypto from "crypto";
+import { logger } from "../../lib/logger";
+import crypto from "node:crypto";
 import { generateContent, webSearch } from "../../services/ai-engine";
 
 const router: IRouter = Router();
@@ -51,8 +52,8 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
   const sanitizedNiche = String(niche).substring(0, 50);
   const sanitizedGoal = String(goal).substring(0, 500);
 
-  const platforms = nichePlatformWeights[sanitizedNiche as string] || nichePlatformWeights["General"];
-  const goalContext = nicheGoalContext[sanitizedNiche as string] || nicheGoalContext["General"];
+  const platforms = nichePlatformWeights[sanitizedNiche] || nichePlatformWeights["General"];
+  const goalContext = nicheGoalContext[sanitizedNiche] || nicheGoalContext["General"];
 
   try {
     // 1. Fetch live web data for RAG (Retrieval Augmented Generation)
@@ -104,7 +105,7 @@ Return ONLY a JSON object:
     if (abortController.signal.aborted) return;
 
     const rawContent = rawContentObj.choices[0]?.message?.content ?? "{}";
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    const jsonMatch = /\{[\s\S]*\}/.exec(rawContent);
 
     let parsed: any;
     try {
@@ -143,7 +144,9 @@ Return ONLY a JSON object:
         tone: `${duration}-day plan`,
         content: { plan: parsed.plan ?? [] },
       });
-    } catch (e) { /* non-critical */ }
+    } catch (err) {
+      logger.error({ err, userId: req.userId }, "Failed to save strategy to history");
+    }
 
     res.json({ plan: parsed.plan ?? [] });
     invalidateAuthCache(req.userId);

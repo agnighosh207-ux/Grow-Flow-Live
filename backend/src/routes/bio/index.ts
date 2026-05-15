@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { requireAuth } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";

@@ -425,7 +425,7 @@ export default function CompetitorIntelPage() {
               <div className="max-w-[1400px] mx-auto space-y-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                    {batchItems.map((item, i) => (
-                      <Card key={`batch-${i}`} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden group hover:border-violet-500/30 transition-all shadow-2xl relative">
+                      <Card key={`batch-card-${item.label}-${i}`} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden group hover:border-violet-500/30 transition-all shadow-2xl relative">
                          <CardHeader className="bg-white/[0.02] border-b border-white/5 p-8 flex flex-row justify-between items-center">
                             <Input 
                               value={item.label} 

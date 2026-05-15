@@ -4,7 +4,8 @@ import { enforceGenerationLimit, refundGenerationCredit } from "../../middleware
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, webSearch, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
-import crypto from "crypto";
+import { logger } from "../../lib/logger";
+import crypto from "node:crypto";
 import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
@@ -82,14 +83,14 @@ router.post("/generate", requireAuth, requirePlanOrTrial("ideas"), enforceGenera
     }
   }
 
-  const nicheContext = nicheContextMap[sanitizedNiche as string] || nicheContextMap["General"];
-  const painPoint = nichePainPoints[sanitizedNiche as string] || nichePainPoints["General"];
+  const nicheContext = nicheContextMap[sanitizedNiche] || nicheContextMap["General"];
+  const painPoint = nichePainPoints[sanitizedNiche] || nichePainPoints["General"];
   const currentYear = new Date().getFullYear();
 
   try {
     if (abortController.signal.aborted) return;
 
-    const liveContext = await webSearch(`Trending ${sanitizedNiche} content ideas on social media right now 2025 — viral formats, hooks, topic angles`, abortController.signal);
+    const liveContext = await webSearch(`Trending ${sanitizedNiche} content ideas on social media right now 2025 — viral formats, hooks, topic angles`, abortController.signal).catch(() => "");
 
     const finalSystemPrompt = `You are a content strategist. Search the live web for trending topics and viral patterns in the ${sanitizedNiche} space.${liveContext ? `\n\nLIVE WEB DATA:\n${liveContext}` : ""}
 Generate 10 high-performing content ideas for ${sanitizedNiche} in ${currentYear}.
@@ -107,8 +108,8 @@ Return ONLY a JSON object.`;
   "ideas": [
     {
       "idea": "string",
-      "hook": "string",
-      "angle": "string",
+      "niche": "${sanitizedNiche}",
+      "tone": "informative",
       "whyItWorks": "string",
       "platform": "Instagram" | "YouTube" | "Twitter" | "LinkedIn",
       "pattern": "string"
@@ -157,16 +158,19 @@ Return ONLY a JSON object.`;
         tone: "AI Search",
         content: responseData,
       });
-    } catch (e) { /* non-critical */ }
+    } catch (err) {
+      logger.error({ err, userId: req.userId }, "Failed to save ideas to history");
+    }
 
     res.json(responseData);
     invalidateAuthCache(req.userId);
 
-    db.insert(featureUsageLogsTable).values({
+    await db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),
       userId: req.userId,
-      feature: "ideas"
-    }).catch(() => {});
+      feature: "ideas",
+      action: "GENERATE_IDEAS"
+    }).catch(err => logger.error({ err }, "Failed to log ideas usage"));
   } catch (err: any) {
     if (abortController.signal.aborted) return;
     console.error("IDEAS GEN ERROR:", err);

@@ -51,7 +51,7 @@ export type BillingCycle = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
  */
 export function getRazorpayPlanId(tier: string, cycle: string, currency: string = "INR"): string {
   const normalizedTier = tier.toLowerCase() as PlanTier;
-  const normalizedCycle = cycle.toLowerCase().replace(' ', '').replace('-', '') as BillingCycle;
+  const normalizedCycle = cycle.toLowerCase().replace(' ', '') as BillingCycle;
   const normalizedCurrency = currency.toUpperCase();
 
   const validTiers: PlanTier[] = ['starter', 'creator', 'infinity', 'agency'];
@@ -71,9 +71,9 @@ export function getRazorpayPlanId(tier: string, cycle: string, currency: string 
 
 
   // Construct the environment variable key name
-  // Example: RAZORPAY_PLAN_STARTER_MONTHLY (for INR)
-  // Example: RAZORPAY_PLAN_STARTER_MONTHLY_USD (for USD)
-  let envKey = `RAZORPAY_PLAN_${normalizedTier.toUpperCase()}_${normalizedCycle.toUpperCase().replace('-', '')}`;
+  // Strip hyphens ONLY for the env key (e.g. half-yearly → HALFYEARLY)
+  const envCyclePart = normalizedCycle.toUpperCase().replace('-', '');
+  let envKey = `RAZORPAY_PLAN_${normalizedTier.toUpperCase()}_${envCyclePart}`;
   
   if (normalizedCurrency !== "INR") {
     envKey += `_${normalizedCurrency}`;
