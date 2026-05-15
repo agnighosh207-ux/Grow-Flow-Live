@@ -752,6 +752,7 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
         })
         .where(eq(usersTable.id, req.userId));
 
+      const order = await rzp.orders.fetch(razorpay_order_id);
       const orderAmount = Number((order as any).amount);
 
       await tx.insert(paymentsTable).values({

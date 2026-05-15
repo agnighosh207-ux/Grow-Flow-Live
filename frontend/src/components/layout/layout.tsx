@@ -48,7 +48,8 @@ import {
   BookOpen,
   Library,
   Grid3x3,
-  ChevronLeft
+  ChevronLeft,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -706,27 +707,27 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
                   onClick={() => handleNavigate(item.path)}
                   className={`group relative p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer flex flex-col items-center text-center gap-3
                     ${isActive 
-                      ? "bg-cyan-500/15 border-cyan-500/50 shadow-[0_0_25px_rgba(0,242,255,0.15)] ring-1 ring-cyan-500/30" 
+                      ? "bg-cyan-500/15 border-cyan-500/50 shadow-[0_0_30px_rgba(0,242,255,0.2)] ring-1 ring-cyan-500/40" 
                       : isLocked 
                         ? "bg-white/[0.01] border-white/5 opacity-50" 
-                        : "bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-cyan-500/30"
+                        : "bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-cyan-500/40 shadow-lg"
                     }`}
                 >
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-500
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-500
                     ${isActive 
-                      ? "bg-cyan-500/20 border-cyan-500/60 text-cyan-400 shadow-[0_0_15px_rgba(0,242,255,0.3)]" 
+                      ? "bg-cyan-500/20 border-cyan-500/60 text-white shadow-[0_0_20px_rgba(0,242,255,0.4)]" 
                       : isLocked 
                         ? "bg-white/5 border-white/5 text-white/20" 
-                        : "bg-gradient-to-br from-white/10 to-transparent border-white/10 text-white/60 group-hover:text-cyan-400 group-hover:border-cyan-500/40 group-hover:scale-110"
+                        : "bg-gradient-to-br from-white/10 to-transparent border-white/10 text-white/80 group-hover:text-cyan-400 group-hover:border-cyan-500/40 group-hover:scale-110"
                     }`}>
-                    {isLocked ? <Lock className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                    {isLocked ? <Lock className="w-5 h-5" /> : <Icon className="w-6 h-6" />}
                   </div>
                   <div className="flex flex-col gap-1 w-full">
-                    <span className={`text-[11px] font-bold leading-tight transition-colors ${isActive ? "text-white" : "text-white/70 group-hover:text-white"}`}>
+                    <span className={`text-[11px] font-black leading-tight transition-colors ${isActive ? "text-white" : "text-white/80 group-hover:text-white"}`}>
                       {t(item.label)}
                     </span>
                     {isNew && (
-                      <span className="absolute -top-1 -right-1 text-[7px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                      <span className="absolute -top-1.5 -right-1.5 text-[8px] font-black bg-gradient-to-r from-red-500 to-rose-600 text-white px-2 py-0.5 rounded-full shadow-[0_0_12px_rgba(239,68,68,0.4)]">
                         NEW
                       </span>
                     )}
@@ -776,7 +777,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const { data: announcement } = useQuery({
     queryKey: ["announcement"],
     queryFn: async () => {
-      const res = await fetch("/api/announcement/latest");
+      const res = await fetch("/api/announcement/active");
       if (!res.ok) return null;
       return res.json();
     },
@@ -962,16 +963,16 @@ export function Layout({ children }: { children: ReactNode }) {
                   </SheetTrigger>
                   <SheetContent side="bottom" className="p-0 h-[88vh] bg-[#050110]/95 backdrop-blur-3xl border-t border-white/10 rounded-t-[40px] flex flex-col focus:outline-none ring-0 overflow-hidden">
                     <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mt-3 shrink-0" />
-                    <div className="px-6 pt-6 pb-2 flex items-center justify-between">
-                      <div>
-                        <h2 className="text-xl font-black text-white tracking-tight">Toolkit Explorer</h2>
-                        <p className="text-[11px] text-white/40 font-medium tracking-wide">Select an engine to start building.</p>
+                    <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h2 className="text-2xl font-black text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/60">Toolkit Explorer</h2>
+                        <p className="text-xs text-white/40 font-bold tracking-wide uppercase">Select an engine to start building</p>
                       </div>
                       <button 
                         onClick={() => setIsSheetOpen(false)}
-                        className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 active:scale-90 transition-transform"
+                        className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 active:scale-90 transition-all hover:bg-white/10 hover:text-white"
                       >
-                        <ChevronRight className="w-5 h-5 rotate-90" />
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
                     
@@ -1063,22 +1064,22 @@ export function Layout({ children }: { children: ReactNode }) {
                   <Link 
                     key={item.path} 
                     href={navItem.path} 
-                    className={`flex flex-col items-center gap-1.5 p-2 transition-all relative ${isActive ? "text-cyan-400" : "text-white/30 hover:text-white/60"}`}
+                    className={`flex flex-col items-center gap-1.5 p-2 transition-all relative ${isActive ? "text-cyan-400" : "text-white/50 hover:text-white/80"}`}
                      onClick={() => {
                         localStorage.setItem(`visited_${navItem.path}`, "true");
                         setIsSheetOpen(false);
                      }}
                   >
-                    <div className={`p-1 rounded-lg transition-all duration-300 ${isActive ? "bg-cyan-500/15 shadow-[0_0_15px_rgba(0,242,255,0.2)]" : ""}`}>
-                      <Icon className="w-[22px] h-[22px]" />
+                    <div className={`p-1.5 rounded-xl transition-all duration-500 ${isActive ? "bg-cyan-500/20 text-white shadow-[0_0_20px_rgba(0,242,255,0.3)]" : "bg-white/5 text-white/40 group-hover:bg-white/10"}`}>
+                      <Icon className="w-[24px] h-[24px]" />
                     </div>
-                    <span className={`text-[8px] font-black uppercase tracking-widest transition-all ${isActive ? "opacity-100 scale-105" : "opacity-40"}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-[0.1em] transition-all ${isActive ? "opacity-100 scale-105 text-white" : "opacity-40"}`}>
                       {t(navItem.label)}
                     </span>
                     {isActive && (
                       <motion.div 
                         layoutId="bottomNavActive"
-                        className="absolute -bottom-2 w-1 h-1 bg-cyan-400 rounded-full shadow-[0_0_8px_#00F2FF]"
+                        className="absolute -bottom-2 w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_12px_#00F2FF]"
                       />
                     )}
 

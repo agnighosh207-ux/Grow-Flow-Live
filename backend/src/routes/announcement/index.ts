@@ -31,4 +31,23 @@ router.get("/active", async (req: any, res: any) => {
   }
 });
 
+// Alias for /active used by some frontend components
+router.get("/latest", async (req: any, res: any) => {
+  try {
+    const now = Date.now();
+    if (announcementCache && now - announcementCache.timestamp < CACHE_TTL) {
+      res.json(announcementCache.data);
+      return;
+    }
+    const activeList = await db
+      .select()
+      .from(globalAnnouncementsTable)
+      .where(eq(globalAnnouncementsTable.isActive, true))
+      .orderBy(desc(globalAnnouncementsTable.createdAt));
+    res.json({ announcements: activeList });
+  } catch {
+    res.json({ announcements: [] });
+  }
+});
+
 export default router;

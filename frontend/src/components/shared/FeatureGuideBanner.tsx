@@ -47,22 +47,27 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
   return (
     <>
       {/* Reshow Toggle - Floating in top-right when dismissed */}
+      {/* Reshow Toggle - Floating in bottom-right for better reach on mobile */}
       <AnimatePresence>
         {!isVisible && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed top-24 right-4 z-[40] md:right-8"
+            initial={{ opacity: 0, scale: 0.8, x: 20 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, x: 20 }}
+            className="fixed bottom-28 right-6 z-[120] md:right-8"
           >
             <Button
-              variant="ghost"
+              variant="default"
               size="icon"
               onClick={handleShow}
-              className="w-8 h-8 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/10 text-white/40 hover:text-cyan-400 hover:border-cyan-500/30 transition-all shadow-lg"
+              className="w-12 h-12 rounded-full bg-cyan-600 text-white shadow-[0_0_20px_rgba(0,242,255,0.4)] border border-cyan-400/50 hover:bg-cyan-500 hover:scale-110 transition-all active:scale-90"
               title="Show tool guide"
             >
-              <HelpCircle className="w-4 h-4" />
+              <HelpCircle className="w-6 h-6" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+              </span>
             </Button>
           </motion.div>
         )}
@@ -77,12 +82,12 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="relative group bg-gradient-to-br from-cyan-500/10 via-cyan-500/[0.02] to-transparent border border-white/5 border-l-cyan-500/40 rounded-2xl p-5 sm:p-6 shadow-xl shadow-cyan-950/20 backdrop-blur-sm">
+            <div className="relative group bg-[#0a051d] border border-cyan-500/30 border-l-[6px] border-l-cyan-500 rounded-2xl p-6 sm:p-7 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl">
               
               {/* Dismiss Button */}
               <button
                 onClick={handleDismiss}
-                className="absolute top-4 right-4 p-1.5 rounded-lg text-white/20 hover:text-white/60 hover:bg-white/5 transition-all"
+                className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all border border-white/5"
                 title="Got it"
               >
                 <X className="w-4 h-4" />
@@ -90,30 +95,30 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
 
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 {/* Left Side: Info */}
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
-                    {icon}
+                <div className="flex items-start gap-5 flex-1">
+                  <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-[inset_0_0_20px_rgba(6,182,212,0.1)]">
+                    {React.cloneElement(icon as React.ReactElement, { className: "w-7 h-7" })}
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-xl font-black text-white tracking-tight uppercase italic">{title}</h3>
                       {planRequired && (
-                        <span className="text-[10px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2 py-0.5 uppercase tracking-wider">
+                        <span className="text-[10px] font-black text-black bg-cyan-400 rounded-full px-3 py-0.5 uppercase tracking-widest shadow-lg shadow-cyan-500/20">
                           {planRequired}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-white/50 leading-relaxed max-w-2xl">{tagline}</p>
+                    <p className="text-sm text-white/70 leading-relaxed font-medium max-w-2xl">{tagline}</p>
                   </div>
                 </div>
 
                 {/* Right Side: What you get pills */}
-                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <span className="text-[10px] uppercase tracking-widest text-white/20 font-bold w-full lg:w-auto lg:mr-2 mb-1 lg:mb-0">Yields:</span>
+                <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
+                  <span className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 w-full lg:w-auto lg:mr-3 mb-1 lg:mb-0">You'll Get:</span>
                   {whatYouGet.map((item, idx) => (
                     <span 
                       key={idx}
-                      className="text-[11px] font-semibold text-cyan-300/80 bg-cyan-500/5 border border-cyan-500/10 rounded-lg px-2.5 py-1 backdrop-blur-md"
+                      className="text-[11px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-xl px-3.5 py-1.5 backdrop-blur-md shadow-sm"
                     >
                       {item}
                     </span>
@@ -122,17 +127,19 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
               </div>
 
               {/* Bottom Section: Best for + Pro Tip */}
-              <div className="mt-5 pt-4 border-t border-white/[0.04] flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-2 text-white/40">
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Best for:</span>
-                  <p className="text-xs font-medium text-white/60">{whenToUse}</p>
+              <div className="mt-6 pt-5 border-t border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div className="flex items-center gap-3 text-white/50">
+                  <div className="px-2 py-0.5 rounded bg-white/5 text-[10px] font-black uppercase tracking-widest">Best For</div>
+                  <p className="text-xs font-bold text-white/80">{whenToUse}</p>
                 </div>
 
                 {proTip && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10 text-amber-200/70">
-                    <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="text-[11px] font-medium leading-none">
-                      <span className="text-amber-400 font-bold mr-1">Pro tip:</span> {proTip}
+                  <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-200 shadow-lg shadow-amber-900/10">
+                    <div className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    </div>
+                    <span className="text-[12px] font-bold leading-tight">
+                      <span className="text-amber-400 uppercase text-[10px] tracking-widest mr-1.5">Pro tip:</span> {proTip}
                     </span>
                   </div>
                 )}

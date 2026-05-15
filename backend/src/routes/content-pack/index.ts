@@ -9,6 +9,7 @@ import { generateContent, webSearch, extractJson } from "../../services/ai-engin
 const router: IRouter = Router();
 
 router.post("/enhance", requireAuth, requirePlanOrTrial("content-pack"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const { idea } = req.body;
   if (typeof idea !== "string" || !idea.trim()) { res.status(400).json({ error: "Idea must be a valid string" }); return; }
   const sanitizedIdea = idea.substring(0, 500);
 

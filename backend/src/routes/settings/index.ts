@@ -7,6 +7,8 @@ const router: IRouter = Router();
 
 import { requireAuth } from "../../middlewares/planMiddleware";
 
+router.get("/test", (req, res) => res.json({ ok: true }));
+
 router.get("/", requireAuth, async (req: any, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
 
@@ -139,6 +141,26 @@ router.get("/export", requireAuth, async (req: any, res) => {
     contentGenerations: generations,
     savedItems: savedItems,
   });
+});
+
+router.get("/preferences", requireAuth, async (req: any, res) => {
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+  res.json({
+    languagePreference: user?.languagePreference || "en",
+    emailReports: user?.emailReports ?? true
+  });
+});
+
+router.patch("/preferences", requireAuth, async (req: any, res) => {
+  const { languagePreference, emailReports } = req.body;
+  const updates: any = {};
+  if (typeof languagePreference === "string") updates.languagePreference = languagePreference;
+  if (typeof emailReports === "boolean") updates.emailReports = emailReports;
+
+  if (Object.keys(updates).length > 0) {
+    await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId));
+  }
+  res.json({ success: true });
 });
 
 export default router;

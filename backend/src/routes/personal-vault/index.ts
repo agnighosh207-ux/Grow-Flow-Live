@@ -21,7 +21,9 @@ router.get("/folders", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 router.post("/folders", requireAuth, requirePlanOrTrial("personal-vault"), async (req: any, res): Promise<void> => {
-  const { name, color, icon } = req.body;
+  const name = typeof req.body.name === "string" ? req.body.name : "";
+  const color = typeof req.body.color === "string" ? req.body.color : "#06b6d4";
+  const icon = typeof req.body.icon === "string" ? req.body.icon : "Folder";
   if (typeof name !== "string" || !name.trim()) {
     res.status(400).json({ error: "Folder name must be a valid string" });
     return;
@@ -86,7 +88,10 @@ router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
 // Actions
 router.patch("/items/:id", requireAuth, requirePlanOrTrial("personal-vault"), async (req: any, res): Promise<void> => {
   const { id } = req.params;
-  const { tags, folderId, performanceNote, isFavorited } = req.body;
+  const tags = Array.isArray(req.body.tags) ? req.body.tags : undefined;
+  const folderId = typeof req.body.folderId === "string" ? req.body.folderId : undefined;
+  const performanceNote = typeof req.body.performanceNote === "string" ? req.body.performanceNote : undefined;
+  const isFavorited = typeof req.body.isFavorited === "boolean" ? req.body.isFavorited : undefined;
 
   try {
     await db.update(contentGenerationsTable)

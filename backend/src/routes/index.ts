@@ -40,6 +40,7 @@ import templatesRouter from "./templates";
 
 const router: IRouter = Router();
 
+router.get("/test-root", (req, res) => res.json({ root: true }));
 router.use(healthRouter);
 router.use("/referral", referralRouter);
 router.use("/public", publicRouter);

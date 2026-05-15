@@ -1785,16 +1785,20 @@ export default function Generate() {
               {TEMPLATES.map((t, i) => (
                 <motion.button
                   key={t.label}
-                  whileHover={{ y: -6, scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ y: -8, scale: 1.02, rotate: 1 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleTemplate(t)}
-                  className="group relative p-5 min-h-[72px] md:min-h-0 rounded-[32px] border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-cyan-500/30 transition-all duration-500 text-center flex flex-col items-center gap-4 overflow-hidden shadow-lg"
+                  className="group relative p-6 min-h-[90px] md:min-h-0 rounded-[35px] border border-white/10 bg-[#0a051d]/40 hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all duration-500 text-center flex flex-col items-center gap-4 overflow-hidden shadow-2xl backdrop-blur-md"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="text-3xl group-hover:scale-125 transition-transform duration-700 relative z-10">{t.icon}</div>
-                  <div className="space-y-1.5 relative z-10 w-full overflow-hidden">
-                    <h4 className="text-[10px] md:text-[11px] font-black text-white/90 uppercase tracking-widest leading-none overflow-hidden text-ellipsis whitespace-nowrap">{t.label}</h4>
-                    <p className="text-[8px] text-white/20 font-black uppercase tracking-tighter">{t.contentType} · {t.tone}</p>
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="text-4xl group-hover:scale-125 transition-transform duration-700 relative z-10 filter drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{t.icon}</div>
+                  <div className="space-y-2 relative z-10 w-full">
+                    <h4 className="text-[11px] md:text-[12px] font-black text-white tracking-[0.1em] uppercase leading-none">{t.label}</h4>
+                    <div className="flex items-center justify-center gap-2">
+                       <span className="text-[8px] text-cyan-400 font-black uppercase tracking-tighter bg-cyan-500/10 px-1.5 py-0.5 rounded-md">{t.contentType}</span>
+                       <span className="text-[8px] text-white/20 font-black uppercase tracking-tighter">·</span>
+                       <span className="text-[8px] text-white/40 font-black uppercase tracking-tighter">{t.tone}</span>
+                    </div>
                   </div>
                 </motion.button>
               ))}

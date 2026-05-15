@@ -10,7 +10,8 @@ const router: IRouter = Router();
 
 router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const userId = req.userId;
-  const { language = "English" } = req.body;
+  const { language: rawLanguage } = req.body;
+  const language = typeof rawLanguage === "string" ? rawLanguage : "English";
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), 25000);
   req.on('close', () => {
@@ -107,7 +108,7 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
   const topic = typeof req.body.topic === "string" ? req.body.topic : "";
   const platform = typeof req.body.platform === "string" ? req.body.platform : "";
   const length = typeof req.body.length === "string" ? req.body.length : "medium";
-  const useVoice = Boolean(req.body.useVoice);
+  const useVoice = typeof req.body.useVoice === "boolean" ? req.body.useVoice : false;
   const language = typeof req.body.language === "string" ? req.body.language : "English";
   const userId = req.userId;
   const abortController = new AbortController();
@@ -205,7 +206,11 @@ router.get("/history", requireAuth, requirePlanOrTrial("ghostwriter"), async (re
 
 router.patch("/voice-profile", requireAuth, requirePlanOrTrial("ghostwriter"), async (req: any, res): Promise<void> => {
   try {
-    const { profile } = req.body;
+    const profile = typeof req.body.profile === "object" ? req.body.profile : null;
+    if (!profile) {
+      res.status(400).json({ error: "Invalid profile format" });
+      return;
+    }
     await db.update(usersTable)
       .set({ voiceProfile: profile })
       .where(eq(usersTable.id, req.userId));
