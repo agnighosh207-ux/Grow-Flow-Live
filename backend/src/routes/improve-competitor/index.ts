@@ -29,8 +29,8 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
 
   const { competitorContent, yourNiche, platform, yourGoal, language = "English" } = req.body;
 
-  if (!competitorContent || competitorContent.length < 100) {
-    res.status(400).json({ error: "Competitor content must be at least 100 characters" });
+  if (typeof competitorContent !== "string" || competitorContent.length < 100) {
+    res.status(400).json({ error: "Competitor content must be a valid string of at least 100 characters" });
     return;
   }
 

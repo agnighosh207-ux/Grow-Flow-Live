@@ -1,4 +1,4 @@
-﻿import { ReactNode, useEffect, useState, useRef } from "react";
+import { ReactNode, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBanner } from "@/components/banners/NotificationBanner";
 import { FeatureDiscoveryBanner } from "@/components/banners/FeatureDiscoveryBanner";
@@ -675,6 +675,7 @@ function SidebarContent({
 
 function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void }) {
   const [, setLocation] = useLocation();
+  const [location] = useLocation();
   const { t } = useTranslation();
 
   const handleNavigate = (path: string) => {
@@ -684,48 +685,56 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-8 space-y-10 custom-scrollbar">
+    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8 custom-scrollbar">
       {NAV_GROUPS.map((group) => (
         <div key={group.label} className="space-y-4">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 ml-1">{group.label}</h3>
-          <div className="grid grid-cols-1 gap-3">
+          <div className="flex items-center gap-3 px-1">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-500/60">{group.label}</h3>
+            <div className="h-px flex-1 bg-gradient-to-r from-cyan-500/20 to-transparent" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             {group.items.map((item) => {
               const Icon = item.icon;
               const isLocked = item.pro && !isPro;
               const visited = typeof window !== "undefined" ? localStorage.getItem(`visited_${item.path}`) : "true";
               const isNew = !visited && !isLocked && group.label !== "⚙️ Account" && item.path !== "/generate";
+              const isActive = item.path === location;
 
               return (
                 <div
                   key={item.path}
                   onClick={() => handleNavigate(item.path)}
-                  className={`group relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center gap-4
-                    ${isLocked 
-                      ? "bg-white/[0.01] border-white/5 opacity-60" 
-                      : "bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-cyan-500/30 hover:shadow-[0_0_20px_rgba(0,242,255,0.05)]"
+                  className={`group relative p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer flex flex-col items-center text-center gap-3
+                    ${isActive 
+                      ? "bg-cyan-500/15 border-cyan-500/50 shadow-[0_0_25px_rgba(0,242,255,0.15)] ring-1 ring-cyan-500/30" 
+                      : isLocked 
+                        ? "bg-white/[0.01] border-white/5 opacity-50" 
+                        : "bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-cyan-500/30"
                     }`}
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-300
-                    ${isLocked ? "bg-white/5 border-white/5 text-white/20" : "bg-cyan-500/10 border-cyan-500/20 text-cyan-400 group-hover:scale-110 group-hover:border-cyan-500/40"}
-                  `}>
-                    {isLocked ? <Lock className="w-5 h-5" /> : <Icon className="w-6 h-6" />}
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-500
+                    ${isActive 
+                      ? "bg-cyan-500/20 border-cyan-500/60 text-cyan-400 shadow-[0_0_15px_rgba(0,242,255,0.3)]" 
+                      : isLocked 
+                        ? "bg-white/5 border-white/5 text-white/20" 
+                        : "bg-gradient-to-br from-white/10 to-transparent border-white/10 text-white/60 group-hover:text-cyan-400 group-hover:border-cyan-500/40 group-hover:scale-110"
+                    }`}>
+                    {isLocked ? <Lock className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white/90 group-hover:text-white transition-colors">{t(item.label)}</span>
-                      {isNew && (
-                        <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]">
-                          NEW
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-white/40 truncate font-medium group-hover:text-white/60 transition-colors">{(item as any).desc}</p>
+                  <div className="flex flex-col gap-1 w-full">
+                    <span className={`text-[11px] font-bold leading-tight transition-colors ${isActive ? "text-white" : "text-white/70 group-hover:text-white"}`}>
+                      {t(item.label)}
+                    </span>
+                    {isNew && (
+                      <span className="absolute -top-1 -right-1 text-[7px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                        NEW
+                      </span>
+                    )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-white/30 transition-all group-hover:translate-x-1" />
                   
                   {isLocked && (
                     <div className="absolute top-2 right-2">
-                      <span className="text-[8px] font-black text-cyan-500/60 uppercase tracking-widest bg-cyan-500/10 px-1.5 py-0.5 rounded-md">Locked</span>
+                      <Lock className="w-2.5 h-2.5 text-white/20" />
                     </div>
                   )}
                 </div>
@@ -748,6 +757,46 @@ export function Layout({ children }: { children: ReactNode }) {
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("manual");
   const { t, i18n } = useTranslation();
   const [discoverItem, setDiscoverItem] = useState(DISCOVERY_ITEMS[0]);
+  const { isSignedIn } = useClerk();
+
+  // Offline detection
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  useEffect(() => {
+    const onOffline = () => setIsOffline(true);
+    const onOnline = () => setIsOffline(false);
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
+    return () => {
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
+    };
+  }, []);
+
+  // "What's New" Announcements
+  const { data: announcement } = useQuery({
+    queryKey: ["announcement"],
+    queryFn: async () => {
+      const res = await fetch("/api/announcement/latest");
+      if (!res.ok) return null;
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: !!isSignedIn,
+  });
+
+  useEffect(() => {
+    if (!announcement?.message) return;
+    const seenKey = `announcement_seen_${announcement.id}`;
+    if (localStorage.getItem(seenKey)) return;
+    const timer = setTimeout(() => {
+      toast({
+        title: "📢 " + (announcement.title || "Update from GrowFlow"),
+        description: announcement.message,
+      });
+      localStorage.setItem(seenKey, "1");
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [announcement]);
   
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -847,6 +896,11 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-[#050110] selection:bg-cyan-500/30">
+      {isOffline && (
+        <div className="fixed top-0 inset-x-0 z-[200] bg-red-500 text-white text-center text-[10px] py-1.5 font-bold uppercase tracking-widest animate-in fade-in slide-in-from-top duration-300">
+          📡 No internet connection — check your network
+        </div>
+      )}
       <ImpersonationBanner />
       <NotificationBanner />
       
@@ -900,60 +954,74 @@ export function Layout({ children }: { children: ReactNode }) {
           <header className="h-16 border-b border-white/[0.06] bg-[#080316]/95 backdrop-blur-2xl flex items-center justify-between px-6 z-[60] sticky top-0">
             <Logo size="sm" />
             <div className="flex items-center gap-3">
-               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-white/70">
-                    <Menu className="w-6 h-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="bottom" className="p-0 h-[85vh] bg-[#050110] border-t border-white/10 rounded-t-[40px] flex flex-col focus:outline-none ring-0">
-                  <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mt-4 shrink-0" />
-                  <div className="px-8 pt-8 pb-2">
-                    <h2 className="text-2xl font-black text-white">All Toolkits</h2>
-                    <p className="text-sm text-white/40 font-medium">Browse our entire intelligence engine.</p>
-                  </div>
-                  <ToolsGrid
-                    isPro={isPro}
-                    onClick={() => setIsSheetOpen(false)}
-                  />
-                  <div className="mt-auto border-t border-white/5 p-6 space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {user?.imageUrl ? (
-                          <img src={user.imageUrl} alt={user.fullName || "User"} className="w-9 h-9 rounded-full border border-white/10 object-cover flex-shrink-0" />
-                        ) : (
-                          <div className="w-9 h-9 rounded-full border border-white/10 bg-white/5 flex-shrink-0 flex items-center justify-center text-sm text-white/40 font-bold">
-                            {(user?.fullName || "U").charAt(0).toUpperCase()}
+                <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-white/70">
+                      <Menu className="w-6 h-6" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="p-0 h-[88vh] bg-[#050110]/95 backdrop-blur-3xl border-t border-white/10 rounded-t-[40px] flex flex-col focus:outline-none ring-0 overflow-hidden">
+                    <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mt-3 shrink-0" />
+                    <div className="px-6 pt-6 pb-2 flex items-center justify-between">
+                      <div>
+                        <h2 className="text-xl font-black text-white tracking-tight">Toolkit Explorer</h2>
+                        <p className="text-[11px] text-white/40 font-medium tracking-wide">Select an engine to start building.</p>
+                      </div>
+                      <button 
+                        onClick={() => setIsSheetOpen(false)}
+                        className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 active:scale-90 transition-transform"
+                      >
+                        <ChevronRight className="w-5 h-5 rotate-90" />
+                      </button>
+                    </div>
+                    
+                    <ToolsGrid
+                      isPro={isPro}
+                      onClick={() => setIsSheetOpen(false)}
+                    />
+
+                    <div className="mt-auto bg-[#080316] border-t border-white/5 px-6 py-5 space-y-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="relative">
+                            {user?.imageUrl ? (
+                              <img src={user.imageUrl} alt={user.fullName || "User"} className="w-9 h-9 rounded-full border border-white/10 object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full border border-white/10 bg-white/5 flex-shrink-0 flex items-center justify-center text-sm text-white/40 font-bold">
+                                {(user?.fullName || "U").charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#080316] rounded-full" />
                           </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-white/80 truncate">{user?.fullName || "User"}</p>
-                          <p className="text-[10px] text-white/30 truncate">{user?.primaryEmailAddress?.emailAddress}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-white/90 truncate">{user?.fullName || "User"}</p>
+                            <p className="text-[10px] text-white/30 truncate tracking-tight">{user?.primaryEmailAddress?.emailAddress}</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm"
+                          className="text-white/40 hover:text-red-400 hover:bg-red-500/10 text-[10px] px-3 h-8 flex items-center gap-1.5 flex-shrink-0 border border-white/5 rounded-xl transition-all"
+                          onClick={() => { setIsSheetOpen(false); signOut(); }}
+                        >
+                          <LogOut className="w-3 h-3" /> Sign Out
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-xl p-2.5">
+                        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Language</span>
+                        <div className="flex gap-4">
+                          {['en', 'hi', 'bn'].map(lang => (
+                            <button key={lang}
+                              onClick={() => { i18n.changeLanguage(lang); localStorage.setItem('i18nextLng', lang); setIsSheetOpen(false); }}
+                              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md transition-all ${i18n.language === lang ? 'text-cyan-400 bg-cyan-500/10' : 'text-white/20 hover:text-white/40'}`}
+                            >{lang === 'en' ? 'EN' : lang === 'hi' ? 'HI' : 'BN'}</button>
+                          ))}
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm"
-                        className="text-white/35 hover:text-red-400 hover:bg-red-500/10 text-xs px-3 h-8 flex items-center gap-1.5 flex-shrink-0 border border-white/8 rounded-xl"
-                        onClick={() => { setIsSheetOpen(false); signOut(); }}
-                      >
-                        <LogOut className="w-3.5 h-3.5" /> Sign Out
-                      </Button>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Language</span>
-                      <div className="flex gap-4">
-                        {['en', 'hi', 'bn'].map(lang => (
-                          <button key={lang}
-                            onClick={() => { i18n.changeLanguage(lang); localStorage.setItem('i18nextLng', lang); setIsSheetOpen(false); }}
-                            className={`text-xs font-bold uppercase tracking-widest ${i18n.language === lang ? 'text-cyan-400' : 'text-white/40'}`}
-                          >{lang === 'en' ? 'EN' : lang === 'hi' ? 'HI' : 'BN'}</button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </header>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </header>
 
           <main className="flex-1 overflow-y-auto relative pb-32 custom-scrollbar">
             <div className="bg-grid-pattern fixed inset-0 z-0 pointer-events-none opacity-20" />
@@ -995,16 +1063,29 @@ export function Layout({ children }: { children: ReactNode }) {
                   <Link 
                     key={item.path} 
                     href={navItem.path} 
-                    className={`flex flex-col items-center gap-1 p-2 transition-all relative ${isActive ? "text-cyan-400" : "text-white/40"}`}
+                    className={`flex flex-col items-center gap-1.5 p-2 transition-all relative ${isActive ? "text-cyan-400" : "text-white/30 hover:text-white/60"}`}
                      onClick={() => {
                         localStorage.setItem(`visited_${navItem.path}`, "true");
                         setIsSheetOpen(false);
                      }}
                   >
-                    <Icon className={`w-5 h-5 ${item.path === "discover" && !isActive ? "text-cyan-400/60 animate-pulse" : ""}`} />
-                    <span className="text-[9px] font-bold uppercase tracking-tighter">{t(navItem.label)}</span>
+                    <div className={`p-1 rounded-lg transition-all duration-300 ${isActive ? "bg-cyan-500/15 shadow-[0_0_15px_rgba(0,242,255,0.2)]" : ""}`}>
+                      <Icon className="w-[22px] h-[22px]" />
+                    </div>
+                    <span className={`text-[8px] font-black uppercase tracking-widest transition-all ${isActive ? "opacity-100 scale-105" : "opacity-40"}`}>
+                      {t(navItem.label)}
+                    </span>
+                    {isActive && (
+                      <motion.div 
+                        layoutId="bottomNavActive"
+                        className="absolute -bottom-2 w-1 h-1 bg-cyan-400 rounded-full shadow-[0_0_8px_#00F2FF]"
+                      />
+                    )}
+
                     {item.path === "discover" && !isActive && (
-                      <span className="absolute -top-1 right-0 text-[7px] font-black bg-cyan-500 text-black px-1 rounded-sm tracking-tighter">HOT</span>
+                      <span className="absolute -top-0.5 -right-0.5 text-[6px] font-black bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 py-0.5 rounded-full tracking-tighter shadow-[0_0_10px_rgba(249,115,22,0.3)] animate-pulse">
+                        HOT
+                      </span>
                     )}
                   </Link>
                 );

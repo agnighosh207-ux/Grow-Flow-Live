@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { requireAuth } from "../../middlewares/planMiddleware";
+import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { db, contentGenerationsTable, foldersTable } from "@workspace/db";
 import { eq, and, sql, desc, or, ilike } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -20,10 +20,10 @@ router.get("/folders", requireAuth, async (req: any, res): Promise<void> => {
   }
 });
 
-router.post("/folders", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/folders", requireAuth, requirePlanOrTrial("personal-vault"), async (req: any, res): Promise<void> => {
   const { name, color, icon } = req.body;
-  if (!name) {
-    res.status(400).json({ error: "Folder name is required" });
+  if (typeof name !== "string" || !name.trim()) {
+    res.status(400).json({ error: "Folder name must be a valid string" });
     return;
   }
 
@@ -46,11 +46,16 @@ router.post("/folders", requireAuth, async (req: any, res): Promise<void> => {
 
 // Items (Content Bank)
 router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
-  const { folderId, search, platform, tags, limit = 20 } = req.query;
+  const folderId = typeof req.query.folderId === "string" ? req.query.folderId : null;
+  const search = typeof req.query.search === "string" ? req.query.search : "";
+  const platform = typeof req.query.platform === "string" ? req.query.platform : null;
+  const tags = typeof req.query.tags === "string" ? req.query.tags : null;
+  const limit = Number(req.query.limit) || 20;
   const conditions = [eq(contentGenerationsTable.userId, req.userId)];
 
   if (folderId) conditions.push(eq(contentGenerationsTable.folderId, String(folderId)));
   if (platform) conditions.push(eq(contentGenerationsTable.platform, String(platform)));
+  
   if (search) {
     const searchCondition = or(
       ilike(contentGenerationsTable.idea, `%${search}%`),
@@ -79,7 +84,7 @@ router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // Actions
-router.patch("/items/:id", requireAuth, async (req: any, res): Promise<void> => {
+router.patch("/items/:id", requireAuth, requirePlanOrTrial("personal-vault"), async (req: any, res): Promise<void> => {
   const { id } = req.params;
   const { tags, folderId, performanceNote, isFavorited } = req.body;
 

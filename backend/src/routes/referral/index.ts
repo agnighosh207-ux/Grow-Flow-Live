@@ -32,7 +32,7 @@ router.post("/claim", requireAuth, async (req: any, res): Promise<void> => {
         .where(eq(usersTable.referralCode, normalizedCode));
 
       if (!referrer) throw new Error("Invalid referral code");
-      if (referrer.id === req.userId) throw new Error("Self-referral not allowed");
+      if (referrer.id === req.userId) throw new Error("Cannot use your own referral code");
 
       const [currentUser] = await tx.select({ referralUsedCode: usersTable.referralUsedCode })
         .from(usersTable)

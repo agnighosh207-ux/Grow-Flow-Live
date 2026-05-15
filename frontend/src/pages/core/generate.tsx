@@ -42,75 +42,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NPSModal, checkShouldShowNPS } from "@/components/modals/NPSModal";
+import { FeatureDiscoveryBanner } from "@/components/generate/FeatureDiscoveryBanner";
+import { ContentPackCard } from "@/components/generate/ContentPackCard";
+import { ViralScoreCard } from "@/components/generate/ViralScoreCard";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { track, identify } from "@/lib/analytics";
-
-const DISCOVERY_CARDS = [
-  { id: "ghostwriter", title: "AI Ghostwriter", msg: "Train the AI to write in your exact authentic voice.", path: "/ghostwriter", icon: PenTool, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
-  { id: "predictor", title: "Performance Predictor", msg: "See how your post will perform before you hit publish.", path: "/predictor", icon: BarChart2, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-  { id: "strategy", title: "7-Day Strategy", msg: "Get a full week of strategic content ideas mapped out.", path: "/strategy", icon: CalendarDays, color: "text-cyan-400", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
-  { id: "coach", title: "AI Content Coach", msg: "Get real-time feedback on your content strategy.", path: "/coach", icon: Brain, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-];
-
-function CrossToolDiscoveryBanner() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
-  const [, navigate] = useLocation();
-
-  useEffect(() => {
-    // Session-based rotation
-    const sessionIdx = sessionStorage.getItem("discovery_banner_idx");
-    let nextIdx = 0;
-    if (sessionIdx !== null) {
-      nextIdx = (parseInt(sessionIdx) + 1) % DISCOVERY_CARDS.length;
-    }
-    sessionStorage.setItem("discovery_banner_idx", nextIdx.toString());
-    setCurrentIndex(nextIdx);
-
-    const isDismissed = localStorage.getItem(`discovery_dismissed_${DISCOVERY_CARDS[nextIdx].id}`);
-    if (isDismissed) setDismissed(true);
-  }, []);
-
-  const handleDismiss = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    localStorage.setItem(`discovery_dismissed_${DISCOVERY_CARDS[currentIndex].id}`, "true");
-    setDismissed(true);
-  };
-
-  if (dismissed) return null;
-
-  const card = DISCOVERY_CARDS[currentIndex];
-  const Icon = card.icon;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`relative group cursor-pointer overflow-hidden rounded-2xl border ${card.border} ${card.bg} p-4 mb-8 transition-all hover:border-white/20`}
-      onClick={() => navigate(card.path)}
-    >
-      <div className="flex items-center gap-4 relative z-10">
-        <div className={`w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center shrink-0 border border-white/5`}>
-          <Icon className={`w-5 h-5 ${card.color}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h4 className="text-xs font-black text-white uppercase tracking-wider">{card.title}</h4>
-            <span className="text-[8px] font-black bg-cyan-500 text-black px-1.5 py-0.5 rounded-sm uppercase">Try Now</span>
-          </div>
-          <p className="text-[11px] text-white/50 font-medium truncate mt-0.5">{card.msg}</p>
-        </div>
-        <button 
-          onClick={handleDismiss}
-          className="p-1.5 rounded-lg text-white/20 hover:text-white/60 hover:bg-white/5 transition-all"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-white/10 transition-all duration-700" />
-    </motion.div>
-  );
-}
 
 // ─── Constants ───
 const PLATFORMS = [
@@ -119,9 +55,6 @@ const PLATFORMS = [
   { name: "LinkedIn", color: "text-sky-400" },
   { name: "YouTube", color: "text-red-400" }
 ] as const;
-
-
-
 
 function AnimatedOrbs() {
   return (
@@ -207,115 +140,6 @@ function SectionCard({
         ) : children}
       </div>
     </motion.div>
-  );
-}
-
-function BatchResultView({ result, onSave }: { result: any; onSave: () => void }) {
-  const [activeTab, setActiveTab] = useState<"blueprint" | "kit">("kit");
-  
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex bg-white/5 p-1 rounded-2xl w-full max-w-sm border border-white/5">
-          {[
-            { id: "kit", label: "The Kit", icon: Wand2 },
-            { id: "blueprint", label: "The Blueprint", icon: Brain }
-          ].map(tab => (
-            <button 
-              key={tab.id} 
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                activeTab === tab.id 
-                  ? "bg-cyan-600 text-white shadow-lg shadow-cyan-500/20" 
-                  : "text-white/30 hover:text-white/60"
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        
-        <button 
-          onClick={onSave}
-          className="w-full sm:w-auto px-8 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest border border-white/5 transition-all"
-         >
-          Save Ecosystem
-        </button>
-      </div>
-
-      {activeTab === "blueprint" && (
-        <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-8">
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <SectionCard icon={Activity} title="Strategic Context" color="bg-emerald-500/10 text-emerald-300">
-                 <div className="space-y-6">
-                    <div>
-                       <h4 className="text-[10px] font-black text-emerald-400/80 uppercase tracking-widest mb-2">Market Sentiment</h4>
-                       <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.whyThisWorksNow}</p>
-                    </div>
-                    <div>
-                       <h4 className="text-[10px] font-black text-emerald-400/80 uppercase tracking-widest mb-2">Audience Psychology</h4>
-                       <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.targetAudiencePsychology}</p>
-                    </div>
-                 </div>
-              </SectionCard>
-              <SectionCard icon={Target} title="Competitive Edge" color="bg-cyan-500/10 text-cyan-300">
-                 <div className="space-y-6">
-                    <div>
-                       <h4 className="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-2">Unfair Advantage</h4>
-                       <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.competitorGap}</p>
-                    </div>
-                    <div>
-                       <h4 className="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-2">Core Value Prop</h4>
-                       <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.painPointAddressed}</p>
-                    </div>
-                 </div>
-              </SectionCard>
-           </div>
-        </motion.div>
-      )}
-
-      {activeTab === "kit" && (
-        <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} className="space-y-8">
-           {result.instagram && (
-            <SectionCard icon={() => <span className="text-xl">📸</span>} title="Instagram Ecosystem" color="bg-pink-500/10 text-pink-300">
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-[10px] font-black text-pink-400/60 uppercase tracking-widest mb-3">Conversion Caption</h4>
-                  <div className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-black/20 border border-white/5">
-                    <p className="text-white/85 text-sm leading-relaxed whitespace-pre-wrap flex-1">{result.instagram.caption}</p>
-                    <CopyBtn text={result.instagram.caption} />
-                  </div>
-                </div>
-                {result.instagram.storyStrategy && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {result.instagram.storyStrategy.map((s: string, i: number) => (
-                      <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 text-xs text-white/60">
-                        <span className="font-black text-pink-400 block mb-1 uppercase tracking-tighter">Slide {i+1}</span>
-                        {s}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </SectionCard>
-           )}
-           {result.twitter && (
-            <SectionCard icon={() => <span className="text-xl">🐦</span>} title="Viral X Thread" color="bg-sky-500/10 text-sky-300">
-              <div className="space-y-4">
-                {result.twitter.thread.map((t: string, i: number) => (
-                  <div key={i} className="flex items-start gap-4 p-5 rounded-2xl bg-black/20 border border-white/5 group">
-                    <span className="text-[10px] text-white/20 font-black mt-1">{i + 1}</span>
-                    <p className="text-white/85 text-sm flex-1 leading-relaxed">{t}</p>
-                    <CopyBtn text={t} />
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-           )}
-        </motion.div>
-      )}
-    </div>
   );
 }
 
@@ -493,17 +317,6 @@ function HookIntelligenceView({ content, niche }: { content: any; niche: string 
   );
 }
 
-interface ContentAnalysis {
-  viralityScore: number;
-  hookStrength: number;
-  engagementPotential: number;
-  shareability: number;
-  emotionalTrigger: string;
-  curiosityGap: string;
-  targetAudienceReaction: string;
-  improvementTip: string;
-}
-
 function ContentSkeleton() {
   return (
     <div className="space-y-3 p-4">
@@ -669,84 +482,6 @@ function ViralScoreMeter({ score }: { score: number }) {
         {score}
       </motion.span>
       <span className="absolute -bottom-6 text-[10px] font-black text-center whitespace-nowrap tracking-widest uppercase opacity-60">{level.label}</span>
-    </div>
-  );
-}
-
-function PerformancePredictionCard({ viralScore, platform, niche }: { viralScore: number; platform: string; niche: string }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-  
-  const baseReach = { instagram: 800, youtube: 1200, twitter: 2000, linkedin: 1500 };
-  const multiplier = viralScore / 50; 
-  const pKey = platform.toLowerCase() as keyof typeof baseReach;
-  const reach = baseReach[pKey] || 1000;
-  const estimatedReach = Math.floor(reach * multiplier * (1 + Math.random() * 0.2));
-  const engagementRate = (3 + (viralScore / 100) * 5).toFixed(1);
-
-  const handleShareCard = async () => {
-    if (!cardRef.current) return;
-    try {
-      const dataUrl = await htmlToImage.toPng(cardRef.current, { quality: 1.0, pixelRatio: 2 });
-      const link = document.createElement('a');
-      link.download = `growflow-prediction-${platform}.png`;
-      link.href = dataUrl;
-      link.click();
-      toast({ title: "Prediction card generated!", description: "Share this to your Stories to flex your content game." });
-    } catch (err) {
-      toast({ variant: "destructive", title: "Failed to generate card" });
-    }
-  };
-  
-  return (
-    <div className="mt-8">
-      <div ref={cardRef} className="p-8 rounded-[32px] border border-cyan-500/20 bg-[#0c0d12] relative overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-violet-500/10 pointer-events-none" />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl -mr-16 -mt-16" />
-        
-        <div className="flex items-center justify-between mb-8 relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-cyan-500 flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-black fill-black" />
-            </div>
-            <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">GrowFlow AI Intelligence</span>
-          </div>
-          <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{niche} • {platform}</span>
-        </div>
-
-        <p className="text-[11px] text-white/40 font-black uppercase tracking-[0.2em] mb-6 text-center">Projected Algorithmic Performance</p>
-        
-        <div className="grid grid-cols-3 gap-6 relative z-10">
-          <div className="text-center space-y-1">
-            <p className="text-2xl font-black text-white tracking-tighter">{estimatedReach.toLocaleString()}+</p>
-            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Est. Reach</p>
-          </div>
-          <div className="text-center space-y-1 border-x border-white/5">
-            <p className="text-2xl font-black text-cyan-400 tracking-tighter">{engagementRate}%</p>
-            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Eng. Rate</p>
-          </div>
-          <div className="text-center space-y-1">
-            <p className="text-2xl font-black text-violet-400 tracking-tighter">{viralScore}</p>
-            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Viral Score™</p>
-          </div>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between opacity-40">
-           <span className="text-[9px] font-bold text-white/30 italic">© 2026 GrowFlow Platform</span>
-           <div className="flex items-center gap-1.5">
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-             <span className="text-[8px] font-black uppercase tracking-widest">Verified Logic</span>
-           </div>
-        </div>
-      </div>
-      
-      <button 
-        onClick={handleShareCard}
-        className="w-full mt-4 flex items-center justify-center gap-2 text-[10px] font-black text-white/30 hover:text-cyan-400 transition-all uppercase tracking-[0.2em] group"
-      >
-        <Share2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-        Export Performance Prediction Card
-      </button>
     </div>
   );
 }
@@ -947,7 +682,7 @@ function buildPlatformText(platform: Platform, content: any): string {
       return [
         content.headline && `${content.headline}`,
         content.post && `\n${content.post}`,
-        content.cta && `\n${content.cta}`,
+        content.cta && `\nCTA:\n${content.cta}`,
         content.hashtags && `\n${content.hashtags}`,
       ].filter(Boolean).join("\n");
     default:
@@ -962,7 +697,6 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
   const { toast } = useToast();
   const { data: sub } = useSubscriptionStatus();
   
-  const isFreeUser = !sub || (sub.planType === "free" && sub.plan === "free") || sub.plan === "blocked";
   const config = PLATFORM_CONFIG[platform];
   const Icon = config.icon;
   const fullText = buildPlatformText(platform, content);
@@ -993,7 +727,6 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
   const repurposeAbortController = useRef<AbortController | null>(null);
 
   const handleRepurpose = async (targetFormat: string) => {
-    // Abort existing call if any
     if (repurposeAbortController.current) {
       repurposeAbortController.current.abort();
     }
@@ -1151,7 +884,6 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
           >
             <div className="p-8 md:p-12 space-y-12 bg-white/[0.01]">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-                {/* Primary Narrative Column */}
                 <div className="space-y-10">
                   {platform === "instagram" && content && (
                     <>
@@ -1167,6 +899,26 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                            </div>
                         </div>
                       )}
+                      <div className="sticky bottom-[72px] md:static mt-4 pt-3 pb-2 bg-gradient-to-t from-[#060312] via-[#060312]/95 to-transparent -mx-4 px-4 md:mx-0 md:px-0 md:bg-transparent md:pt-0 md:pb-0 z-20">
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={loading || !idea.trim()}
+                      className="w-full h-14 md:h-16 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-lg md:text-xl rounded-2xl shadow-xl shadow-cyan-950 transition-all duration-300 transform active:scale-[0.98] group relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                      {loading ? (
+                        <div className="flex items-center gap-3">
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                          <span className="animate-pulse">Synthesizing...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-6 w-6 fill-white" />
+                          Generate My Content
+                        </div>
+                      )}
+                    </Button>
+                  </div>
                       {content.caption && (
                         <ContentSection label="Platform Narrative" content={content.caption} copyLabel="Caption" labelColor="text-pink-400/40" />
                       )}
@@ -1252,7 +1004,6 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                   )}
                 </div>
 
-                {/* Strategic Assets Column */}
                 <div className="space-y-12">
                   {content.cta && (
                     <motion.div 
@@ -1320,7 +1071,6 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
   );
 }
 
-
 function buildAllPlatformsText(data: any): string {
   if (!data?.content) return "";
   const { idea, contentType, tone, content } = data;
@@ -1361,9 +1111,17 @@ export default function Generate() {
   const searchParams = new URLSearchParams(
     typeof window !== "undefined" ? window.location.search : ""
   );
-  const prefillIdea = searchParams.get("idea") ?? "";
-  const prefillType = (searchParams.get("contentType") ?? "Educational") as "Educational" | "Story" | "Viral";
-  const prefillTone = (searchParams.get("tone") ?? "Professional") as "Casual" | "Professional" | "Aggressive";
+  
+  const sanitizeXSS = (val: string | null) => {
+    if (!val) return "";
+    return val.replace(/<[^>]*>?/gm, "").replace(/[<>"']/g, "").trim();
+  };
+  
+  const prefillIdea = sanitizeXSS(searchParams.get("idea"));
+  const rawType = searchParams.get("contentType");
+  const prefillType = (["Educational", "Story", "Viral"].includes(rawType || "") ? rawType : "Educational") as any;
+  const rawTone = searchParams.get("tone");
+  const prefillTone = (["Casual", "Professional", "Aggressive"].includes(rawTone || "") ? rawTone : "Professional") as any;
   const autoGenerate = searchParams.get("auto") === "1";
 
   const [generatedContent, setGeneratedContent] = useState<any>(null);
@@ -1383,6 +1141,7 @@ export default function Generate() {
   const [batchLoading, setBatchLoading] = useState(false);
   const lastSubmittedValues = useRef<any>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [activePlatform, setActivePlatform] = useState<Platform>("instagram");
   const [isFavorited, setIsFavorited] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -1392,7 +1151,7 @@ export default function Generate() {
       contentType: prefillType,
       tone: prefillTone,
       niche: "General",
-      language: localStorage.getItem("preferred_language") || "English",
+      language: typeof window !== "undefined" ? localStorage.getItem("preferred_language") || "English" : "English",
     }
   });
   
@@ -1433,6 +1192,16 @@ export default function Generate() {
   const [hookScore, setHookScore] = useState<any>(null);
   const [isScoringHook, setIsScoringHook] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const ideaValue = form.watch("idea");
+  
+  useEffect(() => {
+    if (generatedContent && !batchLoading) {
+      const el = document.getElementById("generation-output");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [generatedContent, batchLoading]);
   const { toast } = useToast();
   const { data: sub, refetch: refetchSub } = useSubscriptionStatus();
   const [, navigate] = useLocation();
@@ -1445,8 +1214,9 @@ export default function Generate() {
   
   const generationsUsed = sub?.monthlyGenerationsUsed ?? 0;
   const generationLimit = sub?.generationLimit ?? (isFreeUser ? 10 : 25);
+  const showMidLimitWarning = isFreeUser && (generationLimit - generationsUsed) === 1;
 
-  const isFirstTime = !sessionStorage.getItem("has_generated") && !localStorage.getItem("has_generated");
+  const isFirstTime = typeof sessionStorage !== "undefined" && !sessionStorage.getItem("has_generated") && !localStorage.getItem("has_generated");
 
   useEffect(() => {
     if (isFirstTime && savedPrefs?.niche) {
@@ -1471,10 +1241,6 @@ export default function Generate() {
     }
   }, [isFirstTime, savedPrefs, form]);
   
-  // Triggers
-  const showMidLimitWarning = isFreeUser && !warningDismissed && generationsUsed === 2 && sub?.canGenerate;
-  const showInfinitySoftWarning = isInfinityUser && !warningDismissed && generationsUsed >= 300;
-
   useEffect(() => {
     if (!sub) return;
     if (sub.planType === "free" && sub.plan === "free") {
@@ -1511,7 +1277,6 @@ export default function Generate() {
     })();
   }, []);
 
-  // Track user identify on mount
   useEffect(() => {
     if (user) {
       identify(user.id, user.primaryEmailAddress?.emailAddress, {
@@ -1528,7 +1293,6 @@ export default function Generate() {
     }
   }, [watchLanguage]);
 
-  // Restore last used settings
   useEffect(() => {
     try {
       const last = localStorage.getItem("gf_last_settings");
@@ -1555,7 +1319,6 @@ export default function Generate() {
           contentType: data.contentType
         });
 
-        // Save preferences for next session
         try {
           localStorage.setItem("gf_last_settings", JSON.stringify({
             contentType: form.getValues("contentType"),
@@ -1579,7 +1342,6 @@ export default function Generate() {
           setRatingTrigger("gen-3");
           setTimeout(() => setShowRatingModal(true), 1500);
         }
-        // --- FIX: Use invalidateQueries for cross-component state sync (High 5 fix) ---
         queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
         queryClient.invalidateQueries({ queryKey: ["content-history"] });
         try {
@@ -1697,7 +1459,6 @@ export default function Generate() {
   const variationMutation = useGenerateVariations({
     mutation: {
       onSuccess: (data: any) => {
-        // Only update the specific platform that was regenerated, not the whole content
         if (regeneratingPlatform && data?.variations?.length > 0) {
           const bestVariation = data.variations[0];
           setGeneratedContent((prev: any) => {
@@ -1830,7 +1591,6 @@ export default function Generate() {
     };
   }, [currentIdea, currentNiche]);
 
-  // Load language from preferences API instead of localStorage
   useEffect(() => {
     (async () => {
       const token = await getToken();
@@ -1859,7 +1619,6 @@ export default function Generate() {
 
   const handleGenerate = async (values: z.infer<typeof formSchema>) => {
     if (generateMutation.isPending) return;
-    // Save language preference via API instead of localStorage
     (async () => {
       const token = await getToken();
       fetch("/api/settings/preferences", {
@@ -1936,25 +1695,6 @@ export default function Generate() {
     form.setValue("niche", template.niche);
   }
 
-  async function handleFavoriteToggle() {
-    if (!generatedContent?.id || favoriteLoading) return;
-    setFavoriteLoading(true);
-    try {
-      const token = await getToken();
-      const method = isFavorited ? "DELETE" : "POST";
-      await fetch(`/api/favorites/${generatedContent.id}`, { 
-        method,
-        headers: token ? { "Authorization": `Bearer ${token}` } : {},
-      });
-      setIsFavorited(!isFavorited);
-      toast({ title: isFavorited ? "Removed from saved" : "Saved to favorites!" });
-    } catch {
-      toast({ variant: "destructive", title: "Failed to save" });
-    } finally {
-      setFavoriteLoading(false);
-    }
-  }
-
   function handleRegenerate(platform: Platform) {
     if (!generatedContent) return;
     setRegeneratingPlatform(platform);
@@ -1969,61 +1709,22 @@ export default function Generate() {
     } as any);
   }
 
-  function handleCopyAll() {
-    const text = buildAllPlatformsText(generatedContent);
-    navigator.clipboard.writeText(text);
-    setCopiedAll(true);
-    toast({ title: "All content copied to clipboard!" });
-    setTimeout(() => setCopiedAll(false), 2500);
-  }
-
-  function handleDownload() {
-    const text = buildAllPlatformsText(generatedContent);
-    const idea = generatedContent?.idea ?? "content";
-    const slug = idea.slice(0, 30).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `content-campaign-${slug}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "Downloaded!" });
-  }
-
   const isLoading = generateMutation.isPending || variationMutation.isPending || batchLoading;
   const platforms: Platform[] = ["instagram", "youtube", "twitter", "linkedin"];
 
-  const isLimited = sub && !sub.canGenerate;
-
   function UsageCounter() {
     if (!sub) return null;
-    if (isFreeUser) {
-      return (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-[11px] font-semibold"
-        >
-          <span className={generationsUsed >= generationLimit ? "text-red-400" : generationsUsed === generationLimit - 1 ? "text-amber-400" : "text-cyan-300"}>
-            {generationsUsed}
-          </span>
-          <span className="text-white/30">/</span>
-          <span className="text-white/50">{generationLimit} {t("credits")}</span>
-        </motion.div>
-      );
-    }
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-[11px] font-semibold"
       >
-        <span className={generationsUsed >= (sub.generationLimit ?? 20) && !isInfinityUser ? "text-red-400" : generationsUsed >= 300 && isInfinityUser ? "text-amber-400" : "text-cyan-300"}>
+        <span className={generationsUsed >= generationLimit ? "text-red-400" : "text-cyan-300"}>
           {generationsUsed}
         </span>
         <span className="text-white/30">/</span>
-        <span className="text-white/50">{isInfinityUser ? "∞ / 300 soft limit" : `${sub.generationLimit ?? 20} / mo`}</span>
+        <span className="text-white/50">{generationLimit} {t("credits")}</span>
       </motion.div>
     );
   }
@@ -2057,10 +1758,8 @@ export default function Generate() {
       
       <FeedbackModal open={showRatingModal} onClose={() => setShowRatingModal(false)} trigger={ratingTrigger} />
 
-      {/* Main Studio Container */}
       <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-12 space-y-12">
         
-        {/* Elite Header & Strategy Banner */}
         <div className="text-center space-y-10">
            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
               <div className="flex items-center justify-center gap-3 mb-2">
@@ -2071,15 +1770,11 @@ export default function Generate() {
               </div>
               <p className="text-white/40 font-medium max-w-lg mx-auto">Transform one idea into a high-authority content ecosystem across four platforms, instantly.</p>
            </motion.div>
-
-
         </div>
 
-        {/* Studio Core Input Engine */}
         <div className="max-w-4xl mx-auto space-y-12">
-          <CrossToolDiscoveryBanner />
+          <FeatureDiscoveryBanner />
           
-          {/* Quick Start Templates Grid */}
           <div className="space-y-5">
             <div className="flex items-center justify-center gap-4">
                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/5" />
@@ -2106,7 +1801,6 @@ export default function Generate() {
             </div>
           </div>
 
-          {/* Premium Content Engine */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2136,145 +1830,8 @@ export default function Generate() {
                               placeholder={t("ideaPlaceholder")}
                               className="min-h-[80px] md:min-h-[120px] p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
                             />
-                            
-                            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl bg-white/5 text-[9px] md:text-[10px] text-white/20 font-black uppercase tracking-widest border border-white/5">
-                               <Activity className="w-3 md:w-3.5 h-3 md:h-3.5 text-cyan-500/50" />
-                               Trending
-                            </div>
-                            {isScoringHook && (
-                               <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 text-[10px] md:text-xs font-bold text-white/40">
-                                 <Loader2 className="w-3.5 md:w-4 h-3.5 md:h-4 animate-spin" /> Scoring...
-                                </div>
-                            )}
                           </div>
                         </FormControl>
-
-                        {/* Brand Voice Toggle */}
-                        <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/5 mt-4">
-                           <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-                                 <MessageCircle size={16} />
-                              </div>
-                              <div>
-                                 <p className="text-[10px] font-black text-white uppercase tracking-wider">Write in my voice</p>
-                                 <p className="text-[8px] text-white/30 font-bold uppercase">Use your analyzed linguistic DNA</p>
-                              </div>
-                           </div>
-                           <div className="flex items-center gap-4">
-                              <FormField
-                                control={form.control}
-                                name="brandVoiceId"
-                                render={({ field }) => (
-                                  <div className="flex items-center gap-3">
-                                    {/* Simplified: just using a toggle for now that picks the first voice */}
-                                    <Switch 
-                                      checked={!!field.value && field.value !== "none"}
-                                      onCheckedChange={(checked) => {
-                                        if (checked) {
-                                          // --- FIX (HIGH-5): Must await getToken() before using as header ---
-                                          (async () => {
-                                            const token = await getToken();
-                                            fetch("/api/brand-voice", { headers: { "Authorization": `Bearer ${token}` } })
-                                              .then(r => r.json())
-                                              .then(data => {
-                                                if (data && data.length > 0) {
-                                                  field.onChange(data[0].id);
-                                                } else {
-                                                  toast({ 
-                                                    title: "Voice profile required", 
-                                                    description: "Set up your brand voice first to use this feature.",
-                                                    action: <ToastAction altText="Setup" onClick={() => navigate("/brand-voice")}>Setup →</ToastAction>
-                                                  });
-                                                  field.onChange("none");
-                                                }
-                                              })
-                                              .catch(() => field.onChange("none"));
-                                          })();
-                                        } else {
-                                          field.onChange("none");
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                )}
-                              />
-                           </div>
-                        </div>
-                        <AnimatePresence mode="wait">
-                          {hookScore && currentIdea && currentIdea.length > 20 && !isScoringHook && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                              className="mt-6 overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] bg-zinc-900/80 border border-white/5 backdrop-blur-3xl shadow-2xl"
-                            >
-                              <div className="p-5 md:p-8 space-y-5 md:space-y-6">
-                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                   <div className="flex items-center gap-4 md:gap-6">
-                                      <div className={`relative group`}>
-                                         <div className={`absolute -inset-1 rounded-2xl blur opacity-30 group-hover:opacity-50 transition ${
-                                           hookScore.grade === 'S' ? 'bg-amber-500' :
-                                           hookScore.grade === 'A' ? 'bg-emerald-500' :
-                                           hookScore.grade === 'B' ? 'bg-cyan-500' :
-                                           'bg-amber-400'
-                                         }`} />
-                                         <div className={`relative w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center font-black text-2xl md:text-3xl italic shadow-2xl ${
-                                           hookScore.grade === 'S' ? 'bg-amber-500 text-black' :
-                                           hookScore.grade === 'A' ? 'bg-emerald-500 text-black' :
-                                           hookScore.grade === 'B' ? 'bg-cyan-500 text-black' :
-                                           'bg-zinc-800 text-white'
-                                         }`}>
-                                           {hookScore.grade}
-                                         </div>
-                                      </div>
-                                      <div>
-                                         <div className="flex items-center gap-2 md:gap-3">
-                                            <span className="text-2xl md:text-3xl font-black text-white tracking-tighter">{hookScore.score}</span>
-                                            <span className="text-zinc-500 font-bold text-xs md:text-sm">/ 100</span>
-                                         </div>
-                                         <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{hookScore.hookType}</p>
-                                      </div>
-                                   </div>
-                                   
-                                   <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
-                                      {hookScore.patternMatches?.map((m: string) => (
-                                         <span key={m} className="px-2 md:px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-[9px] md:text-[10px] font-black uppercase tracking-wider border border-emerald-500/20">{m}</span>
-                                      ))}
-                                   </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                                   {hookScore.mainIssue && (
-                                      <div className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-amber-500/5 border border-amber-500/10 flex gap-3 md:gap-4 items-start group/issue hover:bg-amber-500/10 transition-colors">
-                                         <AlertCircle className="w-4 md:w-5 h-4 md:h-5 text-amber-500 shrink-0 mt-0.5" />
-                                         <div className="space-y-0.5 md:space-y-1">
-                                            <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-amber-500/50">Intelligence Insight</p>
-                                            <p className="text-xs md:text-sm font-bold text-amber-200/80 leading-relaxed">{hookScore.mainIssue}</p>
-                                         </div>
-                                      </div>
-                                   )}
-                                   {hookScore.quickFix && (
-                                      <button 
-                                        type="button"
-                                        onClick={() => {
-                                          navigator.clipboard.writeText(hookScore.quickFix);
-                                          toast({ title: "Optimized hook copied!" });
-                                        }}
-                                        className="p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] bg-cyan-500/5 border border-cyan-500/10 flex gap-3 md:gap-4 items-start text-left group/fix hover:bg-cyan-500/10 transition-all active:scale-95"
-                                      >
-                                         <Sparkles className="w-4 md:w-5 h-4 md:h-5 text-cyan-400 shrink-0 mt-0.5 group-hover/fix:scale-125 transition-transform" />
-                                         <div className="space-y-0.5 md:space-y-1">
-                                            <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-cyan-400/50">Suggested Optimization</p>
-                                            <p className="text-xs md:text-sm font-bold text-cyan-100 italic leading-relaxed">"{hookScore.quickFix}"</p>
-                                            <p className="text-[8px] md:text-[9px] font-black text-cyan-400/30 uppercase mt-1 md:mt-2">Click to copy</p>
-                                         </div>
-                                      </button>
-                                   )}
-                                </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -2349,6 +1906,8 @@ export default function Generate() {
                               value={field.value}
                               onChange={field.onChange}
                               isFreeUser={isFreeUser}
+                              planType={sub?.planType}
+                              regionalLanguageLock={sub?.regionalLanguageLock}
                               onUpgradeRequired={() => {
                                 setUpgradeReason("pro_feature");
                                 setProFeatureName("Regional Languages");
@@ -2359,62 +1918,13 @@ export default function Generate() {
                         )}
                       />
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2">
-                       <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-all">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                                <Package2 className="w-4 h-4 text-cyan-400" />
-                             </div>
-                             <div className="space-y-0.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-white/80">Batch Mode</Label>
-                                <p className="text-[9px] text-white/30 font-medium leading-none">Full Content Ecosystem</p>
-                             </div>
-                          </div>
-                          <Switch 
-                            checked={batchMode} 
-                            onCheckedChange={(val) => {
-                              if (val && isFreeUser) {
-                                setUpgradeReason("pro_feature");
-                                setProFeatureName("Batch Mode");
-                                setShowUpgradeModal(true);
-                                return;
-                              }
-                              setBatchMode(val);
-                            }} 
-                          />
-                       </div>
-                       <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-all">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                                <Flame className="w-4 h-4 text-orange-400" />
-                             </div>
-                             <div className="space-y-0.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-white/80">Viral Mode</Label>
-                                <p className="text-[9px] text-white/30 font-medium leading-none">High-Aggression Open Loops</p>
-                             </div>
-                          </div>
-                          <Switch 
-                            checked={viralMode} 
-                            onCheckedChange={(val) => {
-                              if (val && isFreeUser) {
-                                setUpgradeReason("pro_feature");
-                                setProFeatureName("Viral Mode");
-                                setShowUpgradeModal(true);
-                                return;
-                              }
-                              setViralMode(val);
-                            }} 
-                          />
-                       </div>
-                    </div>
-
-                    <div className="pt-4 sticky bottom-0 md:static bg-gradient-to-t from-[#060312] to-transparent z-20 pb-4">
+                    
+                    <div className="sticky bottom-[72px] md:static mt-4 pt-4 pb-4 bg-gradient-to-t from-[#060312] via-[#060312]/95 to-transparent -mx-4 px-4 md:mx-0 md:px-0 md:bg-transparent md:pt-0 md:pb-0 z-20">
                         <Button
                           type="submit"
                           disabled={isLoading}
                           onClick={() => { haptic('medium'); }}
-                          className={`w-full h-12 text-base font-bold rounded-[24px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white shadow-2xl shadow-cyan-500/30 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 group overflow-hidden relative ${isFirstTime ? 'animate-pulse scale-[1.02] shadow-[0_0_25px_rgba(6,182,212,0.4)]' : ''}`}
+                          className={`w-full h-14 md:h-16 text-base md:text-xl font-black rounded-2xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-xl shadow-cyan-950 transition-all duration-300 transform active:scale-[0.98] group relative overflow-hidden`}
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                           {isLoading ? (
@@ -2424,11 +1934,8 @@ export default function Generate() {
                             </div>
                           ) : (
                             <div className="flex items-center gap-3 relative z-10">
-                               <Zap className="w-5 h-5 fill-white" />
-                               <div className="flex flex-col items-center">
-                                 <span className="tracking-widest uppercase">{isFirstTime ? t("get_started") : t("generateBtn")}</span>
-                                 <span className="text-[10px] text-white/30 font-black tracking-[0.2em] mt-1 hidden md:block">CTRL + ENTER</span>
-                               </div>
+                               <Zap className="w-6 h-6 fill-white" />
+                               <span className="tracking-widest uppercase">{t("generateBtn")}</span>
                             </div>
                           )}
                         </Button>
@@ -2440,7 +1947,6 @@ export default function Generate() {
           </motion.div>
         </div>
 
-        {/* Results Workspace - Spaced Grid below the engine */}
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -2475,23 +1981,25 @@ export default function Generate() {
               className="space-y-12"
             >
               <Tabs value={activeResultTab} onValueChange={setActiveResultTab} className="space-y-12 pt-12">
-                <div className="flex justify-center mb-8">
-                  <TabsList className="bg-white/5 border border-white/5 p-1 rounded-2xl md:rounded-[2rem] h-auto flex-wrap justify-center">
-                    <TabsTrigger value="campaign" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
-                       <Sparkles className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">The Campaign</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="duel" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
-                       <ArrowRightLeft className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">Hook Duel</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="intelligence" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
-                       <BarChart3 className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">Intelligence</span>
-                    </TabsTrigger>
-                  </TabsList>
-               </div>
+                <div className="sticky top-[64px] md:static bg-[#060312]/95 backdrop-blur-md z-30 -mx-4 px-4 py-2 md:mx-0 md:px-0 md:bg-transparent md:pt-0 md:pb-0">
+                  <div className="flex justify-center">
+                    <TabsList className="bg-white/5 border border-white/5 p-1 rounded-2xl md:rounded-[2rem] h-auto flex-wrap justify-center">
+                      <TabsTrigger value="campaign" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
+                         <Sparkles className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">The Campaign</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="duel" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
+                         <ArrowRightLeft className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">Hook Duel</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="intelligence" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
+                         <BarChart3 className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">Intelligence</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                </div>
 
                <TabsContent value="campaign" className="space-y-12 outline-none">
                 {generatedContent.isBatch ? (
-                  <BatchResultView result={generatedContent} onSave={() => toast({ title: "Saved to Bank" })} />
+                  <ContentPackCard result={generatedContent} onSave={() => toast({ title: "Saved to Bank" })} />
                 ) : (
                   <motion.div
                     key="generated-content"
@@ -2556,29 +2064,51 @@ export default function Generate() {
                       </div>
                     </div>
 
-                    {/* Platform Results Grid */}
-                    <div className="grid grid-cols-1 gap-12">
-                      {platforms.map((platform, i) => (
-                        <div key={platform} className="space-y-4">
-                          <PlatformCard
-                            platform={platform}
-                            content={generatedContent.content?.[platform]}
-                            onRegenerate={() => handleRegenerate(platform)}
-                            isRegenerating={regeneratingPlatform === platform}
-                            index={i}
-                          />
-                          <PerformancePredictionCard 
-                            viralScore={generatedContent.content?.[platform]?.viral_score || generatedContent.content.viralScores?.[platform] || 80}
-                            platform={platform}
-                            niche={generatedContent.niche || "General"}
-                          />
-                          {isFreeUser && (
-                            <p className="text-[10px] text-white/30 px-6 font-medium">
-                              Free plan includes GrowFlow watermark. <button className="text-cyan-400 underline font-black" onClick={() => setShowUpgradeModal(true)}>Upgrade to remove it →</button>
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                    {/* Platform Results Tabs */}
+                    <div id="generation-output" className="space-y-12">
+                      <div className="flex bg-white/5 p-1 rounded-2xl md:rounded-full border border-white/5 overflow-x-auto no-scrollbar">
+                        {platforms.map((p) => {
+                          const config = PLATFORM_CONFIG[p];
+                          const Icon = config.icon;
+                          const isActive = activePlatform === p;
+                          return (
+                            <button
+                              key={p}
+                              onClick={() => setActivePlatform(p)}
+                              className={`flex-1 min-w-[120px] flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl md:rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                                isActive 
+                                  ? "bg-white text-black shadow-2xl scale-[1.02]" 
+                                  : "text-white/30 hover:text-white/60 hover:bg-white/5"
+                              }`}
+                            >
+                              <Icon className={`w-4 h-4 ${isActive ? "text-black" : config.iconColor}`} />
+                              {config.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="space-y-12">
+                        <PlatformCard
+                          platform={activePlatform}
+                          content={generatedContent.content?.[activePlatform]}
+                          onRegenerate={() => handleRegenerate(activePlatform)}
+                          isRegenerating={regeneratingPlatform === activePlatform}
+                          index={0}
+                        />
+                        
+                        <ViralScoreCard 
+                          data={generatedContent} 
+                          analysis={contentAnalysis}
+                          analysisLoading={analysisLoading}
+                        />
+
+                        {isFreeUser && (
+                          <p className="text-[10px] text-white/30 px-6 font-medium text-center">
+                            Free plan includes GrowFlow watermark. <button className="text-cyan-400 underline font-black" onClick={() => setShowUpgradeModal(true)}>Upgrade to remove it →</button>
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 )}

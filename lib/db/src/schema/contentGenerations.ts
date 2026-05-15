@@ -19,6 +19,7 @@ export const contentGenerationsTable = pgTable("content_generations", {
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   performanceNote: text("performance_note"),
   folderId: text("folder_id"),
+  promptLanguage: text("prompt_language").default("English"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (table) => ({

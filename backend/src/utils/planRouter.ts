@@ -5,7 +5,7 @@ import { logger } from "../lib/logger";
  * Strictly maps tier and billing cycle combinations to environment-configured Plan IDs.
  */
 
-export type PlanTier = 'starter' | 'creator' | 'infinity';
+export type PlanTier = 'starter' | 'creator' | 'infinity' | 'agency';
 export type BillingCycle = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
 
 /**
@@ -29,6 +29,9 @@ export type BillingCycle = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
  * RAZORPAY_PLAN_INFINITY_HALFYEARLY  = plan_xxxx  (₹4320/6mo = 432000 paise)
  * RAZORPAY_PLAN_INFINITY_YEARLY      = plan_xxxx  (₹7660/yr = 766000 paise)
  *
+ * RAZORPAY_PLAN_AGENCY_MONTHLY       = plan_xxxx  (₹2999/mo = 299900 paise)
+ * RAZORPAY_PLAN_AGENCY_YEARLY        = plan_xxxx  (₹28799/yr = 2879900 paise)
+ *
  * USD PLANS (amounts in cents):
  * RAZORPAY_PLAN_STARTER_MONTHLY_USD  = plan_xxxx  ($5/mo = 500 cents)
  * RAZORPAY_PLAN_STARTER_YEARLY_USD   = plan_xxxx  ($48/yr = 4800 cents)
@@ -40,25 +43,30 @@ export type BillingCycle = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
 
 /**
  * Resolves the correct Razorpay Plan ID from environment variables.
- * @param tier - The subscription tier (starter, creator, infinity)
+ * @param tier - The subscription tier (starter, creator, infinity, agency)
  * @param cycle - The billing cycle (monthly, quarterly, half-yearly, yearly)
  * @throws Error if the combination is invalid or environment variable is missing
  */
 export function getRazorpayPlanId(tier: string, cycle: string, currency: string = "INR"): string {
   const normalizedTier = tier.toLowerCase() as PlanTier;
-  const normalizedCycle = cycle.toLowerCase().replace(' ', '') as BillingCycle;
+  const normalizedCycle = cycle.toLowerCase().replace(' ', '').replace('-', '') as BillingCycle;
   const normalizedCurrency = currency.toUpperCase();
 
-  const validTiers: PlanTier[] = ['starter', 'creator', 'infinity'];
+  const validTiers: PlanTier[] = ['starter', 'creator', 'infinity', 'agency'];
   const validCycles: BillingCycle[] = ['monthly', 'quarterly', 'half-yearly', 'yearly'];
 
   if (!validTiers.includes(normalizedTier)) {
     throw new Error(`INVALID_PLAN_TIER: The tier "${tier}" is not supported.`);
   }
 
+  if (normalizedTier === 'agency' && !['monthly', 'yearly'].includes(normalizedCycle)) {
+    throw new Error(`Agency plan only supports monthly and yearly billing`);
+  }
+
   if (!validCycles.includes(normalizedCycle)) {
     throw new Error(`INVALID_BILLING_CYCLE: The cycle "${cycle}" is not supported.`);
   }
+
 
   // Construct the environment variable key name
   // Example: RAZORPAY_PLAN_STARTER_MONTHLY (for INR)

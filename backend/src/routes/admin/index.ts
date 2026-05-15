@@ -21,16 +21,17 @@ const requireAdmin = async (req: any, res: any, next: any) => {
     }
 
     const adminEmailFromEnv = (process.env.ADMIN_EMAIL || "").toLowerCase();
-    if (!adminEmailFromEnv) {
-      logger.error("[AUTH] ADMIN_EMAIL not configured in environment");
-    }
-    const isExplicitAdmin = user.isAdmin === true;
-    const isHardcodedAdmin = adminEmailFromEnv && user.email?.toLowerCase() === adminEmailFromEnv;
-
-    if (!isExplicitAdmin && !isHardcodedAdmin) {
+    
+    if (!user || (!user.isAdmin && user.email?.toLowerCase() !== adminEmailFromEnv)) {
       res.status(403).json({ error: "Forbidden" });
       return;
     }
+
+    // Auto-escalate if email matches but DB flag is missing
+    if (!user.isAdmin && user.email?.toLowerCase() === adminEmailFromEnv) {
+      await db.update(usersTable).set({ isAdmin: true }).where(eq(usersTable.id, user.id));
+    }
+
     next();
   } catch (error: any) {
     logger.error({ error: error?.message }, "[AUTH] Admin check error");
@@ -353,7 +354,7 @@ router.patch("/settings/maintenance", requireAuth, requireAdmin, async (req: any
 // 1. Search users by email or ID
 router.get("/users/search", requireAuth, requireAdmin, async (req: any, res: any) => {
   try {
-    const q = req.query.q as string;
+    const q = typeof req.query.q === "string" ? req.query.q : "";
     if (!q || q.length < 2) {
       res.status(400).json({ error: "Query must be at least 2 characters" });
       return;

@@ -876,13 +876,13 @@ router.post("/analyze", requireAuth, requirePlanOrTrial("content_analyze"), enfo
     platforms?: Record<string, string>;
   };
 
-  if (!idea || idea.trim().length < 2) {
-    res.status(400).json({ error: "Please provide a valid idea to analyze." });
+  if (typeof idea !== "string" || idea.trim().length < 2) {
+    res.status(400).json({ error: "Please provide a valid idea string to analyze." });
     return;
   }
 
-  const sanitizedIdea = String(idea).substring(0, 500);
-  const sanitizedNiche = String(niche).substring(0, 50);
+  const sanitizedIdea = idea.substring(0, 500);
+  const sanitizedNiche = (typeof niche === "string" ? niche : "General").substring(0, 50);
 
   const contentSample = platforms
     ? Object.values(platforms).filter(Boolean).slice(0, 2).join("\n\n---\n\n").slice(0, 800)

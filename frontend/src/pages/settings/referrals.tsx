@@ -79,7 +79,7 @@ export default function ReferralsPage() {
   const progressPercent = Math.min(100, Math.round((referralCount / target) * 100));
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-24">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 space-y-8 md:space-y-12 pb-24">
         {/* Header Block: High-Fidelity Hero Section */}
         <div className="relative overflow-hidden rounded-3xl glass-panel-premium p-10 md:p-16 shadow-2xl group">
           <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none group-hover:bg-cyan-500/20 transition-all duration-1000" />

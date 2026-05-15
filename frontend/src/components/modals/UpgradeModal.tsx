@@ -28,12 +28,12 @@ interface UpgradeModalProps {
   reason?: "limit" | "expired" | "blocked" | "pro_feature" | "upgrade";
   featureName?: string;
   message?: string;
-  targetPlan?: "starter" | "creator" | "infinity";
+  targetPlan?: "starter" | "creator" | "infinity" | "agency";
   billingPeriod?: "monthly" | "quarterly" | "half-yearly" | "yearly";
   currency?: "INR" | "USD";
 }
 
-type PlanType = "starter" | "creator" | "infinity";
+type PlanType = "starter" | "creator" | "infinity" | "agency";
 type PaymentState = "idle" | "pending" | "success" | "error";
 
 const REASONS = {
@@ -89,6 +89,17 @@ const INFINITY_HIGHLIGHTS = [
   "Cancel anytime",
 ];
 
+const AGENCY_HIGHLIGHTS = [
+  "1,000 generations / month",
+  "Everything in Infinity",
+  "5 Team Member Seats",
+  "Team Collaboration Suite",
+  "Agency Analytics Dashboard",
+  "Dedicated Account Manager",
+  "Bulk Repurposing Tools",
+  "Cancel anytime",
+];
+
 export function UpgradeModal({ open, onClose, reason = "limit", featureName, message, targetPlan = "starter", billingPeriod = "monthly", currency = "INR" }: UpgradeModalProps) {
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(
@@ -131,6 +142,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
       starter: { monthly: "$5", quarterly: "$4.50", "half-yearly": "$4.25", yearly: "$4" },
       creator: { monthly: "$15", quarterly: "$13.50", "half-yearly": "$13", yearly: "$12" },
       infinity: { monthly: "$27", quarterly: "$24.30", "half-yearly": "$23.40", yearly: "$21.60" },
+      agency: { monthly: "$39", quarterly: "$35", "half-yearly": "$32", yearly: "$29" },
     };
     return usdPrices[plan][period] || usdPrices[plan]["monthly"];
   }
@@ -138,14 +150,15 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
     starter: { monthly: "₹149", quarterly: "₹139", "half-yearly": "₹133", yearly: "₹119" },
     creator: { monthly: "₹449", quarterly: "₹419", "half-yearly": "₹404", yearly: "₹358" },
     infinity: { monthly: "₹799", quarterly: "₹749", "half-yearly": "₹720", yearly: "₹638" },
+    agency: { monthly: "₹2,999", quarterly: "₹2,799", "half-yearly": "₹2,699", yearly: "₹2,399" },
   };
   return inrPrices[plan][period] || inrPrices[plan]["monthly"];
 };
 
   const price = getPriceDisplay(selectedPlan, billingPeriod);
 
-  const planLabel = selectedPlan === "infinity" ? "Infinity" : selectedPlan === "creator" ? "Creator" : "Starter";
-  const purchasedPlanLabel = purchasedPlan === "infinity" ? "Infinity" : purchasedPlan === "creator" ? "Creator" : "Starter";
+  const planLabel = selectedPlan === "agency" ? "Agency" : selectedPlan === "infinity" ? "Infinity" : selectedPlan === "creator" ? "Creator" : "Starter";
+  const purchasedPlanLabel = purchasedPlan === "agency" ? "Agency" : purchasedPlan === "infinity" ? "Infinity" : purchasedPlan === "creator" ? "Creator" : "Starter";
 
   const handleClose = () => {
     if (paymentState === "pending") return;
@@ -155,7 +168,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
 
   const handleCheckout = async (forcePlan?: PlanType) => {
     const plan = forcePlan ?? selectedPlan;
-    const planLabelForCheckout = plan === "infinity" ? "Infinity" : plan === "creator" ? "Creator" : "Starter";
+    const planLabelForCheckout = plan === "agency" ? "Agency" : plan === "infinity" ? "Infinity" : plan === "creator" ? "Creator" : "Starter";
     setPurchasedPlan(plan);
     setPaymentState("pending");
 
@@ -208,7 +221,9 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
               razorpay_signature: response.razorpay_signature,
               planType: plan,
             });
-            queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+            // Force immediate refetch, not just invalidation
+            await queryClient.refetchQueries({ queryKey: ["subscription-status"] });
+            await queryClient.refetchQueries({ queryKey: ["subscription"] });
             setPaymentState("success");
           } catch (err: any) {
             console.error("Verification failed:", err);
@@ -310,7 +325,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       </p>
 
                       <ul className="space-y-1.5 text-left mb-6 max-w-xs mx-auto">
-                        {(purchasedPlan === "infinity" ? INFINITY_HIGHLIGHTS : purchasedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS).slice(0, 3).map(h => (
+                        {(purchasedPlan === "agency" ? AGENCY_HIGHLIGHTS : purchasedPlan === "infinity" ? INFINITY_HIGHLIGHTS : purchasedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS).slice(0, 3).map(h => (
                           <li key={h} className="flex items-center gap-2 text-xs text-white/60">
                             <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                             {h}
@@ -491,7 +506,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                     </div>
 
                     <div className="flex gap-2 mb-4 overflow-x-auto pb-1 hide-scrollbar">
-                      {(["starter", "creator", "infinity"] as const).map((p) => (
+                      {(["starter", "creator", "infinity", "agency"] as const).map((p) => (
                         <button
                           key={p}
                           onClick={() => setSelectedPlan(p)}
@@ -505,8 +520,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                             <span>{p === "infinity" ? "Infinity" : p === "creator" ? "Creator" : "Starter"}</span>
                             <span className="text-[10px] font-normal opacity-80">
                               {currency === "USD" 
-                                ? (p === "infinity" ? "$27/mo" : p === "creator" ? "$15/mo" : "$5/mo")
-                                : (p === "infinity" ? "₹799/mo" : p === "creator" ? "₹449/mo" : "₹149/mo")
+                                ? (p === "agency" ? "$39/mo" : p === "infinity" ? "$27/mo" : p === "creator" ? "$15/mo" : "$5/mo")
+                                : (p === "agency" ? "₹2,999/mo" : p === "infinity" ? "₹799/mo" : p === "creator" ? "₹449/mo" : "₹149/mo")
                               }
                             </span>
                           </div>

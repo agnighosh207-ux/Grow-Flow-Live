@@ -175,14 +175,14 @@ router.post("/review/:shareId/feedback", async (req, res) => {
     const { shareId } = req.params;
     const { status, comment } = req.body;
 
-    if (!['approved', 'needs_changes'].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
+    if (typeof status !== "string" || !['approved', 'needs_changes'].includes(status)) {
+      return res.status(400).json({ error: "Invalid or missing status string" });
     }
 
     await db.insert(shareFeedbacksTable).values({
       shareId,
       status,
-      comment: comment?.substring(0, 500) || null
+      comment: (typeof comment === "string") ? comment.substring(0, 500) : null
     });
 
     // Notify the owner

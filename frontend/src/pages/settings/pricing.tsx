@@ -46,6 +46,7 @@ const BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
   starter: { monthly: 149, quarterly: 139, "half-yearly": 133, yearly: 119 },
   creator: { monthly: 449, quarterly: 419, "half-yearly": 404, yearly: 358 },
   infinity: { monthly: 799, quarterly: 749, "half-yearly": 720, yearly: 638 },
+  agency: { monthly: 2999, quarterly: 2799, "half-yearly": 2699, yearly: 2399 },
 };
 
 const STRIKETHROUGH_PRICES: Record<string, number> = {
@@ -58,12 +59,14 @@ const BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
   starter: { monthly: 149, quarterly: 417, "half-yearly": 798, yearly: 1430 },
   creator: { monthly: 449, quarterly: 1257, "half-yearly": 2428, yearly: 4300 },
   infinity: { monthly: 799, quarterly: 2247, "half-yearly": 4320, yearly: 7660 },
+  agency: { monthly: 2999, quarterly: 8397, "half-yearly": 16194, yearly: 28788 },
 };
 
 const USD_BASE_PRICES: Record<string, Record<BillingPeriod, number>> = {
   starter: { monthly: 1.99, quarterly: 1.79, "half-yearly": 1.69, yearly: 1.49 },
   creator: { monthly: 5.49, quarterly: 4.99, "half-yearly": 4.79, yearly: 4.39 },
   infinity: { monthly: 9.49, quarterly: 8.49, "half-yearly": 7.99, yearly: 7.49 },
+  agency: { monthly: 39, quarterly: 35, "half-yearly": 32, yearly: 29 },
 };
 
 const USD_STRIKETHROUGH_PRICES: Record<string, number> = {
@@ -76,6 +79,7 @@ const USD_BILLING_TOTALS: Record<string, Record<BillingPeriod, number>> = {
   starter: { monthly: 1.99, quarterly: 5.37, "half-yearly": 10.14, yearly: 17.88 },
   creator: { monthly: 5.49, quarterly: 14.97, "half-yearly": 28.74, yearly: 52.68 },
   infinity: { monthly: 9.49, quarterly: 25.47, "half-yearly": 47.94, yearly: 89.88 },
+  agency: { monthly: 39, quarterly: 105, "half-yearly": 192, yearly: 348 },
 };
 
 function getBillingMonths(period: BillingPeriod): number {
@@ -152,7 +156,7 @@ function CellContent({ value, infinityLabel }: { value: boolean | string; infini
   return <X className="w-4 h-4 text-white/20 mx-auto" />;
 }
 
-const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3 };
+const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3, agency: 4 };
 
 function TopUpSection() {
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
@@ -262,7 +266,7 @@ export default function PricingPage() {
     }
     return "INR";
   });
-  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity"; billing: BillingPeriod; currency: "INR" | "USD" }>({ 
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity" | "agency"; billing: BillingPeriod; currency: "INR" | "USD" }>({ 
     open: false, plan: "starter", billing: "monthly", currency: "INR" 
   });
   
@@ -313,7 +317,7 @@ export default function PricingPage() {
   };
 
   // Returns button state for each plan
-  const getPlanState = (plan: "starter" | "creator" | "infinity"): "current" | "upgrade" | "downgrade" | "cta" => {
+  const getPlanState = (plan: "starter" | "creator" | "infinity" | "agency"): "current" | "upgrade" | "downgrade" | "cta" => {
     if (!sub || !isActivePaidUser) return "cta";
     const targetRank = PLAN_RANK[plan] ?? 0;
     if (plan === currentPlan) return "current";
@@ -321,7 +325,7 @@ export default function PricingPage() {
     return "downgrade";
   };
   
-  const handlePlanClick = (plan: "starter" | "creator" | "infinity") => {
+  const handlePlanClick = (plan: "starter" | "creator" | "infinity" | "agency") => {
     if (isLoaded && !isSignedIn) {
       navigate("/sign-in");
       return;
@@ -421,6 +425,19 @@ export default function PricingPage() {
             Back
           </button>
 
+          {sub?.subscriptionStatus === "past_due" && (
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 mb-6">
+              <p className="text-red-400 font-semibold text-sm">⚠️ Payment failed</p>
+              <p className="text-white/50 text-xs mt-1">Your last payment could not be processed. Please update your payment method.</p>
+              <button 
+                onClick={() => window.open("https://dashboard.razorpay.com", "_blank")}
+                className="mt-3 bg-red-500 hover:bg-red-400 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all"
+              >
+                Update Payment Method →
+              </button>
+            </div>
+          )}
+
           <div className="text-center">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <div className="flex flex-col items-center gap-6 mb-8">
@@ -476,7 +493,11 @@ export default function PricingPage() {
                 >
                   {opt.label}
                   {opt.badge && (
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${billing === opt.key ? (opt.key === 'yearly' ? 'bg-emerald-500/10' : 'bg-emerald-500/20 text-emerald-400') : 'bg-emerald-500/10 text-emerald-400/50'}`}>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full transition-colors ${
+                      billing === opt.key 
+                        ? (opt.key === 'yearly' ? 'bg-emerald-400 text-emerald-950' : 'bg-cyan-400 text-cyan-950') 
+                        : 'bg-emerald-500/10 text-emerald-400/50'
+                    }`}>
                       {opt.badge}
                     </span>
                   )}
@@ -841,10 +862,11 @@ export default function PricingPage() {
                 <p className="text-violet-400/40 text-[10px] font-bold uppercase tracking-tighter mt-1">Billed monthly</p>
               </div>
               <Button 
-                onClick={() => window.open("mailto:agnighosh207@gmail.com?subject=GrowFlow%20Agency%20Plan%20Inquiry")}
-                className="w-full md:w-auto h-12 bg-violet-600 hover:bg-violet-500 text-white font-bold px-10 rounded-xl shadow-lg shadow-violet-900/40 transition-all hover:scale-105 active:scale-95"
+                onClick={() => handlePlanClick("agency")}
+                disabled={getPlanState("agency") === "current"}
+                className={`w-full md:w-auto h-12 ${getPlanState("agency") === "current" ? "bg-white/5 text-white/30" : "bg-violet-600 hover:bg-violet-500 text-white"} font-bold px-10 rounded-xl shadow-lg shadow-violet-900/40 transition-all hover:scale-105 active:scale-95`}
               >
-                Contact Sales
+                {getPlanState("agency") === "current" ? "✓ Active Plan" : "Get Agency Plan"}
               </Button>
             </div>
           </div>

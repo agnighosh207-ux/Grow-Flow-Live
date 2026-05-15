@@ -29,7 +29,9 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
 
     const auth = getAuth(req);
     const userId = auth?.sessionClaims?.userId || auth?.userId;
-    if (!userId) return next();
+    if (!userId || typeof userId !== 'string') {
+      return next(); // Skip sync for unauthenticated requests
+    }
 
     const uid = userId as string;
     const rawEmail = auth.sessionClaims?.email;

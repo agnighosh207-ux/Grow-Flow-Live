@@ -90,9 +90,17 @@ export function OnboardingModal() {
     return () => {};
   }, []);
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     localStorage.setItem("gf_onboarding_v1", "done");
     setIsOpen(false);
+    
+    // Sync to backend
+    const token = await getToken();
+    await fetch(`${BASE}/api/settings/profile`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ niche, platform }),
+    }).catch(() => {}); // Don't block onboarding if this fails
   };
 
   const handleGenerate = () => {
@@ -133,7 +141,8 @@ export function OnboardingModal() {
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full h-full md:h-auto md:max-w-lg bg-[#0c0d12] border border-white/10 md:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
+        className="relative w-full h-[92dvh] md:h-auto md:max-h-[85vh] md:max-w-lg bg-[#0c0d12] border border-white/10 md:rounded-[2.5rem] overflow-y-auto shadow-2xl flex flex-col"
+        style={{ overscrollBehavior: 'contain' }}
       >
         {/* Top Progress Dots */}
         <div className="flex justify-center gap-2 py-6">

@@ -1,20 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, animate } from "framer-motion";
-import { BarChart3, Crown, TrendingUp, Zap, Linkedin, Twitter, Star, Calendar } from "lucide-react";
-import { SiInstagram, SiYoutube } from "react-icons/si";
+import { BarChart3, TrendingUp, Zap, Star, Calendar } from "lucide-react";
 import { PlanGate } from "@/components/shared/PlanGate";
 import { Button } from "@/components/ui/button";
 import { useGetContentHistory } from "@workspace/api-client-react";
 import { PageSkeleton } from "@/components/shared/Skeleton";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
-
-const PLATFORM_CONFIG: Record<string, { icon: React.ReactNode; label: string; color: string; bar: string }> = {
-  instagram: { icon: <SiInstagram className="w-4 h-4 text-pink-400" />, label: "Instagram", color: "text-pink-400", bar: "bg-pink-500" },
-  youtube: { icon: <SiYoutube className="w-4 h-4 text-red-400" />, label: "YouTube Shorts", color: "text-red-400", bar: "bg-red-500" },
-  twitter: { icon: <Twitter className="w-4 h-4 text-sky-400" />, label: "Twitter / X", color: "text-sky-400", bar: "bg-sky-500" },
-  linkedin: { icon: <Linkedin className="w-4 h-4 text-blue-400" />, label: "LinkedIn", color: "text-blue-400", bar: "bg-blue-500" },
-};
 
 const CONTENT_TYPE_COLORS: Record<string, string> = {
   Educational: "bg-[#00F2FF]",
@@ -84,7 +76,6 @@ export default function Insights() {
   const chartData = useMemo(() => {
     if (!history.length) return [];
     
-    // Group by date
     const byDate: Record<string, number> = {};
     history.forEach((item: any) => {
       if (!item.createdAt) return;
@@ -97,34 +88,15 @@ export default function Insights() {
     });
     
     return Object.entries(byDate)
-      .slice(-14) // Last 14 days
+      .slice(-14)
       .map(([date, count]) => ({ date, generations: count }));
-  }, [history]);
-
-  const platformData = useMemo(() => {
-    if (!history.length) return [];
-    const byPlatform: Record<string, number> = {};
-    
-    history.forEach((item: any) => {
-      // Normalize platform name (lowercase and trim)
-      const platform = (item.platform || 'other').toLowerCase().trim();
-      byPlatform[platform] = (byPlatform[platform] || 0) + 1;
-    });
-
-    return Object.entries(byPlatform).map(([name, count]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      count,
-      pct: Math.round((count / history.length) * 100)
-    }));
   }, [history]);
 
   const stats = useMemo(() => {
     if (!history.length) return null;
 
-    const total = sub?.totalGenerations || history.length;
     const streak = sub?.currentStreak || 0;
 
-    // Type counts
     const typeCount: Record<string, number> = {};
     history.forEach((item: any) => {
       const t = item.contentType || "Educational";
@@ -132,7 +104,6 @@ export default function Insights() {
     });
     const topType = Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "Educational";
 
-    // Growth Momentum (this week vs last week)
     const now = new Date();
     const thisWeek = history.filter((item: any) => {
         const d = new Date(item.createdAt);
@@ -147,7 +118,6 @@ export default function Insights() {
     const delta = lastWeek === 0 ? (thisWeek > 0 ? 100 : 0) : Math.round(((thisWeek - lastWeek) / lastWeek) * 100);
 
     return {
-      total,
       streak,
       topType,
       typeCount,
@@ -190,7 +160,7 @@ export default function Insights() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Total generations" value={stats?.total || 0} icon={<Zap className="w-4 h-4 text-cyan-400" />} />
+          <StatCard label="Total generations" value={sub?.totalGenerationsUsed ?? 0} icon={<Zap className="w-4 h-4 text-cyan-400" />} />
           <StatCard label="Growth Momentum" value={stats?.thisWeek || 0} sub="Generations this week" icon={<TrendingUp className="w-4 h-4 text-cyan-400" />} delta={stats?.delta} />
           <StatCard label="Top Format" value={stats?.topType || "—"} icon={<Star className="w-4 h-4 text-cyan-400" />} />
           <StatCard label="Current Streak" value={`${stats?.streak || 0} Days`} icon={<Calendar className="w-4 h-4 text-cyan-400" />} />
@@ -222,62 +192,25 @@ export default function Insights() {
           </section>
 
           <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-6">
-            <h3 className="text-white/80 font-semibold text-sm mb-6">Activity (Last 14 Days)</h3>
-            <div className="flex items-end justify-between h-32 gap-1 sm:gap-2">
-              {chartData.map((day, i) => {
-                const max = Math.max(...chartData.map(d => d.generations), 1);
-                const height = Math.round((day.generations / max) * 100);
+            <h3 className="text-white/80 font-semibold text-sm mb-6">Calendar Availability & Reach</h3>
+            <div className="grid grid-cols-7 gap-2 h-40 items-end">
+              {chartData.map((d, i) => {
+                const max = Math.max(...chartData.map(day => day.generations), 1);
+                const height = Math.round((d.generations / max) * 100);
                 return (
-                  <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
+                  <div key={i} className="flex-1 flex flex-col justify-end items-center gap-2">
                     <motion.div 
                       initial={{ height: 0 }} 
                       animate={{ height: `${Math.max(height, 5)}%` }} 
-                      className={`w-full rounded-t-lg ${i === chartData.length - 1 ? 'bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)]' : 'bg-white/10'}`} 
+                      className={`w-full rounded-t-lg ${i === chartData.length - 1 ? 'bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)]' : 'bg-white/10'}`} 
                     />
-                    <span className="text-[8px] text-white/20 font-bold uppercase overflow-hidden whitespace-nowrap">
-                      {day.date.split(' ')[1]}
-                    </span>
+                    <span className="text-[8px] text-white/20 font-bold uppercase">{d.date.split(' ')[1]}</span>
                   </div>
                 );
               })}
             </div>
           </section>
         </div>
-
-        <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-6">
-          <h3 className="text-white/80 font-semibold text-sm mb-6">Platform Coverage & Reach</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {platformData.map((item) => {
-              const cfg = PLATFORM_CONFIG[item.name.toLowerCase()] || { 
-                icon: <Zap className="w-4 h-4 text-white/40" />, 
-                label: item.name, 
-                color: "text-white/40", 
-                bar: "bg-white/10" 
-              };
-              return (
-                <div key={item.name} className="bg-black/20 border border-white/5 rounded-2xl p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                       {cfg.icon}
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold text-sm">{cfg.label}</p>
-                      <p className={`text-[10px] font-bold uppercase tracking-wider ${cfg.color}`}>{item.count} items</p>
-                    </div>
-                  </div>
-                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }} 
-                      animate={{ width: `${item.pct}%` }} 
-                      className={`h-full ${cfg.bar || 'bg-cyan-500'}`} 
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-center text-white/20 text-[10px] mt-6">All generators output specialized formats for every platform simultaneously.</p>
-        </section>
       </div>
     </PlanGate>
   );

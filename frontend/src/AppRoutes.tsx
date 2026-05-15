@@ -157,6 +157,9 @@ export function ClerkProviderWithRoutes() {
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
+      afterSignOutUrl="/"
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
       {...(clerkProxyUrl ? { proxyUrl: clerkProxyUrl } : {})}
       appearance={{
         baseTheme: dark,
@@ -172,17 +175,27 @@ export function ClerkProviderWithRoutes() {
           colorText: '#ffffff',
           colorTextSecondary: '#94A3B8',
           colorSuccess: '#00F2FF',
+          colorDanger: '#ef4444',
+          colorWarning: '#f59e0b',
+          colorNeutral: '#1a1a2e',
+          fontSize: '14px',
           borderRadius: '12px',
         },
         elements: {
-          card: 'bg-[#101C20]/80 backdrop-blur-xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/60',
-          headerTitle: '!text-white font-bold',
-          headerSubtitle: '!text-cyan-100',
-          formButtonPrimary: '!bg-cyan-600 hover:!bg-cyan-500 !text-white font-semibold shadow-[0_0_15px_rgba(0,242,255,0.4)] transition-all ease-out hover:scale-[1.02]',
+          card: 'bg-[#101C20]/80 backdrop-blur-xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/60 !w-full',
+          navbar: 'hidden',
+          headerTitle: 'text-white text-2xl font-black',
+          headerSubtitle: 'text-white/50 font-medium',
+          formButtonPrimary: 'bg-cyan-500 hover:bg-cyan-400 text-black font-black transition-all',
           formFieldInput: '!bg-white/5 !border !border-white/10 !text-white focus:!border-cyan-500 rounded-xl transition-colors',
           formFieldLabel: '!text-cyan-100 font-medium',
-          socialButtonsBlockButton: '!bg-white/5 !border !border-white/10 !text-white hover:!bg-white/10 transition-colors',
-          footerActionLink: '!text-cyan-400 hover:!text-cyan-300',
+          socialButtonsBlockButton: 'bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold transition-all',
+          socialButtonsIconButton: '!bg-white/5 !border !border-white/10 hover:!bg-white/10 transition-colors',
+          socialButtonsProviderIcon: 'opacity-100',
+          footerActionLink: 'text-cyan-400 hover:text-cyan-300 font-bold',
+          identityPreviewText: 'text-white',
+          identityPreviewEditButtonIcon: 'text-cyan-400',
+          rootBox: '!w-full',
         }
       }}
     >

@@ -20,6 +20,8 @@ export interface SubscriptionStatus {
   subscriptionStatus: string;
   razorpaySubscriptionId: string | null;
   isAdmin: boolean;
+  isBanned: boolean;
+  regionalLanguageLock: string | null;
   currentStreak: number;
   totalGenerations: number;
 }

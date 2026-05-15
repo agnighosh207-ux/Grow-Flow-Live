@@ -37,8 +37,8 @@ const formSchema = z.object({
   language: z.string().default("English")
 });
 
-function HooksGeneratorInner() {
-  const [prefLang, setPrefLang] = useState(localStorage.getItem("preferred_language") || "English");
+  const sanitizeXSS = (val: string | null) => (val || "").replace(/<[^>]*>?/gm, "").replace(/[<>"']/g, "").trim();
+  const [prefLang, setPrefLang] = useState(sanitizeXSS(localStorage.getItem("preferred_language") || "English"));
 
   useEffect(() => {
     localStorage.setItem("preferred_language", prefLang);

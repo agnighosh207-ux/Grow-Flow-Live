@@ -10,10 +10,25 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
-  const { name, niche, mainTopic, achievement, targetAudience, tone, language, formats } = req.body;
+  const name = typeof req.body.name === "string" ? req.body.name : null;
+  const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
+  const mainTopic = typeof req.body.mainTopic === "string" ? req.body.mainTopic : null;
+  const achievement = typeof req.body.achievement === "string" ? req.body.achievement : null;
+  const targetAudience = typeof req.body.targetAudience === "string" ? req.body.targetAudience : "General";
+  const tone = typeof req.body.tone === "string" ? req.body.tone : "Professional";
+  const language = typeof req.body.language === "string" ? req.body.language : "English";
+  const formats = Array.isArray(req.body.formats) ? req.body.formats : [];
 
-  if (!name || !formats || formats.length === 0) {
-    res.status(400).json({ error: "Name and at least one format are required" });
+  if (!name) {
+    res.status(400).json({ error: "Name is required as a string" });
+    return;
+  }
+  if (!mainTopic) {
+    res.status(400).json({ error: "Main topic is required as a string" });
+    return;
+  }
+  if (formats.length === 0) {
+    res.status(400).json({ error: "At least one format is required in an array" });
     return;
   }
 
@@ -36,11 +51,11 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
   NAME: ${name}
   NICHE: ${niche || "General"}
   TOPIC: ${mainTopic}
-  ACHIEVEMENT: ${achievement}
-  TARGET AUDIENCE: ${targetAudience}
+  ACHIEVEMENT: ${achievement || "None"}
+  TARGET AUDIENCE: ${targetAudience || "General"}
   TONE: ${tone || "Professional"}
   LANGUAGE: ${language || "English"}
-  FORMATS REQUESTED: ${formats.join(", ")}
+  FORMATS REQUESTED: ${Array.isArray(formats) ? formats.join(", ") : "None"}
 
   Return JSON where each requested format is a key:
   {

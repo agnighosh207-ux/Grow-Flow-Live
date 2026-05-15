@@ -21,7 +21,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   esbuild: {
-    drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
+    pure: process.env.NODE_ENV === "production" ? ["console.log", "console.debug", "console.info"] : [],
   },
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),

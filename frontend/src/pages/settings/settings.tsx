@@ -205,6 +205,8 @@ export default function SettingsPage() {
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [scheduledDeletionAt, setScheduledDeletionAt] = useState<string | null>(null);
+  const [savedNotif, setSavedNotif] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
 
   const retrySub = useRetrySubscription();
 
@@ -305,6 +307,8 @@ export default function SettingsPage() {
         method: "PATCH",
         body: JSON.stringify({ [key]: value }),
       });
+      setSavedNotif(true);
+      setTimeout(() => setSavedNotif(false), 2000);
     } catch {
       setPrefs(prefs);
       toast({ variant: "destructive", title: "Failed to save preference" });
@@ -571,11 +575,52 @@ export default function SettingsPage() {
                   <Button onClick={saveContentPrefs} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl">Save Preferences</Button>
                 </div>
               </section>
+              <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+                <h2 className="text-white/80 font-semibold text-sm mb-4">Appearance</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-white/80">Collapse sidebar by default</p>
+                      <p className="text-xs text-white/30 mt-0.5">Desktop only</p>
+                    </div>
+                    <ToggleSwitch
+                      checked={sidebarCollapsed}
+                      onChange={(val) => {
+                        setSidebarCollapsed(val);
+                        localStorage.setItem('sidebar_collapsed', String(val));
+                        window.dispatchEvent(new Event('storage'));
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-white/80">Preferred language</p>
+                      <p className="text-xs text-white/30 mt-0.5">Default language for content generation</p>
+                    </div>
+                    <select
+                      value={localStorage.getItem('preferred_language') || 'English'}
+                      onChange={e => {
+                        localStorage.setItem('preferred_language', e.target.value);
+                        toast({ title: "Language preference saved" });
+                      }}
+                      className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white text-right focus:outline-none"
+                    >
+                      {["English", "Hindi", "Spanish", "French", "German", "Portuguese"].map(l => (
+                        <option key={l} value={l} className="bg-zinc-900">{l}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </section>
             </div>
           )}
 
           {activeTab === "notifications" && (
             <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-white/80 font-semibold text-sm">Notifications</h2>
+                {savedNotif && <span className="text-xs text-emerald-400 animate-fade-in">Saved ✓</span>}
+              </div>
               {[
                 { key: "emailReports" as const, label: "Weekly Growth Report", desc: "Get a summary of your reach and engagement wins every Monday." },
                 { key: "streakReminders" as const, label: "Streak Reminders", desc: "Don't lose your consistency. We'll nudge you if you haven't posted." },

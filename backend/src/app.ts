@@ -1,5 +1,4 @@
 import express, { type Express } from "express";
-// Triggering restart for env sync...
 import path from "path";
 import { fileURLToPath } from "node:url";
 
@@ -35,6 +34,28 @@ function validateRazorpayConfig() {
   }
 }
 validateRazorpayConfig();
+
+logger.info({
+  environment: process.env.APP_STATUS || process.env.NODE_ENV,
+  hasOpenRouter: !!(process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API),
+  hasGroq: !!process.env.GROQ_API_KEY,
+  hasRazorpay: !!process.env.RAZORPAY_LIVE_KEY_ID,
+  hasClerk: !!process.env.CLERK_SECRET_KEY,
+  hasResend: !!process.env.RESEND_API_KEY,
+  hasDatabase: !!process.env.DATABASE_URL,
+}, "🚀 GrowFlow AI starting up");
+
+function validateClerkConfig() {
+  const secretKey = process.env.CLERK_SECRET_KEY;
+  if (!secretKey) {
+    logger.error('[CLERK] CRITICAL: CLERK_SECRET_KEY missing');
+  } else if (secretKey.startsWith('sk_test_')) {
+    logger.warn('[CLERK] Using TEST secret key — switch to sk_live_ for production');
+  } else if (secretKey.startsWith('sk_live_')) {
+    logger.info('[CLERK] Live secret key configured ✓');
+  }
+}
+validateClerkConfig();
 
 import { isShuttingDown } from "./lib/state.js";
 
@@ -82,6 +103,10 @@ app.use(helmet({
         "https://clerk.growflowai.space",
         "https://*.clerk.accounts.dev",
         "https://img.clerk.com",
+        // Google OAuth & CDN
+        "https://accounts.google.com",
+        "https://oauth2.googleapis.com",
+        "https://*.googleapis.com",
         // Google Fonts (fetched by service worker)
         "https://fonts.googleapis.com",
         "https://fonts.gstatic.com",
@@ -96,6 +121,8 @@ app.use(helmet({
       frameSrc: [
         "https://checkout.razorpay.com",
         "https://api.razorpay.com",
+        "https://accounts.google.com",
+        "https://*.clerk.accounts.dev",
       ],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
@@ -127,7 +154,7 @@ app.use(
 
 // ─── 2.2 Graceful shutdown check ───────────────────────────────────────────
 app.use((req, res, next) => {
-  if (isShuttingDown && req.path.startsWith("/api/")) {
+  if (isShuttingDown && req.path.startsWith("/api/") && req.path !== "/api/health") {
     res.status(503).json({ error: "Server is restarting, please retry in a moment" });
     return;
   }
@@ -292,10 +319,9 @@ app.use("/api", generalLimiter);
 app.use("/api", router);
 
 // ─── 11. Frontend serving (production only) ─────────────────────────────────
-const isProd = process.env.NODE_ENV === "production" || 
-               process.env.APP_STATUS === "PRODUCTION" || 
-               process.env.APP_STATUS === "BETA" ||
-               process.env.RAILWAY_ENVIRONMENT; // Include Railway auto-detect
+import { IS_PRODUCTION } from "./lib/env";
+
+const isProd = IS_PRODUCTION;
 
 if (isProd) {
   // ESM-safe path resolution

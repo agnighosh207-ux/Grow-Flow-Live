@@ -92,11 +92,11 @@ export function NotificationBanner() {
     activeBanners.push("trial_ending");
     maybeSendBrowserNotif("trial_ending", sub.trialDaysLeft);
   }
-  if (sub.plan === "blocked" && sub.subscriptionStatus === "canceled") {
+  if (sub.isBanned === true && sub.subscriptionStatus === "canceled") {
     activeBanners.push("trial_expired");
     maybeSendBrowserNotif("trial_expired");
   }
-  if (sub.plan === "blocked" && sub.subscriptionStatus === "past_due") {
+  if (sub.isBanned === true && sub.subscriptionStatus === "past_due") {
     activeBanners.push("payment_failed");
     maybeSendBrowserNotif("payment_failed");
   }

@@ -9,6 +9,8 @@ interface LanguageSelectorProps {
   onUpgradeRequired?: () => void;
   className?: string;
   label?: string;
+  planType?: string;
+  regionalLanguageLock?: string | null;
 }
 
 export function LanguageSelector({
@@ -18,12 +20,22 @@ export function LanguageSelector({
   onUpgradeRequired,
   className = "",
   label = "Content Language",
+  planType = "free",
+  regionalLanguageLock = null,
 }: LanguageSelectorProps) {
   const handleChange = (newValue: string) => {
+    // Free users: block all non-English
     if (isFreeUser && newValue !== "English") {
       onUpgradeRequired?.();
       return;
     }
+
+    // Starter users: block if they try to change their already-locked regional language
+    if (planType === "starter" && regionalLanguageLock && newValue !== "English" && newValue !== regionalLanguageLock) {
+      onUpgradeRequired?.();
+      return;
+    }
+
     onChange(newValue);
   };
 
@@ -73,9 +85,9 @@ export function LanguageSelector({
               className="text-white/80 language-select-item cursor-pointer py-2.5"
             >
               <span className="flex items-center gap-2">
-                {isFreeUser && lang.value !== "English" && (
+                {(isFreeUser && lang.value !== "English") || (planType === "starter" && regionalLanguageLock && lang.value !== "English" && lang.value !== regionalLanguageLock) ? (
                   <Lock className="w-3 h-3 text-amber-400 shrink-0" />
-                )}
+                ) : null}
                 <span className="font-medium">
                   {lang.label}
                   {lang.native ? (

@@ -12,13 +12,13 @@ router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Pro
 
   const { sourceContent, sourceFormat, targetFormats, tone, niche, language } = req.body;
 
-  if (!sourceContent || sourceContent.length < 50) {
-    res.status(400).json({ error: "Source content must be at least 50 characters" });
+  if (typeof sourceContent !== "string" || sourceContent.length < 50) {
+    res.status(400).json({ error: "Source content must be a valid string of at least 50 characters" });
     return;
   }
 
   if (!Array.isArray(targetFormats) || targetFormats.length === 0 || targetFormats.length > 4) {
-    res.status(400).json({ error: "Select between 1 and 4 target formats" });
+    res.status(400).json({ error: "Select between 1 and 4 target formats in an array" });
     return;
   }
 

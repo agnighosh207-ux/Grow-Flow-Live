@@ -71,7 +71,9 @@ router.post("/tip/create", requireAuth, async (req: AuthenticatedRequest, res: R
 
 router.post("/tip/verify", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const razorpay_order_id = typeof req.body.razorpay_order_id === "string" ? req.body.razorpay_order_id : "";
+    const razorpay_payment_id = typeof req.body.razorpay_payment_id === "string" ? req.body.razorpay_payment_id : "";
+    const razorpay_signature = typeof req.body.razorpay_signature === "string" ? req.body.razorpay_signature : "";
     
     const appStatus = process.env.APP_STATUS || "";
     const isProd = 

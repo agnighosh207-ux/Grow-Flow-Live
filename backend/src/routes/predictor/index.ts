@@ -14,12 +14,12 @@ router.post("/analyze", requireAuth, requirePlanOrTrial("predictor"), enforceGen
 
   const { content, platform, niche, contentType, language = "English" } = req.body;
 
-  if (!content || content.length < 50) {
-    res.status(400).json({ error: "Content must be at least 50 characters" });
+  if (typeof content !== "string" || content.length < 50) {
+    res.status(400).json({ error: "Content must be a valid string of at least 50 characters" });
     return;
   }
-  if (!["Instagram", "Twitter", "LinkedIn", "YouTube"].includes(platform)) {
-    res.status(400).json({ error: "Invalid platform" });
+  if (typeof platform !== "string" || !["Instagram", "Twitter", "LinkedIn", "YouTube"].includes(platform)) {
+    res.status(400).json({ error: "Invalid or missing platform string" });
     return;
   }
 

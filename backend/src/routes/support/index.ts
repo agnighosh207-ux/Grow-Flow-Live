@@ -18,7 +18,11 @@ router.post("/message", requireAuth, async (req: any, res): Promise<void> => {
     return;
   }
   if (!message || typeof message !== "string" || message.trim().length < 10) {
-    res.status(400).json({ error: "Message is required (min 10 characters)" });
+    res.status(400).json({ error: "Message must be at least 10 characters" });
+    return;
+  }
+  if (message.length > 2000) {
+    res.status(400).json({ error: "Message too long (max 2000 characters)" });
     return;
   }
 

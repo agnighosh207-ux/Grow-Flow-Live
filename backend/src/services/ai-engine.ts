@@ -3,11 +3,9 @@ import pino from "pino";
 import { z } from "zod";
 import { LANGUAGE_INSTRUCTIONS } from "../lib/languages";
 
-const isProduction =
-  process.env.NODE_ENV === "production" ||
-  (process.env.APP_STATUS || "") === "PRODUCTION" ||
-  (process.env.APP_STATUS || "") === "BETA" ||
-  !!process.env.RAILWAY_ENVIRONMENT;
+import { IS_PRODUCTION } from "../lib/env";
+
+const isProduction = IS_PRODUCTION;
 
 const logger = pino({
   ...(isProduction ? {} : {

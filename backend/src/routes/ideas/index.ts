@@ -45,7 +45,11 @@ setInterval(() => {
 // Groq is NOT involved here. JSON output enforced via prompt instructions.
 router.post("/generate", requireAuth, requirePlanOrTrial("ideas"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const abortController = new AbortController();
-  req.on('close', () => abortController.abort());
+  const timeoutId = setTimeout(() => abortController.abort(), 25000);
+  req.on('close', () => {
+    clearTimeout(timeoutId);
+    abortController.abort();
+  });
 
   const { niche = "General", goal = "grow my audience", language = "English" } = req.body;
   const sanitizedNiche = String(niche).substring(0, 50);

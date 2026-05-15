@@ -32,13 +32,13 @@ router.post("/", requireAuth, async (req: any, res): Promise<void> => {
     return;
   }
 
-  if (!trigger || typeof trigger !== "string") {
-    res.status(400).json({ error: "Trigger is required" });
+  if (typeof trigger !== "string" || !trigger.trim()) {
+    res.status(400).json({ error: "Trigger must be a valid string" });
     return;
   }
 
-  if (!page || typeof page !== "string") {
-    res.status(400).json({ error: "Page is required" });
+  if (typeof page !== "string" || !page.trim()) {
+    res.status(400).json({ error: "Page must be a valid string" });
     return;
   }
 
@@ -99,8 +99,8 @@ router.post("/nps/respond", requireAuth, async (req: any, res): Promise<void> =>
     await db.insert(npsResponsesTable).values({
       userId,
       score,
-      comment: comment?.trim() || null,
-      trigger,
+      comment: (typeof comment === "string") ? comment.trim() || null : null,
+      trigger: (typeof trigger === "string") ? trigger.trim() : "unknown",
       planTier: user?.planTier,
       generationsCount: user?.totalGenerations,
     });

@@ -16,17 +16,14 @@ import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { getRazorpayPlanId } from "../../utils/planRouter";
 import { createSubscription } from "../../services/payment-service";
+import { IS_PRODUCTION } from "../../lib/env";
+
 
 
 const router: IRouter = Router();
 
 function getRazorpay() {
-  const appStatus = process.env.APP_STATUS || "";
-  const isProd = 
-    process.env.NODE_ENV === "production" || 
-    appStatus === "PRODUCTION" || 
-    appStatus === "BETA" ||
-    !!process.env.RAILWAY_ENVIRONMENT;
+  const isProd = IS_PRODUCTION;
 
   const keyId = isProd 
     ? process.env.RAZORPAY_LIVE_KEY_ID 
@@ -40,7 +37,7 @@ function getRazorpay() {
         ? process.env.RAZORPAY_LIVE_KEY_SECRET 
         : process.env.RAZORPAY_TEST_KEY_SECRET);
 
-  logger.info({ isProd, hasKeyId: !!keyId, hasSecret: !!keySecret, appStatus }, "[Razorpay] Key selection");
+  logger.info({ isProd, hasKeyId: !!keyId, hasSecret: !!keySecret, appStatus: process.env.APP_STATUS }, "[Razorpay] Key selection");
 
   if (!keyId || !keySecret) {
     logger.error("[Razorpay] CRITICAL: No valid keys found");
@@ -271,6 +268,7 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Respon
     subscriptionStatus: user.subscriptionStatus,
     razorpaySubscriptionId: user.razorpaySubscriptionId,
     isAdmin: user.isAdmin,
+    isBanned: !!user.isBanned,
     currentStreak: user.currentStreak || 0,
     totalGenerations: user.totalGenerations || 0,
   });
@@ -333,12 +331,10 @@ const subscriptionCreateLimiter = rateLimit({
 router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const user = (req as any).user;
-    const { planType, couponCode, billingPeriod, currency = "INR" } = req.body as {
-      planType?: "starter" | "creator" | "infinity";
-      couponCode?: string;
-      billingPeriod?: "monthly" | "quarterly" | "half-yearly" | "yearly";
-      currency?: "INR" | "USD";
-    };
+    const planType = typeof req.body.planType === "string" ? req.body.planType : null;
+    const couponCode = typeof req.body.couponCode === "string" ? req.body.couponCode : null;
+    const billingPeriod = typeof req.body.billingPeriod === "string" ? req.body.billingPeriod : "monthly";
+    const currency = typeof req.body.currency === "string" ? req.body.currency : "INR";
 
     logger.info({ userId: req.userId, planType, billingPeriod, currency }, "[SUBSCRIPTION] Create request received");
     
@@ -353,7 +349,12 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
       return;
     }
 
-    const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
+    if (!["starter", "creator", "infinity", "agency"].includes(planType)) {
+      res.status(400).json({ error: "Invalid planType" });
+      return;
+    }
+
+    const effectivePlan = (planType === "agency" ? "agency" : planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity" | "agency";
     const billing = (billingPeriod === "yearly" ? "yearly" : billingPeriod === "half-yearly" ? "half-yearly" : billingPeriod === "quarterly" ? "quarterly" : "monthly");
     
     let razorpayPlanId: string;
@@ -458,7 +459,11 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
 });
 
 router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, planType, couponCode } = req.body;
+  const razorpay_payment_id = typeof req.body.razorpay_payment_id === "string" ? req.body.razorpay_payment_id : "";
+  const razorpay_subscription_id = typeof req.body.razorpay_subscription_id === "string" ? req.body.razorpay_subscription_id : "";
+  const razorpay_signature = typeof req.body.razorpay_signature === "string" ? req.body.razorpay_signature : "";
+  const planType = typeof req.body.planType === "string" ? req.body.planType : "";
+  const couponCode = typeof req.body.couponCode === "string" ? req.body.couponCode : null;
 
   if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
     res.status(400).json({ error: "Missing payment verification data" });
@@ -494,12 +499,7 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
-  const appStatus = process.env.APP_STATUS || "";
-  const isProd = 
-    process.env.NODE_ENV === "production" || 
-    appStatus === "PRODUCTION" || 
-    appStatus === "BETA" ||
-    !!process.env.RAILWAY_ENVIRONMENT;
+  const isProd = IS_PRODUCTION;
 
   const keySecret = isProd 
     ? process.env.RAZORPAY_LIVE_KEY_SECRET
@@ -690,12 +690,7 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
     return;
   }
 
-  const appStatus = process.env.APP_STATUS || "";
-  const isProd = 
-    process.env.NODE_ENV === "production" || 
-    appStatus === "PRODUCTION" || 
-    appStatus === "BETA" ||
-    !!process.env.RAILWAY_ENVIRONMENT;
+  const isProd = IS_PRODUCTION;
 
   const keySecret = isProd 
     ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
@@ -757,10 +752,13 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
         })
         .where(eq(usersTable.id, req.userId));
 
+      const orderAmount = Number((order as any).amount);
+
       await tx.insert(paymentsTable).values({
         id: razorpay_payment_id,
         userId: req.userId,
-        amount: 0, 
+        amount: orderAmount, 
+        orderId: razorpay_order_id,
         status: "captured",
         processedAt: new Date(),
         metadata: { razorpay_order_id, type: "credit_topup", credits: verifiedCredits }
@@ -895,7 +893,7 @@ router.post("/retry", requireAuth, async (req: AuthenticatedRequest, res: Respon
 });
 
 router.get("/validate-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const { code } = req.query as { code?: string };
+  const code = typeof req.query.code === "string" ? req.query.code : null;
   if (!code) {
     res.status(400).json({ error: "No code provided" });
     return;
@@ -911,8 +909,8 @@ router.get("/validate-coupon", requireAuth, async (req: AuthenticatedRequest, re
 });
 
 router.post("/apply-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const { code } = req.body as { code?: string };
-  if (!code || typeof code !== 'string') {
+  const code = typeof req.body.code === "string" ? req.body.code : null;
+  if (!code) {
     res.status(400).json({ error: "Invalid coupon code" });
     return;
   }
@@ -1009,6 +1007,25 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
         updates.planTier = pType.toUpperCase() as any;
       }
     }
+
+    // Bug 2 Fix: Handle subscription.activated specifically for first-time activation
+    if (event.event === "subscription.activated") {
+      const activatedSubId = event.payload?.subscription?.entity?.id;
+      if (activatedSubId) {
+        const planTier = getTierFromPlanId(event.payload?.subscription?.entity?.plan_id || "");
+        if (planTier) {
+          await db.update(usersTable)
+            .set({
+              planType: planTier,
+              subscriptionStatus: "active",
+              razorpaySubscriptionId: activatedSubId,
+            })
+            .where(eq(usersTable.razorpaySubscriptionId, activatedSubId));
+          logger.info({ activatedSubId, planTier }, "[WEBHOOK] subscription.activated processed");
+        }
+      }
+    }
+
     const updatedUsers = await db.update(usersTable)
       .set(updates)
       .where(eq(usersTable.razorpaySubscriptionId, subscriptionId))

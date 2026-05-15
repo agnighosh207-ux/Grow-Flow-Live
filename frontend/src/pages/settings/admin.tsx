@@ -562,11 +562,11 @@ export default function AdminDashboard() {
                   {(isSearching || (isDebouncing && userSearchQuery.length >= 2)) && <div className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />}
                 </div>
 
-                <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 rounded-3xl pb-32">
+                <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden">
                   <div className="p-8 border-b border-white/5 bg-white/[0.02] rounded-t-3xl">
                     <h3 className="text-2xl font-black">{debouncedSearch ? `Search Results (${searchResults?.length || 0})` : "Recent Command Log (100 Users)"}</h3>
                   </div>
-                  <div className="w-full overflow-x-auto scrollbar-hide pb-4">
+                  <div className="w-full overflow-x-auto scrollbar-hide">
                     <table className="w-full text-left min-w-[800px]">
                       <thead>
                         <tr className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-black border-b border-white/5">

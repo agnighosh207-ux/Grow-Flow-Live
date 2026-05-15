@@ -90,8 +90,15 @@ router.get("/today", requireAuth, async (req: any, res): Promise<void> => {
   const currentStreak = computeCurrentStreak(user);
   const language = (user as any).languagePreference || "English";
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
   let [existing] = await db.select().from(dailyPlansTable)
-    .where(and(eq(dailyPlansTable.userId, userId), eq(dailyPlansTable.date, today)));
+    .where(and(
+      eq(dailyPlansTable.userId, userId), 
+      eq(dailyPlansTable.date, today),
+      sql`${dailyPlansTable.createdAt} >= ${todayStart}`
+    ));
 
   if (!existing) {
     try {

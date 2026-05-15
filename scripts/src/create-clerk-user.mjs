@@ -26,7 +26,7 @@ async function createAdminUser() {
       body: JSON.stringify({
         email_address: ['agnighosh207@gmail.com'],
         username: 'admin_123',
-        password: 'Agnish222',
+        password: process.env.CLERK_ADMIN_PASSWORD || 'ChangeMe123!',
         skip_password_checks: true,
         skip_password_requirement: true
       })

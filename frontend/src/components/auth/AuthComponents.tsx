@@ -24,7 +24,9 @@ export function AuthBackground({ children }: { children: React.ReactNode }) {
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-600/25 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-900/20 rounded-full blur-[120px]" />
       </div>
-      <div className="relative z-10 w-full max-w-md">{children}</div>
+      <div className="relative z-10 w-full max-w-md px-4 sm:px-0">
+        {children}
+      </div>
     </div>
   );
 }

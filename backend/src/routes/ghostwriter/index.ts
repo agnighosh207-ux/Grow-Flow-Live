@@ -12,7 +12,11 @@ router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), en
   const userId = req.userId;
   const { language = "English" } = req.body;
   const abortController = new AbortController();
-  req.on('close', () => abortController.abort());
+  const timeoutId = setTimeout(() => abortController.abort(), 25000);
+  req.on('close', () => {
+    clearTimeout(timeoutId);
+    abortController.abort();
+  });
 
   try {
     const generations = await db.select()
@@ -100,14 +104,27 @@ Return JSON:
 });
 
 router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  const { topic, platform, length, useVoice, language = "English" } = req.body;
+  const topic = typeof req.body.topic === "string" ? req.body.topic : "";
+  const platform = typeof req.body.platform === "string" ? req.body.platform : "";
+  const length = typeof req.body.length === "string" ? req.body.length : "medium";
+  const useVoice = Boolean(req.body.useVoice);
+  const language = typeof req.body.language === "string" ? req.body.language : "English";
   const userId = req.userId;
   const abortController = new AbortController();
-  req.on('close', () => abortController.abort());
+  const timeoutId = setTimeout(() => abortController.abort(), 25000);
+  req.on('close', () => {
+    clearTimeout(timeoutId);
+    abortController.abort();
+  });
 
-  if (!topic || !platform) {
+  if (!topic || typeof topic !== "string") {
     await refundGenerationCredit(userId, req.user?.planTier);
-    res.status(400).json({ error: "Topic and platform are required" });
+    res.status(400).json({ error: "Topic must be a valid string" });
+    return;
+  }
+  if (!platform || typeof platform !== "string") {
+    await refundGenerationCredit(userId, req.user?.planTier);
+    res.status(400).json({ error: "Platform must be a valid string" });
     return;
   }
 

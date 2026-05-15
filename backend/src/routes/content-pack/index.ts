@@ -9,9 +9,8 @@ import { generateContent, webSearch, extractJson } from "../../services/ai-engin
 const router: IRouter = Router();
 
 router.post("/enhance", requireAuth, requirePlanOrTrial("content-pack"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  const { idea } = req.body;
-  if (!idea?.trim()) { res.status(400).json({ error: "Idea is required" }); return; }
-  const sanitizedIdea = String(idea).substring(0, 500);
+  if (typeof idea !== "string" || !idea.trim()) { res.status(400).json({ error: "Idea must be a valid string" }); return; }
+  const sanitizedIdea = idea.substring(0, 500);
 
     const abortController = new AbortController();
     try {
@@ -46,12 +45,12 @@ router.post("/generate", requireAuth, requirePlanOrTrial("content-pack"), enforc
 
   const { idea, tone = "Professional", contentType = "Educational", language = "English", niche = "General" } = req.body;
 
-  if (!idea?.trim()) {
-    res.status(400).json({ error: "Idea is required" });
+  if (typeof idea !== "string" || !idea.trim()) {
+    res.status(400).json({ error: "Idea must be a valid string" });
     return;
   }
-  const sanitizedIdea = String(idea).substring(0, 500);
-  const sanitizedNiche = String(niche).substring(0, 50);
+  const sanitizedIdea = idea.substring(0, 500);
+  const sanitizedNiche = (typeof niche === "string" ? niche : "General").substring(0, 50);
 
   try {
     // 1. Fetch live web data for RAG (Retrieval Augmented Generation)

@@ -60,6 +60,7 @@ export default function ContentCoachPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+   const [activeView, setActiveView] = useState<"report" | "chat">("chat");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -128,7 +129,7 @@ export default function ContentCoachPage() {
   };
 
   return (
-    <PageWrapper maxWidth="md" className="py-10">
+    <PageWrapper maxWidth="md" className="py-6 md:py-10 px-4 md:px-0 space-y-8 md:space-y-12">
       <FeatureGuideBanner
         toolKey="coach"
         title="AI Content Coach"
@@ -139,6 +140,25 @@ export default function ContentCoachPage() {
         proTip="The coach analyzes your actual generation history to find patterns you might have missed yourself."
         planRequired="Infinity"
       />
+
+       <div className="flex bg-white/5 rounded-2xl p-1 mb-8 border border-white/5">
+        <button 
+          onClick={() => setActiveView("chat")}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            activeView === "chat" ? "bg-white/10 text-white shadow-xl shadow-white/5" : "text-white/30 hover:text-white/60"
+          }`}
+        >
+          <MessageCircle className="w-4 h-4" /> Chat
+        </button>
+        <button 
+          onClick={() => setActiveView("report")}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            activeView === "report" ? "bg-white/10 text-white shadow-xl shadow-white/5" : "text-white/30 hover:text-white/60"
+          }`}
+        >
+          <Zap className="w-4 h-4" /> My Report
+        </button>
+      </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -166,7 +186,7 @@ export default function ContentCoachPage() {
         </div>
       )}
 
-      {!loading && report && (
+      {!loading && report && activeView === "report" && (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
           {/* Score & Highlights */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -262,14 +282,14 @@ export default function ContentCoachPage() {
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <ArrowRight className="h-6 w-6" /> Your Main Objective
                 </h3>
-                <p className="text-lg leading-relaxed font-medium">"{report.nextWeekFocus}"</p>
+                <p className="text-lg leading-relaxed font-medium">{report.nextWeekFocus}</p>
               </div>
             </motion.div>
           </div>
         </motion.div>
       )}
 
-      {!loading && !report && (
+      {!loading && !report && activeView === "report" && (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
           <div className="h-20 w-20 rounded-full bg-indigo-500/10 flex items-center justify-center mb-4">
             <Brain className="h-10 w-10 text-indigo-500" />
@@ -285,30 +305,32 @@ export default function ContentCoachPage() {
       )}
 
       {/* ── Chat Interface ─────────────────────────────────────────────────── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-3">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-indigo-400" /> Ask Your Coach
-        </h2>
+      {activeView === "chat" && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-3">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-indigo-400" /> Ask Your Coach
+          </h2>
 
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden">
-          {/* Messages area */}
-          <div className="h-64 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <p className="text-white/25 text-sm">Ask your AI coach anything about growing your content</p>
-                <div className="flex flex-wrap gap-2 mt-3 justify-center">
-                  {SUGGESTED_QUESTIONS.map(q => (
-                    <button
-                      key={q}
-                      onClick={() => sendMessage(q)}
-                      className="text-[10px] px-3 py-1.5 rounded-full border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 transition-all"
-                    >
-                      {q}
-                    </button>
-                  ))}
+          <div className="rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden">
+            {/* Messages area */}
+            <div className="h-96 overflow-y-auto p-4 space-y-3">
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <p className="text-white/25 text-sm">Ask your AI coach anything about growing your content</p>
+                  <p className="text-[10px] text-white/10 mt-1 italic uppercase tracking-widest font-black">Your conversation resets when you leave this page.</p>
+                  <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                    {SUGGESTED_QUESTIONS.map(q => (
+                      <button
+                        key={q}
+                        onClick={() => sendMessage(q)}
+                        className="text-[10px] px-3 py-1.5 rounded-full border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 transition-all"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -351,9 +373,10 @@ export default function ContentCoachPage() {
               <Send className="w-3.5 h-3.5" />
               Send
             </button>
+           </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
     </PageWrapper>
   );
 }

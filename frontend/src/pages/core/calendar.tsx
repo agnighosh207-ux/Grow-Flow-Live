@@ -255,17 +255,21 @@ export default function CalendarPage() {
       </header>
 
       <Card className="border-none shadow-2xl overflow-hidden bg-background">
-        <div className="grid grid-cols-7 border-b bg-muted/30">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-            <div key={d} className="py-3 text-center text-xs font-black uppercase tracking-widest text-muted-foreground">{d}</div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7">
-          {loading ? (
-            Array(35).fill(0).map((_, i) => <Skeleton key={i} className="h-[140px] rounded-none border" />)
-          ) : (
-            renderCells()
-          )}
+        <div className="overflow-x-auto -mx-4 px-4 md:overflow-visible md:mx-0 md:px-0 scrollbar-hide">
+          <div className="min-w-[800px] md:min-w-0">
+            <div className="grid grid-cols-7 border-b bg-muted/30">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+                <div key={d} className="py-3 text-center text-xs font-black uppercase tracking-widest text-muted-foreground">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7">
+              {loading ? (
+                Array(35).fill(0).map((_, i) => <Skeleton key={i} className="h-[140px] rounded-none border" />)
+              ) : (
+                renderCells()
+              )}
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -337,8 +341,15 @@ export default function CalendarPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Time</Label>
-                    <Input value={newItem.scheduledTime} onChange={e => setNewItem({...newItem, scheduledTime: e.target.value})} />
+                    <Label>Scheduled Time</Label>
+                    <Select value={newItem.scheduledTime} onValueChange={val => setNewItem({...newItem, scheduledTime: val})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["6 AM","7 AM","8 AM","9 AM","10 AM","11 AM","12 PM","1 PM","2 PM","3 PM","4 PM","5 PM","6 PM","7 PM","8 PM","9 PM","10 PM"].map(t => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Color</Label>

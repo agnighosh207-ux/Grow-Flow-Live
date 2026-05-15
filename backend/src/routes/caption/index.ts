@@ -31,14 +31,14 @@ router.post("/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGener
     language = "English"
   } = req.body;
 
-  if (!originalCaption?.trim()) {
-    res.status(400).json({ error: "Original caption is required" });
+  if (typeof originalCaption !== "string" || !originalCaption.trim()) {
+    res.status(400).json({ error: "Original caption must be a valid string" });
     return;
   }
 
-  const sanitizedCaption = String(originalCaption).substring(0, 3000);
-  const sanitizedGoal = String(goal).substring(0, 300);
-  const sanitizedNiche = String(niche).substring(0, 100);
+  const sanitizedCaption = originalCaption.substring(0, 3000);
+  const sanitizedGoal = (typeof goal === "string" ? goal : "increase engagement").substring(0, 300);
+  const sanitizedNiche = (typeof niche === "string" ? niche : "General").substring(0, 100);
 
   const platformContext = PLATFORM_CONTEXT[platform as string] || PLATFORM_CONTEXT["General"];
 
