@@ -115,8 +115,8 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
     let parsed: any;
     try {
       parsed = extractJson(content);
-    } catch (e) {
-      throw new Error("MALFORMED_AI_RESPONSE");
+    } catch (e: any) {
+      throw new Error(`MALFORMED_AI_RESPONSE: ${e.message}`);
     }
     
     let hooks: string[] = [];
@@ -148,8 +148,7 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
     await db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),
       userId: req.userId,
-      feature: "hooks",
-      action: "GENERATE_HOOKS"
+      feature: "hooks"
     }).catch(err => logger.error({ err }, "Failed to log hooks usage"));
   } catch (err: any) {
     if (isAborted) return;

@@ -1,12 +1,11 @@
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
-import { extractJson } from "../services/ai-engine";
-import { db, contentGenerationsTable, usersTable, securityLogsTable } from "@workspace/db";
+import { db, usersTable, securityLogsTable } from "@workspace/db";
 import { redis } from "../lib/redis";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { getAuth } from "@clerk/express";
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 // Use shared Redis client
 const redisClient = redis;
@@ -139,7 +138,7 @@ export const guardianMiddleware = async (req: any, res: any, next: any) => {
     }
 
     // --- FIX: Use pre-synchronized user from req.user to avoid redundant DB hits ---
-    let user = (req as any).user;
+    let user = req.user;
     if (!user) {
       const [fetchedUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId as string));
       user = fetchedUser;
@@ -159,7 +158,6 @@ export const guardianMiddleware = async (req: any, res: any, next: any) => {
     // Attach user to req so the limiter max() and handler() can use it
     req.rateLimitUser = user;
 
-    const tier = (user?.planTier as string) || "FREE";
     const isAdmin = user?.email === process.env.ADMIN_EMAIL || user?.isAdmin;
 
     if (isAdmin) {
