@@ -1,5 +1,7 @@
 import { logger } from "../lib/logger";
 
+export const IS_PRODUCTION = process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT === "production";
+
 /**
  * Razorpay Plan ID Router
  * Strictly maps tier and billing cycle combinations to environment-configured Plan IDs.

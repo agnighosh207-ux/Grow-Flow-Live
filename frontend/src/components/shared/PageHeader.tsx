@@ -13,7 +13,7 @@ interface PageHeaderProps {
   onInfoClick?: () => void; // shows/re-shows the feature guide banner
 }
 
-export function PageHeader({ icon, iconBg = "bg-violet-500/10", iconColor = "text-violet-400", title, subtitle, badge, badgeColor, action, onInfoClick }: PageHeaderProps) {
+export function PageHeader({ icon, iconBg = "bg-violet-500/10", iconColor = "text-violet-400", title, subtitle, badge, badgeColor, action, onInfoClick }: Readonly<PageHeaderProps>) {
   return (
     <div className="flex items-start justify-between gap-4 mb-6">
       <div className="flex items-center gap-3 min-w-0">

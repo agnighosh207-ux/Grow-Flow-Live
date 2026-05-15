@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
   Users, UserPlus, Shield, UserMinus, 
-  ExternalLink, Copy, Check, Loader2,
-  Brain, Zap, Crown, BarChart3, Lock
+  Copy, Check,
+  Brain, Zap, Crown, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@clerk/react";
-import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { PageSkeleton } from "@/components/shared/Skeleton";
 
 interface TeamMember {
@@ -22,11 +21,9 @@ interface TeamMember {
 
 export default function TeamPage() {
   const { getToken } = useAuth();
-  const { data: sub } = useSubscriptionStatus();
   const { toast } = useToast();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [inviting, setInviting] = useState(false);
   const [teamCode, setTeamCode] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -43,8 +40,8 @@ export default function TeamPage() {
       const data = await res.json();
       if (data.members) setMembers(data.members);
       if (data.teamCode) setTeamCode(data.teamCode);
-    } catch (e) {
-      console.error("Failed to fetch team data:", e);
+    } catch (error) {
+      console.error("Failed to fetch team data:", error);
     } finally {
       setLoading(false);
     }
@@ -65,7 +62,8 @@ export default function TeamPage() {
       } else {
         toast({ variant: "destructive", title: "Error", description: data.error || "Failed to create team" });
       }
-    } catch (e) {
+    } catch (error) {
+      console.error("Failed to create team:", error);
       toast({ variant: "destructive", title: "Error", description: "Failed to create team" });
     } finally {
       setLoading(false);
@@ -73,7 +71,7 @@ export default function TeamPage() {
   };
 
   const copyInvite = () => {
-    const link = `${window.location.origin}/join-team?code=${teamCode}`;
+    const link = `${globalThis.location.origin}/join-team?code=${teamCode}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     toast({ title: "Link Copied!", description: "Send this link to your team members." });
@@ -114,36 +112,9 @@ export default function TeamPage() {
         )}
       </div>
 
-      {!teamCode ? (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-[40px] border border-white/5 bg-white/[0.02] p-12 md:p-20 text-center space-y-8 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-violet-500/[0.03] to-transparent pointer-events-none" />
-          <div className="relative z-10">
-            <div className="w-20 h-20 rounded-3xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-8 shadow-glow-sm">
-               <Brain className="w-10 h-10 text-violet-400" />
-            </div>
-            <div className="space-y-3 max-w-md mx-auto">
-              <h2 className="text-2xl font-black text-white">Create Your Agency Team</h2>
-              <p className="text-white/40 text-sm leading-relaxed">
-                Unlock collaborative content creation. Add up to 5 members, pool generations, and scale your content output as a unified force.
-              </p>
-            </div>
-            <div className="pt-8">
-              <Button 
-                onClick={handleCreateTeam}
-                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-black px-12 h-14 rounded-2xl shadow-2xl shadow-violet-900/40 transition-all hover:scale-105 active:scale-95"
-              >
-                Create Team Ecosystem →
-              </Button>
-              <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mt-6">Requires Agency or Infinity Tier</p>
-            </div>
-          </div>
-        </motion.div>
-      ) : (
+      {teamCode ? (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="rounded-3xl border border-white/5 bg-gradient-to-br from-white/[0.04] to-transparent p-8 space-y-4 shadow-xl">
               <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
@@ -184,6 +155,7 @@ export default function TeamPage() {
             </div>
           </div>
 
+          {/* Members Table */}
           <div className="rounded-[32px] border border-white/5 bg-white/[0.02] overflow-hidden shadow-2xl">
             <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
               <div>
@@ -246,14 +218,14 @@ export default function TeamPage() {
                         </div>
                       </td>
                       <td className="px-8 py-6 text-right">
-                        {member.role !== 'owner' ? (
-                          <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-red-400/30 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
-                            <UserMinus className="w-4 h-4" />
-                          </Button>
-                        ) : (
+                        {member.role === 'owner' ? (
                           <div className="h-10 w-10 flex items-center justify-center opacity-20">
                              <Lock className="w-4 h-4 text-white" />
                           </div>
+                        ) : (
+                          <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-red-400/30 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
+                            <UserMinus className="w-4 h-4" />
+                          </Button>
                         )}
                       </td>
                     </tr>
@@ -272,6 +244,34 @@ export default function TeamPage() {
             )}
           </div>
         </div>
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[40px] border border-white/5 bg-white/[0.02] p-12 md:p-20 text-center space-y-8 relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-violet-500/[0.03] to-transparent pointer-events-none" />
+          <div className="relative z-10">
+            <div className="w-20 h-20 rounded-3xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-8 shadow-glow-sm">
+               <Brain className="w-10 h-10 text-violet-400" />
+            </div>
+            <div className="space-y-3 max-w-md mx-auto">
+              <h2 className="text-2xl font-black text-white">Create Your Agency Team</h2>
+              <p className="text-white/40 text-sm leading-relaxed">
+                Unlock collaborative content creation. Add up to 5 members, pool generations, and scale your content output as a unified force.
+              </p>
+            </div>
+            <div className="pt-8">
+              <Button 
+                onClick={handleCreateTeam}
+                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-black px-12 h-14 rounded-2xl shadow-2xl shadow-violet-900/40 transition-all hover:scale-105 active:scale-95"
+              >
+                Create Team Ecosystem →
+              </Button>
+              <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em] mt-6">Requires Agency or Infinity Tier</p>
+            </div>
+          </div>
+        </motion.div>
       )}
     </div>
   );

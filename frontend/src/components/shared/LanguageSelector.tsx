@@ -1,6 +1,6 @@
 import { Globe, Lock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SUPPORTED_LANGUAGES, RTL_LANGUAGES, PREMIUM_LANGUAGES } from "@/lib/languages";
+import { SUPPORTED_LANGUAGES, RTL_LANGUAGES } from "@/lib/languages";
 
 interface LanguageSelectorProps {
   value: string;
@@ -22,7 +22,7 @@ export function LanguageSelector({
   label = "Content Language",
   planType = "free",
   regionalLanguageLock = null,
-}: LanguageSelectorProps) {
+}: Readonly<LanguageSelectorProps>) {
   const handleChange = (newValue: string) => {
     // Free users: block all non-English
     if (isFreeUser && newValue !== "English") {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Brain, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, Zap, Send, MessageCircle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Brain, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, Zap, Send, MessageCircle, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -244,7 +244,10 @@ export default function ContentCoachPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {report.weeklyTasks.map((task, idx) => (
                 <motion.div
-                  key={idx} variants={itemVariants} whileHover={{ y: -5 }}
+                  key={`task-${idx}-${task.task.slice(0, 10)}`} 
+                  variants={itemVariants} 
+                  whileHover={{ y: -5 }}
+                  onClick={() => toggleTask(task.task)}
                   className={`cursor-pointer group p-6 rounded-2xl border transition-all duration-300 ${completedTasks.includes(task.task) ? "bg-muted/50 border-muted grayscale opacity-60" : "bg-card hover:shadow-xl hover:border-violet-500/50"}`}
                 >
                   <div className="flex justify-between items-start mb-4">
@@ -273,7 +276,7 @@ export default function ContentCoachPage() {
                 </div>
                 <span className="text-[10px] font-black uppercase text-violet-400 block mb-3 tracking-[0.3em]">Master Outclass Hook</span>
                 {report.contentPatterns.map((p, i) => (
-                  <div key={i} className="mb-4 last:mb-0">
+                  <div key={`pattern-${i}-${p.pattern.slice(0, 10)}`} className="mb-4 last:mb-0">
                     <h4 className="font-bold text-sm text-violet-900">{p.pattern}</h4>
                     <p className="text-sm text-muted-foreground">{p.observation}</p>
                   </div>
@@ -339,7 +342,7 @@ export default function ContentCoachPage() {
               )}
 
             {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={`msg-${i}`} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === "user" ? "bg-violet-500/20 text-white border border-violet-500/30" : "bg-white/5 text-white/80 border border-white/10"
                 }`}>

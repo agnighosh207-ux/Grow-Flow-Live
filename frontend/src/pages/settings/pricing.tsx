@@ -628,8 +628,9 @@ export default function PricingPage() {
                 Unlock high-performance AI tools and scale your content production.
               </p>
             </motion.div>
-          </div>
+          </motion.div>
         </div>
+      </div>
 
         <div className="flex flex-col items-center justify-center mb-12">
           <UrgencyHeader />
@@ -832,10 +833,10 @@ export default function PricingPage() {
                   style={{ background: 'var(--violet)', color: 'white', boxShadow: '0 4px 15px rgba(124,58,237,0.3)' }}
                 >
                   {getPlanState("agency") === "current" ? "Active Plan" : "Get Agency Plan"}
-                </Button>
+              </Button>
             </div>
           </div>
-        </motion.div>
+        </div>
         <div className="mb-16">
           <TopUpSection currency={currency} />
         </div>
@@ -1129,6 +1130,6 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
-  </div>
+    </div>
   );
 }

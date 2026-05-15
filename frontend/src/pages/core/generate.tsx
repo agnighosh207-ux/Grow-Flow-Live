@@ -1963,7 +1963,6 @@ export default function Generate() {
                   </div>
                 </form>
               </Form>
-            </div>
           </motion.div>
         </div>
 

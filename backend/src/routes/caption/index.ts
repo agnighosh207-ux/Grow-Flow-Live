@@ -34,11 +34,12 @@ router.post("/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGener
 
   // Free users only get English
   if ((!planType || planType === "free") && language && language !== "English") {
-    return res.status(403).json({
+    res.status(403).json({
       error: "language_locked",
       message: "Upgrade to Starter or higher to generate content in regional languages.",
       requiredPlan: "starter"
     });
+    return;
   }
 
   if (typeof originalCaption !== "string" || !originalCaption.trim()) {

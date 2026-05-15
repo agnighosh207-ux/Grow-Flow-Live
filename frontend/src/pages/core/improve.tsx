@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Search, Sparkles, TrendingUp, TrendingDown, Target, Brain, Copy, RefreshCw, Layers, Plus, Trash2, ArrowRight, ShieldAlert, Zap, Quote, ChevronRight, BarChart3, CheckCircle2 } from "lucide-react";
+import { Sparkles, TrendingUp, TrendingDown, Target, Brain, Copy, RefreshCw, Layers, Plus, Trash2, ShieldAlert, Zap, ChevronRight, BarChart3, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
@@ -135,6 +135,7 @@ export default function CompetitorIntelPage() {
       <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-12 space-y-12">
         {/* Elite Header */}
         <PageHeader 
+          icon={<Target />}
           iconBg="bg-violet-500/10" 
           iconColor="text-violet-400" 
           title="Competitor Intelligence" 
@@ -184,7 +185,7 @@ export default function CompetitorIntelPage() {
                     <div className="space-y-10">
                       <div className="space-y-4">
                         <div className="flex items-center justify-between px-2">
-                           <label className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Target Intelligence Stream</label>
+                           <span className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Target Intelligence Stream</span>
                            <Badge variant="outline" className="bg-white/5 border-white/10 text-[10px] px-3 py-1 text-emerald-500/50">{content.length} chars</Badge>
                         </div>
                         <Textarea 
@@ -197,7 +198,7 @@ export default function CompetitorIntelPage() {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="space-y-3">
-                          <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Theater of War</label>
+                          <span className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Theater of War</span>
                           <Select value={platform} onValueChange={setPlatform}>
                             <SelectTrigger className="h-14 rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
                               <SelectValue />
@@ -211,7 +212,7 @@ export default function CompetitorIntelPage() {
                           </Select>
                         </div>
                         <div className="space-y-3">
-                          <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Target Language</label>
+                          <span className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Target Language</span>
                             <LanguageSelector 
                               value={language} 
                               onChange={setLanguage} 
@@ -219,7 +220,7 @@ export default function CompetitorIntelPage() {
                             />
                         </div>
                         <div className="space-y-3">
-                          <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Your Contextual Domain</label>
+                          <span className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Your Contextual Domain</span>
                           <Input 
                             placeholder="e.g. SaaS Growth" 
                             value={niche} 
@@ -230,7 +231,7 @@ export default function CompetitorIntelPage() {
                       </div>
 
                       <div className="space-y-3">
-                        <label className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Strategic Objective</label>
+                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest ml-1">Strategic Objective</span>
                         <Input 
                           placeholder="What specific outcome do you want to beat them at?" 
                           value={goal} 
@@ -291,7 +292,7 @@ export default function CompetitorIntelPage() {
                         </CardHeader>
                         <CardContent className="p-8 pt-4 space-y-4">
                           {result.competitorStrengths.map((s: string, i: number) => (
-                            <div key={i} className="flex gap-5 p-5 rounded-2xl bg-violet-500/5 border border-violet-500/10 text-base font-bold text-violet-100/70 leading-relaxed shadow-inner">
+                            <div key={`strength-${i}-${s.slice(0, 5)}`} className="flex gap-5 p-5 rounded-2xl bg-violet-500/5 border border-violet-500/10 text-base font-bold text-violet-100/70 leading-relaxed shadow-inner">
                                <CheckCircle2 className="h-6 w-6 text-violet-500 shrink-0 mt-0.5" />
                                {s}
                             </div>
@@ -306,7 +307,7 @@ export default function CompetitorIntelPage() {
                         </CardHeader>
                         <CardContent className="p-8 pt-4 space-y-4">
                           {result.competitorWeaknesses.map((w: string, i: number) => (
-                            <div key={i} className="flex gap-5 p-5 rounded-2xl bg-rose-500/5 border border-rose-500/10 text-base font-bold text-rose-100/70 leading-relaxed shadow-inner">
+                            <div key={`weakness-${i}-${w.slice(0, 5)}`} className="flex gap-5 p-5 rounded-2xl bg-rose-500/5 border border-rose-500/10 text-base font-bold text-rose-100/70 leading-relaxed shadow-inner">
                                <Trash2 className="h-6 w-6 text-rose-500 shrink-0 mt-0.5" />
                                {w}
                             </div>
@@ -322,7 +323,7 @@ export default function CompetitorIntelPage() {
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                           {result.psychologicalTriggers.map((t: any, i: number) => (
-                            <div key={i} className="p-8 rounded-[2.5rem] bg-white/[0.04] border border-white/10 hover:border-violet-500/30 transition-all group cursor-default shadow-xl h-full flex flex-col justify-between">
+                            <div key={`trigger-${i}-${t.trigger.slice(0, 5)}`} className="p-8 rounded-[2.5rem] bg-white/[0.04] border border-white/10 hover:border-violet-500/30 transition-all group cursor-default shadow-xl h-full flex flex-col justify-between">
                                <span className="text-lg font-black text-violet-400 group-hover:scale-105 transition-transform block mb-3">{t.trigger}</span>
                                <p className="text-sm text-muted-foreground leading-relaxed italic font-medium">"{t.howTheyUsedIt}"</p>
                             </div>
@@ -424,7 +425,7 @@ export default function CompetitorIntelPage() {
               <div className="max-w-[1400px] mx-auto space-y-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                    {batchItems.map((item, i) => (
-                      <Card key={i} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden group hover:border-violet-500/30 transition-all shadow-2xl relative">
+                      <Card key={`batch-${i}`} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden group hover:border-violet-500/30 transition-all shadow-2xl relative">
                          <CardHeader className="bg-white/[0.02] border-b border-white/5 p-8 flex flex-row justify-between items-center">
                             <Input 
                               value={item.label} 
@@ -472,7 +473,7 @@ export default function CompetitorIntelPage() {
                 {batchResults.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10">
                      {batchResults.map((r, i) => (
-                        <Card key={i} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 shadow-2xl border-l-4 border-l-violet-500" style={{ animationDelay: `${i * 150}ms` }}>
+                        <Card key={r.id || i} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 shadow-2xl border-l-4 border-l-violet-500" style={{ animationDelay: `${i * 150}ms` }}>
                            <CardHeader className="bg-violet-500/10 border-b border-violet-500/20 p-8">
                               <CardTitle className="text-2xl font-black text-violet-400">{r.label}</CardTitle>
                            </CardHeader>

@@ -6,11 +6,10 @@ import {
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import {
-  Copy, Check, Zap, TrendingUp, Calendar,
+  Copy, Check, TrendingUp, Calendar,
   Target, MessageSquare, BarChart2, Loader2, Trash2, Clock, AlertCircle,
-  Lightbulb, Map, FileText, AtSign, PenTool, Type, Package, History as HistoryIcon
+  Lightbulb, Map, FileText, AtSign, PenTool, Type, Package
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +40,7 @@ const TYPE_COLORS: Record<string, string> = {
   Caption: "bg-violet-500/10 text-violet-400 border-violet-500/20",
 };
 
-function CopyBtn({ text }: { text: string }) {
+function CopyBtn({ text }: Readonly<{ text: string }>) {
   const [copied, setCopied] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard.writeText(typeof text === "string" ? text : JSON.stringify(text, null, 2)); setCopied(true); setTimeout(() => setCopied(false), 1800); }}
@@ -54,7 +53,7 @@ function CopyBtn({ text }: { text: string }) {
 
 
 
-function DetailView({ item, onClose }: { item: any; onClose: () => void }) {
+function DetailView({ item, onClose }: Readonly<{ item: any; onClose: () => void }>) {
   const content = item.content;
   const type = item.contentType;
 
@@ -74,7 +73,7 @@ function DetailView({ item, onClose }: { item: any; onClose: () => void }) {
         <div className="space-y-2">
           <span className="text-[9px] font-bold uppercase tracking-widest text-white/30">{title}</span>
           {data.map((item: any, i: number) => (
-            <div key={i} className="flex items-start gap-2">
+            <div key={`history-data-${i}`} className="flex items-start gap-2">
               <span className="text-[10px] text-white/20 mt-0.5 shrink-0">{i + 1}.</span>
               <p className="text-xs text-white/70 leading-relaxed">{typeof item === "string" ? item : JSON.stringify(item)}</p>
             </div>
@@ -267,7 +266,7 @@ export default function History() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {statsLoading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-24 rounded-2xl bg-white/5 animate-pulse" />
+              <div key={`stat-skeleton-${i}`} className="h-24 rounded-2xl bg-white/5 animate-pulse" />
             ))
           : STAT_CARDS.map((card) => (
             <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: STAT_CARDS.indexOf(card) * 0.04 }}
@@ -298,74 +297,82 @@ export default function History() {
       </div>
 
       {/* Items Grid */}
-      {loading ? (
-        <PageSkeleton />
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon={Clock}
-          title="No history yet"
-          description="Your generated content will appear here. Generate something to get started."
-          action={() => setLocation("/generate")}
-          actionLabel="Generate your first content →"
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <AnimatePresence>
-            {items.map((item, idx) => (
-              <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ delay: Math.min(idx * 0.03, 0.2), duration: 0.2 }}
-                onClick={() => setSelectedItem(item)}
-                className="group rounded-2xl border border-white/6 p-5 cursor-pointer hover:border-white/12 transition-all duration-500 relative flex flex-col"
-                style={{ background: "rgba(255,255,255,0.025)" }}
-              >
-                {/* Delete button */}
-                <div className="absolute top-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
-                  <button 
-                    onClick={(e) => handleDelete(item.id, e)} 
-                    disabled={deletingId === item.id}
-                    className={`h-7 rounded-lg flex items-center justify-center transition-all ${
-                      confirmDelete === item.id 
-                        ? "bg-red-500 text-white px-2 gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
-                        : "bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 w-7"
-                    }`}
-                  >
-                    {deletingId === item.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : confirmDelete === item.id ? (
-                      <span className="text-[10px] font-black uppercase tracking-tighter">Delete?</span>
-                    ) : (
-                      <Trash2 className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
+      {(() => {
+        if (loading) return <PageSkeleton />;
+        if (items.length === 0) {
+          return (
+            <EmptyState
+              icon={Clock}
+              title="No history yet"
+              description="Your generated content will appear here. Generate something to get started."
+              action={() => setLocation("/generate")}
+              actionLabel="Generate your first content →"
+            />
+          );
+        }
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <AnimatePresence>
+              {items.map((item, idx) => (
+                <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ delay: Math.min(idx * 0.03, 0.2), duration: 0.2 }}
+                  onClick={() => setSelectedItem(item)}
+                  className="group rounded-2xl border border-white/6 p-5 cursor-pointer hover:border-white/12 transition-all duration-500 relative flex flex-col"
+                  style={{ background: "rgba(255,255,255,0.025)" }}
+                >
+                  {/* Delete button */}
+                  <div className="absolute top-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
+                    <button 
+                      onClick={(e) => handleDelete(item.id, e)} 
+                      disabled={deletingId === item.id}
+                      className={`h-7 rounded-lg flex items-center justify-center transition-all ${
+                        confirmDelete === item.id 
+                          ? "bg-red-500 text-white px-2 gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
+                          : "bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 w-7"
+                      }`}
+                    >
+                      {deletingId === item.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          {confirmDelete === item.id ? (
+                            <span className="text-[10px] font-black uppercase tracking-tighter">Delete?</span>
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-                {/* Badges */}
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${TYPE_COLORS[item.contentType] ?? "bg-white/5 text-white/50 border-white/10"}`}>
-                    {item.contentType}
-                  </span>
-                  {item.tone && item.tone !== "AI Search" && item.tone !== "Enhancement" && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-white/5 text-white/40 border-white/8">
-                      {item.tone}
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${TYPE_COLORS[item.contentType] ?? "bg-white/5 text-white/50 border-white/10"}`}>
+                      {item.contentType}
                     </span>
-                  )}
-                </div>
+                    {item.tone && item.tone !== "AI Search" && item.tone !== "Enhancement" && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-white/5 text-white/40 border-white/8">
+                        {item.tone}
+                      </span>
+                    )}
+                  </div>
 
-                {/* Idea/Title */}
-                <p className="text-white/85 text-sm font-medium mb-4 line-clamp-2 leading-relaxed flex-1">
-                  "{item.idea}"
-                </p>
+                  {/* Idea/Title */}
+                  <p className="text-white/85 text-sm font-medium mb-4 line-clamp-2 leading-relaxed flex-1">
+                    "{item.idea}"
+                  </p>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between text-[10px] text-white/30 border-t border-white/6 pt-3 mt-auto">
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(item.createdAt), "MMM d, yyyy")}</span>
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{format(new Date(item.createdAt), "h:mm a")}</span>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+                  {/* Footer */}
+                  <div className="flex items-center justify-between text-[10px] text-white/30 border-t border-white/6 pt-3 mt-auto">
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(item.createdAt), "MMM d, yyyy")}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{format(new Date(item.createdAt), "h:mm a")}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        );
+      })()}
 
       {/* Detail Sheet */}
       <Sheet open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>

@@ -16,11 +16,12 @@ router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), en
 
   // Free users only get English
   if ((!planType || planType === "free") && language && language !== "English") {
-    return res.status(403).json({
+    res.status(403).json({
       error: "language_locked",
       message: "Upgrade to Starter or higher to generate content in regional languages.",
       requiredPlan: "starter"
     });
+    return;
   }
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), 25000);
@@ -124,11 +125,12 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
 
   // Free users only get English
   if ((!planType || planType === "free") && language && language !== "English") {
-    return res.status(403).json({
+    res.status(403).json({
       error: "language_locked",
       message: "Upgrade to Starter or higher to generate content in regional languages.",
       requiredPlan: "starter"
     });
+    return;
   }
   const userId = req.userId;
   const abortController = new AbortController();

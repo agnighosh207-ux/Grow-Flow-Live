@@ -44,7 +44,7 @@ export default defineConfig({
             '@radix-ui/react-switch',
             '@radix-ui/react-label'
           ],
-          'vendor-clerk': ['@clerk/clerk-react'],
+          'vendor-clerk': ['@clerk/react'],
           'vendor-charts': ['recharts'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function Skeleton({ className }: { className?: string }) {
+export function Skeleton({ className }: Readonly<{ className?: string }>) {
   return (
     <div className={cn("animate-pulse rounded-lg bg-white/5", className)} />
   );
@@ -32,13 +32,13 @@ export function PageSkeleton() {
   );
 }
 
-export function EmptyState({ icon: Icon, title, description, action, actionLabel }: {
+export function EmptyState({ icon: Icon, title, description, action, actionLabel }: Readonly<{
   icon: any;
   title: string;
   description: string;
   action?: () => void;
   actionLabel?: string;
-}) {
+}>) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">

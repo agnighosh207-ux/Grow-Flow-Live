@@ -37,8 +37,11 @@ const formSchema = z.object({
 });
 
 function HooksGeneratorInner() {
-  const sanitizeXSS = (val: string | null) => (val || "").replace(/<[^>]*>?/gm, "").replace(/[<>"']/g, "").trim();
-  const [prefLang, setPrefLang] = useState(sanitizeXSS(localStorage.getItem("preferred_language") || "English"));
+  const [prefLang, setPrefLang] = useState(() => {
+    const SUPPORTED_LANGUAGES = ["English", "Hindi", "Marathi", "Gujarati", "Tamil", "Telugu", "Kannada", "Malayalam", "Bengali", "Punjabi"];
+    const raw = localStorage.getItem("preferred_language") || "English";
+    return SUPPORTED_LANGUAGES.includes(raw) ? raw : "English";
+  });
 
   useEffect(() => {
     localStorage.setItem("preferred_language", prefLang);
@@ -199,7 +202,7 @@ function HooksGeneratorInner() {
           >
             {Array.from({ length: 10 }).map((_, i) => (
               <div
-                key={i}
+                key={`hook-skeleton-${i}`}
                 className="h-20 rounded-xl bg-white/3 border border-white/5 animate-pulse"
                 style={{ animationDelay: `${i * 0.06}s` }}
               />
@@ -224,7 +227,7 @@ function HooksGeneratorInner() {
 
               return (
                 <motion.div
-                  key={i}
+                  key={`hook-${i}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
