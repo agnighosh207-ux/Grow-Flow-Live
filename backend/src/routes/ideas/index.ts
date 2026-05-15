@@ -168,8 +168,7 @@ Return ONLY a JSON object.`;
     await db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),
       userId: req.userId,
-      feature: "ideas",
-      action: "GENERATE_IDEAS"
+      feature: "ideas"
     }).catch(err => logger.error({ err }, "Failed to log ideas usage"));
   } catch (err: any) {
     if (abortController.signal.aborted) return;

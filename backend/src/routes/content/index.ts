@@ -300,8 +300,8 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
   const niche = typeof req.body.niche === "string" ? req.body.niche : "General";
 
   const savedNiche = user?.niche ?? null;
-  const savedTone = req.user?.preferredTone;
-  const savedPlatform = req.user?.preferredPlatform;
+  const savedTone = (req.user as any)?.preferredTone;
+  const savedPlatform = (req.user as any)?.preferredPlatform;
   const resolvedNiche = niche !== "General" ? niche : (savedNiche ?? niche);
   const resolvedTone = ((tone as string) !== "Default" && (tone as string) !== "default") ? tone : (savedTone ?? tone);
   const resolvedPlatform = (typeof req.body.platform === "string" ? req.body.platform : (savedPlatform ?? "all")).toLowerCase();
@@ -585,8 +585,7 @@ Return ONLY this JSON:
     await db.insert(featureUsageLogsTable).values({
       id: crypto.randomUUID(),
       userId: req.userId,
-      feature: "content_variations",
-      action: "GENERATE_VARIATIONS"
+      feature: "content_variations"
     }).catch(err => logger.error({ err }, "Failed to log variations usage"));
   } catch (err: any) {
     res.status(500).json({ error: "Failed to save variation. Please try again." });
