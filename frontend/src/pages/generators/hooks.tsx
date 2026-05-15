@@ -9,26 +9,25 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Copy, Check, Zap, Sparkles } from "lucide-react";
+import { Copy, MessageSquareQuote, Loader2, Zap, Check, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
-import { MessageSquareQuote } from "lucide-react";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 const HOOK_PATTERN_LABELS = [
-  { type: "Curiosity Gap", color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20" },
+  { type: "Curiosity Gap", color: "bg-violet-500/15 text-violet-300 border-violet-500/20" },
   { type: "Bold Claim", color: "bg-orange-500/15 text-orange-300 border-orange-500/20" },
   { type: "Relatable Pain", color: "bg-blue-500/15 text-blue-300 border-blue-500/20" },
   { type: "Controversial", color: "bg-red-500/15 text-red-300 border-red-500/20" },
   { type: "Pattern Interrupt", color: "bg-pink-500/15 text-pink-300 border-pink-500/20" },
   { type: "Specificity Hook", color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/20" },
   { type: "Identity Signal", color: "bg-amber-500/15 text-amber-300 border-amber-500/20" },
-  { type: "Story Opener", color: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20" },
+  { type: "Story Opener", color: "bg-violet-500/15 text-violet-300 border-violet-500/20" },
   { type: "Fear / Urgency", color: "bg-rose-500/15 text-rose-300 border-rose-500/20" },
-  { type: "Counterintuitive", color: "bg-teal-500/15 text-teal-300 border-teal-500/20" },
+  { type: "Counterintuitive", color: "bg-indigo-500/15 text-indigo-300 border-indigo-500/20" },
 ];
 
 const formSchema = z.object({
@@ -63,8 +62,6 @@ function HooksGeneratorInner() {
 
   const currentLanguage = form.watch("language");
 
-
-
   const generateMutation = useGenerateHooks({
     mutation: {
       onSuccess: (data) => {
@@ -74,6 +71,8 @@ function HooksGeneratorInner() {
       onError: () => toast({ variant: "destructive", title: "Failed to generate hooks" })
     }
   });
+
+  const isLoading = generateMutation.isPending;
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     generateMutation.mutate({ 
@@ -92,7 +91,7 @@ function HooksGeneratorInner() {
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  const isLoading = generateMutation.isPending;
+  const [showGuide, setShowGuide] = useState(false);
 
   return (
     <PageWrapper maxWidth="md" className="pb-24 md:pb-8">
@@ -104,13 +103,15 @@ function HooksGeneratorInner() {
         whatYouGet={["10 hook variations", "Pattern labels (curiosity/fear/data)", "One-click copy"]}
         whenToUse="Use this before writing any post — a great hook is the difference between 100 and 100,000 views."
         proTip="Generate hooks first, pick your favourite, then use it as the idea in the main Generate page."
+        forceOpen={showGuide}
       />
       <PageHeader 
         icon={<MessageSquareQuote/>} 
-        iconBg="bg-teal-500/10" 
-        iconColor="text-teal-400" 
+        iconBg="bg-violet-500/10" 
+        iconColor="text-violet-400" 
         title="Viral Hooks Generator" 
         subtitle="Scroll-stopping opening lines that triple your reach"
+        onInfoClick={() => setShowGuide(prev => !prev)}
       />
 
       <div
@@ -132,7 +133,7 @@ function HooksGeneratorInner() {
                   <FormControl>
                     <Input
                       placeholder="e.g. Why most diets fail in the first 2 weeks..."
-                      className="bg-black/20 border-white/10 h-11 md:h-12 rounded-xl text-white text-base placeholder:text-white/25 focus-visible:ring-teal-500/40"
+                      className="bg-black/20 border-white/10 h-11 md:h-12 rounded-xl text-white text-base placeholder:text-white/25 focus-visible:ring-violet-500/40"
                       {...field}
                     />
                   </FormControl>
@@ -149,14 +150,14 @@ function HooksGeneratorInner() {
                   <FormLabel className="text-white/70 text-sm font-medium">Tone</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-teal-500/40 rounded-xl h-11 md:h-12 text-base">
+                      <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-violet-500/40 rounded-xl h-11 md:h-12 text-base">
                         <SelectValue />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-[#0f0a1e] border-white/10">
-                      <SelectItem value="Casual" className="text-white/80 focus:text-white focus:bg-teal-600/20">Casual</SelectItem>
-                      <SelectItem value="Professional" className="text-white/80 focus:text-white focus:bg-teal-600/20">Professional</SelectItem>
-                      <SelectItem value="Aggressive" className="text-white/80 focus:text-white focus:bg-teal-600/20">Aggressive</SelectItem>
+                      <SelectItem value="Casual" className="text-white/80 focus:text-white focus:bg-violet-600/20">Casual</SelectItem>
+                      <SelectItem value="Professional" className="text-white/80 focus:text-white focus:bg-violet-600/20">Professional</SelectItem>
+                      <SelectItem value="Aggressive" className="text-white/80 focus:text-white focus:bg-violet-600/20">Aggressive</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -179,7 +180,7 @@ function HooksGeneratorInner() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full sm:w-auto h-12 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white text-base font-semibold shadow-lg shadow-teal-900/40 rounded-xl px-6"
+              className="w-full sm:w-auto h-12 bg-violet-600 hover:bg-violet-500 text-white text-base font-semibold shadow-lg shadow-violet-900/40 rounded-xl px-6"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Zap className="w-4 h-4 mr-1.5" /> Generate</>}
             </Button>

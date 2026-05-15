@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
-import { db, usersTable, contentGenerationsTable, supportMessagesTable, referralsTable, paymentsTable, contentCalendarTable, favoritesTable, usageLogsTable, dailyPlansTable, featureUsageLogsTable, securityLogsTable, impersonationSessionsTable } from "@workspace/db";
-import { eq, count, and, sql } from "drizzle-orm";
+import { db, usersTable, contentGenerationsTable, favoritesTable } from "@workspace/db";
+import { eq, and, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -70,13 +69,14 @@ router.patch("/notifications", requireAuth, async (req: any, res): Promise<void>
 });
 
 router.patch("/profile", requireAuth, async (req: any, res): Promise<void> => {
-  const { username, displayName, showOnLeaderboard, avatarUrl } = req.body;
+  const { username, displayName, showOnLeaderboard, avatarUrl, niche } = req.body;
   const updates: any = {};
 
   if (typeof username === "string") updates.username = username.toLowerCase().replace(/[^a-z0-9_]/g, "");
   if (typeof displayName === "string") updates.displayName = displayName;
   if (typeof showOnLeaderboard === "boolean") updates.showOnLeaderboard = showOnLeaderboard;
   if (typeof avatarUrl === "string") updates.avatarUrl = avatarUrl;
+  if (typeof niche === "string") updates.niche = niche;
 
   if (updates.username) {
     if (updates.username.length < 3) {
@@ -152,10 +152,11 @@ router.get("/preferences", requireAuth, async (req: any, res) => {
 });
 
 router.patch("/preferences", requireAuth, async (req: any, res) => {
-  const { languagePreference, emailReports } = req.body;
+  const { languagePreference, emailReports, niche } = req.body;
   const updates: any = {};
   if (typeof languagePreference === "string") updates.languagePreference = languagePreference;
   if (typeof emailReports === "boolean") updates.emailReports = emailReports;
+  if (typeof niche === "string") updates.niche = niche;
 
   if (Object.keys(updates).length > 0) {
     await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId));

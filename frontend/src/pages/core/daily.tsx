@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 interface DailyPlan {
   id: number;
@@ -62,14 +63,14 @@ function StreakBadge({ streak }: { streak: number }) {
 
   const streakColor = streak >= 30 ? "from-amber-500 to-orange-500" :
     streak >= 14 ? "from-orange-500 to-red-500" :
-    streak >= 7 ? "from-cyan-500 to-teal-500" :
-    "from-emerald-500 to-teal-500";
+    streak >= 7 ? "from-violet-500 to-indigo-500" :
+    "from-indigo-500 to-violet-500";
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${streak >= 7 ? "from-orange-500/15 to-amber-500/10 border-orange-500/25" : "from-emerald-500/10 to-teal-500/8 border-emerald-500/20"} border p-5`}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${streak >= 7 ? "from-orange-500/15 to-amber-500/10 border-orange-500/25" : "from-violet-500/10 to-indigo-500/8 border-violet-500/20"} border p-5`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -142,23 +143,29 @@ export default function DailyActionMode() {
 
   const markAsPosted = async () => {
     if (!data?.plan || data.completedToday) return;
+    
+    // Optimistic Update
+    const oldData = data;
+    setData(prev => prev ? { ...prev, completedToday: true, streak: (prev.streak || 0) + 1 } : prev);
+    setJustCompleted(true);
     setCompleting(true);
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.7 } });
+
     try {
       const { data: json } = await api.patch("/daily/today/complete");
       setData(prev => prev ? { ...prev, streak: json.newStreak, completedToday: true } : prev);
-      setJustCompleted(true);
       
       if (json.reward) {
         setReward(json.reward);
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#06b6d4', '#10b981', '#f59e0b'] });
-      } else {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.7 } });
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#7c3aed', '#8b5cf6', '#f59e0b'] });
       }
       
       setShowCelebration(true);
       toast({ title: `🔥 ${json.newStreak}-day streak!`, description: "Amazing! You posted today's content. Keep the momentum going!" });
     } catch (err: any) {
       console.error("Completion error:", err);
+      setData(oldData); // Rollback
+      setJustCompleted(false);
       toast({ title: "Couldn't mark as posted", variant: "destructive" });
     } finally {
       setCompleting(false);
@@ -179,7 +186,7 @@ export default function DailyActionMode() {
         animate={{ scale: 1, y: 0 }}
         className="relative max-w-md w-full bg-zinc-900 border border-white/10 rounded-[40px] p-10 text-center shadow-2xl overflow-hidden"
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-violet-500/10 to-transparent opacity-50" />
         
         <button 
           onClick={() => setShowCelebration(false)}
@@ -214,12 +221,12 @@ export default function DailyActionMode() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="p-6 rounded-3xl bg-cyan-500/10 border border-cyan-500/20 space-y-3"
+              className="p-6 rounded-3xl bg-violet-500/10 border border-violet-500/20 space-y-3"
             >
               <p className="text-lg font-black text-white leading-tight">
                 {reward.message}
               </p>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-black uppercase tracking-widest border border-cyan-500/30">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/20 text-violet-400 text-xs font-black uppercase tracking-widest border border-violet-500/30">
                 <Sparkles className="w-3.5 h-3.5" />
                 +{reward.credits} Credits Added!
               </div>
@@ -229,7 +236,7 @@ export default function DailyActionMode() {
           {data?.challenge?.completedDays === 30 && (
             <Button 
               onClick={() => window.open("/api/challenge/certificate", "_blank")}
-              className="w-full h-12 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black transition-all active:scale-95"
+              className="w-full h-12 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-black transition-all active:scale-95"
             >
               Download Creator Certificate 🏆
             </Button>
@@ -250,7 +257,7 @@ export default function DailyActionMode() {
     return (
       <div className="flex w-full min-h-[50vh] items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto" />
+          <div className="w-10 h-10 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mx-auto" />
           <p className="text-white/40 text-sm">Loading today's plan...</p>
         </div>
       </div>
@@ -262,18 +269,32 @@ export default function DailyActionMode() {
   const completed = data?.completedToday ?? false;
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" });
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <PageWrapper maxWidth="sm" className="py-6 space-y-5">
+        <FeatureGuideBanner
+          toolKey="daily"
+          title="Daily Growth Plan"
+          icon={<Flame className="w-5 h-5 text-orange-400" />}
+          tagline="One daily task. Consistent growth. Build your creator streak and unlock massive rewards."
+          whatYouGet={["1 curated content idea daily", "Pre-written hook & CTA", "Streak tracking & milestones", "Bonus credit rewards"]}
+          whenToUse="Use this every morning to get your high-impact post out of the way in under 5 minutes."
+          proTip="Don't break the streak! Reaching 30 days unlocks a Creator Certificate and 50 bonus credits."
+          planRequired="Free"
+          forceOpen={showGuide}
+        />
         <AnimatePresence>
           {showCelebration && <CelebrationOverlay />}
         </AnimatePresence>
-
+        
         <PageHeader 
           icon={<Flame/>} 
           iconBg="bg-orange-500/10" 
           iconColor="text-orange-400" 
           title="Daily Growth Plan" 
           subtitle="One daily task. Consistent growth."
+          onInfoClick={() => setShowGuide(prev => !prev)}
         />
 
         {streak > 0 && <StreakBadge streak={streak} />}
@@ -304,7 +325,7 @@ export default function DailyActionMode() {
               {data.challenge?.completedDays === 30 ? (
                 <button 
                   onClick={() => window.open("/api/challenge/certificate", "_blank")}
-                  className="text-[10px] text-cyan-400 font-black uppercase tracking-widest bg-cyan-500/10 px-2 py-0.5 rounded-md hover:bg-cyan-500/20 transition-colors"
+                  className="text-[10px] text-violet-400 font-black uppercase tracking-widest bg-violet-500/10 px-2 py-0.5 rounded-md hover:bg-violet-500/20 transition-colors"
                 >
                   Download Certificate 🏆
                 </button>
@@ -321,9 +342,9 @@ export default function DailyActionMode() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="border border-cyan-500/20 rounded-[32px] p-6 bg-cyan-500/5 flex flex-col md:flex-row items-center gap-5"
+            className="border border-violet-500/20 rounded-[32px] p-6 bg-violet-500/5 flex flex-col md:flex-row items-center gap-5"
           >
-             <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-3xl shrink-0">🚀</div>
+             <div className="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center text-3xl shrink-0">🚀</div>
              <div className="flex-1 text-center md:text-left">
                 <p className="font-black text-white uppercase tracking-tight">Accept the 30-Day Challenge</p>
                 <p className="text-xs text-white/40 font-medium mt-1">Generate content for 30 days straight to unlock the Creator Certificate + 50 Credits.</p>
@@ -338,7 +359,7 @@ export default function DailyActionMode() {
                    toast({ variant: "destructive", title: "Failed to join challenge" });
                  }
                }}
-               className="bg-cyan-600 hover:bg-cyan-500 text-white font-black px-6 rounded-xl shadow-glow-sm"
+               className="bg-violet-600 hover:bg-violet-500 text-white font-black px-6 rounded-xl shadow-glow-sm"
              >
                JOIN NOW
              </Button>
@@ -392,8 +413,8 @@ export default function DailyActionMode() {
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-start gap-3 py-2.5 border-b border-white/6">
-                <div className="w-7 h-7 rounded-lg bg-cyan-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                  <Lightbulb className="w-3.5 h-3.5 text-cyan-400" />
+                <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <Lightbulb className="w-3.5 h-3.5 text-violet-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1">Today's Idea</p>
@@ -403,8 +424,8 @@ export default function DailyActionMode() {
               </div>
 
               <div className="flex items-start gap-3 py-2.5 border-b border-white/6">
-                <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                  <Zap className="w-3.5 h-3.5 text-blue-400" />
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <Zap className="w-3.5 h-3.5 text-indigo-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1">Opening Hook</p>
@@ -430,7 +451,7 @@ export default function DailyActionMode() {
                 onClick={markAsPosted}
                 disabled={completing}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-base transition-all disabled:opacity-60 shadow-lg shadow-emerald-900/30"
+                className="w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-base transition-all disabled:opacity-60 shadow-lg shadow-violet-900/30"
               >
                 {completing ? (
                   <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Marking...</>
@@ -467,9 +488,9 @@ export default function DailyActionMode() {
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="rounded-2xl bg-white/[0.03] border border-white/8 p-6 text-center space-y-3">
-            <Sparkles className="w-8 h-8 text-cyan-400/50 mx-auto" />
+            <Sparkles className="w-8 h-8 text-violet-400/50 mx-auto" />
             <p className="text-white/50 text-sm">Couldn't load today's plan.</p>
-            <button onClick={fetchToday} className="px-4 py-2 rounded-xl bg-cyan-500/15 text-cyan-300 text-xs font-medium hover:bg-cyan-500/25 transition-all">
+            <button onClick={fetchToday} className="px-4 py-2 rounded-xl bg-violet-500/15 text-violet-300 text-xs font-medium hover:bg-violet-500/25 transition-all">
               Try Again
             </button>
           </motion.div>

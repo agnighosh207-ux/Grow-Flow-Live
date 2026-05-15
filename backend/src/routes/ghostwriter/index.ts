@@ -12,6 +12,16 @@ router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), en
   const userId = req.userId;
   const { language: rawLanguage } = req.body;
   const language = typeof rawLanguage === "string" ? rawLanguage : "English";
+  const planType = req.user?.planType ?? "free";
+
+  // Free users only get English
+  if ((!planType || planType === "free") && language && language !== "English") {
+    return res.status(403).json({
+      error: "language_locked",
+      message: "Upgrade to Starter or higher to generate content in regional languages.",
+      requiredPlan: "starter"
+    });
+  }
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), 25000);
   req.on('close', () => {
@@ -110,6 +120,16 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
   const length = typeof req.body.length === "string" ? req.body.length : "medium";
   const useVoice = typeof req.body.useVoice === "boolean" ? req.body.useVoice : false;
   const language = typeof req.body.language === "string" ? req.body.language : "English";
+  const planType = req.user?.planType ?? "free";
+
+  // Free users only get English
+  if ((!planType || planType === "free") && language && language !== "English") {
+    return res.status(403).json({
+      error: "language_locked",
+      message: "Upgrade to Starter or higher to generate content in regional languages.",
+      requiredPlan: "starter"
+    });
+  }
   const userId = req.userId;
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), 25000);

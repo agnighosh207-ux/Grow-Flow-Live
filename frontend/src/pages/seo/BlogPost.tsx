@@ -59,7 +59,7 @@ export default function BlogPost({ slug }: { slug: string }) {
   return (
     <PageWrapper maxWidth="md" className="py-20 space-y-12">
       <div className="space-y-6 text-center">
-        <div className="flex items-center justify-center gap-6 text-xs font-black text-cyan-400 uppercase tracking-widest">
+        <div className="flex items-center justify-center gap-6 text-xs font-black text-violet-400 uppercase tracking-widest">
           <span className="flex items-center gap-1.5"><Calendar size={14}/> {post.date}</span>
           <span className="flex items-center gap-1.5"><User size={14}/> {post.author}</span>
           <span className="flex items-center gap-1.5"><Clock size={14}/> {post.readTime}</span>
@@ -84,13 +84,13 @@ export default function BlogPost({ slug }: { slug: string }) {
       </div>
 
       {/* CTA Box */}
-      <div className="mt-16 p-10 rounded-3xl bg-cyan-600/10 border border-cyan-500/20 text-center space-y-6">
+      <div className="mt-16 p-10 rounded-3xl bg-violet-600/10 border border-violet-500/20 text-center space-y-6">
         <h3 className="text-2xl font-black text-white italic">Want to put this strategy on autopilot?</h3>
         <p className="text-white/60">GrowFlow AI handles the writing, you handle the growth.</p>
         <Button 
           size="lg"
           onClick={() => navigate("/sign-up")}
-          className="rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black px-10 h-14"
+          className="rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-black px-10 h-14"
         >
           TRY GROWFLOW FREE →
         </Button>

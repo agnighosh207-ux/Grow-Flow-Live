@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { requireAuth } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
@@ -10,7 +10,18 @@ router.post("/", requireAuth, enforceGenerationLimit, async (req: any, res): Pro
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
-  const { sourceContent, sourceFormat, targetFormats, tone, niche, language } = req.body;
+  const { sourceContent, sourceFormat, targetFormats, tone, niche, language = "English" } = req.body;
+  const planType = req.user?.planType ?? "free";
+
+  // Free users only get English
+  if ((!planType || planType === "free") && language && language !== "English") {
+    res.status(403).json({
+      error: "language_locked",
+      message: "Upgrade to Starter or higher to generate content in regional languages.",
+      requiredPlan: "starter"
+    });
+    return;
+  }
 
   if (typeof sourceContent !== "string" || sourceContent.length < 50) {
     res.status(400).json({ error: "Source content must be a valid string of at least 50 characters" });

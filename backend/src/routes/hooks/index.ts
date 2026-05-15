@@ -58,6 +58,16 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hooks"), enforceGenera
   req.on('close', () => { isAborted = true; });
 
   const { topic, tone, language = "English" } = req.body;
+  const planType = req.user?.planType ?? "free";
+
+  // Free users only get English
+  if ((!planType || planType === "free") && language && language !== "English") {
+    return res.status(403).json({
+      error: "language_locked",
+      message: "Upgrade to Starter or higher to generate content in regional languages.",
+      requiredPlan: "starter"
+    });
+  }
   
   if (!topic) {
     res.status(400).json({ error: "Topic is required" });

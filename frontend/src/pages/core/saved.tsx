@@ -22,14 +22,14 @@ interface SavedItem {
 }
 
 const CONTENT_TYPE_COLORS: Record<string, string> = {
-  Educational: "bg-cyan-500/15 text-cyan-300 border-cyan-500/20",
-  Story: "bg-blue-500/15 text-blue-300 border-blue-500/20",
+  Educational: "bg-violet-500/15 text-violet-300 border-violet-500/20",
+  Story: "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
   Viral: "bg-orange-500/15 text-orange-300 border-orange-500/20",
 };
 
 const TONE_COLORS: Record<string, string> = {
-  Casual: "bg-emerald-500/12 text-emerald-300/80 border-emerald-500/15",
-  Professional: "bg-sky-500/12 text-sky-300/80 border-sky-500/15",
+  Casual: "bg-violet-500/12 text-violet-300/80 border-violet-500/15",
+  Professional: "bg-indigo-500/12 text-indigo-300/80 border-indigo-500/15",
   Aggressive: "bg-red-500/12 text-red-300/80 border-red-500/15",
 };
 
@@ -121,13 +121,13 @@ export default function Saved() {
     >
       {isRefreshing && (
         <div className="flex justify-center py-4">
-          <Loader2 className="w-6 h-6 animate-spin text-pink-500" />
+          <Loader2 className="w-6 h-6 animate-spin text-violet-500" />
         </div>
       )}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">
-            <Heart className="w-7 h-7 text-pink-400" />
+            <Heart className="w-7 h-7 text-violet-400" />
             Saved Content
           </h1>
           <p className="text-white/50 text-sm">
@@ -194,12 +194,12 @@ export default function Saved() {
                       <button
                         onClick={() => handleRemove(item.id)}
                         disabled={isRemoving}
-                        className="p-2 rounded-lg text-pink-400/60 hover:text-pink-400 hover:bg-pink-500/10 transition-all duration-200 shrink-0"
+                        className="p-2 rounded-lg text-violet-400/60 hover:text-violet-400 hover:bg-violet-500/10 transition-all duration-200 shrink-0"
                         title="Remove from saved"
                       >
                         {isRemoving
                           ? <Loader2 className="w-4 h-4 animate-spin" />
-                          : <Heart className="w-4 h-4 fill-pink-400/40" />
+                          : <Heart className="w-4 h-4 fill-violet-400/40" />
                         }
                       </button>
                     </div>
@@ -217,7 +217,7 @@ export default function Saved() {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleRegenerate(item)}
-                        className="text-cyan-400/70 hover:text-cyan-300 bg-cyan-500/5 hover:bg-cyan-500/12 border border-cyan-500/15 text-xs rounded-lg"
+                        className="text-violet-400/70 hover:text-violet-300 bg-violet-500/5 hover:bg-violet-500/12 border border-violet-500/15 text-xs rounded-lg"
                       >
                         <RefreshCw className="w-3 h-3 mr-1.5" /> Regenerate
                       </Button>

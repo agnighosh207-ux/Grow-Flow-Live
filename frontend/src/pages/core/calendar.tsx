@@ -18,6 +18,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +26,7 @@ import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageSkeleton } from "@/components/shared/Skeleton";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 interface CalendarItem {
   id: number;
@@ -42,12 +44,11 @@ interface CalendarItem {
 const platforms = ["Instagram", "Twitter", "LinkedIn", "YouTube"];
 const contentTypes = ["Post", "Thread", "Reel", "Short", "Video", "Carousel"];
 const colors = [
+  { name: "Violet", value: "bg-violet-600", border: "border-violet-600/20", text: "text-violet-600" },
   { name: "Pink", value: "bg-pink-500", border: "border-pink-500/20", text: "text-pink-500" },
   { name: "Blue", value: "bg-blue-500", border: "border-blue-500/20", text: "text-blue-500" },
-  { name: "Sky", value: "bg-sky-500", border: "border-sky-500/20", text: "text-sky-500" },
   { name: "Red", value: "bg-red-500", border: "border-red-500/20", text: "text-red-500" },
   { name: "Indigo", value: "bg-indigo-500", border: "border-indigo-500/20", text: "text-indigo-500" },
-  { name: "Emerald", value: "bg-emerald-500", border: "border-emerald-500/20", text: "text-emerald-500" },
 ];
 
 export default function CalendarPage() {
@@ -69,7 +70,7 @@ export default function CalendarPage() {
     contentType: "Post",
     scheduledTime: "09:00 AM",
     notes: "",
-    color: "bg-pink-500"
+    color: "bg-violet-600"
   });
 
   // AI Schedule State
@@ -165,9 +166,9 @@ export default function CalendarPage() {
     switch (p) {
       case "Instagram": return "bg-pink-500";
       case "Twitter": return "bg-blue-500";
-      case "LinkedIn": return "bg-sky-500";
+      case "LinkedIn": return "bg-blue-600";
       case "YouTube": return "bg-red-500";
-      default: return "bg-indigo-500";
+      default: return "bg-violet-600";
     }
   };
 
@@ -190,7 +191,7 @@ export default function CalendarPage() {
           className={`min-h-[140px] p-2 border border-border/50 group transition-all cursor-pointer ${isCurrentMonth ? 'bg-card/30 hover:bg-card/60' : 'bg-muted/10 opacity-40'}`}
         >
           <div className="flex justify-between items-center mb-2">
-            <span className={`text-sm font-bold ${isSameDay(day, new Date()) ? 'bg-indigo-600 text-white h-6 w-6 rounded-full flex items-center justify-center' : ''}`}>
+            <span className={`text-sm font-bold ${isSameDay(day, new Date()) ? 'bg-violet-600 text-white h-6 w-6 rounded-full flex items-center justify-center' : ''}`}>
               {format(day, "d")}
             </span>
             {dayItems.length > 0 && <span className="text-[10px] font-bold text-muted-foreground">{dayItems.length} items</span>}
@@ -200,10 +201,10 @@ export default function CalendarPage() {
             {dayItems.slice(0, 3).map(item => (
               <div 
                 key={item.id}
-                className={`px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 text-white truncate ${getPlatformColor(item.platform)}`}
+                className={`px-1.5 py-1 rounded-lg text-[9px] font-bold flex items-center gap-1.5 text-white/90 truncate border border-white/5 bg-white/[0.03] group/item transition-colors hover:bg-white/[0.08]`}
               >
-                {getPlatformIcon(item.platform)}
-                {item.idea}
+                <div className={`w-1.5 h-1.5 rounded-full ${getPlatformColor(item.platform)} shadow-[0_0_8px_rgba(0,0,0,0.5)]`} />
+                <span className="truncate">{item.idea}</span>
               </div>
             ))}
             {dayItems.length > 3 && (
@@ -219,52 +220,63 @@ export default function CalendarPage() {
     return days;
   };
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <PageWrapper maxWidth="xl" className="py-10">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-            <CalendarIcon className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black tracking-tight">Content Calendar</h1>
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              AI-Powered Scheduling & Planning
-            </div>
-          </div>
-        </div>
+      <FeatureGuideBanner
+        toolKey="calendar"
+        title="Content Calendar"
+        icon={<CalendarIcon className="w-5 h-5 text-violet-400" />}
+        tagline="Visualize your multi-platform growth. Never miss a post again."
+        whatYouGet={["Monthly & weekly views", "Platform-specific color coding", "AI-powered auto-scheduling", "One-click generation from planned items"]}
+        whenToUse="Use this to plan your next 7-30 days of content and ensure a healthy mix of value, hype, and engagement."
+        proTip="Use 'AI Auto-Schedule' to instantly fill your empty slots with optimized posting times for your niche."
+        planRequired="Creator"
+        forceOpen={showGuide}
+      />
+      
+      <PageHeader
+        icon={<CalendarIcon />}
+        iconBg="bg-violet-600/10"
+        iconColor="text-violet-500"
+        title="Content Calendar"
+        subtitle="AI-Powered Scheduling & Planning"
+        onInfoClick={() => setShowGuide(prev => !prev)}
+        action={
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="gap-2 border-violet-500/20" onClick={() => setIsAIScheduleOpen(true)}>
+              <Wand2 className="h-4 w-4 text-violet-500" />
+              AI Auto-Schedule
+            </Button>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center bg-muted rounded-xl p-1 border">
-            <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="h-8 w-8"><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="px-4 font-bold text-sm min-w-[140px] text-center">{format(currentDate, "MMMM yyyy")}</span>
-            <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="h-8 w-8"><ChevronRight className="h-4 w-4" /></Button>
+            <Button className="bg-violet-600 hover:bg-violet-700 gap-2 shadow-lg shadow-violet-600/20" onClick={() => { setSelectedDay(new Date()); setIsAddItemOpen(true); }}>
+              <Plus className="h-4 w-4" />
+              Add Content
+            </Button>
           </div>
-          
-          <Button variant="outline" className="gap-2 border-indigo-500/20" onClick={() => setIsAIScheduleOpen(true)}>
-            <Wand2 className="h-4 w-4 text-indigo-500" />
-            AI Auto-Schedule
-          </Button>
+        }
+      />
 
-          <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 shadow-lg shadow-indigo-600/20" onClick={() => { setSelectedDay(new Date()); setIsAddItemOpen(true); }}>
-            <Plus className="h-4 w-4" />
-            Add Content
-          </Button>
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex items-center bg-muted rounded-xl p-1 border">
+          <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="h-8 w-8"><ChevronLeft className="h-4 w-4" /></Button>
+          <span className="px-4 font-bold text-sm min-w-[140px] text-center">{format(currentDate, "MMMM yyyy")}</span>
+          <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="h-8 w-8"><ChevronRight className="h-4 w-4" /></Button>
         </div>
-      </header>
+      </div>
 
       <Card className="border-none shadow-2xl overflow-hidden bg-background">
         <div className="overflow-x-auto -mx-4 px-4 md:overflow-visible md:mx-0 md:px-0 scrollbar-hide">
-          <div className="min-w-[800px] md:min-w-0">
+          <div className="min-w-[560px] md:min-w-0">
             <div className="grid grid-cols-7 border-b bg-muted/30">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-                <div key={d} className="py-3 text-center text-xs font-black uppercase tracking-widest text-muted-foreground">{d}</div>
+                <div key={d} className="py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{d}</div>
               ))}
             </div>
             <div className="grid grid-cols-7">
               {loading ? (
-                Array(35).fill(0).map((_, i) => <Skeleton key={i} className="h-[140px] rounded-none border" />)
+                Array(35).fill(0).map((_, i) => <Skeleton key={i} className="h-[140px] rounded-none border border-border/10" />)
               ) : (
                 renderCells()
               )}
@@ -305,7 +317,7 @@ export default function CalendarPage() {
                              <ExternalLink className="h-3 w-3" /> View Content
                            </Button>
                          ) : (
-                           <Button size="sm" className="w-full text-xs gap-2 bg-indigo-600" onClick={() => generateForItem(item.id)}>
+                           <Button size="sm" className="w-full text-xs gap-2 bg-violet-600" onClick={() => generateForItem(item.id)}>
                              <Zap className="h-3 w-3 fill-current" /> Generate Now
                            </Button>
                          )}
@@ -358,13 +370,13 @@ export default function CalendarPage() {
                         <button 
                           key={c.name} 
                           onClick={() => setNewItem({...newItem, color: c.value})}
-                          className={`h-6 w-6 rounded-full ${c.value} ${newItem.color === c.value ? 'ring-2 ring-offset-2 ring-indigo-600' : ''}`} 
+                          className={`h-6 w-6 rounded-full ${c.value} ${newItem.color === c.value ? 'ring-2 ring-offset-2 ring-violet-600' : ''}`} 
                         />
                       ))}
                     </div>
                   </div>
                 </div>
-                <Button onClick={addItem} className="w-full bg-indigo-600">Save to Calendar</Button>
+                <Button onClick={addItem} className="w-full bg-violet-600">Save to Calendar</Button>
               </div>
             </div>
           </div>
@@ -375,7 +387,7 @@ export default function CalendarPage() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-indigo-600 fill-indigo-600" />
+              <Zap className="h-5 w-5 text-violet-600 fill-violet-600" />
               AI Auto-Schedule
             </DialogTitle>
             <DialogDescription>Let AI build your content strategy for the next few weeks.</DialogDescription>

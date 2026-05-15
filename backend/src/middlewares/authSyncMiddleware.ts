@@ -134,7 +134,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         
         // Background tasks
         WelcomeSequence.sendWelcomeToBeta(emailFromSession || "", (auth.sessionClaims?.firstName as string) || "").catch(() => {});
-        ensureReferralCode(uid, tx).catch(() => {});
+        await ensureReferralCode(uid, tx);
       } else {
         // EXISTING USER - Possible credit reset or info update
         const updates: any = { lastLoginAt: now };

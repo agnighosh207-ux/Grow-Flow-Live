@@ -49,8 +49,8 @@ function getRazorpay() {
 
 // requireAuth and getOrCreateUser are now centralized in planMiddleware.ts (Flaw 20 & 21 fix)
 
-function getTierFromPlanId(planId: string): "starter" | "creator" | "infinity" | null {
-  const tiers = ["STARTER", "CREATOR", "INFINITY"] as const;
+function getTierFromPlanId(planId: string): "starter" | "creator" | "infinity" | "agency" | null {
+  const tiers = ["STARTER", "CREATOR", "INFINITY", "AGENCY"] as const;
   const cycles = ["MONTHLY", "QUARTERLY", "HALFYEARLY", "YEARLY"] as const;
   const currencies = ["", "_USD"] as const;
 
@@ -271,6 +271,7 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Respon
     isBanned: !!user.isBanned,
     currentStreak: user.currentStreak || 0,
     totalGenerations: user.totalGenerations || 0,
+    hasUsedTrial: user.hasUsedTrial || false,
   });
 });
 
@@ -296,31 +297,40 @@ const PLAN_CONFIG = {
     "half-yearly": { amount: 432000, period: "monthly" as const, interval: 6, totalCount: 20 },
     yearly: { amount: 766000, period: "yearly" as const, interval: 1, totalCount: 10 },
   },
+  agency: {
+    displayName: "Agency",
+    monthly: { amount: 299900, period: "monthly" as const, interval: 1, totalCount: 120 },
+    yearly: { amount: 2879900, period: "yearly" as const, interval: 1, totalCount: 10 },
+  },
   USD: {
     starter: {
-      monthly: { amount: 500, period: "monthly" as const, interval: 1, totalCount: 120 },
-      quarterly: { amount: 1350, period: "monthly" as const, interval: 3, totalCount: 40 },
-      "half-yearly": { amount: 2550, period: "monthly" as const, interval: 6, totalCount: 20 },
-      yearly: { amount: 4800, period: "yearly" as const, interval: 1, totalCount: 10 },
+      monthly: { amount: 199, period: "monthly" as const, interval: 1, totalCount: 120 },
+      quarterly: { amount: 537, period: "monthly" as const, interval: 3, totalCount: 40 },
+      "half-yearly": { amount: 1014, period: "monthly" as const, interval: 6, totalCount: 20 },
+      yearly: { amount: 1788, period: "yearly" as const, interval: 1, totalCount: 10 },
     },
     creator: {
-      monthly: { amount: 1500, period: "monthly" as const, interval: 1, totalCount: 120 },
-      quarterly: { amount: 4050, period: "monthly" as const, interval: 3, totalCount: 40 },
-      "half-yearly": { amount: 7800, period: "monthly" as const, interval: 6, totalCount: 20 },
-      yearly: { amount: 14400, period: "yearly" as const, interval: 1, totalCount: 10 },
+      monthly: { amount: 549, period: "monthly" as const, interval: 1, totalCount: 120 },
+      quarterly: { amount: 1497, period: "monthly" as const, interval: 3, totalCount: 40 },
+      "half-yearly": { amount: 2874, period: "monthly" as const, interval: 6, totalCount: 20 },
+      yearly: { amount: 5268, period: "yearly" as const, interval: 1, totalCount: 10 },
     },
     infinity: {
-      monthly: { amount: 2700, period: "monthly" as const, interval: 1, totalCount: 120 },
-      quarterly: { amount: 7290, period: "monthly" as const, interval: 3, totalCount: 40 },
-      "half-yearly": { amount: 14040, period: "monthly" as const, interval: 6, totalCount: 20 },
-      yearly: { amount: 25920, period: "yearly" as const, interval: 1, totalCount: 10 },
+      monthly: { amount: 949, period: "monthly" as const, interval: 1, totalCount: 120 },
+      quarterly: { amount: 2547, period: "monthly" as const, interval: 3, totalCount: 40 },
+      "half-yearly": { amount: 4794, period: "monthly" as const, interval: 6, totalCount: 20 },
+      yearly: { amount: 8988, period: "yearly" as const, interval: 1, totalCount: 10 },
+    },
+    agency: {
+      monthly: { amount: 3900, period: "monthly" as const, interval: 1, totalCount: 120 },
+      yearly: { amount: 34800, period: "yearly" as const, interval: 1, totalCount: 10 },
     },
   },
 };
 
 const subscriptionCreateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  limit: 5,
+  windowMs: 24 * 60 * 60 * 1000,
+  limit: 2,
   keyGenerator: (req: any, res: any) => req.userId || ipKeyGenerator(req, res),
   message: { error: "Too many payment attempts. Please wait before trying again." },
   standardHeaders: true,
@@ -341,6 +351,14 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
     if (!user) {
       logger.error({ userId: req.userId }, "[SUBSCRIPTION] User object missing from request");
       res.status(500).json({ error: "user_context_missing", message: "User data could not be synchronized. Please try logging out and back in." });
+      return;
+    }
+
+    if (!user.email) {
+      res.status(400).json({ 
+        error: "email_required",
+        message: "A verified email address is required to start a trial."
+      });
       return;
     }
 
@@ -397,13 +415,26 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
 
     let subscription;
     try {
+      const [existingUser] = await db.select()
+        .from(usersTable)
+        .where(eq(usersTable.id, req.userId));
+
+      const isEligibleForTrial = !existingUser?.hasUsedTrial;
+
       subscription = await createSubscription(
         req.userId, 
         razorpayPlanId,
         effectivePlan.toUpperCase(), 
         user.email || undefined,
-        config.totalCount
+        config.totalCount,
+        isEligibleForTrial
       );
+
+      if (isEligibleForTrial) {
+        await db.update(usersTable)
+          .set({ hasUsedTrial: true })
+          .where(eq(usersTable.id, req.userId));
+      }
     } catch (rzpErr: any) {
       const rzpDesc = rzpErr?.error?.description || rzpErr?.message || String(rzpErr);
       logger.error({ userId: req.userId, rzpErr: rzpErr?.error || rzpErr }, "[SUBSCRIPTION] Razorpay API Call Failed");
@@ -525,7 +556,7 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
-  const effectivePlan = (planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity";
+  const effectivePlan = (planType === "agency" ? "agency" : planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity" | "agency";
   const planTierStr = effectivePlan.toUpperCase();
   const credits = TIER_CREDITS[planTierStr] || 20;
   const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -621,22 +652,27 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
 });
 
 router.post("/credits/topup", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const { pack: packKey } = req.body as { pack: "small" | "medium" | "large" };
-  const PACKS: Record<string, { credits: number; amount: number; label: string }> = {
+  const { pack: packKey, currency = "INR" } = req.body as { pack: "small" | "medium" | "large", currency?: "INR" | "USD" };
+  
+  // Amounts in smallest currency unit (paise for INR, cents for USD)
+  const PACKS: Record<string, { credits: number; INR: number; USD: number; label: string }> = {
     small: {
       credits: parseInt(process.env.RAZORPAY_TOPUP_SMALL_CREDITS || "10"),
-      amount: parseInt(process.env.RAZORPAY_TOPUP_SMALL_AMOUNT || "4900"),
-      label: `${process.env.RAZORPAY_TOPUP_SMALL_CREDITS || 10} credits — ₹${parseInt(process.env.RAZORPAY_TOPUP_SMALL_AMOUNT || "4900") / 100}`,
+      INR: parseInt(process.env.RAZORPAY_TOPUP_SMALL_AMOUNT || "4900"),
+      USD: 99, // $0.99
+      label: `${process.env.RAZORPAY_TOPUP_SMALL_CREDITS || 10} credits`,
     },
     medium: {
       credits: parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_CREDITS || "25"),
-      amount: parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_AMOUNT || "9900"),
-      label: `${process.env.RAZORPAY_TOPUP_MEDIUM_CREDITS || 25} credits — ₹${parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_AMOUNT || "9900") / 100}`,
+      INR: parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_AMOUNT || "9900"),
+      USD: 199, // $1.99
+      label: `${process.env.RAZORPAY_TOPUP_MEDIUM_CREDITS || 25} credits`,
     },
     large: {
       credits: parseInt(process.env.RAZORPAY_TOPUP_LARGE_CREDITS || "60"),
-      amount: parseInt(process.env.RAZORPAY_TOPUP_LARGE_AMOUNT || "19900"),
-      label: `${process.env.RAZORPAY_TOPUP_LARGE_CREDITS || 60} credits — ₹${parseInt(process.env.RAZORPAY_TOPUP_LARGE_AMOUNT || "19900") / 100}`,
+      INR: parseInt(process.env.RAZORPAY_TOPUP_LARGE_AMOUNT || "19900"),
+      USD: 399, // $3.99
+      label: `${process.env.RAZORPAY_TOPUP_LARGE_CREDITS || 60} credits`,
     },
   };
   
@@ -646,6 +682,9 @@ router.post("/credits/topup", requireAuth, async (req: AuthenticatedRequest, res
     return;
   }
 
+  const amount = currency === "USD" ? pack.USD : pack.INR;
+  const displayAmount = currency === "USD" ? `$${amount / 100}` : `₹${amount / 100}`;
+
   const { rzp, keyId } = getRazorpay();
   if (!rzp) {
     res.status(503).json({ error: "Payment gateway not configured" });
@@ -654,27 +693,29 @@ router.post("/credits/topup", requireAuth, async (req: AuthenticatedRequest, res
 
   try {
     const order = await rzp.orders.create({ 
-      amount: pack.amount, 
-      currency: "INR",
+      amount: amount, 
+      currency: currency,
       notes: {
         clerk_user_id: req.userId,
         type: "credit_topup",
-        credits: pack.credits
+        credits: pack.credits,
+        currency: currency
       }
     });
     res.json({ 
       orderId: order.id, 
       keyId: keyId,
-      amount: pack.amount,
-      currency: "INR",
+      amount: amount,
+      currency: currency,
       credits: pack.credits,
-      label: pack.label
+      label: `${pack.label} — ${displayAmount}`
     });
   } catch (err: any) {
-    logger.error({ err: err.message, userId: req.userId }, "Failed to create topup order");
-    res.status(500).json({ error: "Failed to create order" });
+    logger.error({ err: err.message, userId: req.userId, packKey, currency }, "Failed to create topup order");
+    res.status(500).json({ error: "Failed to create order. Please try again later." });
   }
 });
+
 
 router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -1012,17 +1053,34 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
     // Bug 2 Fix: Handle subscription.activated specifically for first-time activation
     if (event.event === "subscription.activated") {
       const activatedSubId = event.payload?.subscription?.entity?.id;
+      const planId = event.payload?.subscription?.entity?.plan_id;
+      const startAt = event.payload?.subscription?.entity?.start_at;
+      const isTrialActive = startAt && (startAt * 1000) > Date.now();
+
       if (activatedSubId) {
-        const planTier = getTierFromPlanId(event.payload?.subscription?.entity?.plan_id || "");
+        const planTier = getTierFromPlanId(planId || "");
         if (planTier) {
-          await db.update(usersTable)
-            .set({
-              planType: planTier,
-              subscriptionStatus: "active",
-              razorpaySubscriptionId: activatedSubId,
-            })
-            .where(eq(usersTable.razorpaySubscriptionId, activatedSubId));
-          logger.info({ activatedSubId, planTier }, "[WEBHOOK] subscription.activated processed");
+          if (isTrialActive) {
+            await db.update(usersTable)
+              .set({
+                subscriptionStatus: "trial",
+                planType: planTier,
+                razorpaySubscriptionId: activatedSubId,
+                trialEndsAt: new Date(startAt * 1000),
+                generationsRemaining: TIER_CREDITS[planTier.toUpperCase()] || 25,
+              })
+              .where(eq(usersTable.razorpaySubscriptionId, activatedSubId));
+            logger.info({ activatedSubId, planTier }, "[WEBHOOK] Trial activated");
+          } else {
+            await db.update(usersTable)
+              .set({
+                planType: planTier,
+                subscriptionStatus: "active",
+                razorpaySubscriptionId: activatedSubId,
+              })
+              .where(eq(usersTable.razorpaySubscriptionId, activatedSubId));
+            logger.info({ activatedSubId, planTier }, "[WEBHOOK] subscription.activated processed");
+          }
         }
       }
     }

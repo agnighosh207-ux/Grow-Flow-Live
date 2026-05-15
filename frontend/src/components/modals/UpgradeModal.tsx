@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Zap, Check, Loader2, Crown, Lock, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCreateSubscription, useVerifySubscription, useValidateCoupon } from "@/hooks/useSubscription";
+import { useCreateSubscription, useVerifySubscription, useValidateCoupon, useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { NPSModal } from "@/components/modals/NPSModal";
 import { useQueryClient } from "@tanstack/react-query";
@@ -109,6 +109,9 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
     reason === "pro_feature" ? "infinity" : targetPlan
   );
 
+  const { data: subStatus } = useSubscriptionStatus();
+  const hasUsedTrial = subStatus?.hasUsedTrial || false;
+
   // Sync selected plan when the modal opens
   React.useEffect(() => {
     if (open) {
@@ -134,14 +137,14 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
       ? `${featureName} is exclusive to Infinity. Upgrade to unlock it and all premium features.`
       : subtitle;
 
-  const highlights = selectedPlan === "infinity" ? INFINITY_HIGHLIGHTS : selectedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS;
+  const highlights = selectedPlan === "agency" ? AGENCY_HIGHLIGHTS : selectedPlan === "infinity" ? INFINITY_HIGHLIGHTS : selectedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS;
   
 const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
   if (currency === "USD") {
     const usdPrices: Record<PlanType, Record<string, string>> = {
-      starter: { monthly: "$5", quarterly: "$4.50", "half-yearly": "$4.25", yearly: "$4" },
-      creator: { monthly: "$15", quarterly: "$13.50", "half-yearly": "$13", yearly: "$12" },
-      infinity: { monthly: "$27", quarterly: "$24.30", "half-yearly": "$23.40", yearly: "$21.60" },
+      starter: { monthly: "$1.99", quarterly: "$1.79", "half-yearly": "$1.69", yearly: "$1.49" },
+      creator: { monthly: "$5.49", quarterly: "$4.99", "half-yearly": "$4.79", yearly: "$4.39" },
+      infinity: { monthly: "$9.49", quarterly: "$8.49", "half-yearly": "$7.99", yearly: "$7.49" },
       agency: { monthly: "$39", quarterly: "$35", "half-yearly": "$32", yearly: "$29" },
     };
     return usdPrices[plan][period] || usdPrices[plan]["monthly"];
@@ -288,7 +291,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
               boxShadow: "0 0 80px -10px rgba(124,58,237,0.4)",
             }}
           >
-            <div className="h-0.5 w-full bg-gradient-to-r from-cyan-600 via-teal-500 to-cyan-600" />
+            <div className="h-1 w-full bg-violet-600" />
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
               <AnimatePresence mode="wait">
@@ -316,7 +319,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
                     >
-                      <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-3 py-1 mb-3">
+                      <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-3 py-1 mb-3">
                         <Sparkles className="w-3 h-3" /> {purchasedPlanLabel} plan activated
                       </div>
                       <h2 className="text-2xl font-bold text-white mb-2">You're all set! 🎉</h2>
@@ -334,7 +337,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       </ul>
 
                       <Button
-                        className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-3"
+                        className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-3"
                         onClick={handleClose}
                       >
                         <Zap className="w-4 h-4 mr-2" /> Start creating
@@ -359,7 +362,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       <AlertCircle className="w-8 h-8 text-amber-400" />
                     </div>
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 bg-amber-500/20 border border-amber-500/30 rounded-full px-3 py-1 mb-3">
-                      Payment cancelled please try again
+                      Please try again
                     </span>
                     <h2 className="text-xl font-bold text-white mb-2">Payment incomplete</h2>
                     <p className="text-white/50 text-sm leading-relaxed mb-1 max-w-xs mx-auto">
@@ -369,7 +372,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       You can try again — your card details are pre-filled.
                     </p>
                     <Button
-                      className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-3"
+                      className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-3"
                       onClick={() => handleCheckout()}
                     >
                       <Zap className="w-4 h-4 mr-2" /> Try again
@@ -385,8 +388,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="pro_feature" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-cyan-600/20 border border-cyan-500/25 flex items-center justify-center">
-                          <Lock className="w-4 h-4 text-cyan-400" />
+                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-violet-400" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -398,8 +401,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       </button>
                     </div>
 
-                    <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 mb-5">
-                      <p className="text-[10px] font-semibold text-cyan-400 uppercase tracking-widest mb-3">
+                    <div className="rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-4 mb-5">
+                      <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-widest mb-3">
                         What you unlock
                       </p>
                       <ul className="space-y-2.5">
@@ -420,22 +423,27 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                         <span className="text-2xl font-bold text-white">{currency === "USD" ? "$27" : "₹799"}</span>
                         <span className="text-white/40 text-xs ml-1">/month</span>
                       </div>
-                      <span className="text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2.5 py-1 font-semibold">
+                      <span className="text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1 font-semibold">
                         Cancel anytime
                       </span>
                     </div>
 
                     <Button
-                      className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-2"
+                      className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-2"
                       onClick={() => handleCheckout("infinity")}
                       disabled={paymentState === "pending"}
                     >
                       {paymentState === "pending" ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
                       ) : (
-                        <><Zap className="w-4 h-4 mr-2" /> Unlock Full Power</>
+                        <><Zap className="w-4 h-4 mr-2" /> Start 7-Day Free Trial →</>
                       )}
                     </Button>
+                    <p className="text-center text-[10px] text-white/35 mt-2 mb-2">
+                      {hasUsedTrial 
+                        ? "Trial already used · Billing starts immediately · Cancel anytime"
+                        : "✓ No charge today · ✓ Cancel anytime before day 7 · ✓ Full access starts immediately"}
+                    </p>
 
                     <button
                       onClick={handleClose}
@@ -448,8 +456,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="limit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-cyan-600/20 border border-cyan-500/25 flex items-center justify-center">
-                          <Crown className="w-4 h-4 text-cyan-400" />
+                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
+                          <Crown className="w-4 h-4 text-violet-400" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -465,16 +473,21 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
 
 
                       <Button
-                        className="w-full h-16 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-cyan-900/40"
-                        onClick={() => handleCheckout("creator")}
+                        className="w-full h-16 bg-violet-600 hover:bg-violet-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-violet-900/40"
+                        onClick={() => handleCheckout(targetPlan)}
                         disabled={paymentState === "pending"}
                       >
                         {paymentState === "pending" ? (
                           <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Activating...</>
                         ) : (
-                          <><Zap className="w-5 h-5 mr-2" /> Upgrade to Creator →</>
+                          <><Zap className="w-5 h-5 mr-2" /> Start 7-Day Free Trial →</>
                         )}
                       </Button>
+                      <p className="text-center text-[10px] text-white/35">
+                        {hasUsedTrial 
+                          ? "Trial already used · Billing starts immediately · Cancel anytime"
+                          : "✓ No charge today · ✓ Cancel anytime before day 7 · ✓ Full access starts immediately"}
+                      </p>
                     </div>
 
                     <p className="text-center text-[11px] text-white/35 leading-relaxed mb-1">
@@ -492,8 +505,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="checkout" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-cyan-600/20 border border-cyan-500/25 flex items-center justify-center">
-                          <Crown className="w-4 h-4 text-cyan-400" />
+                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
+                          <Crown className="w-4 h-4 text-violet-400" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -512,7 +525,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                           onClick={() => setSelectedPlan(p)}
                           className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold border transition-all duration-200 whitespace-nowrap min-w-[100px] ${
                             selectedPlan === p
-                              ? "bg-cyan-600/25 border-cyan-500/50 text-cyan-200"
+                              ? "bg-violet-600/25 border-violet-500/50 text-violet-200"
                               : "border-white/8 text-white/40 hover:text-white/60 hover:border-white/15"
                           }`}
                         >
@@ -520,7 +533,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                             <span>{p === "infinity" ? "Infinity" : p === "creator" ? "Creator" : "Starter"}</span>
                             <span className="text-[10px] font-normal opacity-80">
                               {currency === "USD" 
-                                ? (p === "agency" ? "$39/mo" : p === "infinity" ? "$27/mo" : p === "creator" ? "$15/mo" : "$5/mo")
+                                ? (p === "agency" ? "$39/mo" : p === "infinity" ? "$9.49/mo" : p === "creator" ? "$5.49/mo" : "$1.99/mo")
                                 : (p === "agency" ? "₹2,999/mo" : p === "infinity" ? "₹799/mo" : p === "creator" ? "₹449/mo" : "₹149/mo")
                               }
                             </span>
@@ -542,7 +555,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                           )}
                         </span>
                         <span className="text-white/40 text-sm mb-0.5">/month</span>
-                        <span className="ml-auto inline-flex items-center gap-1 text-xs text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2.5 py-0.5 font-medium">
+                        <span className="ml-auto inline-flex items-center gap-1 text-xs text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-0.5 font-medium">
                           <Zap className="w-2.5 h-2.5" /> {planLabel} plan
                         </span>
                       </div>
@@ -579,7 +592,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       <ul className="space-y-1.5">
                         {highlights.map((h) => (
                           <li key={h} className="flex items-center gap-2 text-xs text-white/70">
-                            <Check className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                            <Check className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
                             {h}
                           </li>
                         ))}
@@ -587,16 +600,21 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                     </div>
 
                     <Button
-                      className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold shadow-lg shadow-cyan-900/40 mb-2"
+                      className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-2"
                       onClick={() => handleCheckout()}
                       disabled={paymentState === "pending"}
                     >
                       {paymentState === "pending" ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Opening checkout...</>
                       ) : (
-                        <><Zap className="w-4 h-4 mr-2" /> Unlock Full Power</>
+                        <><Zap className="w-4 h-4 mr-2" /> Start 7-Day Free Trial →</>
                       )}
                     </Button>
+                    <p className="text-center text-[10px] text-white/35 mt-2 mb-2">
+                      {hasUsedTrial 
+                        ? "Trial already used · Billing starts immediately · Cancel anytime"
+                        : "✓ No charge today · ✓ Cancel anytime before day 7 · ✓ Full access starts immediately"}
+                    </p>
 
 
                     <button

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { api } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 interface Template {
   id: string;
@@ -68,9 +69,22 @@ export default function TemplatesPage() {
     t.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-6 py-12">
+        <FeatureGuideBanner
+          toolKey="templates"
+          title="Viral Frameworks"
+          icon={<Rocket className="w-5 h-5 text-violet-400" />}
+          tagline="Stop staring at a blank screen. Use proven psychological frameworks to structure your next viral post."
+          whatYouGet={["Viral Growth structures", "Educational frameworks", "Storytelling patterns", "Promotional templates"]}
+          whenToUse="Use this when you have an idea but don't know how to structure it for maximum engagement."
+          proTip="Try the 'Viral' category if you want to maximize reach, or 'Story' if you want to build deep authority."
+          planRequired="Starter"
+          forceOpen={showGuide}
+        />
         <div className="mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -78,24 +92,32 @@ export default function TemplatesPage() {
             className="flex flex-col md:flex-row md:items-end justify-between gap-6"
           >
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-4">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Content Frameworks</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-4">
+                <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Content Frameworks</span>
               </div>
-              <h1 className="text-4xl font-black text-white mb-3">Viral Templates</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl font-black text-white mb-3">Viral Templates</h1>
+                <button 
+                  onClick={() => setShowGuide(prev => !prev)}
+                  className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all group mt-[-8px]"
+                >
+                  <Sparkles className="w-4 h-4 text-white/40 group-hover:text-violet-400" />
+                </button>
+              </div>
               <p className="text-white/40 max-w-xl text-lg font-medium leading-relaxed">
                 Stop staring at a blank screen. Use these proven frameworks to structure your next viral post.
               </p>
             </div>
 
             <div className="relative group w-full md:w-80">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-cyan-400 transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-violet-400 transition-colors" />
               <input
                 type="text"
                 placeholder="Search frameworks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-cyan-500/50 focus:bg-white/[0.05] transition-all"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.05] transition-all"
               />
             </div>
           </motion.div>
@@ -111,11 +133,11 @@ export default function TemplatesPage() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl border text-sm font-bold transition-all whitespace-nowrap
                   ${isActive 
-                    ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-400 shadow-[0_0_20px_rgba(0,242,255,0.1)]" 
+                    ? "bg-violet-500/10 border-violet-500/40 text-violet-400 shadow-[0_0_20px_rgba(124,58,237,0.1)]" 
                     : "bg-white/[0.02] border-white/5 text-white/40 hover:border-white/20 hover:bg-white/[0.04]"
                   }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-cyan-400" : "text-white/20"}`} />
+                <Icon className={`w-4 h-4 ${isActive ? "text-violet-400" : "text-white/20"}`} />
                 {cat.label}
               </button>
             );
@@ -136,10 +158,10 @@ export default function TemplatesPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="group relative p-8 rounded-3xl bg-white/[0.02] border border-white/10 hover:border-cyan-500/40 transition-all hover:bg-white/[0.04] flex flex-col"
+                className="group relative p-8 rounded-3xl bg-white/[0.02] border border-white/10 hover:border-violet-500/40 transition-all hover:bg-white/[0.04] flex flex-col"
               >
                 <div className="flex items-start justify-between mb-6">
-                  <div className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-white/40 group-hover:text-cyan-400 group-hover:border-cyan-500/20 transition-colors">
+                  <div className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-white/40 group-hover:text-violet-400 group-hover:border-violet-500/20 transition-colors">
                     {template.category}
                   </div>
                   <div className="flex items-center gap-1.5 text-white/20 text-[10px] font-bold">
@@ -148,7 +170,7 @@ export default function TemplatesPage() {
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-4 group-hover:text-cyan-400 transition-colors">
+                <h3 className="text-xl font-bold text-white mb-4 group-hover:text-violet-400 transition-colors">
                   {template.name}
                 </h3>
 
@@ -160,7 +182,7 @@ export default function TemplatesPage() {
 
                 <Button
                   onClick={() => handleUseTemplate(template)}
-                  className="w-full h-12 rounded-2xl bg-white/5 hover:bg-cyan-600 border border-white/10 hover:border-cyan-500 text-white font-bold transition-all flex items-center justify-center gap-2"
+                  className="w-full h-12 rounded-2xl bg-white/5 hover:bg-violet-600 border border-white/10 hover:border-violet-500 text-white font-bold transition-all flex items-center justify-center gap-2"
                 >
                   Use Template <ChevronRight className="w-4 h-4" />
                 </Button>

@@ -44,6 +44,7 @@ export const usersTable = pgTable("users", {
   referralCode: text("referral_code").unique(),
   referralUsedCode: text("referral_used_code"),
   hasSeenReferralPopup: boolean("has_seen_referral_popup").notNull().default(false),
+  hasUsedTrial: boolean("has_used_trial").notNull().default(false),
   currentStreak: integer("current_streak").notNull().default(0),
   lastStreakDate: text("last_streak_date"),
   niche: text("niche"),

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, HelpCircle, Lightbulb, Zap } from "lucide-react";
+import { X, HelpCircle, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface FeatureGuideBannerProps {
@@ -12,6 +12,7 @@ interface FeatureGuideBannerProps {
   whenToUse: string;        // one sentence on when to use this
   proTip?: string;          // optional power user tip
   planRequired?: string;    // "Starter" | "Creator" | "Infinity" | undefined (free)
+  forceOpen?: boolean;      // NEW: allow external trigger to show the banner
 }
 
 const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
@@ -22,7 +23,8 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
   whatYouGet,
   whenToUse,
   proTip,
-  planRequired
+  planRequired,
+  forceOpen
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const storageKey = `guide_dismissed_${toolKey}`;
@@ -33,6 +35,13 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
       setIsVisible(true);
     }
   }, [storageKey]);
+
+  // Sync with external trigger
+  useEffect(() => {
+    if (forceOpen) {
+      setIsVisible(true);
+    }
+  }, [forceOpen]);
 
   const handleDismiss = () => {
     localStorage.setItem(storageKey, "true");
@@ -60,13 +69,13 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
               variant="default"
               size="icon"
               onClick={handleShow}
-              className="w-12 h-12 rounded-full bg-cyan-600 text-white shadow-[0_0_20px_rgba(0,242,255,0.4)] border border-cyan-400/50 hover:bg-cyan-500 hover:scale-110 transition-all active:scale-90"
+              className="w-12 h-12 rounded-full bg-violet-600 text-white shadow-[0_0_20px_rgba(124,58,237,0.4)] border border-violet-400/50 hover:bg-violet-500 hover:scale-110 transition-all active:scale-90"
               title="Show tool guide"
             >
               <HelpCircle className="w-6 h-6" />
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-violet-500"></span>
               </span>
             </Button>
           </motion.div>
@@ -82,7 +91,7 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="relative group bg-[#0a051d] border border-cyan-500/30 border-l-[6px] border-l-cyan-500 rounded-2xl p-6 sm:p-7 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl">
+            <div className="relative group bg-[#0a051d] border border-violet-500/30 border-l-[6px] border-l-violet-500 rounded-2xl p-6 sm:p-7 shadow-2xl shadow-violet-950/40 backdrop-blur-xl">
               
               {/* Dismiss Button */}
               <button
@@ -96,14 +105,14 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 {/* Left Side: Info */}
                 <div className="flex items-start gap-5 flex-1">
-                  <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-[inset_0_0_20px_rgba(6,182,212,0.1)]">
-                    {React.cloneElement(icon as React.ReactElement, { className: "w-7 h-7" })}
+                  <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400 shrink-0 shadow-[inset_0_0_20px_rgba(124,58,237,0.1)]">
+                    {React.cloneElement(icon as React.ReactElement<any>, { className: "w-7 h-7" })}
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-3">
                       <h3 className="text-xl font-black text-white tracking-tight uppercase italic">{title}</h3>
                       {planRequired && (
-                        <span className="text-[10px] font-black text-black bg-cyan-400 rounded-full px-3 py-0.5 uppercase tracking-widest shadow-lg shadow-cyan-500/20">
+                        <span className="text-[10px] font-black text-black bg-violet-400 rounded-full px-3 py-0.5 uppercase tracking-widest shadow-lg shadow-violet-500/20">
                           {planRequired}
                         </span>
                       )}
@@ -115,10 +124,10 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
                 {/* Right Side: What you get pills */}
                 <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
                   <span className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 w-full lg:w-auto lg:mr-3 mb-1 lg:mb-0">You'll Get:</span>
-                  {whatYouGet.map((item, idx) => (
+                  {whatYouGet.map((item) => (
                     <span 
-                      key={idx}
-                      className="text-[11px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-xl px-3.5 py-1.5 backdrop-blur-md shadow-sm"
+                      key={`${toolKey}-${item}`}
+                      className="text-[11px] font-black uppercase tracking-wider text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-xl px-3.5 py-1.5 backdrop-blur-md shadow-sm"
                     >
                       {item}
                     </span>

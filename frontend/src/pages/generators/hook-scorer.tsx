@@ -2,15 +2,17 @@ import { useState } from "react";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { useAuth } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Loader2, TrendingUp, AlertCircle, CheckCircle2, Copy, Sparkles } from "lucide-react";
+import { Target, Loader2, TrendingUp, AlertCircle, CheckCircle2, Copy, Sparkles, HelpCircle } from "lucide-react";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { PageHeader } from "@/components/shared/PageHeader";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 export default function HookScorerPage() {
   const { getToken } = useAuth();
   const { toast } = useToast();
   const { data: sub } = useSubscriptionStatus();
   const [hook, setHook] = useState("");
+  const [niche, setNiche] = useState("General");
   const [platform, setPlatform] = useState("Instagram");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -23,7 +25,7 @@ export default function HookScorerPage() {
       const res = await fetch("/api/hook-scorer/score", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ hook: hook.trim(), platform }),
+        body: JSON.stringify({ hook: hook.trim(), platform, niche }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scoring failed");
@@ -40,12 +42,25 @@ export default function HookScorerPage() {
   const scoreBg = (score: number) =>
     score >= 80 ? "bg-emerald-500/10 border-emerald-500/20" : score >= 60 ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20";
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <PageWrapper maxWidth="lg">
+      <FeatureGuideBanner 
+        toolKey="hook-scorer"
+        icon={<Target />}
+        title="Hook Scorer"
+        tagline="AI-powered analysis to predict your hook's performance and stop the scroll."
+        whatYouGet={["Viral Grade (S-D)", "Pattern Analysis", "Improved AI Version", "Specific Quick-Fixes"]}
+        whenToUse="Use this before posting any video or thread to ensure your first 3 seconds are perfect."
+        proTip="Negative framing (e.g. 'Stop doing X') often scores 15% higher than positive framing."
+        forceOpen={showGuide}
+      />
       <PageHeader 
         icon={<Target />} 
         title="Hook Scorer" 
-        subtitle="Score your hook before posting — know if it'll stop the scroll"
+        subtitle="Predict viral performance before you post"
+        onInfoClick={() => setShowGuide(prev => !prev)}
       />
       <div className="max-w-2xl mx-auto space-y-4">
         {/* Input */}
@@ -54,14 +69,23 @@ export default function HookScorerPage() {
             value={hook}
             onChange={e => setHook(e.target.value)}
             placeholder="Paste your hook here... e.g. 'I quit my 9-5 after discovering this one thing'"
-            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-cyan-500/40 resize-none min-h-[80px]"
+            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-violet-500/40 resize-none min-h-[80px]"
             maxLength={300}
           />
           <div className="flex items-center gap-3">
             <select
+              value={niche}
+              onChange={e => setNiche(e.target.value)}
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/40"
+            >
+              {["General", "Fitness", "Finance", "Tech", "Business", "Lifestyle", "Education"].map(n => (
+                <option key={n} value={n} className="bg-zinc-900">{n}</option>
+              ))}
+            </select>
+            <select
               value={platform}
               onChange={e => setPlatform(e.target.value)}
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500/40"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/40"
             >
               {["Instagram","YouTube","Twitter","LinkedIn","TikTok"].map(p => (
                 <option key={p} value={p} className="bg-zinc-900">{p}</option>
@@ -70,7 +94,7 @@ export default function HookScorerPage() {
             <button
               onClick={handleScore}
               disabled={loading || !hook.trim()}
-              className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-black font-bold px-6 py-2 rounded-xl text-sm transition-all flex items-center gap-2"
+              className="bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all flex items-center gap-2 shadow-lg shadow-violet-900/40"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
               Score It
@@ -129,11 +153,11 @@ export default function HookScorerPage() {
 
             {/* Improved Version */}
             {result.improvedVersion && (
-              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+              <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-black text-cyan-400 uppercase tracking-widest">AI-Improved Version</h3>
+                  <h3 className="text-xs font-black text-violet-400 uppercase tracking-widest">AI-Improved Version</h3>
                   <button onClick={() => { navigator.clipboard.writeText(result.improvedVersion); toast({ title: "Copied!" }); }}
-                    className="text-xs text-white/30 hover:text-cyan-400 flex items-center gap-1">
+                    className="text-xs text-white/30 hover:text-violet-400 flex items-center gap-1">
                     <Copy className="w-3 h-3" /> Copy
                   </button>
                 </div>

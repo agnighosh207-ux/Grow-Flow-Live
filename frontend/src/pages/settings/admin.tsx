@@ -98,7 +98,7 @@ export default function AdminDashboard() {
   const [banningUserId, setBanningUserId] = useState<string | null>(null);
   const [isRunningReengagement, setIsRunningReengagement] = useState(false);
 
-  const COLORS = ['#00F2FF', '#00D9E5', '#00BEC9', '#00A3AD', '#00848D'];
+  const COLORS = ['#7c3aed', '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe'];
 
   const { data: subData, isPending: isSubPending } = useSubscriptionStatus();
 
@@ -352,13 +352,13 @@ export default function AdminDashboard() {
   if (!isLoaded || isSubPending || (isStatsLoading && !stats)) {
     return (
       <div className="flex flex-col items-center justify-center p-20 min-h-screen bg-[#0b0416]">
-        <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-cyan-400 animate-pulse">Initializing Secure Admin Protocol...</p>
+        <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-violet-400 animate-pulse">Initializing Secure Admin Protocol...</p>
       </div>
     );
   }
 
-  const StatCard = ({ icon: Icon, label, value, color = "cyan" }: any) => (
+  const StatCard = ({ icon: Icon, label, value, color = "violet" }: any) => (
     <div className={`bg-[#100726]/80 backdrop-blur-xl border border-${color}-500/30 p-5 rounded-2xl shadow-xl`}>
       <div className="flex items-center gap-3 mb-2">
         <div className={`p-2 bg-${color}-500/20 rounded-lg`}>
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0b0416] text-white font-sans selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#0b0416] text-white font-sans selection:bg-violet-500/30">
       <div className="max-w-[1600px] mx-auto p-6 lg:p-10 space-y-10">
         
         {/* Header */}
@@ -382,7 +382,7 @@ export default function AdminDashboard() {
             </button>
             <div>
               <div className="flex items-center gap-3">
-                <Shield className="text-cyan-400 w-8 h-8" />
+                <Shield className="text-violet-400 w-8 h-8" />
                 <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-white to-white/40 bg-clip-text text-transparent">
                   COMMAND CENTER
                 </h1>
@@ -396,9 +396,9 @@ export default function AdminDashboard() {
               variant="ghost" 
               size="sm" 
               onClick={invalidateAll} 
-              className="h-12 w-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-cyan-400 transition-all"
+              className="h-12 w-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-violet-400 transition-all"
             >
-              <RefreshCw className={`w-5 h-5 ${isStatsLoading || isRevenueLoading ? 'animate-spin text-cyan-400' : ''}`} />
+              <RefreshCw className={`w-5 h-5 ${isStatsLoading || isRevenueLoading ? 'animate-spin text-violet-400' : ''}`} />
             </Button>
             <div className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all ${stats?.maintenanceMode ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/5 border-emerald-500/20'}`}>
               <div className="text-right">
@@ -424,7 +424,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-2.5 rounded-xl text-sm font-bold capitalize transition-all ${
                 activeTab === tab 
-                ? "bg-cyan-500 text-[#0b0416] shadow-[0_0_20px_rgba(6,182,212,0.4)]" 
+                ? "bg-violet-500 text-[#0b0416] shadow-[0_0_20px_rgba(6,182,212,0.4)]" 
                 : "text-white/50 hover:text-white hover:bg-white/5"
               }`}
             >
@@ -448,7 +448,7 @@ export default function AdminDashboard() {
                   <StatCard icon={Users} label="Total Users" value={stats?.totalUsers.toLocaleString()} />
                   <StatCard icon={Mail} label="Emails" value={stats?.totalEmails.toLocaleString()} color="emerald" />
                   <StatCard icon={Zap} label="Generations" value={stats?.totalGenerations.toLocaleString()} color="amber" />
-                  <StatCard icon={DollarSign} label="MRR" value={`₹${revenue?.mrr.toLocaleString() || 0}`} color="cyan" />
+                  <StatCard icon={DollarSign} label="MRR" value={`₹${revenue?.mrr.toLocaleString() || 0}`} color="violet" />
                   <StatCard icon={Activity} label="Active Subs" value={revenue?.activeSubscribers || 0} color="indigo" />
                   <StatCard icon={TrendingUp} label="Daily Growth" value="+12%" color="emerald" />
                 </div>
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-4 sm:p-8 rounded-3xl overflow-hidden">
                     <div className="flex items-center justify-between mb-8">
-                      <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2"><Activity className="w-5 h-5 text-cyan-400" /> DAU (30 Days)</h3>
+                      <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2"><Activity className="w-5 h-5 text-violet-400" /> DAU (30 Days)</h3>
                     </div>
                     <div className="h-64 sm:h-72 w-full overflow-x-auto no-scrollbar">
                       <div className="h-full min-w-[500px]">
@@ -551,15 +551,15 @@ export default function AdminDashboard() {
             {activeTab === "users" && (
               <div className="space-y-6">
                 <div className="relative group">
-                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-cyan-400 transition-colors" />
+                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-violet-400 transition-colors" />
                   <input 
                     type="text" 
                     placeholder="Search by email or exact Clerk ID..."
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
-                    className="w-full bg-[#160d2b] border border-white/5 rounded-3xl pl-16 pr-8 py-5 text-lg focus:outline-none focus:border-cyan-500/50 transition-all placeholder:text-white/10"
+                    className="w-full bg-[#160d2b] border border-white/5 rounded-3xl pl-16 pr-8 py-5 text-lg focus:outline-none focus:border-violet-500/50 transition-all placeholder:text-white/10"
                   />
-                  {(isSearching || (isDebouncing && userSearchQuery.length >= 2)) && <div className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />}
+                  {(isSearching || (isDebouncing && userSearchQuery.length >= 2)) && <div className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />}
                 </div>
 
                 <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden">
@@ -584,7 +584,7 @@ export default function AdminDashboard() {
                             <tr className={`hover:bg-white/[0.03] transition-colors group ${banningUserId === user.id ? 'bg-red-500/5' : ''}`}>
                               <td className="px-8 py-6">
                                 <div className="flex items-center gap-4">
-                                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center font-black text-white/40 group-hover:text-cyan-400 group-hover:border-cyan-500/50 transition-all">
+                                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center font-black text-white/40 group-hover:text-violet-400 group-hover:border-violet-500/50 transition-all">
                                     {user.email ? user.email[0].toUpperCase() : "?"}
                                   </div>
                                   <div>
@@ -595,7 +595,7 @@ export default function AdminDashboard() {
                               </td>
                               <td className="px-8 py-6">
                                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                  user.plan_type === 'infinity' ? 'bg-cyan-500/20 text-cyan-400' :
+                                  user.plan_type === 'infinity' ? 'bg-violet-500/20 text-violet-400' :
                                   user.plan_type === 'creator' ? 'bg-amber-500/20 text-amber-400' :
                                   user.plan_type === 'starter' ? 'bg-blue-500/20 text-blue-400' : 'bg-white/10 text-white/40'
                                 }`}>
@@ -608,7 +608,7 @@ export default function AdminDashboard() {
                                   <span className="text-xs font-bold text-white/60 capitalize">{user.subscription_status || 'free'}</span>
                                 </div>
                               </td>
-                              <td className="px-8 py-6 text-center font-mono font-bold text-cyan-400/60">
+                              <td className="px-8 py-6 text-center font-mono font-bold text-violet-400/60">
                                 {user.generations_count || 0}
                               </td>
                               <td className="px-8 py-6">
@@ -616,7 +616,7 @@ export default function AdminDashboard() {
                               </td>
                               <td className="px-8 py-6 text-right relative">
                                 <div className="flex items-center justify-end gap-2">
-                                  <button onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)} className="p-2 bg-white/5 hover:bg-cyan-500/20 text-white/40 hover:text-cyan-400 rounded-xl transition-all">
+                                  <button onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)} className="p-2 bg-white/5 hover:bg-violet-500/20 text-white/40 hover:text-violet-400 rounded-xl transition-all">
                                     <ChevronDown className={`w-5 h-5 transition-transform ${openDropdownId === user.id ? 'rotate-180' : ''}`} />
                                   </button>
                                 </div>
@@ -644,7 +644,7 @@ export default function AdminDashboard() {
                                                 newTier: p.toUpperCase(),
                                                 newStatus: p === 'free' ? 'free' : 'active'
                                               })}
-                                              className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-white/60 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all capitalize"
+                                              className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-white/60 hover:text-violet-400 hover:bg-violet-500/10 rounded-xl transition-all capitalize"
                                             >
                                               <Zap className="w-4 h-4" /> Set to {p}
                                             </button>
@@ -752,7 +752,7 @@ export default function AdminDashboard() {
                               <Button
                                 onClick={() => sendReengagementMutation.mutate(user)}
                                 disabled={sendReengagementMutation.isPending}
-                                className="bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-[#0b0416] border border-cyan-500/30 text-xs font-black rounded-xl h-10 px-4 transition-all"
+                                className="bg-violet-500/10 hover:bg-violet-500 text-violet-400 hover:text-[#0b0416] border border-violet-500/30 text-xs font-black rounded-xl h-10 px-4 transition-all"
                               >
                                 {sendReengagementMutation.isPending ? "Sending..." : "Send Personal Outreach"}
                               </Button>
@@ -785,7 +785,7 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2 bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-8 rounded-3xl">
-                    <h3 className="text-xl font-bold mb-8 flex items-center gap-2"><CreditCard className="w-5 h-5 text-cyan-400" /> Revenue by Plan</h3>
+                    <h3 className="text-xl font-bold mb-8 flex items-center gap-2"><CreditCard className="w-5 h-5 text-violet-400" /> Revenue by Plan</h3>
                     <div className="h-72 overflow-x-auto no-scrollbar">
                       <div className="h-full min-w-[400px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -818,8 +818,8 @@ export default function AdminDashboard() {
                           <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Cancellations</p>
                           <p className="text-2xl font-bold">{revenue?.cancelledSubscribers || 0}</p>
                         </div>
-                        <div className="p-4 bg-cyan-500/5 border border-cyan-500/10 rounded-2xl">
-                          <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">Recovered</p>
+                        <div className="p-4 bg-violet-500/5 border border-violet-500/10 rounded-2xl">
+                          <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1">Recovered</p>
                           <p className="text-2xl font-bold">0</p>
                         </div>
                       </div>
@@ -935,7 +935,7 @@ export default function AdminDashboard() {
                               <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${
                                 ann.theme === 'error' ? 'bg-red-500/20 text-red-400' : 
                                 ann.theme === 'warning' ? 'bg-amber-500/20 text-amber-400' :
-                                ann.theme === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-cyan-500/20 text-cyan-400'
+                                ann.theme === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-violet-500/20 text-violet-400'
                               }`}>{ann.theme}</span>
                               <span className="text-[10px] text-white/20 font-mono">{format(new Date(ann.createdAt), "yyyy-MM-dd HH:mm")}</span>
                             </div>
@@ -995,7 +995,7 @@ export default function AdminDashboard() {
 
                   <div className="space-y-6">
                     <div className="bg-[#100726]/80 backdrop-blur-xl border border-white/5 p-8 rounded-3xl space-y-6">
-                      <h3 className="text-xl font-bold flex items-center gap-2"><Settings2 className="w-5 h-5 text-cyan-400" /> Instance Metrics</h3>
+                      <h3 className="text-xl font-bold flex items-center gap-2"><Settings2 className="w-5 h-5 text-violet-400" /> Instance Metrics</h3>
                       <div className="space-y-4">
                         <div className="flex justify-between items-center py-3 border-b border-white/5">
                           <span className="text-white/40 text-xs font-bold uppercase">Node Runtime</span>

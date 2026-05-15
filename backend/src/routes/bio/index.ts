@@ -18,6 +18,16 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
   const tone = typeof req.body.tone === "string" ? req.body.tone : "Professional";
   const language = typeof req.body.language === "string" ? req.body.language : "English";
   const formats = Array.isArray(req.body.formats) ? req.body.formats : [];
+  const planType = req.user?.planType ?? "free";
+
+  // Free users only get English
+  if ((!planType || planType === "free") && language && language !== "English") {
+    return res.status(403).json({
+      error: "language_locked",
+      message: "Upgrade to Starter or higher to generate content in regional languages.",
+      requiredPlan: "starter"
+    });
+  }
 
   if (!name) {
     res.status(400).json({ error: "Name is required as a string" });
@@ -77,7 +87,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      userPlan: "FREE",
+      userPlan: planType || "free",
       userId: req.userId,
       language: language || "English",
       maxTokens: 2000,

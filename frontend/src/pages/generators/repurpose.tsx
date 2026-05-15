@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { RefreshCw, Sparkles, Copy, Download, ArrowRight, ArrowLeft, Instagram, Linkedin, Twitter, Youtube, FileText, Mail, CheckCircle2, Zap, Brain, ChevronRight, Share2, Layers, Smartphone, MousePointer2 } from "lucide-react";
+import { Copy, Download, ArrowRight, ArrowLeft, Instagram, Linkedin, Twitter, Youtube, FileText, Mail, CheckCircle2, Brain, ChevronRight, Share2, Layers, Smartphone, MousePointer2, RefreshCw, Zap, Sparkles } from "lucide-react";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -104,31 +104,35 @@ export default function RepurposePage() {
     toast({ title: "Copied!" });
   };
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <PageWrapper maxWidth="xl" className="space-y-12 pb-24 md:pb-8">
       <FeatureGuideBanner 
         toolKey="repurpose" 
         title="Content Repurposer" 
-        icon={<Share2 className="w-5 h-5 text-cyan-400" />}
+        icon={<Share2 className="w-5 h-5 text-violet-400" />}
         tagline="One piece of content. Every platform. Master the multi-channel algorithm by automatically adapting your message."
         whatYouGet={["Platform-specific adaptations", "Core insight extraction", "Cross-platform export (.txt)"]}
         whenToUse="Use this when you have a winning piece of content (like a blog post or viral tweet) and want to milk it for all its worth on other platforms."
         proTip="Always start with your longest/most detailed piece of content as the 'Source'. It gives the AI more 'meat' to work with for the adaptations."
         planRequired="Creator"
+        forceOpen={showGuide}
       />
       <div className="flex flex-col gap-8">
         <PageHeader 
           icon={<RefreshCw/>} 
-          iconBg="bg-teal-500/10" 
-          iconColor="text-teal-400" 
+          iconBg="bg-violet-500/10" 
+          iconColor="text-violet-400" 
           title="Content Repurposer" 
           subtitle="One video. Infinite posts."
           badge="Creator"
+          onInfoClick={() => setShowGuide(prev => !prev)}
           action={
             <div className="hidden md:flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-3xl shadow-2xl">
                {[1, 2, 3].map(i => (
-                 <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-500 ${step === i ? 'bg-cyan-600 text-white font-black shadow-lg scale-105' : 'text-white/20'}`}>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${step === i ? 'bg-white text-cyan-600' : 'bg-white/5 text-white/20'}`}>{i}</div>
+                 <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-500 ${step === i ? 'bg-violet-600 text-white font-black shadow-lg scale-105' : 'text-white/20'}`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${step === i ? 'bg-white text-violet-600' : 'bg-white/5 text-white/20'}`}>{i}</div>
                     <span className="text-[10px] uppercase tracking-widest">{i === 1 ? 'Source' : i === 2 ? 'Distribute' : 'Results'}</span>
                  </div>
                ))}
@@ -138,8 +142,8 @@ export default function RepurposePage() {
         {/* Mobile Progress Bar */}
         <div className="flex md:hidden items-center justify-between gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar">
            {[1, 2, 3].map(i => (
-             <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-500 shrink-0 ${step === i ? 'bg-cyan-600 text-white font-black' : 'text-white/20'}`}>
-                <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black ${step === i ? 'bg-white text-cyan-600' : 'bg-white/5 text-white/20'}`}>{i}</div>
+             <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-500 shrink-0 ${step === i ? 'bg-violet-600 text-white font-black' : 'text-white/20'}`}>
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black ${step === i ? 'bg-white text-violet-600' : 'bg-white/5 text-white/20'}`}>{i}</div>
                 <span className="text-[8px] uppercase tracking-widest whitespace-nowrap">{i === 1 ? 'Source' : i === 2 ? 'Distribute' : 'Results'}</span>
              </div>
            ))}
@@ -181,9 +185,9 @@ export default function RepurposePage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                            <div className="space-y-3">
-                              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Brand Voice</label>
+                              <label htmlFor="tone-select" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Brand Voice</label>
                               <Select value={tone} onValueChange={setTone}>
-                                <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
+                                <SelectTrigger id="tone-select" className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-zinc-950 border-white/10 text-white">
@@ -196,8 +200,9 @@ export default function RepurposePage() {
                               </Select>
                            </div>
                            <div className="space-y-3">
-                              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Target Niche</label>
+                              <label htmlFor="niche-input" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Target Niche</label>
                               <Input 
+                                id="niche-input"
                                 placeholder="e.g. Crypto Trading" 
                                 value={niche} 
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNiche(e.target.value)}
@@ -207,21 +212,24 @@ export default function RepurposePage() {
                         </div>
 
                         <div className="space-y-3 pt-4">
-                           <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Output Language</label>
-                           <LanguageSelector 
-                             value={language} 
-                             onChange={setLanguage} 
-                             isFreeUser={isFreeUser}
-                           />
+                           <label htmlFor="language-select" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Output Language</label>
+                           <div id="language-select">
+                             <LanguageSelector 
+                               value={language} 
+                               onChange={setLanguage} 
+                               isFreeUser={isFreeUser}
+                             />
+                           </div>
                         </div>
                      </div>
 
                      <div className="xl:col-span-7 space-y-4">
                         <div className="flex justify-between items-end">
-                           <label className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground italic">Input Intelligence Stream</label>
+                           <label htmlFor="source-content" className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground italic">Input Intelligence Stream</label>
                            <Badge variant="outline" className="bg-white/5 border-white/10 text-[10px] h-6 px-3">{sourceContent.length} / 3000</Badge>
                         </div>
                         <Textarea 
+                          id="source-content"
                           placeholder="Paste your original caption, script, or blog post here for multi-channel transformation..."
                           className="min-h-[300px] md:min-h-[450px] bg-white/[0.02] border-white/10 rounded-[2rem] md:rounded-[2.5rem] text-base md:text-xl p-6 md:p-10 focus-visible:ring-indigo-500/50 leading-relaxed resize-none shadow-inner"
                           value={sourceContent}
@@ -392,7 +400,7 @@ export default function RepurposePage() {
                    <Download className="mr-3 h-7 w-7" /> EXPORT ALL (.TXT)
                 </Button>
                 <Button 
-                  className="h-20 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black text-xl rounded-3xl shadow-2xl shadow-emerald-600/30 hover:scale-[1.02] transition-all"
+                  className="h-20 bg-gradient-to-r from-violet-600 to-indigo-500 text-white font-black text-xl rounded-3xl shadow-2xl shadow-violet-600/30 hover:scale-[1.02] transition-all"
                   onClick={() => setLocation(`/generate?idea=${encodeURIComponent(result.coreInsight)}`)}
                 >
                    <Sparkles className="mr-3 h-7 w-7" /> BUILD CAMPAIGN

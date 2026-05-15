@@ -1,13 +1,9 @@
 import Razorpay from "razorpay";
+import { IS_PRODUCTION } from "../utils/planRouter";
 import { logger } from "../lib/logger";
 
-function getRazorpayClient() {
-  const appStatus = process.env.APP_STATUS || "";
-  const isProd = 
-    process.env.NODE_ENV === "production" || 
-    appStatus === "PRODUCTION" || 
-    appStatus === "BETA" ||
-    !!process.env.RAILWAY_ENVIRONMENT;
+export const getRazorpayClient = () => {
+  const isProd = IS_PRODUCTION;
 
   const keyId = isProd 
     ? (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID)
@@ -32,17 +28,24 @@ function getRazorpayClient() {
 
 
 
-export const createSubscription = async (userId: string, planId: string, planTier: string, customerEmail?: string, totalCount?: number) => {
+export const createSubscription = async (userId: string, planId: string, planTier: string, customerEmail?: string, totalCount?: number, withTrial: boolean = true) => {
   try {
-    const options = {
+    const sevenDaysFromNow = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+
+    const options: any = {
       plan_id: planId,
       customer_notify: 1,
       total_count: totalCount ?? 120,
       notes: {
         clerk_user_id: userId,
         tier: planTier,
+        trial: withTrial ? "true" : "false",
       },
     };
+
+    if (withTrial) {
+      options.start_at = sevenDaysFromNow;
+    }
 
     logger.info(`[Razorpay Service] Creating subscription for user ${userId} with plan ${planId}...`);
     const client = getRazorpayClient();

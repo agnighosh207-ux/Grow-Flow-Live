@@ -30,6 +30,16 @@ router.post("/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGener
     improvementFocus = "all",
     language = "English"
   } = req.body;
+  const planType = req.user?.planType ?? "free";
+
+  // Free users only get English
+  if ((!planType || planType === "free") && language && language !== "English") {
+    return res.status(403).json({
+      error: "language_locked",
+      message: "Upgrade to Starter or higher to generate content in regional languages.",
+      requiredPlan: "starter"
+    });
+  }
 
   if (typeof originalCaption !== "string" || !originalCaption.trim()) {
     res.status(400).json({ error: "Original caption must be a valid string" });

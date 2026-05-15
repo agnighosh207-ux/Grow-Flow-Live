@@ -12,6 +12,7 @@ export interface ReferralInfo {
   hasSeenReferralPopup: boolean;
   hasAppliedCode: boolean;
   error?: string;
+  referrals?: any[];
 }
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");

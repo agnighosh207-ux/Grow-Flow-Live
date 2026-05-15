@@ -62,7 +62,7 @@ export default function ReviewPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#050110] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
       </div>
     );
   }
@@ -85,7 +85,7 @@ export default function ReviewPage() {
   const generatedData = content.content;
 
   return (
-    <div className="min-h-screen bg-[#050110] selection:bg-cyan-500/30 font-sans">
+    <div className="min-h-screen bg-[#050110] selection:bg-violet-500/30 font-sans">
       <nav className="h-20 border-b border-white/[0.06] bg-[#080316]/80 backdrop-blur-xl flex items-center justify-between px-8 sticky top-0 z-50">
         <Logo size="sm" />
         <div className="flex items-center gap-2">
@@ -96,9 +96,9 @@ export default function ReviewPage() {
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Review Request</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Review Request</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-white mb-4">Draft Review: {content.idea.slice(0, 40)}...</h1>
           <p className="text-white/40 font-medium">Please review the generated content below and share your feedback.</p>
@@ -113,7 +113,7 @@ export default function ReviewPage() {
                   onClick={() => setActiveTab(p)}
                   className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-bold transition-all whitespace-nowrap
                     ${activeTab === p 
-                      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(0,242,255,0.05)]" 
+                      ? "bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-[0_0_15px_rgba(124,58,237,0.05)]" 
                       : "text-white/30 hover:text-white/50 hover:bg-white/5"
                     }`}
                 >
@@ -150,7 +150,7 @@ export default function ReviewPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {generatedData.instagram.visualBriefs.map((brief: string, idx: number) => (
                             <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-4 text-[11px] text-white/60">
-                              <span className="text-cyan-400 font-bold mr-2">Slide {idx + 1}:</span> {brief}
+                              <span className="text-violet-400 font-bold mr-2">Slide {idx + 1}:</span> {brief}
                             </div>
                           ))}
                         </div>
@@ -201,10 +201,10 @@ export default function ReviewPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#0A061E] border border-white/10 rounded-[32px] p-8 md:p-10 shadow-2xl shadow-cyan-950/20"
+            className="bg-[#0A061E] border border-white/10 rounded-[32px] p-8 md:p-10 shadow-2xl shadow-violet-950/20"
           >
             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-cyan-400" />
+              <MessageSquare className="w-5 h-5 text-violet-400" />
               Share your feedback
             </h3>
 
@@ -238,12 +238,12 @@ export default function ReviewPage() {
                 placeholder="Any specific comments or change requests? (Optional)"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-sm text-white placeholder-white/20 focus:outline-none focus:border-cyan-500/50 transition-all min-h-[120px] resize-none font-medium"
+                className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-sm text-white placeholder-white/20 focus:outline-none focus:border-violet-500/50 transition-all min-h-[120px] resize-none font-medium"
               />
               <Button
                 onClick={handleSubmitFeedback}
                 disabled={!feedbackStatus || isSubmitting}
-                className="w-full h-14 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold rounded-2xl shadow-xl shadow-cyan-900/40 disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full h-14 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-2xl shadow-xl shadow-violet-900/40 disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                   <>Send Feedback <Send className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></>
@@ -278,7 +278,7 @@ export default function ReviewPage() {
               {[1, 2, 3].map(i => (
                 <img key={i} src={`https://i.pravatar.cc/100?u=${i}`} className="w-10 h-10 rounded-full border-2 border-[#050110]" />
               ))}
-              <div className="w-10 h-10 rounded-full border-2 border-[#050110] bg-cyan-500 flex items-center justify-center text-[10px] font-black text-black">
+              <div className="w-10 h-10 rounded-full border-2 border-[#050110] bg-violet-500 flex items-center justify-center text-[10px] font-black text-black">
                 +420
               </div>
             </div>
@@ -288,7 +288,7 @@ export default function ReviewPage() {
             </div>
             <Button
               onClick={() => window.location.href = "https://growflowai.space"}
-              className="bg-gradient-to-r from-cyan-600 to-teal-600 text-white font-black text-xs px-6 py-4 rounded-2xl flex items-center gap-2 group shadow-xl shadow-cyan-950"
+              className="bg-violet-600 hover:bg-violet-500 text-white font-black text-xs px-6 py-4 rounded-2xl flex items-center gap-2 group shadow-xl shadow-violet-950"
             >
               Start Creating Free <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </Button>

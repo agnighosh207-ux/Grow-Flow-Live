@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Hash, Sparkles, Filter, ShieldAlert, CheckCircle2, Copy, Save, Trash2, LayoutGrid, Search, AlertCircle, RefreshCw, Smartphone, Globe, Zap, ChevronRight } from "lucide-react";
+import { Hash, Sparkles, Filter, ShieldAlert, CheckCircle2, Copy, Save, Trash2, LayoutGrid, Search, AlertCircle, RefreshCw, Globe, Zap, Smartphone } from "lucide-react";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
@@ -69,6 +68,7 @@ export default function HashtagsPage() {
       const { data } = await api.get("/hashtags/collections");
       setCollections(data);
     } catch (err) {
+      console.error(err);
       toast({ variant: "destructive", title: "Failed to load collections" });
     } finally {
       setLoadingCollections(false);
@@ -90,6 +90,7 @@ export default function HashtagsPage() {
       const { queryClient } = await import("@/lib/queryClient");
       queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
+      console.error(err);
       toast({ variant: "destructive", title: "Generation failed" });
     } finally {
       setGenerating(false);
@@ -107,6 +108,7 @@ export default function HashtagsPage() {
       const { queryClient } = await import("@/lib/queryClient");
       queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     } catch (err) {
+      console.error(err);
       toast({ variant: "destructive", title: "Analysis failed" });
     } finally {
       setAnalyzing(false);
@@ -124,6 +126,7 @@ export default function HashtagsPage() {
       setCollectionName("");
       toast({ title: "Collection saved!" });
     } catch (err) {
+      console.error(err);
       toast({ variant: "destructive", title: "Failed to save collection" });
     }
   };
@@ -134,6 +137,7 @@ export default function HashtagsPage() {
       setCollections(prev => prev.filter(c => c.id !== id));
       toast({ title: "Collection deleted" });
     } catch (err) {
+      console.error(err);
       toast({ variant: "destructive", title: "Failed to delete" });
     }
   };
@@ -149,27 +153,32 @@ export default function HashtagsPage() {
     return "bg-rose-500/10 text-rose-400 border-rose-500/20";
   };
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <PageWrapper maxWidth="xl" className="pb-24 md:pb-8 relative overflow-x-hidden min-h-screen">
+      <FeatureGuideBanner 
+        toolKey="hashtags" 
+        title="Hashtag Intelligence" 
+        icon={<Hash className="w-5 h-5 text-violet-400" />}
+        tagline="Strategic hashtag sets that bypass low-reach traps and feed the algorithm's specific needs."
+        whatYouGet={["Viral hashtag sets", "Competition analysis", "Blacklist protection", "Custom collections"]}
+        whenToUse="Use this for every post to maximize discovery. Don't just pick random tags; pick the ones that match your topic's specific momentum."
+        proTip="Using 3-5 high-volume tags mixed with 15-20 niche-specific low-competition tags is the current 'sweet spot' for reach."
+        planRequired="Creator"
+        forceOpen={showGuide}
+      />
       <div className="relative z-10 py-12 space-y-12">
+        <PageHeader 
+          icon={<Hash />}
+          iconBg="bg-pink-500/10"
+          iconColor="text-pink-400"
+          title="Hashtag Intelligence"
+          subtitle="Strategy-grade hashtags that drive discovery."
+          badge="Creator"
+          onInfoClick={() => setShowGuide(prev => !prev)}
+        />
         
-        <div className="text-center space-y-6 max-w-3xl mx-auto mb-16">
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-20 h-20 bg-gradient-to-br from-pink-500 to-rose-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-pink-500/20"
-          >
-            <Hash className="w-10 h-10 text-white" />
-          </motion.div>
-          <div className="space-y-3">
-            <h1 className="text-5xl md:text-6xl font-black tracking-tight text-white italic">
-              Hashtag <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-500">Intelligence</span>
-            </h1>
-            <p className="text-xl text-muted-foreground font-medium">
-              Strategy-grade hashtags that feed the algorithm and drive discovery.
-            </p>
-          </div>
-        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-center mb-12">
@@ -212,8 +221,9 @@ export default function HashtagsPage() {
                     </CardHeader>
                     <CardContent className="p-10 space-y-8">
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">The Post Topic</label>
+                        <label htmlFor="post-topic" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">The Post Topic</label>
                         <Input 
+                          id="post-topic"
                           placeholder="e.g. 5 Morning Habits for High Performance" 
                           value={topic} 
                           onChange={(e) => setTopic(e.target.value)}
@@ -223,9 +233,9 @@ export default function HashtagsPage() {
                       
                       <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-4">
-                          <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Platform</label>
+                          <label htmlFor="platform-select" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Platform</label>
                           <Select value={platform} onValueChange={setPlatform}>
-                            <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
+                            <SelectTrigger id="platform-select" className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-zinc-950 border-white/10">
@@ -237,9 +247,9 @@ export default function HashtagsPage() {
                           </Select>
                         </div>
                         <div className="space-y-4">
-                          <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Strategy</label>
+                          <label htmlFor="strategy-select" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Strategy</label>
                           <Select value={strategy} onValueChange={setStrategy}>
-                            <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
+                            <SelectTrigger id="strategy-select" className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-zinc-950 border-white/10">
@@ -253,12 +263,14 @@ export default function HashtagsPage() {
                       </div>
 
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Target Language</label>
-                        <LanguageSelector 
-                          value={language} 
-                          onChange={setLanguage} 
-                          isFreeUser={isFreeUser}
-                        />
+                        <label htmlFor="target-language" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Target Language</label>
+                        <div id="target-language">
+                          <LanguageSelector 
+                            value={language} 
+                            onChange={setLanguage} 
+                            isFreeUser={isFreeUser}
+                          />
+                        </div>
                       </div>
 
                       <div className="p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
@@ -405,8 +417,9 @@ export default function HashtagsPage() {
                               </DialogHeader>
                               <div className="py-8 space-y-6">
                                 <div className="space-y-3">
-                                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Collection Name</label>
+                                   <label htmlFor="collection-name" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Collection Name</label>
                                    <Input 
+                                    id="collection-name"
                                     placeholder="e.g. Q2 Growth Strategy" 
                                     value={collectionName} 
                                     onChange={(e) => setCollectionName(e.target.value)}
@@ -461,8 +474,9 @@ export default function HashtagsPage() {
                   </CardHeader>
                   <CardContent className="p-10 space-y-10">
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Raw Hashtag Stream</label>
+                       <label htmlFor="hashtag-stream" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Raw Hashtag Stream</label>
                        <Textarea 
+                        id="hashtag-stream"
                         placeholder="Paste your current hashtags here... (e.g. #growth #marketing #business)"
                         className="min-h-[180px] bg-white/[0.02] border-white/10 rounded-[2rem] text-xl p-8 leading-relaxed resize-none focus:ring-2 focus:ring-pink-500/50 transition-all"
                         value={analyzeText}
@@ -472,9 +486,9 @@ export default function HashtagsPage() {
                     
                     <div className="grid grid-cols-2 gap-8">
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Platform</label>
+                          <label htmlFor="platform-select" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Platform</label>
                           <Select value={platform} onValueChange={setPlatform}>
-                            <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                            <SelectTrigger id="platform-select" className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-zinc-950 border-white/10">
@@ -486,9 +500,9 @@ export default function HashtagsPage() {
                           </Select>
                        </div>
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Niche Context</label>
+                          <label htmlFor="niche-select" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Niche Context</label>
                           <Select value={niche} onValueChange={setNiche}>
-                            <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
+                            <SelectTrigger id="niche-select" className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold">
                               <SelectValue placeholder="Niche" />
                             </SelectTrigger>
                             <SelectContent className="bg-zinc-950 border-white/10">
@@ -543,8 +557,8 @@ export default function HashtagsPage() {
                              <ShieldAlert className="h-5 w-5" /> Efficiency Leaks
                           </h4>
                           <div className="space-y-4">
-                            {analysisResult.issues.map((issue: any, i: number) => (
-                              <div key={i} className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex gap-6 items-start hover:bg-white/5 transition-all">
+                            {analysisResult.issues.map((issue: any) => (
+                              <div key={issue.tag} className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 flex gap-6 items-start hover:bg-white/5 transition-all">
                                 <div className={`p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 ${issue.severity === "high" ? "animate-pulse" : ""}`}>
                                    <AlertCircle className={`h-6 w-6 ${issue.severity === "high" ? "text-rose-500" : "text-amber-500"}`} />
                                 </div>
@@ -561,8 +575,8 @@ export default function HashtagsPage() {
                              <Zap className="h-5 w-5" /> Optimizations
                           </h4>
                           <div className="space-y-4">
-                            {analysisResult.recommendations.map((rec: string, i: number) => (
-                              <div key={i} className="flex gap-5 items-start p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
+                            {analysisResult.recommendations.map((rec: string) => (
+                              <div key={rec} className="flex gap-5 items-start p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
                                 <CheckCircle2 className="h-6 w-6 text-indigo-400 mt-0.5 shrink-0" />
                                 <p className="text-base text-muted-foreground font-medium leading-relaxed italic">"{rec}"</p>
                               </div>
@@ -600,46 +614,52 @@ export default function HashtagsPage() {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-12"
               >
-                 {loadingCollections ? (
-                   <div className="flex justify-center py-40"><RefreshCw className="h-12 w-12 animate-spin text-white/10" /></div>
-                 ) : collections.length === 0 ? (
-                   <div className="text-center py-40 opacity-20 space-y-8 flex flex-col items-center">
-                     <div className="p-16 rounded-[5rem] bg-white/5 border border-white/5">
-                        <LayoutGrid className="h-32 w-32 mx-auto" />
-                     </div>
-                     <div className="space-y-2">
-                        <h3 className="text-4xl font-black italic tracking-tight">Library Empty</h3>
-                        <p className="text-lg font-medium">Save generated sets to see them here.</p>
-                     </div>
-                   </div>
-                 ) : (
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                     {collections.map(col => (
-                       <Card key={col.id} className="bg-white/[0.03] border-white/10 rounded-[3rem] group hover:border-indigo-500/30 transition-all overflow-hidden flex flex-col shadow-2xl">
-                         <CardHeader className="flex flex-row justify-between items-start p-10 pb-6">
-                           <div>
-                             <CardTitle className="text-2xl font-black text-white group-hover:text-indigo-400 transition-colors">{col.name}</CardTitle>
-                             <CardDescription className="text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground mt-2">{col.platform}</CardDescription>
-                           </div>
-                           <Button variant="ghost" size="icon" className="h-12 w-12 text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all rounded-2xl" onClick={() => deleteCollection(col.id)}>
-                             <Trash2 className="h-6 w-6" />
-                           </Button>
-                         </CardHeader>
-                         <CardContent className="p-10 pt-0 space-y-8 flex-1 flex flex-col justify-between">
-                           <div className="flex flex-wrap gap-2">
-                             {col.tags.slice(0, 12).map((t: string) => (
-                               <span key={t} className="text-xs font-bold text-white/30 group-hover:text-white/60 transition-colors">#{t}</span>
-                             ))}
-                             {col.tags.length > 12 && <span className="text-[10px] font-black text-indigo-500/50">+{col.tags.length - 12} MORE</span>}
-                           </div>
-                           <Button variant="secondary" className="w-full h-16 rounded-[1.5rem] bg-white/5 border border-white/5 hover:bg-white hover:text-black transition-all font-black uppercase tracking-[0.15em] text-sm" onClick={() => copyTags(col.tags.join(" "))}>
-                              <Copy className="mr-2 h-5 w-5" /> Copy Pack
-                           </Button>
-                         </CardContent>
-                       </Card>
-                     ))}
-                   </div>
-                 )}
+                  {(() => {
+                    if (loadingCollections) {
+                      return <div className="flex justify-center py-40"><RefreshCw className="h-12 w-12 animate-spin text-white/10" /></div>;
+                    }
+                    if (collections.length === 0) {
+                      return (
+                        <div className="text-center py-40 opacity-20 space-y-8 flex flex-col items-center">
+                          <div className="p-16 rounded-[5rem] bg-white/5 border border-white/5">
+                             <LayoutGrid className="h-32 w-32 mx-auto" />
+                          </div>
+                          <div className="space-y-2">
+                             <h3 className="text-4xl font-black italic tracking-tight">Library Empty</h3>
+                             <p className="text-lg font-medium">Save generated sets to see them here.</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {collections.map(col => (
+                          <Card key={col.id} className="bg-white/[0.03] border-white/10 rounded-[3rem] group hover:border-indigo-500/30 transition-all overflow-hidden flex flex-col shadow-2xl">
+                            <CardHeader className="flex flex-row justify-between items-start p-10 pb-6">
+                              <div>
+                                <CardTitle className="text-2xl font-black text-white group-hover:text-indigo-400 transition-colors">{col.name}</CardTitle>
+                                <CardDescription className="text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground mt-2">{col.platform}</CardDescription>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-12 w-12 text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all rounded-2xl" onClick={() => deleteCollection(col.id)}>
+                                <Trash2 className="h-6 w-6" />
+                              </Button>
+                            </CardHeader>
+                            <CardContent className="p-10 pt-0 space-y-8 flex-1 flex flex-col justify-between">
+                              <div className="flex flex-wrap gap-2">
+                                {col.tags.slice(0, 12).map((t: string) => (
+                                  <span key={t} className="text-xs font-bold text-white/30 group-hover:text-white/60 transition-colors">#{t}</span>
+                                ))}
+                                {col.tags.length > 12 && <span className="text-[10px] font-black text-indigo-500/50">+{col.tags.length - 12} MORE</span>}
+                              </div>
+                              <Button variant="secondary" className="w-full h-16 rounded-[1.5rem] bg-white/5 border border-white/5 hover:bg-white hover:text-black transition-all font-black uppercase tracking-[0.15em] text-sm" onClick={() => copyTags(col.tags.join(" "))}>
+                                 <Copy className="mr-2 h-5 w-5" /> Copy Pack
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    );
+                  })()}
               </motion.div>
             </TabsContent>
           </AnimatePresence>

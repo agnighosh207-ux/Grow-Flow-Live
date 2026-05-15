@@ -302,38 +302,13 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
 
   const planType = user?.planType ?? "free";
 
-  if (language !== "English") {
-    const canUsePremiumLanguage = 
-      status === "active" || 
-      status === "trial" || 
-      (status === "pending" && user?.planType && user.planType !== "free");
-    
-    if (!canUsePremiumLanguage) {
-      const upgradeMessage = (user?.planType && user.planType !== "free")
-        ? "Your subscription is not currently active. Please check your billing settings to restore access."
-        : "🔥 Create content in 10 Premium Languages. Upgrade to unlock!";
-
-      res.status(402).json({
-        error: "upgrade_required",
-        message: upgradeMessage,
-        plan: status,
-        generationsRemaining: (req as any).user?.generationsRemaining ?? generationsRemaining,
-      });
-      return;
-    }
-    if (status === "active" && planType === "starter") {
-      if (!user?.regionalLanguageLock) {
-        await db.update(usersTable).set({ regionalLanguageLock: language }).where(eq(usersTable.id, req.userId));
-      } else if (user.regionalLanguageLock !== language) {
-        res.status(402).json({
-          error: "upgrade_required",
-          message: `Your Starter plan is locked to ${user.regionalLanguageLock}. Upgrade to Creator for full language access!`,
-          plan: status,
-          generationsRemaining: (req as any).user?.generationsRemaining ?? generationsRemaining,
-        });
-        return;
-      }
-    }
+  // Free users only get English
+  if ((!planType || planType === "free") && language && language !== "English") {
+    return res.status(403).json({
+      error: "language_locked",
+      message: "Upgrade to Starter or higher to generate content in regional languages.",
+      requiredPlan: "starter"
+    });
   }
 
   let content: any;
@@ -517,10 +492,10 @@ router.post("/variations", requireAuth, requireActivePlan, enforceGenerationLimi
     regenCount = (existingGeneration.content as any).regenerationsCount || 0;
   }
 
-  if (planType === "starter" && regenCount >= 1) {
+  if (planType === "starter" && regenCount >= 3) {
     res.status(403).json({
       error: "forbidden",
-      message: "Starter plan includes 1 regeneration per topic. Upgrade to Creator to unlock more.",
+      message: "Starter plan includes 3 regenerations per topic. Upgrade to Creator to unlock more.",
     });
     return;
   }

@@ -4,7 +4,7 @@ import { useAuth, useSession } from "@clerk/react";
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export type SubscriptionPlan = "free" | "trial" | "active" | "blocked" | "pending" | "past_due";
-export type PlanType = "free" | "starter" | "creator" | "infinity";
+export type PlanType = "free" | "starter" | "creator" | "infinity" | "agency";
 
 export interface SubscriptionStatus {
   plan: SubscriptionPlan;
@@ -24,6 +24,7 @@ export interface SubscriptionStatus {
   regionalLanguageLock: string | null;
   currentStreak: number;
   totalGenerations: number;
+  hasUsedTrial?: boolean;
 }
 
 async function fetchWithAuth(url: string, token: string, options?: RequestInit & { signal?: AbortSignal }) {
@@ -99,7 +100,7 @@ export function useCreateSubscription() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { 
-      planType: "starter" | "creator" | "infinity", 
+      planType: PlanType, 
       couponCode?: string, 
       billingPeriod?: "monthly" | "yearly" | "quarterly" | "half-yearly", 
       currency?: "INR" | "USD" 
@@ -134,7 +135,7 @@ export function useVerifySubscription() {
       razorpay_payment_id: string;
       razorpay_subscription_id: string;
       razorpay_signature: string;
-      planType: "starter" | "creator" | "infinity";
+      planType: "starter" | "creator" | "infinity" | "agency";
       couponCode?: string;
     }) => {
       const token = await getToken();

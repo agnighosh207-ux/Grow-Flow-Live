@@ -132,6 +132,19 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
         .where(inArray(referralsTable.id, unseenIds));
     }
 
+    const referrals = await db.select({
+      id: usersTable.id,
+      username: usersTable.username,
+      displayName: usersTable.displayName,
+      avatarUrl: usersTable.avatarUrl,
+      createdAt: referralsTable.createdAt,
+      rewardGranted: referralsTable.rewardGranted
+    })
+    .from(referralsTable)
+    .innerJoin(usersTable, eq(referralsTable.referredUserId, usersTable.id))
+    .where(eq(referralsTable.referrerUserId, req.userId))
+    .orderBy(desc(referralsTable.createdAt));
+
     res.json({
       referralCode: code,
       shareableLink,
@@ -142,6 +155,7 @@ router.get("/info", requireAuth, async (req: any, res): Promise<void> => {
       hasNewReward,
       hasSeenReferralPopup: userRow?.hasSeenReferralPopup ?? false,
       hasAppliedCode: !!userRow?.referralUsedCode,
+      referrals: referrals || []
     });
 
   } catch (err) {

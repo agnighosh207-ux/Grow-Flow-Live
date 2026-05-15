@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Info } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
 interface PageHeaderProps {
   icon: ReactNode;
@@ -13,7 +13,7 @@ interface PageHeaderProps {
   onInfoClick?: () => void; // shows/re-shows the feature guide banner
 }
 
-export function PageHeader({ icon, iconBg = "bg-cyan-500/10", iconColor = "text-cyan-400", title, subtitle, badge, badgeColor, action, onInfoClick }: PageHeaderProps) {
+export function PageHeader({ icon, iconBg = "bg-violet-500/10", iconColor = "text-violet-400", title, subtitle, badge, badgeColor, action, onInfoClick }: PageHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-4 mb-6">
       <div className="flex items-center gap-3 min-w-0">
@@ -24,7 +24,7 @@ export function PageHeader({ icon, iconBg = "bg-cyan-500/10", iconColor = "text-
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight truncate">{title}</h1>
             {badge && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${badgeColor || "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"}`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${badgeColor || "bg-violet-500/10 text-violet-400 border-violet-500/20"}`}>
                 {badge}
               </span>
             )}
@@ -35,8 +35,8 @@ export function PageHeader({ icon, iconBg = "bg-cyan-500/10", iconColor = "text-
       <div className="flex items-center gap-2 flex-shrink-0">
         {action}
         {onInfoClick && (
-          <button onClick={onInfoClick} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all" title="What is this tool?">
-            <Info className="w-3.5 h-3.5 text-white/40" />
+          <button onClick={onInfoClick} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all group" title="What is this tool?">
+            <HelpCircle className="w-3.5 h-3.5 text-white/40 group-hover:text-violet-400 transition-colors" />
           </button>
         )}
       </div>

@@ -22,7 +22,7 @@ const NICHE_COLORS: Record<string, string> = {
   Finance: "text-yellow-400",
   Tech: "text-blue-400",
   Motivation: "text-orange-400",
-  Business: "text-cyan-400",
+  Business: "text-indigo-400",
   Lifestyle: "text-pink-400",
 };
 
@@ -32,7 +32,7 @@ const NICHE_BG: Record<string, string> = {
   Finance: "bg-yellow-500/8 border-yellow-500/20",
   Tech: "bg-blue-500/8 border-blue-500/20",
   Motivation: "bg-orange-500/8 border-orange-500/20",
-  Business: "bg-cyan-500/8 border-cyan-500/20",
+  Business: "bg-indigo-500/8 border-indigo-500/20",
   Lifestyle: "bg-pink-500/8 border-pink-500/20",
 };
 
@@ -40,12 +40,12 @@ const PATTERN_COLORS: Record<string, string> = {
   "Do This Not That": "bg-blue-500/15 text-blue-300 border-blue-500/20",
   "Stop This Mistake": "bg-red-500/15 text-red-300 border-red-500/20",
   "The Truth About X": "bg-amber-500/15 text-amber-300 border-amber-500/20",
-  "X vs Y Comparison": "bg-cyan-500/15 text-cyan-300 border-cyan-500/20",
-  "Story Arc (Before → After)": "bg-teal-500/15 text-teal-300 border-teal-500/20",
+  "X vs Y Comparison": "bg-violet-500/15 text-violet-300 border-violet-500/20",
+  "Story Arc (Before → After)": "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
   "Step-by-Step Framework": "bg-green-500/15 text-green-300 border-green-500/20",
-  "Specific Result Breakdown": "bg-teal-500/15 text-teal-300 border-teal-500/20",
+  "Specific Result Breakdown": "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
   "Contrarian Opinion": "bg-orange-500/15 text-orange-300 border-orange-500/20",
-  "Little-Known Secret": "bg-cyan-500/15 text-cyan-300 border-cyan-500/20",
+  "Little-Known Secret": "bg-violet-500/15 text-violet-300 border-violet-500/20",
   "Common Myth Debunked": "bg-pink-500/15 text-pink-300 border-pink-500/20",
 };
 
@@ -61,6 +61,7 @@ function IdeasGeneratorInner() {
   const [niche, setNiche] = useState<typeof NICHES[number]>("General");
   const [goal, setGoal] = useState("");
   const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("preferred_language", language);
@@ -132,6 +133,7 @@ function IdeasGeneratorInner() {
         whatYouGet={["10 content ideas per niche", "Platform tags per idea", "Viral angle for each"]}
         whenToUse="Use this every Sunday to plan your content week. Save ideas you like to your calendar."
         proTip="Ideas are cached for 15 minutes per niche — if you want fresh ones, change the goal field slightly."
+        forceOpen={showGuide}
       />
       <PageHeader 
         icon={<Lightbulb/>} 
@@ -139,6 +141,7 @@ function IdeasGeneratorInner() {
         iconColor="text-yellow-400" 
         title="Idea Generator" 
         subtitle="Fresh content topics powered by live search"
+        onInfoClick={() => setShowGuide(prev => !prev)}
       />
 
       <div

@@ -65,7 +65,7 @@ export default function TermsAndConditions() {
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">5. Refund Policy</h2>
               <p>
-                We offer a <strong>7-day money-back guarantee</strong> for first-time paid subscribers. If you are not satisfied with the service within the first 7 days of your initial subscription, you may request a full refund, provided you have used fewer than 50 generations. For more details, see our <Link href="/refund-policy" className="text-cyan-400 hover:underline">Refund Policy</Link>.
+                We offer a <strong>7-day money-back guarantee</strong> for first-time paid subscribers. If you are not satisfied with the service within the first 7 days of your initial subscription, you may request a full refund, provided you have used fewer than 50 generations. For more details, see our <Link href="/refund-policy" className="text-violet-400 hover:underline">Refund Policy</Link>.
               </p>
             </section>
 
@@ -109,7 +109,7 @@ export default function TermsAndConditions() {
               <p>
                 If you have any questions about these Terms, please contact us at:
                 <br />
-                <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 font-medium hover:underline">growflowhelp@gmail.com</a>
+                <a href="mailto:growflowhelp@gmail.com" className="text-violet-400 font-medium hover:underline">growflowhelp@gmail.com</a>
               </p>
             </section>
           </div>

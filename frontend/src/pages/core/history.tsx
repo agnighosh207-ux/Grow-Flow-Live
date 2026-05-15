@@ -33,12 +33,12 @@ const TYPE_COLORS: Record<string, string> = {
   Story: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   Viral: "bg-red-500/10 text-red-400 border-red-500/20",
   Trends: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-  Ideas: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+  Ideas: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
   Strategy: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   Pack: "bg-pink-500/10 text-pink-400 border-pink-500/20",
-  Bio: "bg-teal-500/10 text-teal-400 border-teal-500/20",
+  Bio: "bg-violet-500/10 text-violet-400 border-violet-500/20",
   Hooks: "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20",
-  Caption: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+  Caption: "bg-violet-500/10 text-violet-400 border-violet-500/20",
 };
 
 function CopyBtn({ text }: { text: string }) {
@@ -188,23 +188,38 @@ export default function History() {
 
   useEffect(() => { fetchHistory(activeTab); }, [activeTab, fetchHistory]);
 
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (confirmDelete !== id) {
+      setConfirmDelete(id);
+      haptic('light');
+      // Reset confirmation after 3 seconds
+      setTimeout(() => setConfirmDelete(null), 3000);
+      return;
+    }
+
     setDeletingId(id);
+    haptic('heavy');
     try {
       await fetch(`/api/content/history/${id}`, { method: "DELETE", credentials: "include" });
-      toast({ title: "Deleted" });
+      toast({ title: "Content deleted successfully" });
       setItems(prev => prev.filter(i => i.id !== id));
       if (selectedItem?.id === id) setSelectedItem(null);
-    } catch { toast({ variant: "destructive", title: "Failed to delete" }); }
+    } catch { 
+      toast({ variant: "destructive", title: "Failed to delete" }); 
+    }
     setDeletingId(null);
+    setConfirmDelete(null);
   };
 
   const STAT_CARDS = [
-    { label: "Lifetime Total", value: stats?.totalGenerations ?? 0, sub: "all-time generations (never resets)", icon: <BarChart2 className="w-5 h-5" />, iconBg: "bg-cyan-500/15", iconColor: "text-cyan-400", accent: "from-cyan-500/10" },
-    { label: "This Week", value: stats?.thisWeek ?? 0, sub: "new generations", icon: <TrendingUp className="w-5 h-5" />, iconBg: "bg-pink-500/15", iconColor: "text-pink-400", accent: "from-pink-500/8" },
-    { label: "Top Style", value: stats?.topContentType ?? "—", sub: "most used format", icon: <Target className="w-5 h-5" />, iconBg: "bg-emerald-500/15", iconColor: "text-emerald-400", accent: "from-emerald-500/8" },
-    { label: "Top Tone", value: stats?.topTone ?? "—", sub: "most used tone", icon: <MessageSquare className="w-5 h-5" />, iconBg: "bg-blue-500/15", iconColor: "text-blue-400", accent: "from-blue-500/8" },
+    { label: "Lifetime Total", value: stats?.totalGenerations ?? 0, sub: "all-time generations (never resets)", icon: <BarChart2 className="w-5 h-5" />, iconBg: "bg-violet-500/15", iconColor: "text-violet-400", accent: "from-violet-500/10" },
+    { label: "This Week", value: stats?.thisWeek ?? 0, sub: "new generations", icon: <TrendingUp className="w-5 h-5" />, iconBg: "bg-purple-500/15", iconColor: "text-purple-400", accent: "from-purple-500/8" },
+    { label: "Top Style", value: stats?.topContentType ?? "—", sub: "most used format", icon: <Target className="w-5 h-5" />, iconBg: "bg-fuchsia-500/15", iconColor: "text-fuchsia-400", accent: "from-fuchsia-500/8" },
+    { label: "Top Tone", value: stats?.topTone ?? "—", sub: "most used tone", icon: <MessageSquare className="w-5 h-5" />, iconBg: "bg-indigo-500/15", iconColor: "text-indigo-400", accent: "from-indigo-500/8" },
   ];
 
   return (
@@ -230,7 +245,7 @@ export default function History() {
     >
       {isRefreshing && (
         <div className="flex justify-center py-4">
-          <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+          <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
         </div>
       )}
       {/* Header */}
@@ -273,7 +288,7 @@ export default function History() {
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all border ${
               activeTab === tab.key
-                ? "bg-white/10 text-white border-white/15 shadow-lg shadow-white/5"
+                ? "bg-violet-500/20 text-violet-400 border-violet-500/30 shadow-lg shadow-violet-500/10"
                 : "bg-white/3 text-white/40 border-white/6 hover:bg-white/6 hover:text-white/60"
             }`}
           >
@@ -304,10 +319,23 @@ export default function History() {
                 style={{ background: "rgba(255,255,255,0.025)" }}
               >
                 {/* Delete button */}
-                <div className="absolute top-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                  <button onClick={(e) => handleDelete(item.id, e)} disabled={deletingId === item.id}
-                    className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 flex items-center justify-center transition-colors">
-                    {deletingId === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <div className="absolute top-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
+                  <button 
+                    onClick={(e) => handleDelete(item.id, e)} 
+                    disabled={deletingId === item.id}
+                    className={`h-7 rounded-lg flex items-center justify-center transition-all ${
+                      confirmDelete === item.id 
+                        ? "bg-red-500 text-white px-2 gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
+                        : "bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 w-7"
+                    }`}
+                  >
+                    {deletingId === item.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : confirmDelete === item.id ? (
+                      <span className="text-[10px] font-black uppercase tracking-tighter">Delete?</span>
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
                   </button>
                 </div>
 

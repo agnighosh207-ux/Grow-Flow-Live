@@ -104,6 +104,9 @@ Format must be exactly: {"aiScore": number (0-40 additional points), "mainIssue"
     invalidateAuthCache(req.userId);
 
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input data" });
+    }
     console.error("Hook scorer error:", error);
     await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(500).json({ error: "Failed to score hook" });

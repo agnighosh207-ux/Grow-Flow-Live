@@ -63,7 +63,7 @@ export default function NicheLandingPage({ niche }: { niche: string }) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-black uppercase tracking-widest"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-black uppercase tracking-widest"
         >
           <Sparkles className="w-3.5 h-3.5" />
           AI Content for {config.name} Creators
@@ -75,7 +75,7 @@ export default function NicheLandingPage({ niche }: { niche: string }) {
           transition={{ delay: 0.1 }}
           className="text-5xl md:text-7xl font-black text-white italic tracking-tight leading-none"
         >
-          Generate 30 Days of <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">{config.name}</span> Content in Minutes
+          Generate 30 Days of <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-indigo-500">{config.name}</span> Content in Minutes
         </motion.h1>
         
         <motion.p
@@ -96,7 +96,7 @@ export default function NicheLandingPage({ niche }: { niche: string }) {
           <Button 
             size="lg" 
             onClick={() => navigate("/sign-up")}
-            className="h-14 px-10 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-lg shadow-glow transition-all"
+            className="h-14 px-10 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-black text-lg shadow-glow transition-all"
           >
             START GROWING NOW →
           </Button>
@@ -114,7 +114,7 @@ export default function NicheLandingPage({ niche }: { niche: string }) {
             transition={{ delay: 0.4 + i * 0.1 }}
             className="p-8 rounded-[32px] bg-white/[0.02] border border-white/5 space-y-4 hover:bg-white/[0.04] transition-all"
           >
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+            <div className="w-12 h-12 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-400">
               {i === 0 ? <Zap /> : i === 1 ? <TrendingUp /> : <CheckCircle2 />}
             </div>
             <h3 className="text-xl font-black text-white italic">{f}</h3>
@@ -142,14 +142,14 @@ export default function NicheLandingPage({ niche }: { niche: string }) {
       </div>
 
       {/* CTA Section */}
-      <div className="p-12 rounded-[40px] bg-gradient-to-br from-cyan-600 to-blue-700 text-center space-y-8 shadow-2xl relative overflow-hidden">
+      <div className="p-12 rounded-[40px] bg-gradient-to-br from-violet-600 to-indigo-700 text-center space-y-8 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -mr-32 -mt-32 rounded-full" />
         <h2 className="text-4xl font-black text-white italic leading-tight">Ready to become the #1 <br/> {config.name} creator?</h2>
         <Button 
           size="lg" 
           variant="secondary"
           onClick={() => navigate("/sign-up")}
-          className="h-16 px-12 rounded-2xl bg-white text-cyan-900 font-black text-xl hover:bg-zinc-100 transition-all shadow-xl"
+          className="h-16 px-12 rounded-2xl bg-white text-violet-900 font-black text-xl hover:bg-zinc-100 transition-all shadow-xl"
         >
           CLAIM YOUR FREE CREDITS
         </Button>

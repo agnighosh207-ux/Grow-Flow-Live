@@ -58,8 +58,8 @@ export default function QuickGeneratePage() {
       <div className="max-w-md mx-auto w-full flex-1 flex flex-col pt-12 gap-8">
         <header className="flex items-center justify-between">
            <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                <Zap className="w-6 h-6 text-cyan-400 fill-cyan-400" />
+             <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                <Zap className="w-6 h-6 text-violet-400 fill-violet-400" />
              </div>
              <h1 className="text-xl font-black uppercase tracking-widest">Quick Flow</h1>
            </div>
@@ -76,12 +76,12 @@ export default function QuickGeneratePage() {
                 placeholder="What's your content idea?" 
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
-                className="bg-white/5 border-white/10 h-40 rounded-[2rem] p-6 text-lg font-bold focus:border-cyan-500/50 transition-all resize-none"
+                className="bg-white/5 border-white/10 h-40 rounded-[2rem] p-6 text-lg font-bold focus:border-violet-500/50 transition-all resize-none"
               />
               <Button 
                 onClick={handleQuickGenerate}
                 disabled={generating || !idea}
-                className="w-full h-16 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-cyan-600/20 flex flex-col gap-0.5"
+                className="w-full h-16 bg-violet-600 hover:bg-violet-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-violet-600/20 flex flex-col gap-0.5"
               >
                 {generating ? <Loader2 className="animate-spin" /> : (
                   <>

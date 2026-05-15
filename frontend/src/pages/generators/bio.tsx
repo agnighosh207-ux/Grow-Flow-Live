@@ -17,6 +17,8 @@ import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { Fingerprint as FingerprintIcon } from "lucide-react";
 
 const formats = [
   { id: "instagram", label: "Instagram", icon: <Instagram className="h-5 w-5" />, limit: 150 },
@@ -55,6 +57,7 @@ export default function CreatorProfilePage() {
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
   const { toast } = useToast();
+  const [showGuide, setShowGuide] = useState(false);
 
   const handleFormatToggle = (id: string) => {
     const newFormats = formData.formats.includes(id)
@@ -113,6 +116,17 @@ export default function CreatorProfilePage() {
 
   return (
     <PageWrapper maxWidth="2xl" className="pb-24 md:pb-8">
+      <FeatureGuideBanner 
+        toolKey="bio" 
+        title="Bio Optimizer" 
+        icon={<FingerprintIcon className="w-5 h-5 text-indigo-400" />}
+        tagline="Your bio is your digital billboard. We help you engineer it for maximum follower conversion."
+        whatYouGet={["Cross-platform optimized bios", "Elevator pitch scripts", "Practice mode for pitches", "Brand positioning statements"]}
+        whenToUse="Use this when setting up a new profile or rebranding to ensure your 'first impression' is mathematically optimized."
+        proTip="Try the Elevator Pitch practice mode to sharpen how you describe yourself in real-life networking events."
+        planRequired="Creator"
+        forceOpen={showGuide}
+      />
       <PageHeader 
         icon={<Fingerprint className="w-8 h-8" />} 
         iconBg="bg-indigo-500/10" 
@@ -120,6 +134,7 @@ export default function CreatorProfilePage() {
         title="Bio Optimizer" 
         subtitle="First impressions are algorithmic destiny. Engineer yours for maximum retention."
         badge="Pro Feature"
+        onInfoClick={() => setShowGuide(prev => !prev)}
         action={
           <Button onClick={saveToProfile} variant="outline" className="h-12 px-6 border-white/10 bg-white/5 text-white font-black text-sm rounded-xl hover:bg-white/10 shadow-xl transition-all hidden md:flex">
              <Save className="mr-2 h-5 w-5 text-purple-500" /> Archive Suite

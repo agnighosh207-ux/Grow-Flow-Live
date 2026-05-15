@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, Zap, Globe, Clock, ArrowRight, Star, TrendingUp,
   CalendarDays, BarChart3, Layers, Check, Shield, Lock, Users,
-  Play, Linkedin as LinkedinIcon, Loader2, Copy, ChevronUp
+  Play, Linkedin as LinkedinIcon, Loader2, Copy, ChevronUp,
+  RefreshCw, ChevronRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/layout/Logo";
@@ -31,18 +32,18 @@ const STEPS = [
   {
     num: "01",
     icon: Sparkles,
-    color: "text-cyan-400",
-    bg: "from-cyan-600/15 to-cyan-600/0",
-    border: "border-cyan-500/20",
+    color: "text-violet-400",
+    bg: "from-violet-600/15 to-violet-600/0",
+    border: "border-violet-500/20",
     title: "Drop your idea",
     desc: "Type anything — a topic, a feeling, a trend. Even a single sentence is enough to get started.",
   },
   {
     num: "02",
     icon: Zap,
-    color: "text-teal-400",
-    bg: "from-teal-600/15 to-teal-600/0",
-    border: "border-teal-500/20",
+    color: "text-indigo-400",
+    bg: "from-indigo-600/15 to-indigo-600/0",
+    border: "border-indigo-500/20",
     title: "AI writes for every platform",
     desc: "GrowFlow AI instantly generates perfectly formatted content for Instagram, YouTube, Twitter, and LinkedIn.",
   },
@@ -130,18 +131,18 @@ const TESTIMONIALS = [
 ];
 
 const FEATURES = [
-  { icon: Globe, color: "text-[#00F2FF]", bg: "from-[#00F2FF]/20", label: "Multi-Platform Native", desc: "No generic outputs. Everything is mapped to the exact algorithmic expectations of Twitter, LinkedIn, Instagram, and YouTube. Context is king.", span: "md:col-span-2 md:row-span-2" },
-  { icon: Zap, color: "text-[#00F2FF]", bg: "from-[#00F2FF]/20", label: "Viral Hook Injector", desc: "Instantly halt the feed scroll with psychologically-mapped hooks tested against the highest performing content vectors.", span: "md:col-span-1 md:row-span-1" },
-  { icon: Clock, color: "text-[#00F2FF]", bg: "from-[#00F2FF]/20", label: "Hyper-Speed Pipeline", desc: "Generate 30 days of interconnected, native content in literal seconds. Time is your most valuable asset.", span: "md:col-span-1 md:row-span-1" },
-  { icon: Layers, color: "text-[#00F2FF]", bg: "from-[#00F2FF]/20", label: "Dynamic Style Modes", desc: "Shift tone algorithmically. Go from aggressive execution to deep, authoritative storytelling with one dimensional toggle.", pro: true, span: "md:col-span-1 md:row-span-1" },
-  { icon: CalendarDays, color: "text-[#00F2FF]", bg: "from-[#00F2FF]/20", label: "Omni-Channel Calendar", desc: "Deploy your entire generated content matrix across all platforms from a single, unified view.", pro: true, span: "md:col-span-2 md:row-span-1" },
-  { icon: BarChart3, color: "text-[#00F2FF]", bg: "from-[#00F2FF]/20", label: "Deep Performance Intelligence", desc: "Analyze engagement vectors, content decay rates, and programmatic algorithmic growth patterns over time.", pro: true, span: "md:col-span-3 md:row-span-1" },
+  { icon: Globe, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Multi-Platform Native", desc: "No generic outputs. Everything is mapped to the exact algorithmic expectations of Twitter, LinkedIn, Instagram, and YouTube. Context is king.", span: "md:col-span-2 md:row-span-2" },
+  { icon: Zap, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Viral Hook Injector", desc: "Instantly halt the feed scroll with psychologically-mapped hooks tested against the highest performing content vectors.", span: "md:col-span-1 md:row-span-1" },
+  { icon: Clock, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Hyper-Speed Pipeline", desc: "Generate 30 days of interconnected, native content in literal seconds. Time is your most valuable asset.", span: "md:col-span-1 md:row-span-1" },
+  { icon: Layers, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Dynamic Style Modes", desc: "Shift tone algorithmically. Go from aggressive execution to deep, authoritative storytelling with one dimensional toggle.", pro: true, span: "md:col-span-1 md:row-span-1" },
+  { icon: CalendarDays, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Omni-Channel Calendar", desc: "Deploy your entire generated content matrix across all platforms from a single, unified view.", pro: true, span: "md:col-span-2 md:row-span-1" },
+  { icon: BarChart3, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Deep Performance Intelligence", desc: "Analyze engagement vectors, content decay rates, and programmatic algorithmic growth patterns over time.", pro: true, span: "md:col-span-3 md:row-span-1" },
 ];
 
 const TRUST = [
   { icon: Shield, label: "Secure Payments", desc: "Powered by Razorpay", color: "text-emerald-400" },
-  { icon: Lock, label: "Data Encrypted", desc: "End-to-end SSL/TLS", color: "text-blue-400" },
-  { icon: Users, label: "2,400+ Creators", desc: "And growing daily", color: "text-cyan-400" },
+  { icon: Lock, label: "Data Encrypted", desc: "End-to-end SSL/TLS", color: "text-violet-400" },
+  { icon: Users, label: "2,400+ Creators", desc: "And growing daily", color: "text-violet-400" },
 ];
 
 import { Input } from "@/components/ui/input";
@@ -208,7 +209,7 @@ function Leaderboard() {
         
         <div className="mt-12 text-center">
           <Link href="/sign-up">
-            <div className="inline-flex items-center gap-2 text-cyan-400 font-bold hover:text-cyan-300 transition-colors cursor-pointer group">
+            <div className="inline-flex items-center gap-2 text-violet-400 font-bold hover:text-violet-300 transition-colors cursor-pointer group">
               {"Join them and start growing"} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </div>
           </Link>
@@ -293,7 +294,7 @@ export default function Home() {
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="min-h-screen bg-[#060312] text-foreground overflow-x-hidden selection:bg-cyan-500/30 font-sans"
+      className="min-h-screen bg-[#060312] text-foreground overflow-x-hidden selection:bg-violet-500/30 font-sans"
     >
       <AnimatePresence>
         {showStickyNav && (
@@ -310,7 +311,7 @@ export default function Home() {
               <Link href="/support"><span className="hover:text-white/70 transition-colors cursor-pointer">Support</span></Link>
             </div>
             <Link href="/sign-up">
-              <Button className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-full px-5 py-2 text-sm h-9">
+              <Button className="btn-primary rounded-full px-5 py-2 text-sm h-9">
                 Get Started Free
               </Button>
             </Link>
@@ -318,31 +319,15 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <div className="fixed inset-0 pointer-events-none z-0" style={{ transform: "translateZ(0)" }}>
-        <div className="absolute top-[-15%] left-[-15%] w-[55%] h-[55%] bg-cyan-700/25 blur-[140px] rounded-full will-change-transform" />
-        <div className="absolute bottom-[-20%] right-[-15%] w-[55%] h-[55%] bg-teal-700/25 blur-[140px] rounded-full will-change-transform" />
-        <div className="absolute top-[35%] right-[15%] w-[35%] h-[35%] bg-pink-700/15 blur-[120px] rounded-full will-change-transform" />
-        <div className="absolute top-[60%] left-[10%] w-[30%] h-[30%] bg-blue-700/10 blur-[100px] rounded-full will-change-transform" />
-        
-        {/* Floating God-Level Icons */}
-        <motion.div className="absolute top-[10%] right-[5%] opacity-10 animate-float hidden md:block" style={{ animationDelay: '1s' }}><Brain className="w-24 h-24 md:w-48 md:h-48 text-[var(--accent-cyan)]" /></motion.div>
-        <motion.div className="absolute bottom-[10%] left-[2%] opacity-10 animate-float hidden md:block" style={{ animationDelay: '2.5s' }}><Zap className="w-32 h-32 md:w-64 md:h-64 text-purple-500" /></motion.div>
-        <motion.div className="absolute top-[50%] left-[1%] opacity-10 animate-float hidden lg:block" style={{ animationDelay: '4s' }}><Sparkles className="w-20 h-20 md:w-32 md:h-32 text-pink-500" /></motion.div>
-
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.5) 1px, transparent 1px)`,
-            backgroundSize: "60px 60px",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)`,
-            backgroundSize: "30px 30px",
-          }}
-        />
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ transform: "translateZ(0)" }}>
+        <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)' }} />
+        <div className="absolute top-[30%] right-[-5%] w-[400px] h-[400px] rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0 opacity-[0.02]"
+          style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
       </div>
 
       <nav className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 max-w-7xl mx-auto">
@@ -358,300 +343,180 @@ export default function Home() {
             </span>
           </Link>
           <Link href="/sign-up">
-            <Button className="shine-effect relative overflow-hidden bg-transparent border-2 border-[#00F2FF] text-[#00F2FF] hover:bg-[#00F2FF] hover:text-[#0B1215] font-semibold rounded-full px-4 sm:px-5 text-sm transition-all duration-300 shadow-[0_0_15px_rgba(0,242,255,0.15)] hover:shadow-[0_0_35px_rgba(0,242,255,0.6)] hover:scale-105 active:scale-95">
+            <Button className="btn-primary rounded-full px-4 sm:px-5 text-sm">
               Get Started Free
             </Button>
           </Link>
         </div>
       </nav>
 
-      <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-16 py-5 px-4 border-y border-white/[0.05] bg-white/[0.01] backdrop-blur-sm">
-        {/* Real-time Counter */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center gap-4"
-        >
-          <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 shadow-glow-sm">
-             <Zap className="w-5 h-5 text-cyan-400 fill-cyan-400" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-black text-white tracking-tight tabular-nums leading-none">
-              <span className="text-cyan-400">{totalGenerations.toLocaleString()}</span>
-            </span>
-            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mt-1">Content Pieces Created</span>
-          </div>
-        </motion.div>
-
-        <span className="hidden md:block w-px h-8 bg-white/10" />
-
-        {/* Real Testimonial Excerpt */}
-        <div className="flex items-center gap-4 max-w-sm">
-           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xs font-black text-white border border-white/10 shrink-0 shadow-lg">
-             RH
-           </div>
-           <div className="flex flex-col gap-0.5">
-             <p className="text-[11px] text-white/60 font-medium leading-tight">
-               "@fitnessbyrohan — 'Generated 30 days of content in 20 min. My Instagram went from 2K to 12K followers.'"
-             </p>
-             <div className="flex items-center gap-1">
-               {[1,2,3,4,5].map(i => <Star key={i} className="w-2 h-2 fill-amber-400 text-amber-400" />)}
-             </div>
-           </div>
-        </div>
-
-        <span className="hidden md:block w-px h-8 bg-white/10" />
-
-        {/* Platform Validation */}
-        <div className="flex flex-col items-center md:items-start gap-2">
-           <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Native Multi-Platform Export</span>
-           <div className="flex items-center gap-5 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-              <SiInstagram className="w-4 h-4 hover:text-pink-400 transition-colors" />
-              <SiYoutube className="w-4 h-4 hover:text-red-500 transition-colors" />
-              <SiX className="w-4 h-4 hover:text-white transition-colors" />
-              <LinkedinIcon className="w-4 h-4 hover:text-sky-500 transition-colors" />
-           </div>
-        </div>
-      </div>
-
-      <main className="relative z-10 flex flex-col items-center justify-center px-4 pt-10 pb-8 md:pt-20 md:pb-16 text-center max-w-6xl mx-auto">
+      <main className="relative z-10 flex flex-col items-center justify-center px-4 pt-16 pb-8 md:pt-28 md:pb-16 text-center max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/25 mb-8 backdrop-blur-md"
+          transition={{ duration: 0.4 }}
+          className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full border text-sm"
+          style={{ background: 'rgba(124,58,237,0.1)', borderColor: 'rgba(124,58,237,0.2)', color: '#a78bfa' }}
         >
-          <span className="flex w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-xs font-semibold text-cyan-300 tracking-wide uppercase">AI Content Generation 2.0</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+          AI-powered · Built for Indian creators · 18+ languages
+          <ChevronRight className="w-3.5 h-3.5 opacity-60" />
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.05 }}
-          className="text-4xl sm:text-5xl md:text-7xl lg:text-[88px] font-bold tracking-tight mb-4 md:mb-6 leading-[1.05]"
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="text-5xl md:text-7xl font-bold tracking-tight mb-6"
+          style={{ letterSpacing: '-0.04em', lineHeight: 1.05 }}
         >
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#F1F5F9] via-[#00F2FF] to-[#F1F5F9] animate-gradient-xy glow-text-intense inline-block hover:scale-[1.02] transition-transform duration-300 cursor-default">
-            Stop writing.<br />
-            Start growing.
+          Create viral content
+          <br />
+          <span style={{
+            background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 60%, #8b5cf6 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            10× faster
           </span>
         </motion.h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="text-xs font-medium tracking-widest uppercase text-cyan-400/70 mb-4 flex items-center gap-2"
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-lg md:text-xl mb-8 max-w-2xl mx-auto"
+          style={{ color: '#71717a', lineHeight: 1.6 }}
         >
-          <span className="w-6 h-px bg-cyan-500/40" />
-          Built specifically for creators — not generic AI
-          <span className="w-6 h-px bg-cyan-500/40" />
-        </motion.p>
-
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.12 }}
-          className="text-lg md:text-xl text-white/50 max-w-2xl mb-4 leading-relaxed"
-        >
-          One idea transforms into scroll-stopping content for <strong className="text-white/70">Instagram, YouTube, Twitter,</strong> and <strong className="text-white/70">LinkedIn</strong> — in under 60 seconds.
-        </motion.p>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-sm text-white/30 mb-10"
-        >
-          No credit card required · Free plan available · Cancel anytime
+          Generate captions, hooks, strategies and content for every platform —
+          in Hindi, Hinglish, Tamil, Bengali, or any of 18 Indian languages.
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.18 }}
-          className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-8 md:mb-16"
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="flex flex-col sm:flex-row gap-3 justify-center mb-12"
         >
-          <MagneticButton>
-            <Link href="/sign-up">
-              <Button
-                size="lg"
-                className="shine-effect w-full sm:w-auto bg-transparent border-2 border-[#00F2FF] text-[#00F2FF] hover:bg-[#00F2FF] hover:text-[#0B1215] font-bold rounded-full px-10 h-14 text-lg transition-all duration-300 shadow-[0_0_20px_rgba(0,242,255,0.2)] hover:shadow-[0_0_40px_rgba(0,242,255,0.6)] hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group"
-              >
-                Start Creating Free <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
-              </Button>
-            </Link>
-          </MagneticButton>
-          <MagneticButton>
-            <Link href="/pricing">
-              <Button
-                size="lg"
-                variant="ghost"
-                className="w-full sm:w-auto rounded-full px-8 h-14 text-base border border-white/10 text-white/60 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all duration-200 hover:scale-[1.05] active:scale-[0.98]"
-              >
-                View Pricing
-              </Button>
-            </Link>
-          </MagneticButton>
+          <Link href="/sign-up">
+            <button className="btn-primary h-12 px-8 text-base rounded-xl" style={{ boxShadow: '0 0 30px rgba(124,58,237,0.3)' }}>
+              Start for free
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </Link>
+          <Link href="/pricing">
+            <button className="btn-secondary h-12 px-8 text-base rounded-xl">
+              View pricing
+            </button>
+          </Link>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.25 }}
-          className="w-full max-w-5xl mx-auto mt-4 md:mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="flex flex-wrap items-center justify-center gap-4 text-xs"
+          style={{ color: '#52525b' }}
         >
-          {/* God Tier Cinematic Hero Console */}
-          <div className="relative min-h-[550px] sm:min-h-[650px] w-[110%] -ml-[5%] md:w-full md:ml-0 rounded-[20px] sm:rounded-[40px] overflow-hidden border border-[#00F2FF]/15 shadow-[0_0_150px_rgba(0,242,255,0.05),inset_0_0_40px_rgba(0,242,255,0.05)] flex flex-col items-center justify-center bg-[#050B0D]/90 mt-16 group py-16 sm:py-20" style={{ transform: "translateZ(0)" }}>
-             
-             {/* Streaming Data Background - Optimized */}
-             <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-               <motion.div
-                 animate={{ y: ["0%", "-50%"] }}
-                 transition={{ duration: 30, ease: "linear", repeat: Infinity }}
-                 className="absolute inset-x-0 top-0 h-[200%] w-full flex flex-col font-mono text-[10px] text-[#00F2FF]/30 leading-relaxed p-4 will-change-transform"
-               >
-                 {Array.from({ length: 15 }).map((_, i) => (
-                   <span key={i} className="whitespace-pre truncate">
-                     {`[SYS.${Math.floor(Math.random()*9000)}] INJECT: { payload: 0x${Math.random().toString(16).slice(2, 8).toUpperCase()} } -- SUCCESS`}
-                   </span>
-                 ))}
-               </motion.div>
-             </div>
+          <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-violet-400" /> 7-day free trial</span>
+          <span className="w-1 h-1 rounded-full bg-zinc-700" />
+          <span className="flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-violet-400" /> Cancel anytime</span>
+          <span className="w-1 h-1 rounded-full bg-zinc-700" />
+          <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-violet-400" /> No credit card required</span>
+        </motion.div>
 
-             {/* Sweeping Scanner Line */}
-             <motion.div 
-               animate={{ top: ['-20%', '120%'] }} 
-               transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-               className="absolute left-0 right-0 h-1 bg-[#00F2FF]/50 shadow-[0_0_30px_#00F2FF] pointer-events-none z-10 opacity-40 blur-[2px]"
-             />
-             
-             {/* Dynamic Glowing Aurora Core */}
-             <div className="absolute inset-0 overflow-hidden mix-blend-screen pointer-events-none">
-               <motion.div 
-                 animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }} 
-                 transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                 style={{ willChange: "transform" }}
-                 className="absolute -top-[30%] -left-[30%] w-[160%] h-[160%] bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,rgba(0,242,255,0.2)_90deg,transparent_180deg)] blur-[100px] opacity-70"
-               />
-               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#00F2FF]/5 to-[#050B0D] opacity-90"></div>
-             </div>
-             
-             {/* 3D Kinetic Neural Array */}
-             <div className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none z-10">
-               <div className="relative w-40 h-40 sm:w-64 sm:h-64 rounded-full border border-dashed border-[#00F2FF]/20 shadow-[0_0_100px_rgba(0,242,255,0.1)] flex items-center justify-center">
-               <motion.div 
-                 animate={{ rotate: 360 }} 
-                 transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                 className="absolute inset-0 rounded-full border border-[#00F2FF]/20"
-               />
-               <motion.div 
-                 animate={{ rotate: -360 }} 
-                 transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
-                 className="absolute inset-4 sm:inset-8 rounded-full border border-dotted border-[#00F2FF]/40"
-               />
-               
-               {/* Pulsing Quantum Core */}
-               <div className="relative w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-[#00F2FF] shadow-[0_0_80px_#00F2FF,inset_0_0_20px_#FFF] flex items-center justify-center animate-pulse z-20">
-                 <div className="w-full h-full rounded-full border-2 border-white/40 absolute scale-110 animate-ping opacity-30 delay-150" />
-                </div>
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.4 }}
+          className="relative z-10 w-full max-w-5xl mx-auto mt-16"
+        >
+          <div className="relative rounded-2xl overflow-hidden border"
+            style={{ borderColor: 'rgba(255,255,255,0.08)', boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)' }}>
+            
+            {/* Browser chrome */}
+            <div className="flex items-center gap-2 px-4 py-3 border-b"
+              style={{ background: '#0e0e14', borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/60" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
+              </div>
+              <div className="flex-1 mx-4 bg-zinc-900 rounded-md px-3 py-1.5 text-xs text-zinc-500">
+                growflowai.space/generate
               </div>
             </div>
-                
-             <div className="relative w-full z-40 flex flex-col items-center justify-center p-4 sm:p-8 pointer-events-auto py-12 sm:py-20">
-               <div className="w-full max-w-2xl rounded-2xl border border-[#00F2FF]/30 bg-[#0B1215]/80 shadow-[inset_0_0_80px_rgba(0,242,255,0.05),0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-500" style={{ transform: "translateZ(0)" }}>
-                  <div className="flex items-center justify-between px-4 py-2 sm:py-3 border-b border-[#00F2FF]/20 bg-gradient-to-r from-transparent via-[#00F2FF]/10 to-transparent relative">
-                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00F2FF]/50 to-transparent" />
-                     <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/80 shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80 shadow-[0_0_5px_rgba(245,158,11,0.5)]" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-                     </div>
-                     <span className="text-[9px] sm:text-[10px] text-[#00F2FF] font-mono tracking-[0.2em] uppercase">GrowFlow AI // Output Matrix</span>
-                     <div className="flex items-center gap-1.5 opacity-50">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#00F2FF] animate-pulse" />
-                        <span className="text-[8px] text-[#00F2FF] font-mono hidden sm:inline">SYS.SYNC</span>
-                     </div>
-                  </div>
-
-                  <div className="p-4 sm:p-6 pb-6">
-                    <div className="flex items-center gap-3 px-4 py-2.5 sm:py-3 rounded-xl border border-[#00F2FF]/20 bg-[#050B0D]/80 mb-5 shadow-inner relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00F2FF]/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                      <Sparkles className="w-4 h-4 text-[#00F2FF] shrink-0" />
-                      <span className="text-sm font-medium text-[#F1F5F9] truncate">"The future of content creation is here"</span>
-                      <div className="w-1.5 h-4 bg-[#00F2FF] rounded-sm ml-1 animate-pulse" />
+            
+            {/* Platform tabs + output preview */}
+            <div className="p-4 sm:p-6" style={{ background: '#0a0a12' }}>
+              <div className="flex items-center gap-2 mb-5 overflow-x-auto no-scrollbar flex-nowrap pb-2">
+                {PLATFORMS.map((platform, i) => {
+                  const Icon = platform.icon;
+                  const isActive = activePlatform === i;
+                  return (
+                    <div key={platform.name} onClick={() => setActivePlatform(i)} className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all duration-300 shrink-0 ${isActive ? "bg-violet-500/10 border-violet-500/30 text-violet-300" : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5"}`}>
+                      <Icon className="w-3.5 h-3.5" />
+                      {platform.name}
                     </div>
+                  );
+                })}
+              </div>
 
-                    <div className="flex items-center gap-2 mb-5 overflow-x-auto scrollbar-hide flex-nowrap pb-2 -mx-4 px-4">
-                      {PLATFORMS.map((platform, i) => {
-                        const Icon = platform.icon;
-                        const isActive = activePlatform === i;
-                        return (
-                          <div key={platform.name} onClick={() => setActivePlatform(i)} className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all duration-500 shrink-0 ${isActive ? "bg-[#101C20] shadow-[0_0_15px_rgba(0,242,255,0.1)] " + platform.border + " " + platform.color : "border-transparent text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-white/5"}`}>
-                            <Icon className="w-3.5 h-3.5" />
-                            {platform.name}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={activePlatform}
-                        initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
-                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
-                        transition={{ duration: 0.3 }}
-                        className={`relative rounded-xl border ${PLATFORMS[activePlatform].border} p-5 sm:p-6 overflow-hidden bg-[#050B0D]/90 isolate shadow-[inset_0_0_30px_rgba(0,0,0,0.5)] min-h-[160px] sm:min-h-[180px] flex flex-col justify-center`}
-                      >
-                        <div className={`absolute inset-0 bg-gradient-to-br ${PLATFORMS[activePlatform].bg} pointer-events-none opacity-40 -z-10`} />
-                        <div className="relative z-10">
-                          <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 ${PLATFORMS[activePlatform].color}`}>
-                            <Zap className="w-3.5 h-3.5 fill-current" /> Generated {PLATFORMS[activePlatform].name} Drop
-                          </div>
-                          <p className="text-sm text-[#F1F5F9] leading-relaxed whitespace-pre-wrap font-medium drop-shadow-md">
-                            {PLATFORMS[activePlatform].example}
-                          </p>
-                        </div>
-                      </motion.div>
-                    </AnimatePresence>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activePlatform}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="relative rounded-xl border p-5 sm:p-6 overflow-hidden min-h-[160px] sm:min-h-[180px] flex flex-col justify-center"
+                  style={{ background: '#0e0e14', borderColor: 'rgba(255,255,255,0.06)' }}
+                >
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-violet-400">
+                    <Zap className="w-3.5 h-3.5 fill-current" /> Generated {PLATFORMS[activePlatform].name} Drop
                   </div>
-               </div>
-                 <div className="mt-8 relative z-50 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#00F2FF]/30 bg-[rgba(5,11,13,0.95)] shadow-[0_0_30px_rgba(0,242,255,0.15)]">
-                 <span className="w-2 h-2 rounded-full bg-[#00F2FF] animate-[pulse_1.5s_ease-in-out_infinite] shadow-[0_0_8px_#00F2FF]" />
-                 <span className="text-[#00F2FF] text-[10px] sm:text-xs tracking-[0.3em] font-mono font-bold uppercase drop-shadow-[0_0_5px_rgba(0,242,255,0.5)]">Engine Operational</span>
-               </div>
-             </div>
+                  <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap font-medium">
+                    {PLATFORMS[activePlatform].example}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
+          
+          {/* Reflection */}
+          <div className="absolute -bottom-16 inset-x-8 h-16 rounded-2xl blur-2xl opacity-30"
+            style={{ background: 'linear-gradient(180deg, rgba(124,58,237,0.3) 0%, transparent 100%)' }} />
         </motion.div>
       </main>
 
       <div className="relative z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-      <section className="relative z-10 py-14 px-4 border-y border-white/[0.04]"
-        style={{ background: "rgba(255,255,255,0.01)" }}
-      >
+      <section className="relative z-10 border-y py-12 px-4" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
         <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {STATS.map((s, i) => (
+          {[
+            { value: "18+", label: "Indian Languages", sub: "Including Bhojpuri & Odia" },
+            { value: "20+", label: "AI Tools", sub: "All in one dashboard" },
+            { value: "₹149", label: "Starting Price", sub: "Less than a cup of coffee/week" },
+            { value: "7-day", label: "Free Trial", sub: "No credit card needed" },
+          ].map((stat, i) => (
             <motion.div
-              key={s.label}
+              key={stat.label}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
               className="text-center"
             >
-              <div className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-teal-400 mb-1">
-                <motion.span
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: i * 0.1 }}
-                >
-                  {s.value}
-                </motion.span>
+              <div className="text-3xl md:text-4xl font-bold mb-1" style={{ 
+                background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', 
+                WebkitBackgroundClip: 'text', 
+                WebkitTextFillColor: 'transparent' 
+              }}>
+                {stat.value}
               </div>
-              <div className="text-xs text-white/35 font-medium">{s.label}</div>
+              <div className="text-sm font-semibold mb-0.5" style={{ color: '#a1a1aa' }}>{stat.label}</div>
+              <div className="text-xs" style={{ color: '#52525b' }}>{stat.sub}</div>
             </motion.div>
           ))}
         </div>
@@ -687,7 +552,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
-              <Play className="w-3 h-3 text-cyan-400 fill-cyan-400" /> How it works
+              <Play className="w-3 h-3 text-violet-400 fill-violet-400" /> How it works
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">From idea to content in 3 steps</h2>
             <p className="text-white/40 text-base max-w-md mx-auto">No learning curve. No complex settings. Just type and create.</p>
@@ -714,7 +579,7 @@ export default function Home() {
                 </Hover3DCard>
                 {i < STEPS.length - 1 && (
                   <div className="flex justify-center w-full py-2">
-                    <div className="w-px h-6 bg-gradient-to-b from-cyan-500/40 to-transparent" />
+                    <div className="w-px h-6 bg-gradient-to-b from-violet-500/40 to-transparent" />
                   </div>
                 )}
               </div>
@@ -722,7 +587,7 @@ export default function Home() {
           </div>
 
           <div className="hidden md:grid grid-cols-3 gap-6 relative">
-            <div className="hidden md:block absolute top-14 left-[33%] right-[33%] h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/50 to-pink-500/30" />
+            <div className="hidden md:block absolute top-14 left-[33%] right-[33%] h-px bg-gradient-to-r from-violet-500/30 via-indigo-500/50 to-pink-500/30" />
             {STEPS.map((step, i) => {
               const Icon = step.icon;
               return (
@@ -759,12 +624,12 @@ export default function Home() {
 
       {/* ─── LIVE DEMO SECTION ─────────────────────────────────── */}
       <section className="relative z-10 py-12 md:py-20 px-4 border-y border-white/[0.04]"
-        style={{ background: "rgba(0,242,255,0.015)" }}
+        style={{ background: "rgba(124,58,237,0.015)" }}
       >
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25 mb-4 text-xs font-semibold text-cyan-300 uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/25 mb-4 text-xs font-semibold text-violet-300 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
               Try it live — no signup needed
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">See it work in real time</h2>
@@ -784,12 +649,12 @@ export default function Home() {
                   onKeyDown={e => e.key === 'Enter' && !demoLoading && demoIdea.trim() && handleDemoGenerate()}
                   placeholder="e.g. Why I quit my 9-5 to become a creator..."
                   maxLength={120}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
                 />
                 <button
                   onClick={handleDemoGenerate}
                   disabled={demoLoading || !demoIdea.trim()}
-                  className="bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-5 py-3 rounded-xl text-sm transition-all flex items-center gap-2 flex-shrink-0"
+                  className="bg-violet-500 hover:bg-violet-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-5 py-3 rounded-xl text-sm transition-all flex items-center gap-2 flex-shrink-0"
                 >
                   {demoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                   <span className="hidden sm:inline">{demoLoading ? "Generating..." : "Generate"}</span>
@@ -801,8 +666,8 @@ export default function Home() {
             <div className="p-4 md:p-6">
               {!demoResult && !demoLoading && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-3">
-                    <Sparkles className="w-5 h-5 text-cyan-400" />
+                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">
+                    <Sparkles className="w-5 h-5 text-violet-400" />
                   </div>
                   <p className="text-white/30 text-sm">Your generated content will appear here</p>
                   <div className="flex gap-2 mt-4 flex-wrap justify-center">
@@ -817,17 +682,16 @@ export default function Home() {
               )}
               {demoLoading && (
                 <div className="space-y-3 py-4">
-                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-full" />
-                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-4/5" />
-                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-full" />
-                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-3/4" />
-                  <div className="h-3 bg-white/5 rounded-full animate-pulse w-full" />
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className="h-3 bg-white/5 rounded-full animate-pulse" 
+                      style={{ width: `${[100,80,100,75,90][i-1]}%` }} />
+                  ))}
                 </div>
               )}
               {demoResult && !demoLoading && (
                 <div className="space-y-1">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Instagram Caption</span>
+                    <span className="text-[10px] font-bold text-violet-400 uppercase tracking-widest">Instagram Caption</span>
                     <button onClick={() => { navigator.clipboard.writeText(demoResult); toast({ title: "Copied!" }); }}
                       className="text-[10px] text-white/30 hover:text-white/60 flex items-center gap-1 transition-colors">
                       <Copy className="w-3 h-3" /> Copy
@@ -837,7 +701,7 @@ export default function Home() {
                   <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
                     <p className="text-xs text-white/25">Want all platforms + hooks + strategy?</p>
                     <Link href="/sign-up">
-                      <button className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors">
+                      <button className="text-xs font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors">
                         Get full access free <ArrowRight className="w-3 h-3" />
                       </button>
                     </Link>
@@ -864,7 +728,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-7 md:mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
-              <Zap className="w-3 h-3 text-teal-400 fill-teal-400" /> What you get
+              <Zap className="w-3 h-3 text-violet-400 fill-violet-400" /> What you get
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Everything you need to grow</h2>
             <p className="text-white/40 text-base max-w-md mx-auto">Tools built specifically for content creators who want to post more and stress less.</p>
@@ -882,23 +746,23 @@ export default function Home() {
               >
                 <Hover3DCard className="h-full">
                   <div
-                    className={`hyper-hover-card relative rounded-[28px] border border-[#00F2FF]/20 p-8 sm:p-10 group overflow-hidden glass-panel shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-500 bg-[#050B0D]/90 isolate h-full`}
+                    className={`hyper-hover-card relative rounded-[28px] border border-[#7c3aed]/20 p-8 sm:p-10 group overflow-hidden glass-panel shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-500 bg-[#050B0D]/90 isolate h-full`}
                   >
                     {/* Advanced Light Leak Effects */}
-                    <div className={`absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(0,242,255,0.08)_0%,transparent_50%)] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
-                    <div className={`absolute bottom-0 right-0 w-[100%] h-[100%] bg-[radial-gradient(circle_at_bottom_right,rgba(0,242,255,0.04)_0%,transparent_60%)] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
+                    <div className={`absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(167,139,250,0.08)_0%,transparent_50%)] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
+                    <div className={`absolute bottom-0 right-0 w-[100%] h-[100%] bg-[radial-gradient(circle_at_bottom_right,rgba(167,139,250,0.04)_0%,transparent_60%)] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
                     
                     <div className="relative z-10 flex flex-col h-full">
                       <div className="flex items-start justify-between mb-6">
                         {/* Exquisite Icon Plaque */}
-                        <div className="relative w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#101C20] to-[#0A1114] border border-[#00F2FF]/30 flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,242,255,0.1),0_0_20px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-700 ease-out">
-                          <div className="absolute inset-0 rounded-[20px] bg-[#00F2FF]/10 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <Icon className={`w-7 h-7 ${color} drop-shadow-[0_0_12px_rgba(0,242,255,0.6)] relative z-10`} />
+                        <div className="relative w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#101C20] to-[#0A1114] border border-[#7c3aed]/30 flex items-center justify-center shadow-[inset_0_0_20px_rgba(167,139,250,0.1),0_0_20px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-700 ease-out">
+                          <div className="absolute inset-0 rounded-[20px] bg-[#7c3aed]/10 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          <Icon className={`w-7 h-7 ${color} drop-shadow-[0_0_12px_rgba(167,139,250,0.6)] relative z-10`} />
                         </div>
                         {/* Glassmorphic PRO Badge */}
                         {pro && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] text-[#00F2FF] bg-[#00F2FF]/[0.03] border border-[#00F2FF]/30 shadow-[0_0_15px_rgba(0,242,255,0.15)] backdrop-blur-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00F2FF] animate-pulse shadow-[0_0_5px_#00F2FF]" />
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] text-[#7c3aed] bg-[#7c3aed]/[0.03] border border-[#7c3aed]/30 shadow-[0_0_15px_rgba(167,139,250,0.15)] backdrop-blur-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#7c3aed] animate-pulse shadow-[0_0_5px_#7c3aed]" />
                             PRO Access
                           </span>
                         )}
@@ -909,9 +773,9 @@ export default function Home() {
                          {label === "Multi-Platform Native" && (
                             <div className="flex gap-4 opacity-40 group-hover:opacity-100 transition-opacity duration-700 scale-90 sm:scale-100">
                                <div className="flex flex-col gap-2 w-16 sm:w-20">
-                                  <div className="w-full h-2 rounded-full bg-[#00F2FF]/40 shadow-[0_0_8px_#00F2FF]" />
-                                  <div className="w-3/4 h-2 rounded-full bg-[#00F2FF]/20" />
-                                  <div className="w-full h-28 rounded-lg bg-gradient-to-b from-[#00F2FF]/30 to-transparent mt-2 border-t border-[#00F2FF]/50" />
+                                  <div className="w-full h-2 rounded-full bg-[#7c3aed]/40 shadow-[0_0_8px_#7c3aed]" />
+                                  <div className="w-3/4 h-2 rounded-full bg-[#7c3aed]/20" />
+                                  <div className="w-full h-28 rounded-lg bg-gradient-to-b from-[#7c3aed]/30 to-transparent mt-2 border-t border-[#7c3aed]/50" />
                                </div>
                                <div className="flex flex-col gap-2 w-16 sm:w-20 translate-y-6">
                                   <div className="w-full h-2 rounded-full bg-pink-500/40 shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
@@ -928,25 +792,25 @@ export default function Home() {
                          {label === "Deep Performance Intelligence" && (
                             <div className="w-full relative h-28 flex items-end justify-between px-6 sm:px-12 gap-1.5 sm:gap-3 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-4">
                                {[40, 25, 60, 45, 80, 55, 95, 70, 100, 85].map((h, j) => (
-                                 <div key={j} className="w-full rounded-t-sm bg-gradient-to-t from-[#00F2FF]/40 to-[#00F2FF]/90 relative group-hover:scale-y-[1.15] transition-transform origin-bottom duration-500" style={{ height: `${h}%`, transitionDelay: `${j * 40}ms` }}>
-                                    <div className="absolute -top-1 left-0 right-0 h-1 bg-white opacity-90 shadow-[0_0_10px_#00F2FF]" />
+                                 <div key={j} className="w-full rounded-t-sm bg-gradient-to-t from-[#7c3aed]/40 to-[#7c3aed]/90 relative group-hover:scale-y-[1.15] transition-transform origin-bottom duration-500" style={{ height: `${h}%`, transitionDelay: `${j * 40}ms` }}>
+                                    <div className="absolute -top-1 left-0 right-0 h-1 bg-white opacity-90 shadow-[0_0_10px_#7c3aed]" />
                                  </div>
                                ))}
-                               <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00F2FF]/60 to-transparent shadow-[0_0_5px_#00F2FF]" />
+                               <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7c3aed]/60 to-transparent shadow-[0_0_5px_#7c3aed]" />
                             </div>
                          )}
                          {label === "Omni-Channel Calendar" && (
                             <div className="grid grid-cols-7 gap-2 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-2">
                                {Array.from({length: 21}).map((_, j) => (
-                                  <div key={j} className={`w-5 h-5 sm:w-7 sm:h-7 rounded-[4px] ${[2, 5, 8, 12, 17, 19].includes(j) ? 'bg-[#00F2FF]/80 shadow-[0_0_12px_rgba(0,242,255,0.6)] animate-pulse' : 'bg-white/5 border border-white/5'}`} />
+                                  <div key={j} className={`w-5 h-5 sm:w-7 sm:h-7 rounded-[4px] ${[2, 5, 8, 12, 17, 19].includes(j) ? 'bg-[#a78bfa]/80 shadow-[0_0_12px_rgba(167,139,250,0.6)] animate-pulse' : 'bg-white/5 border border-white/5'}`} />
                                ))}
                             </div>
                          )}
                          {label === "Viral Hook Injector" && (
                             <div className="w-full flex flex-col gap-3 opacity-40 group-hover:opacity-100 transition-opacity duration-700 mt-4 max-w-[80%] mx-auto">
-                               <div className="w-full h-1.5 rounded-full bg-[#00F2FF]/20 overflow-hidden"><div className="w-[85%] h-full bg-[#00F2FF] shadow-[0_0_10px_#00F2FF]" /></div>
+                               <div className="w-full h-1.5 rounded-full bg-[#a78bfa]/20 overflow-hidden"><div className="w-[85%] h-full bg-[#a78bfa] shadow-[0_0_10px_#a78bfa]" /></div>
                                <div className="w-4/5 h-1.5 rounded-full bg-pink-500/20 overflow-hidden"><div className="w-[60%] h-full bg-pink-500 shadow-[0_0_10px_#ec4899]" /></div>
-                               <div className="w-full h-1.5 rounded-full bg-[#00F2FF]/10 overflow-hidden"><div className="w-[40%] h-full bg-[#00F2FF]/50" /></div>
+                               <div className="w-full h-1.5 rounded-full bg-[#a78bfa]/10 overflow-hidden"><div className="w-[40%] h-full bg-[#a78bfa]/50" /></div>
                             </div>
                          )}
                          {label === "Hyper-Speed Pipeline" && (
@@ -956,16 +820,16 @@ export default function Home() {
                                    initial={{ height: 12 }}
                                    animate={{ height: [12, 48, 12] }}
                                    transition={{ duration: 1.2, repeat: Infinity, delay: j * 0.15 }}
-                                   key={j} className="w-1.5 rounded-full bg-[#00F2FF]/80 shadow-[0_0_10px_rgba(0,242,255,0.6)]" 
+                                   key={j} className="w-1.5 rounded-full bg-[#a78bfa]/80 shadow-[0_0_10px_rgba(167,139,250,0.6)]" 
                                  />
                                ))}
                             </div>
                          )}
                          {label === "Dynamic Style Modes" && (
                             <div className="relative w-24 h-24 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity duration-700">
-                               <div className="absolute inset-0 rounded-full border border-[#00F2FF]/30 border-t-[#00F2FF] animate-spin shadow-[0_0_15px_rgba(0,242,255,0.3)]" style={{ animationDuration: '3s' }} />
-                               <div className="absolute inset-3 rounded-full border border-[#00F2FF]/20 border-b-pink-500 animate-[spin_2s_linear_infinite_reverse]" />
-                               <div className="w-8 h-8 rounded-full bg-[#00F2FF]/80 shadow-[0_0_20px_#00F2FF] animate-pulse" />
+                               <div className="absolute inset-0 rounded-full border border-[#a78bfa]/30 border-t-[#a78bfa] animate-spin shadow-[0_0_15px_rgba(167,139,250,0.3)]" style={{ animationDuration: '3s' }} />
+                               <div className="absolute inset-3 rounded-full border border-[#a78bfa]/20 border-b-pink-500 animate-[spin_2s_linear_infinite_reverse]" />
+                               <div className="w-8 h-8 rounded-full bg-[#a78bfa]/80 shadow-[0_0_20px_#a78bfa] animate-pulse" />
                             </div>
                          )}
                       </div>
@@ -987,7 +851,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
-              <TrendingUp className="w-3 h-3 text-cyan-400" /> Creator stories
+              <TrendingUp className="w-3 h-3 text-violet-400" /> Creator stories
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Real results from real creators</h2>
             <p className="text-white/40 text-base">Join thousands already growing faster with GrowFlow AI.</p>
@@ -1009,10 +873,10 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className="hyper-hover-card relative rounded-2xl border border-white/10 p-6 overflow-hidden group shadow-[0_5px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_40px_rgba(0,242,255,0.15)] transition-all duration-500"
+                className="hyper-hover-card relative rounded-2xl border border-white/10 p-6 overflow-hidden group shadow-[0_5px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_40px_rgba(167,139,250,0.15)] transition-all duration-500"
                 style={{ background: "rgba(255,255,255,0.025)" }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-600/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-0.5">
@@ -1056,9 +920,9 @@ export default function Home() {
               <p className="text-sm text-white/50">Used GrowFlow AI? We'd love to hear from you.</p>
               <button
                 onClick={() => setShowReviewModal(true)}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-600/20 border border-cyan-500/30 text-sm font-medium text-cyan-300 hover:bg-cyan-600/30 hover:text-cyan-200 transition-all duration-200"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-violet-600/20 border border-violet-500/30 text-sm font-medium text-violet-300 hover:bg-violet-600/30 hover:text-violet-200 transition-all duration-200"
               >
-                <Star className="w-3.5 h-3.5 fill-cyan-400 text-cyan-400" />
+                <Star className="w-3.5 h-3.5 fill-violet-400 text-violet-400" />
                 Leave a Review
               </button>
               <p className="text-[11px] text-white/25">Your review helps other creators make better decisions</p>
@@ -1081,7 +945,7 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              className="relative w-full max-w-md rounded-2xl border border-cyan-500/25 p-6 bg-[#0a0518] shadow-2xl z-10"
+              className="relative w-full max-w-md rounded-2xl border border-violet-500/25 p-6 bg-[#0a0518] shadow-2xl z-10"
             >
               <h3 className="text-xl font-bold text-white mb-4">Leave a Review</h3>
               
@@ -1137,7 +1001,7 @@ export default function Home() {
               <div className="flex gap-3 mt-6">
                 <Button variant="ghost" className="flex-1 text-white/50 hover:text-white" onClick={() => setShowReviewModal(false)}>Cancel</Button>
                 <Button 
-                  className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white" 
+                  className="flex-1 bg-violet-600 hover:bg-violet-500 text-white" 
                   disabled={!newReview.name || !newReview.text || newReview.stars === 0}
                   onClick={() => {
                     const review = {
@@ -1240,28 +1104,28 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="text-center p-8 rounded-3xl border border-[#00F2FF]/30 bg-[#00F2FF]/5 shadow-[0_0_50px_rgba(0,242,255,0.1)] mb-6 mt-4 md:mt-0"
+            className="text-center p-8 rounded-3xl border border-[#a78bfa]/30 bg-[#a78bfa]/5 shadow-[0_0_50px_rgba(167,139,250,0.1)] mb-6 mt-4 md:mt-0"
           >
             <div className="text-white/40 text-sm mb-2 line-through font-medium">Total: ₹50,700/mo</div>
-            <div className="text-2xl md:text-4xl font-bold text-[#00F2FF] mb-2">
+            <div className="text-2xl md:text-4xl font-bold text-[#a78bfa] mb-2">
               GrowFlow AI Infinity gives you all of this for ₹799/month
             </div>
-            <p className="text-sm text-cyan-300/60 font-medium">That's 98% cheaper than hiring the equivalent team.</p>
+            <p className="text-sm text-violet-300/60 font-medium">That's 98% cheaper than hiring the equivalent team.</p>
           </motion.div>
         </div>
       </section>
 
-      <section className="relative z-10 py-24 px-4">
+      <section className="relative z-10 py-12 md:py-24 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="relative rounded-3xl border border-cyan-500/20 overflow-hidden"
+          <div className="relative rounded-3xl border border-violet-500/20 overflow-hidden"
             style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(10,5,30,0.98) 50%, rgba(147,51,234,0.08) 100%)" }}
           >
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-[-30%] left-[20%] w-[60%] h-[60%] bg-cyan-600/20 blur-[80px] rounded-full" />
-              <div className="absolute bottom-[-20%] right-[10%] w-[40%] h-[40%] bg-teal-600/15 blur-[60px] rounded-full" />
+              <div className="absolute top-[-30%] left-[20%] w-[60%] h-[60%] bg-violet-600/20 blur-[80px] rounded-full" />
+              <div className="absolute bottom-[-20%] right-[10%] w-[40%] h-[40%] bg-indigo-600/15 blur-[60px] rounded-full" />
             </div>
             <div className="relative z-10 p-10 md:p-14">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-700 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-cyan-900/50">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-700 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-violet-900/50">
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Ready to grow faster?</h2>
@@ -1284,7 +1148,7 @@ export default function Home() {
               <Link href="/sign-up">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold rounded-full px-12 h-13 text-base shadow-2xl shadow-cyan-900/50 border border-cyan-500/20"
+                  className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold rounded-full px-12 h-13 text-base shadow-2xl shadow-violet-900/50 border border-violet-500/20"
                   style={{ height: 52 }}
                 >
                   Start Creating Free <ArrowRight className="w-4 h-4 ml-2" />
@@ -1297,7 +1161,7 @@ export default function Home() {
                   { icon: Check, label: "Cancel anytime" },
                 ].map(({ icon: Icon, label }) => (
                   <div key={label} className="flex items-center gap-1.5 text-xs text-white/30">
-                    <Icon className="w-3 h-3 text-emerald-400" /> {label}
+                    <Icon className="w-3 h-3 text-violet-400" /> {label}
                   </div>
                 ))}
               </div>
@@ -1316,7 +1180,7 @@ export default function Home() {
               </p>
               <a
                 href="mailto:growflowhelp@gmail.com"
-                className="inline-flex items-center gap-2 text-xs text-white/35 hover:text-cyan-400 transition-colors"
+                className="inline-flex items-center gap-2 text-xs text-white/35 hover:text-violet-400 transition-colors"
               >
                 📧 growflowhelp@gmail.com
               </a>
@@ -1330,7 +1194,7 @@ export default function Home() {
                   <SiX className="w-4 h-4" />
                 </a>
                 <a href="mailto:growflowhelp@gmail.com"
-                  className="text-white/20 hover:text-cyan-400 transition-colors text-xs">
+                  className="text-white/20 hover:text-violet-400 transition-colors text-xs">
                   📧 Support
                 </a>
               </div>
@@ -1351,13 +1215,20 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-40 w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/10 transition-all md:block hidden"
-          aria-label="Back to top"
-        >
-          <ChevronUp className="w-4 h-4" />
-        </button>
+        <AnimatePresence>
+          {showStickyNav && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="fixed bottom-[90px] md:bottom-8 right-5 md:right-8 z-[60] w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 shadow-2xl transition-all"
+              aria-label="Back to top"
+            >
+              <ChevronUp className="w-5 h-5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       </footer>
     </motion.div>
   );

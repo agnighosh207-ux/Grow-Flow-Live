@@ -182,7 +182,7 @@ function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
     );
   if (plan === "trial")
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#00F2FF]/15 text-[#00F2FF] border border-[#00F2FF]/20">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(124,58,237,0.15)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.2)' }}>
         <Zap className="w-2.5 h-2.5" /> Trial
       </span>
     );
@@ -191,18 +191,18 @@ function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
   if (isPaidStatus && planType && planType !== "free") {
     if (planType === "infinity")
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-[#00F2FF]/20 to-sky-500/20 text-[#00F2FF] border border-[#00F2FF]/25 shadow-[0_0_10px_rgba(0,242,255,0.2)]">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'linear-gradient(to right, rgba(124,58,237,0.2), rgba(124,58,237,0.1))', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.3)', boxShadow: '0 0 10px rgba(124,58,237,0.2)' }}>
           <Crown className="w-2.5 h-2.5" /> Infinity{plan !== "active" ? " ⏳" : ""}
         </span>
       );
     if (planType === "starter")
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#00F2FF]/5 text-[#00F2FF]/70 border border-[#00F2FF]/20">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(124,58,237,0.08)', color: 'rgba(167,139,250,0.7)', border: '1px solid rgba(124,58,237,0.2)' }}>
           <Zap className="w-2.5 h-2.5" /> Starter{plan !== "active" ? " ⏳" : ""}
         </span>
       );
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#00F2FF]/10 text-[#00F2FF]/90 border border-[#00F2FF]/40">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(124,58,237,0.1)', color: 'rgba(167,139,250,0.9)', border: '1px solid rgba(124,58,237,0.4)' }}>
         <Zap className="w-2.5 h-2.5" /> Creator{plan !== "active" ? " ⏳" : ""}
       </span>
     );
@@ -219,10 +219,10 @@ function CreditCounter({ sub }: { sub: any }) {
   
   if (sub.planType === "infinity" || sub.plan === "infinity") {
     return (
-      <div className="mx-3 mb-3 px-3 py-2 rounded-lg bg-cyan-600/10 border border-cyan-500/20">
+      <div className="mx-3 mb-3 px-3 py-2 rounded-lg border" style={{ background: 'rgba(124,58,237,0.1)', borderColor: 'rgba(124,58,237,0.2)' }}>
         <div className="flex justify-between items-center text-xs">
           <span className="text-white/60 font-medium">Credits Remaining</span>
-          <span className="text-cyan-300 font-bold flex items-center gap-1"><Sparkles className="w-3 h-3"/> Unlimited</span>
+          <span className="font-bold flex items-center gap-1" style={{ color: '#a78bfa' }}><Sparkles className="w-3 h-3"/> Unlimited</span>
         </div>
       </div>
     );
@@ -243,9 +243,12 @@ function CreditCounter({ sub }: { sub: any }) {
           <span className="text-white font-bold">{remaining} <span className="text-white/40">/ {total}</span></span>
        </div>
        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-          <div 
-             className={`h-full rounded-full transition-all duration-500 ${remaining < 3 ? 'bg-red-500' : 'bg-cyan-500 shadow-[0_0_10px_rgba(124,58,237,0.5)]'}`}
-             style={{ width: `${percentage}%` }}
+          <div              
+              className={`h-full rounded-full transition-all duration-500 ${remaining < 3 ? 'bg-red-500' : ''}`}
+              style={{ 
+                width: `${percentage}%`,
+                ...(remaining >= 3 ? { background: '#7c3aed', boxShadow: '0 0 10px rgba(124,58,237,0.5)' } : {})
+              }}
           />
        </div>
        {remaining < 3 && (
@@ -317,9 +320,9 @@ function NavItem({
   const isLocked = pro && !isPro;
   const showNewBadge = !isVisited && !isLocked && !isAccountGroup && path !== "/generate";
 
-  let baseColorClass = "text-white/55 hover:bg-white/[0.06] hover:text-white/90";
+  let baseColorClass = "text-white/55 hover:bg-white/[0.04] hover:text-white/90";
   if (isAccountGroup) {
-    baseColorClass = "text-white/40 hover:bg-white/[0.06] hover:text-white/70";
+    baseColorClass = "text-white/40 hover:bg-white/[0.04] hover:text-white/70";
   }
 
   const innerSpan = (
@@ -327,7 +330,7 @@ function NavItem({
       className={`group flex items-center rounded-lg transition-all duration-150 cursor-pointer relative
         ${collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2"}
         ${isActive
-          ? "bg-cyan-600/20 text-white font-medium"
+          ? "text-white font-medium"
           : isLocked
           ? "text-white/25 hover:bg-white/3 hover:text-white/40"
           : baseColorClass
@@ -337,12 +340,14 @@ function NavItem({
       {isActive && (
         <motion.span
           layoutId="activeNavIndicator"
-          className="absolute left-0 inset-y-1 w-0.5 rounded-r-full bg-cyan-500 shadow-[0_0_10px_#00F2FF]"
+          className="absolute left-0 inset-y-1 w-0.5 rounded-r-full"
+          style={{ background: '#7c3aed' }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
       <Icon
-        className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-cyan-400" : ""}`}
+        className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}
+        style={isActive ? { color: '#a78bfa' } : undefined}
       />
       {!collapsed && <span className="text-sm flex-1 truncate">{label}</span>}
       {!collapsed && badge}
@@ -351,9 +356,9 @@ function NavItem({
           NEW
         </span>
       )}
-      {!collapsed && isLocked && <Lock className="w-3 h-3 text-cyan-500/40 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />}
+      {!collapsed && isLocked && <Lock className="w-3 h-3 flex-shrink-0 group-hover:scale-110 transition-transform duration-300" style={{ color: 'rgba(124,58,237,0.4)' }} />}
       {!collapsed && pro && isPro && (
-        <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5 flex-shrink-0">
+        <span className="text-[9px] font-bold rounded-full px-1.5 py-0.5 flex-shrink-0" style={{ color: '#a78bfa', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
           PRO
         </span>
       )}
@@ -425,8 +430,8 @@ function StreakBanner({ streak, completedToday }: { streak: number; completedTod
 
       {!completedToday && (
         <Link href="/daily">
-          <div className="flex items-center justify-between text-[10px] font-bold text-cyan-400 group-hover:text-cyan-300 transition-colors cursor-pointer">
-            Complete today's plan <ArrowRight className="w-3 h-3 ml-1 transition-transform group-hover:translate-x-1" />
+          <div className="flex items-center justify-between text-[10px] font-bold transition-colors cursor-pointer" style={{ color: '#a78bfa' }}>
+             Complete today's plan <ArrowRight className="w-3 h-3 ml-1 transition-transform group-hover:translate-x-1" />
           </div>
         </Link>
       )}
@@ -487,7 +492,7 @@ function SidebarContent({
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>
             {!collapsed ? (
-              <p className="text-[11px] font-semibold text-white/20 uppercase tracking-widest mb-1.5 border-l-2 border-white/10 pl-2 ml-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-1" style={{ color: 'var(--text-muted)' }}>
                 {group.label}
               </p>
             ) : (
@@ -528,7 +533,7 @@ function SidebarContent({
           if (sub?.isAdmin) {
           return (
             <div>
-              <p className="text-[11px] font-semibold text-cyan-400 uppercase tracking-widest mb-1.5 border-l-2 border-cyan-500/50 pl-2 ml-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-1" style={{ color: '#a78bfa' }}>
                 Admin Control
               </p>
               <div className="space-y-0.5">
@@ -551,39 +556,33 @@ function SidebarContent({
 
       {sub && (sub.plan === "free" || sub.plan === "blocked") && (!sub.planType || sub.planType === "free") && !collapsed && (
         <Link href="/pricing">
-          <div id="tour-upgrade" className="mx-3 mb-3 p-3 rounded-xl cursor-pointer group pulse-glow transition-all duration-300 hover:scale-[1.02]"
+          <div id="tour-upgrade" className="mx-3 mb-3 p-3 rounded-xl cursor-pointer group transition-all duration-300 hover:scale-[1.02]"
             style={{
-              background: "linear-gradient(135deg, rgba(124,58,237,0.18) 0%, rgba(168,85,247,0.1) 100%)",
-              border: "1px solid rgba(124,58,237,0.4)",
+              background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(124,58,237,0.04) 100%)",
+              border: "1px solid rgba(124,58,237,0.25)",
             }}>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#a78bfa' }} />
               <span className="text-xs font-semibold text-white/80">Unlock Full Power</span>
             </div>
             <p className="text-[11px] text-white/40 mb-2.5 leading-relaxed">
               Unlock all tools · Multi-language · Priority AI
             </p>
-            <div className="flex items-center gap-1 text-xs font-semibold text-cyan-300 group-hover:text-cyan-200 transition-colors">
+            <div className="flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: '#a78bfa' }}>
               Get unlimited access <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </div>
         </Link>
       )}
 
-      {sub && sub.plan === "trial" && !collapsed && (
-        <div className="mx-3 mb-3 p-3 rounded-xl"
-          style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.15)" }}>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-semibold text-cyan-300">Trial Active</span>
-            {sub.trialDaysLeft !== null && (
-              <span className="text-[10px] text-white/40">{sub.trialDaysLeft}d left</span>
-            )}
-          </div>
-          <Link href="/pricing">
-            <span className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer">
-              Subscribe to keep access →
-            </span>
-          </Link>
+      {sub?.plan === "trial" && sub?.trialDaysLeft !== null && !collapsed && (
+        <div className="mx-3 mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 p-3">
+          <p className="text-amber-400 text-xs font-bold text-center">
+            ⏳ Trial ends in {sub.trialDaysLeft} day{sub.trialDaysLeft === 1 ? '' : 's'}
+          </p>
+          <p className="text-white/30 text-[10px] text-center mt-0.5">
+            No charge until day 7
+          </p>
         </div>
       )}
 
@@ -596,7 +595,7 @@ function SidebarContent({
           </div>
           {sub.planType !== "infinity" && (
             <Link href="/pricing">
-              <span className="text-[10px] text-cyan-400 hover:text-cyan-300 font-semibold cursor-pointer">
+              <span className="text-[10px] font-semibold cursor-pointer" style={{ color: '#a78bfa' }}>
                 Upgrade
               </span>
             </Link>
@@ -616,7 +615,7 @@ function SidebarContent({
                   i18n.changeLanguage(e.target.value);
                   localStorage.setItem('i18nextLng', e.target.value); // explicit save
                 }}
-                className="text-[10px] font-bold bg-transparent text-cyan-400 border-none outline-none cursor-pointer hover:text-cyan-300 transition-colors"
+                className="text-[10px] font-bold bg-transparent border-none outline-none cursor-pointer transition-colors" style={{ color: '#a78bfa' }}
               >
                 <option value="en" className="bg-zinc-950 text-white">English</option>
                 <option value="hi" className="bg-zinc-950 text-white">Hindi</option>
@@ -690,8 +689,8 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
       {NAV_GROUPS.map((group) => (
         <div key={group.label} className="space-y-4">
           <div className="flex items-center gap-3 px-1">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-500/60">{group.label}</h3>
-            <div className="h-px flex-1 bg-gradient-to-r from-cyan-500/20 to-transparent" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'rgba(124,58,237,0.6)' }}>{group.label}</h3>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, rgba(124,58,237,0.2), transparent)' }} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             {group.items.map((item) => {
@@ -707,19 +706,21 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
                   onClick={() => handleNavigate(item.path)}
                   className={`group relative p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer flex flex-col items-center text-center gap-3
                     ${isActive 
-                      ? "bg-cyan-500/15 border-cyan-500/50 shadow-[0_0_30px_rgba(0,242,255,0.2)] ring-1 ring-cyan-500/40" 
+                      ? "border-violet-500/50 shadow-[0_0_30px_rgba(124,58,237,0.2)] ring-1 ring-violet-500/40" 
                       : isLocked 
                         ? "bg-white/[0.01] border-white/5 opacity-50" 
-                        : "bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-cyan-500/40 shadow-lg"
+                        : "bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-violet-500/40 shadow-lg"
                     }`}
+                  style={isActive ? { background: 'rgba(124,58,237,0.15)' } : undefined}
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-500
                     ${isActive 
-                      ? "bg-cyan-500/20 border-cyan-500/60 text-white shadow-[0_0_20px_rgba(0,242,255,0.4)]" 
+                      ? "border-violet-500/60 text-white" 
                       : isLocked 
                         ? "bg-white/5 border-white/5 text-white/20" 
-                        : "bg-gradient-to-br from-white/10 to-transparent border-white/10 text-white/80 group-hover:text-cyan-400 group-hover:border-cyan-500/40 group-hover:scale-110"
-                    }`}>
+                        : "bg-gradient-to-br from-white/10 to-transparent border-white/10 text-white/80 group-hover:text-violet-400 group-hover:border-violet-500/40 group-hover:scale-110"
+                    }`}
+                    style={isActive ? { background: 'rgba(124,58,237,0.2)', boxShadow: '0 0 20px rgba(124,58,237,0.4)' } : undefined}>
                     {isLocked ? <Lock className="w-5 h-5" /> : <Icon className="w-6 h-6" />}
                   </div>
                   <div className="flex flex-col gap-1 w-full">
@@ -896,7 +897,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const isPro = !!(sub && sub.planType === "infinity" && ["active", "trial", "pending", "past_due"].includes(sub.plan));
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-[#050110] selection:bg-cyan-500/30">
+    <div className="h-[100dvh] w-full overflow-hidden flex flex-col" style={{ background: 'var(--bg)' }}>
       {isOffline && (
         <div className="fixed top-0 inset-x-0 z-[200] bg-red-500 text-white text-center text-[10px] py-1.5 font-bold uppercase tracking-widest animate-in fade-in slide-in-from-top duration-300">
           📡 No internet connection — check your network
@@ -909,9 +910,10 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Desktop Layout */}
         <div className="hidden md:flex flex-1 h-full min-h-0">
           <div 
-            className={`hidden md:flex flex-col border-r border-white/[0.06] bg-[#080316]/60 backdrop-blur-3xl transition-all duration-300 ease-in-out flex-shrink-0 z-30 h-full ${
-              sidebarCollapsed ? 'w-[70px]' : 'w-[260px]'
+            className={`hidden md:flex flex-col transition-all duration-300 ease-in-out flex-shrink-0 z-30 h-full ${
+              sidebarCollapsed ? 'w-[60px]' : 'w-[240px]'
             }`}
+            style={{ background: 'var(--surface-1)', borderRight: '1px solid var(--border)' }}
           >
             <SidebarContent
               user={user}
@@ -952,7 +954,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Mobile Layout */}
         <div className="md:hidden flex flex-1 flex-col min-h-0 overflow-x-hidden">
           <FeatureDiscoveryBanner />
-          <header className="h-16 border-b border-white/[0.06] bg-[#080316]/95 backdrop-blur-2xl flex items-center justify-between px-6 z-[60] sticky top-0">
+          <header className="h-16 border-b flex items-center justify-between px-6 z-[60] sticky top-0" style={{ borderColor: 'var(--border)', background: 'rgba(5,5,8,0.95)', backdropFilter: 'blur(20px)' }}>
             <Logo size="sm" />
             <div className="flex items-center gap-3">
                 <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -961,7 +963,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       <Menu className="w-6 h-6" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="p-0 h-[88vh] bg-[#050110]/95 backdrop-blur-3xl border-t border-white/10 rounded-t-[40px] flex flex-col focus:outline-none ring-0 overflow-hidden">
+                  <SheetContent side="bottom" className="p-0 h-[88vh] border-t rounded-t-[40px] flex flex-col focus:outline-none ring-0 overflow-hidden" style={{ background: 'rgba(5,5,8,0.97)', backdropFilter: 'blur(30px)', borderColor: 'rgba(255,255,255,0.1)' }}>
                     <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mt-3 shrink-0" />
                     <div className="px-8 pt-8 pb-4 flex items-center justify-between">
                       <div className="space-y-1">
@@ -1013,7 +1015,8 @@ export function Layout({ children }: { children: ReactNode }) {
                           {['en', 'hi', 'bn'].map(lang => (
                             <button key={lang}
                               onClick={() => { i18n.changeLanguage(lang); localStorage.setItem('i18nextLng', lang); setIsSheetOpen(false); }}
-                              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md transition-all ${i18n.language === lang ? 'text-cyan-400 bg-cyan-500/10' : 'text-white/20 hover:text-white/40'}`}
+                              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md transition-all ${i18n.language === lang ? 'bg-violet-500/10' : 'text-white/20 hover:text-white/40'}`}
+                              style={i18n.language === lang ? { color: '#a78bfa' } : undefined}
                             >{lang === 'en' ? 'EN' : lang === 'hi' ? 'HI' : 'BN'}</button>
                           ))}
                         </div>
@@ -1043,7 +1046,7 @@ export function Layout({ children }: { children: ReactNode }) {
             </AnimatePresence>
           </main>
 
-          <nav className="fixed bottom-0 inset-x-0 border-t border-white/[0.08] flex justify-around items-center p-2 z-[100] bg-[#080316]/95 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}>
+          <nav className="fixed bottom-0 inset-x-0 flex justify-around items-center p-2 z-[100]" style={{ background: 'rgba(5,5,8,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
             {BOTTOM_NAV.map((item) => {
                if (item.path === "menu") {
                  const hasNew = SIDEBAR_NAV.some(n => !localStorage.getItem(`visited_${n.path}`) && !n.pro);
@@ -1064,13 +1067,15 @@ export function Layout({ children }: { children: ReactNode }) {
                   <Link 
                     key={item.path} 
                     href={navItem.path} 
-                    className={`flex flex-col items-center gap-1.5 p-2 transition-all relative ${isActive ? "text-cyan-400" : "text-white/50 hover:text-white/80"}`}
+                    className={`flex flex-col items-center gap-1.5 p-2 transition-all relative ${isActive ? "" : "text-white/50 hover:text-white/80"}`}
+                    style={isActive ? { color: '#a78bfa' } : undefined}
                      onClick={() => {
                         localStorage.setItem(`visited_${navItem.path}`, "true");
                         setIsSheetOpen(false);
                      }}
                   >
-                    <div className={`p-1.5 rounded-xl transition-all duration-500 ${isActive ? "bg-cyan-500/20 text-white shadow-[0_0_20px_rgba(0,242,255,0.3)]" : "bg-white/5 text-white/40 group-hover:bg-white/10"}`}>
+                    <div className={`p-1.5 rounded-xl transition-all duration-500 ${isActive ? "text-white" : "bg-white/5 text-white/40 group-hover:bg-white/10"}`}
+                      style={isActive ? { background: 'rgba(124,58,237,0.2)', boxShadow: '0 0 20px rgba(124,58,237,0.3)' } : undefined}>
                       <Icon className="w-[24px] h-[24px]" />
                     </div>
                     <span className={`text-[9px] font-black uppercase tracking-[0.1em] transition-all ${isActive ? "opacity-100 scale-105 text-white" : "opacity-40"}`}>
@@ -1079,7 +1084,8 @@ export function Layout({ children }: { children: ReactNode }) {
                     {isActive && (
                       <motion.div 
                         layoutId="bottomNavActive"
-                        className="absolute -bottom-2 w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_12px_#00F2FF]"
+                        className="absolute -bottom-2 w-1.5 h-1.5 rounded-full"
+                        style={{ background: '#7c3aed', boxShadow: '0 0 12px rgba(124,58,237,0.6)' }}
                       />
                     )}
 
@@ -1123,10 +1129,10 @@ export function Layout({ children }: { children: ReactNode }) {
       {user && (
         <button
           onClick={() => { setFeedbackTrigger("manual"); setShowFeedback(true); }}
-          className="fixed bottom-6 right-6 z-40 hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 text-white/50 hover:text-white/80 hover:border-cyan-500/40 hover:bg-cyan-500/10 transition-all text-xs font-bold shadow-2xl"
-          style={{ background: "rgba(10,4,28,0.85)", backdropFilter: "blur(12px)" }}
+          className="fixed bottom-6 right-6 z-40 hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full border text-white/50 hover:text-white/80 transition-all text-xs font-bold shadow-2xl"
+          style={{ background: 'rgba(14,14,20,0.9)', backdropFilter: 'blur(12px)', borderColor: 'var(--border)' }}
         >
-          <MessageSquare className="w-4 h-4 text-cyan-400" />
+          <MessageSquare className="w-4 h-4" style={{ color: '#a78bfa' }} />
           Feedback
         </button>
       )}

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { BarChart2, Zap, Instagram, Twitter, Linkedin, Youtube, Check, X, Info, Copy, RefreshCw, History, ArrowRight, TrendingUp, Sparkles } from "lucide-react";
+import { Zap, Instagram, Twitter, Check, X, Info, RefreshCw, History, ArrowRight, TrendingUp, Sparkles } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,7 @@ export default function PredictorPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
   const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
@@ -56,7 +56,7 @@ export default function PredictorPage() {
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
 
-  const { data: history = [], isLoading: historyLoading } = useQuery({
+  const { data: history = [] } = useQuery({
     queryKey: ["predictor-history"],
     queryFn: () => api.get("/predictor/history").then(r => r.data),
     staleTime: 5 * 60 * 1000,
@@ -113,17 +113,20 @@ export default function PredictorPage() {
     );
   };
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <PageWrapper maxWidth="lg" className="pb-24 md:pb-8 space-y-10">
       <FeatureGuideBanner 
         toolKey="predictor" 
         title="Viral Predictor" 
-        icon={<BarChart2 className="w-5 h-5 text-indigo-500" />}
+        icon={<TrendingUp className="w-5 h-5 text-violet-400" />}
         tagline="Know if your post will flop before you hit publish. Our AI simulates the algorithm's reaction."
         whatYouGet={["Virality score (0-100)", "Hook strength audit", "Algorithm signal analysis"]}
         whenToUse="Use this right before you post. If your score is below 70, use the suggested 'Top Fix' to improve it."
         proTip="The 'Improved Version' provided in the results isn't just a suggestion — it's optimized for the specific platform's current algorithm."
-        planRequired="Creator"
+        planRequired="Infinity"
+        forceOpen={showGuide}
       />
       <PageHeader 
         icon={<TrendingUp/>} 
@@ -132,7 +135,7 @@ export default function PredictorPage() {
         title="Viral Predictor" 
         subtitle="Predict performance before you post."
         badge="Infinity"
-        badgeColor="bg-purple-500/10 text-purple-400 border-purple-500/20"
+        onInfoClick={() => setShowGuide(prev => !prev)}
       />
 
       <Tabs defaultValue="predict" className="space-y-6">
@@ -318,10 +321,10 @@ export default function PredictorPage() {
                           <p className="text-sm font-medium text-red-600">{result.hookAnalysis.issue}</p>
                         </div>
                       )}
-                      <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 space-y-2">
-                        <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Improved Hook</span>
-                        <p className="text-lg font-black text-indigo-900 leading-tight">"{result.hookAnalysis.improvedVersion}"</p>
-                        <Button variant="link" className="p-0 h-auto text-indigo-600 text-xs font-bold" onClick={() => navigator.clipboard.writeText(result.hookAnalysis.improvedVersion)}>
+                      <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 space-y-2">
+                        <span className="text-[10px] font-bold text-violet-400 uppercase tracking-widest">Improved Hook</span>
+                        <p className="text-lg font-black text-white leading-tight">"{result.hookAnalysis.improvedVersion}"</p>
+                        <Button variant="link" className="p-0 h-auto text-violet-400 text-xs font-bold" onClick={() => navigator.clipboard.writeText(result.hookAnalysis.improvedVersion)}>
                           COPY THIS HOOK
                         </Button>
                       </div>

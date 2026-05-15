@@ -51,7 +51,7 @@ export function LanguageSelector({
       <style dangerouslySetInnerHTML={{ __html: `
         .language-select-content [data-radix-select-viewport] {
           scrollbar-width: thin !important;
-          scrollbar-color: rgba(6, 182, 212, 0.2) transparent !important;
+          scrollbar-color: rgba(124, 58, 237, 0.2) transparent !important;
         }
         .language-select-content [data-radix-select-viewport]::-webkit-scrollbar {
           width: 4px !important;
@@ -61,20 +61,20 @@ export function LanguageSelector({
           background: transparent !important;
         }
         .language-select-content [data-radix-select-viewport]::-webkit-scrollbar-thumb {
-          background-color: rgba(6, 182, 212, 0.3) !important;
+          background-color: rgba(124, 58, 237, 0.3) !important;
           border-radius: 10px !important;
         }
         .language-select-item {
           transition: all 0.2s ease;
         }
         .language-select-item:focus, .language-select-item[data-highlighted] {
-          background: rgba(6, 182, 212, 0.1) !important;
-          color: #06b6d4 !important;
+          background: rgba(124, 58, 237, 0.1) !important;
+          color: #7c3aed !important;
           outline: none !important;
         }
       `}} />
       <Select value={value} onValueChange={handleChange}>
-        <SelectTrigger className="bg-white/[0.03] backdrop-blur-md border border-white/10 text-white focus:ring-cyan-500/40 rounded-xl transition-all hover:bg-white/10 h-11">
+        <SelectTrigger className="bg-white/[0.03] backdrop-blur-md border border-white/10 text-white focus:ring-violet-500/40 rounded-xl transition-all hover:bg-white/10 h-11">
           <SelectValue placeholder="Select language" />
         </SelectTrigger>
         <SelectContent className="glass-panel-premium border-white/10 rounded-xl max-h-[330px] language-select-content shadow-2xl">
@@ -91,7 +91,7 @@ export function LanguageSelector({
                 <span className="font-medium">
                   {lang.label}
                   {lang.native ? (
-                    <span className="text-white/40 ml-1.5 text-[11px] font-normal group-focus:text-cyan-400/60">
+                    <span className="text-white/40 ml-1.5 text-[11px] font-normal group-focus:text-violet-400/60">
                       {lang.native}
                     </span>
                   ) : ""}

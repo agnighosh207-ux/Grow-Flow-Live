@@ -15,7 +15,7 @@ const providers = [
 ];
 
 export const openai = new OpenAI({ 
-  apiKey: openaiApiKey || process.env.OPENAI_API_KEY || "sk-dummy-key-for-sdk-init",
+  apiKey: openaiApiKey || "none",
   timeout: 12000,
   maxRetries: 0
 }) as any;

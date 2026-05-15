@@ -22,6 +22,8 @@ import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useAuth } from "@clerk/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/shared/PageHeader";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 interface InspirationItem {
   id: string;
@@ -156,7 +158,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ name, color: "#06b6d4", icon: "Folder" })
+        body: JSON.stringify({ name, color: "#7c3aed", icon: "Folder" })
       });
       return res.json();
     },
@@ -166,28 +168,42 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
     }
   });
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <PageWrapper maxWidth="full" className="py-6 px-4 md:px-8 space-y-6">
+      <FeatureGuideBanner
+        toolKey="vault"
+        title="The Vault"
+        icon={<Layers className="w-5 h-5 text-violet-400" />}
+        tagline="Your digital content library. Save, organize, and remix your best assets."
+        whatYouGet={["Personal content storage", "Folder-based organization", "Viral inspiration library", "One-click AI remixing"]}
+        whenToUse="Use this to save generations you love, or to find viral hooks from other creators to remix into your own voice."
+        proTip="Use 'Folders' to categorize content by project or client to keep your workflow organized."
+        planRequired="Starter"
+        forceOpen={showGuide}
+      />
       {/* Header Area */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white/[0.02] border border-white/5 p-6 rounded-[32px] backdrop-blur-xl">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-black text-white italic flex items-center gap-3 tracking-tight">
-            <Layers className="text-cyan-400 w-6 h-6" />
-            THE VAULT
-          </h1>
-          <p className="text-xs text-white/40 font-medium italic">Manage your content assets and find viral inspiration</p>
-        </div>
+        <PageHeader 
+          icon={<Layers />} 
+          iconBg="bg-violet-500/10" 
+          iconColor="text-violet-400" 
+          title="The Vault" 
+          subtitle="Manage your content assets and find viral inspiration"
+          onInfoClick={() => setShowGuide(prev => !prev)}
+        />
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-white/5 p-1 rounded-2xl">
             <TabsList className="bg-transparent border-0 gap-1">
-              <TabsTrigger value="my-content" className="rounded-xl px-4 py-2 text-xs font-bold data-[state=active]:bg-cyan-500 data-[state=active]:text-black transition-all">
+              <TabsTrigger value="my-content" className="rounded-xl px-4 py-2 text-xs font-bold data-[state=active]:bg-violet-500 data-[state=active]:text-white transition-all">
                 My Content
               </TabsTrigger>
-              <TabsTrigger value="folders" className="rounded-xl px-4 py-2 text-xs font-bold data-[state=active]:bg-cyan-500 data-[state=active]:text-black transition-all">
+              <TabsTrigger value="folders" className="rounded-xl px-4 py-2 text-xs font-bold data-[state=active]:bg-violet-500 data-[state=active]:text-white transition-all">
                 Folders
               </TabsTrigger>
-              <TabsTrigger value="inspiration" className="rounded-xl px-4 py-2 text-xs font-bold data-[state=active]:bg-cyan-500 data-[state=active]:text-black transition-all">
+              <TabsTrigger value="inspiration" className="rounded-xl px-4 py-2 text-xs font-bold data-[state=active]:bg-violet-500 data-[state=active]:text-white transition-all">
                 Inspiration
               </TabsTrigger>
             </TabsList>
@@ -206,14 +222,14 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                   placeholder="Search your saved content..." 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-12 h-11 rounded-2xl bg-white/5 border-white/10 focus:border-cyan-500/50 transition-all text-sm"
+                  className="pl-12 h-11 rounded-2xl bg-white/5 border-white/10 focus:border-violet-500/50 transition-all text-sm"
                 />
               </div>
               <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                  <Button
                     onClick={() => setActiveFolder(null)}
                     variant="ghost"
-                    className={`h-9 px-4 rounded-xl text-xs font-bold transition-all ${!activeFolder ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-white/40 hover:text-white/60'}`}
+                    className={`h-9 px-4 rounded-xl text-xs font-bold transition-all ${!activeFolder ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20' : 'text-white/40 hover:text-white/60'}`}
                  >
                    All Content
                  </Button>
@@ -222,7 +238,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                       key={f.id}
                       onClick={() => setActiveFolder(f.id)}
                       variant="ghost"
-                      className={`h-9 px-4 rounded-xl text-xs font-bold transition-all ${activeFolder === f.id ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-white/40 hover:text-white/60'}`}
+                      className={`h-9 px-4 rounded-xl text-xs font-bold transition-all ${activeFolder === f.id ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20' : 'text-white/40 hover:text-white/60'}`}
                    >
                      <Folder size={14} className="mr-2" style={{ color: f.color }} />
                      {f.name}
@@ -240,7 +256,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                      <Library className="w-8 h-8 text-white/20" />
                    </div>
                    <h3 className="text-white/40 font-bold">No content found in this view</h3>
-                   <Button variant="link" onClick={() => window.location.href = "/generate"} className="text-cyan-400">Go generate some content</Button>
+                   <Button variant="link" onClick={() => window.location.href = "/generate"} className="text-violet-400">Go generate some content</Button>
                 </div>
               ) : personalItems?.map((item: any) => (
                 <motion.div
@@ -248,11 +264,11 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                   layout
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="group relative bg-white/[0.02] border border-white/5 rounded-[32px] p-6 hover:bg-white/[0.04] hover:border-cyan-500/30 transition-all"
+                  className="group relative bg-white/[0.02] border border-white/5 rounded-[32px] p-6 hover:bg-white/[0.04] hover:border-violet-500/30 transition-all"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2">
-                       <div className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[9px] font-black uppercase tracking-widest border border-cyan-500/20">
+                       <div className="px-3 py-1 rounded-full bg-violet-500/10 text-violet-400 text-[9px] font-black uppercase tracking-widest border border-violet-500/20">
                          {item.platform || "MULTI"}
                        </div>
                        <div className="px-3 py-1 rounded-full bg-white/5 text-white/40 text-[9px] font-black uppercase tracking-widest border border-white/5">
@@ -276,7 +292,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                       <Button variant="ghost" size="sm" onClick={() => handleCopy(item.idea)} className="h-8 w-8 p-0 rounded-lg hover:bg-white/5 text-white/30 hover:text-white">
                         <Copy size={12} />
                       </Button>
-                      <Button onClick={() => window.location.href = `/generate?idea=${encodeURIComponent(item.idea)}`} className="h-8 px-3 rounded-lg bg-white/5 hover:bg-cyan-500/10 text-white/60 hover:text-cyan-400 font-bold text-[10px] uppercase tracking-widest border border-white/5 hover:border-cyan-500/20">
+                      <Button onClick={() => window.location.href = `/generate?idea=${encodeURIComponent(item.idea)}`} className="h-8 px-3 rounded-lg bg-white/5 hover:bg-violet-500/10 text-white/60 hover:text-violet-400 font-bold text-[10px] uppercase tracking-widest border border-white/5 hover:border-violet-500/20">
                         REUSE
                       </Button>
                     </div>
@@ -292,7 +308,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center justify-between mb-8">
                <h2 className="text-xl font-black text-white italic">Organize Content</h2>
-               <Button onClick={handleCreateFolder} className="bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded-2xl gap-2">
+               <Button onClick={handleCreateFolder} className="bg-violet-600 hover:bg-violet-500 text-white font-black rounded-2xl gap-2">
                  <FolderPlus size={18} /> NEW FOLDER
                </Button>
             </div>
@@ -309,10 +325,10 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                  <motion.div
                     key={f.id}
                     whileHover={{ scale: 1.02 }}
-                    className="group bg-white/[0.02] border border-white/5 rounded-[32px] p-6 hover:border-cyan-500/30 transition-all cursor-pointer"
+                    className="group bg-white/[0.02] border border-white/5 rounded-[32px] p-6 hover:border-violet-500/30 transition-all cursor-pointer"
                     onClick={() => { setActiveFolder(f.id); setActiveTab("my-content"); }}
                  >
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4 group-hover:bg-cyan-500/10 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4 group-hover:bg-violet-500/10 transition-all">
                       <Folder size={24} style={{ color: f.color }} fill={f.color + "20"} />
                     </div>
                     <h3 className="text-lg font-black text-white mb-1">{f.name}</h3>
@@ -334,7 +350,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                     key={p.id}
                     variant="ghost"
                     onClick={() => setSelectedPlatform(p.id)}
-                    className={`rounded-full h-10 px-6 font-bold text-xs gap-2 transition-all ${selectedPlatform === p.id ? 'bg-cyan-500 text-black' : 'bg-white/5 text-white/40 hover:text-white'}`}
+                    className={`rounded-full h-10 px-6 font-bold text-xs gap-2 transition-all ${selectedPlatform === p.id ? 'bg-violet-500 text-white' : 'bg-white/5 text-white/40 hover:text-white'}`}
                   >
                     {p.icon}
                     {p.id}
@@ -370,7 +386,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
 
             {inspirationLoading ? (
                <div className="flex justify-center py-20">
-                 <RefreshCw className="w-10 h-10 animate-spin text-cyan-500" />
+                 <RefreshCw className="w-10 h-10 animate-spin text-violet-500" />
                </div>
             ) : inspirationItems.length === 0 ? (
                <div className="py-20 text-center opacity-30">
@@ -385,7 +401,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 hover:border-orange-500/30 transition-all group"
+                    className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 hover:border-violet-500/30 transition-all group"
                   >
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center gap-2">
@@ -395,7 +411,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                         {item.platform === "YouTube" && <Youtube size={14} className="text-red-600" />}
                         <Badge variant="outline" className="text-[8px] font-black uppercase bg-white/5 border-white/10">{item.niche}</Badge>
                       </div>
-                      <div className="text-[10px] font-black text-orange-400 flex items-center gap-1">
+                      <div className="text-[10px] font-black text-violet-400 flex items-center gap-1">
                         <TrendingUp size={12} /> {item.estimatedReach}
                       </div>
                     </div>
@@ -413,7 +429,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                       <Badge variant="outline" className="text-[9px] font-black tracking-widest text-white/30 uppercase p-0">#{item.format}</Badge>
                       <Sheet>
                         <SheetTrigger asChild>
-                          <Button size="sm" onClick={() => { setRemixingItem(item); setRemixData(null); }} className="h-9 px-6 bg-orange-500 hover:bg-orange-400 text-black font-black rounded-xl text-[10px] uppercase tracking-widest">
+                          <Button size="sm" onClick={() => { setRemixingItem(item); setRemixData(null); }} className="h-9 px-6 bg-violet-600 hover:bg-violet-500 text-white font-black rounded-xl text-[10px] uppercase tracking-widest">
                             REMIX <Zap size={12} className="ml-1" />
                           </Button>
                         </SheetTrigger>
@@ -441,7 +457,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                             </div>
 
                             <Button 
-                              className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-black h-12 rounded-2xl shadow-glow" 
+                              className="w-full bg-violet-600 hover:bg-violet-500 text-white font-black h-12 rounded-2xl shadow-glow" 
                               onClick={handleRemix}
                               disabled={remixing}
                             >
@@ -458,7 +474,7 @@ export default function UnifiedVaultPage({ initialTab = "my-content" }: { initia
                                 >
                                   <div className="p-6 rounded-[32px] bg-white/5 border border-white/10 space-y-4">
                                     <div className="flex justify-between items-center">
-                                      <span className="text-[10px] font-black text-cyan-400 tracking-[0.2em] uppercase">Remixed Result</span>
+                                      <span className="text-[10px] font-black text-violet-400 tracking-[0.2em] uppercase">Remixed Result</span>
                                       <Button variant="ghost" size="icon" onClick={() => handleCopy(remixData.remixedHook)} className="h-8 w-8 hover:bg-white/5">
                                         <Copy size={14} className="text-white/40" />
                                       </Button>

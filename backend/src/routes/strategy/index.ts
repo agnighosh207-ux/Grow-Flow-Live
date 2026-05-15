@@ -37,6 +37,16 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
   });
 
   const { niche = "General", goal = "grow my audience and establish authority", duration = 7, language = "English", improvementFocus = "all" } = req.body;
+  const planType = req.user?.planType ?? "free";
+
+  // Free users only get English
+  if ((!planType || planType === "free") && language && language !== "English") {
+    return res.status(403).json({
+      error: "language_locked",
+      message: "Upgrade to Starter or higher to generate content in regional languages.",
+      requiredPlan: "starter"
+    });
+  }
   const sanitizedNiche = String(niche).substring(0, 50);
   const sanitizedGoal = String(goal).substring(0, 500);
 

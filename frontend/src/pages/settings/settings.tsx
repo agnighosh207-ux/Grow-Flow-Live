@@ -44,7 +44,7 @@ function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onCha
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none
-        ${checked ? "bg-cyan-600" : "bg-white/15"}
+        ${checked ? "bg-violet-600" : "bg-white/15"}
         ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
       `}
     >
@@ -200,6 +200,7 @@ export default function SettingsPage() {
     displayName: "",
     showOnLeaderboard: false,
     avatarUrl: "",
+    niche: "",
   });
 
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
@@ -231,6 +232,10 @@ export default function SettingsPage() {
         }
         if (data.profile) {
           setProfile(data.profile);
+          // Sync niche from preferences if profile doesn't have it (fallback)
+          if (!data.profile.niche && data.preferences?.niche) {
+            setProfile(p => ({ ...p, niche: data.preferences.niche }));
+          }
         }
         if (data.account?.scheduledDeletionAt) {
           setScheduledDeletionAt(data.account.scheduledDeletionAt);
@@ -408,7 +413,10 @@ export default function SettingsPage() {
     try {
       const res = await secureFetch("/api/settings/profile", {
         method: "PATCH",
-        body: JSON.stringify(profile),
+        body: JSON.stringify({
+          ...profile,
+          niche: profile.niche || contentPrefs.niche // fallback to contentPrefs if not in profile
+        }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -433,7 +441,7 @@ export default function SettingsPage() {
 
   const planConfig = {
     free: { label: "Free", color: "text-white/50", bg: "bg-white/5 border-white/10", icon: <User className="w-3.5 h-3.5" /> },
-    trial: { label: "Trial", color: "text-cyan-300", bg: "bg-cyan-500/10 border-cyan-500/20", icon: <Zap className="w-3.5 h-3.5" /> },
+    trial: { label: "Trial", color: "text-violet-300", bg: "bg-violet-500/10 border-violet-500/20", icon: <Zap className="w-3.5 h-3.5" /> },
     active: { label: "Pro", color: "text-emerald-300", bg: "bg-emerald-500/10 border-emerald-500/20", icon: <Crown className="w-3.5 h-3.5" /> },
     blocked: { label: "Expired", color: "text-red-300", bg: "bg-red-500/10 border-red-500/20", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
   };
@@ -506,7 +514,7 @@ export default function SettingsPage() {
               activeTab === tab.id ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
             }`}
           >
-            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "text-cyan-400" : "text-white/20"}`} />
+            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "text-violet-400" : "text-white/20"}`} />
             {tab.label}
           </button>
         ))}
@@ -543,6 +551,16 @@ export default function SettingsPage() {
                       className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm"
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-white/60 text-xs font-medium">Your Niche</label>
+                    <input
+                      type="text"
+                      value={profile.niche}
+                      onChange={e => setProfile(p => ({ ...p, niche: e.target.value }))}
+                      className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm"
+                      placeholder="e.g. AI SaaS, Fitness, Finance"
+                    />
+                  </div>
                   <Button onClick={saveProfile} disabled={profileSaving} className="w-full bg-white text-black font-bold rounded-xl">
                     {profileSaving ? "Saving..." : "Update Profile"}
                   </Button>
@@ -572,7 +590,7 @@ export default function SettingsPage() {
                       </select>
                     </div>
                   </div>
-                  <Button onClick={saveContentPrefs} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl">Save Preferences</Button>
+                  <Button onClick={saveContentPrefs} className="w-full bg-violet-600 hover:bg-violet-500 text-white rounded-xl">Save Preferences</Button>
                 </div>
               </section>
               <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">

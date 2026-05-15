@@ -45,6 +45,7 @@ import { NPSModal, checkShouldShowNPS } from "@/components/modals/NPSModal";
 import { FeatureDiscoveryBanner } from "@/components/generate/FeatureDiscoveryBanner";
 import { ContentPackCard } from "@/components/generate/ContentPackCard";
 import { ViralScoreCard } from "@/components/generate/ViralScoreCard";
+import { PageHeader } from "@/components/shared/PageHeader";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { track, identify } from "@/lib/analytics";
 
@@ -60,11 +61,11 @@ function AnimatedOrbs() {
   return (
     <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
       <div className="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(6,182,212,0.05) 0%, transparent 70%)" }} />
+        style={{ background: "radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%)" }} />
       <div className="absolute top-[20%] -left-[10%] w-[500px] h-[500px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.03) 0%, transparent 70%)" }} />
+        style={{ background: "radial-gradient(circle, rgba(99,102,241,0.03) 0%, transparent 70%)" }} />
       <div className="absolute -bottom-[10%] right-[20%] w-[700px] h-[700px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(6,182,212,0.02) 0%, transparent 70%)" }} />
+        style={{ background: "radial-gradient(circle, rgba(124,58,237,0.02) 0%, transparent 70%)" }} />
     </div>
   );
 }
@@ -125,7 +126,7 @@ function SectionCard({
         </div>
         <span className={`text-sm font-black tracking-tight uppercase ${locked ? "text-white/30" : "text-white/90"}`}>{title}</span>
         {badge && (
-          <span className={`ml-auto text-[9px] px-2.5 py-1 rounded-lg border font-black tracking-widest uppercase ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-cyan-500/12 text-cyan-300 border-cyan-500/20"}`}>
+          <span className={`ml-auto text-[9px] px-2.5 py-1 rounded-lg border font-black tracking-widest uppercase ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-violet-500/12 text-violet-300 border-violet-500/20"}`}>
             {badge}
           </span>
         )}
@@ -169,12 +170,12 @@ function AbDuelView({ idea, niche, tone, onResult, result }: { idea: string; nic
       <div className="space-y-12">
         <div className={`p-10 rounded-[3rem] border shadow-2xl flex flex-col lg:flex-row items-center gap-12 ${
           result.prediction.winner === 'A' ? 'bg-indigo-950/20 border-indigo-500/30' : 
-          result.prediction.winner === 'B' ? 'bg-cyan-950/20 border-cyan-500/30' : 
+          result.prediction.winner === 'B' ? 'bg-violet-950/20 border-violet-500/30' : 
           'bg-zinc-900/40 border-white/10'
         }`}>
            <div className={`p-8 rounded-[2rem] ${
              result.prediction.winner === 'A' ? 'bg-indigo-500/20 text-indigo-400' :
-             result.prediction.winner === 'B' ? 'bg-cyan-500/20 text-cyan-400' :
+             result.prediction.winner === 'B' ? 'bg-violet-500/20 text-violet-400' :
              'bg-zinc-500/20 text-zinc-400'
            }`}>
              {result.prediction.winner !== 'too_close' ? <Trophy className="w-16 h-16" /> : <GitBranch className="w-16 h-16" />}
@@ -198,11 +199,11 @@ function AbDuelView({ idea, niche, tone, onResult, result }: { idea: string; nic
                  <span className="text-sm font-black text-indigo-400">{result.versionA.predictedStrength}</span>
               </div>
            </SectionCard>
-           <SectionCard icon={Users} title={`Variant B: ${result.versionB.audienceTarget}`} color="bg-cyan-500/10 text-cyan-400">
+           <SectionCard icon={Users} title={`Variant B: ${result.versionB.audienceTarget}`} color="bg-violet-500/10 text-violet-400">
               <p className="text-xl font-black text-white leading-tight mb-6 italic">"{result.versionB.hook}"</p>
               <div className="flex items-center justify-between pt-6 border-t border-white/5">
                  <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Strength</span>
-                 <span className="text-sm font-black text-cyan-400">{result.versionB.predictedStrength}</span>
+                 <span className="text-sm font-black text-violet-400">{result.versionB.predictedStrength}</span>
               </div>
            </SectionCard>
         </div>
@@ -222,7 +223,7 @@ function AbDuelView({ idea, niche, tone, onResult, result }: { idea: string; nic
           <Input placeholder="e.g. Agency owners" value={audienceA} onChange={(e) => setAudienceA(e.target.value)} className="h-14 rounded-2xl bg-black/40 border-white/10" />
         </div>
         <div className="space-y-3 text-left">
-          <Label className="text-[10px] font-black uppercase tracking-widest text-cyan-400 ml-1">Audience B</Label>
+          <Label className="text-[10px] font-black uppercase tracking-widest text-violet-400 ml-1">Audience B</Label>
           <Input placeholder="e.g. Freelance designers" value={audienceB} onChange={(e) => setAudienceB(e.target.value)} className="h-14 rounded-2xl bg-black/40 border-white/10" />
         </div>
       </div>
@@ -270,7 +271,7 @@ function HookIntelligenceView({ content, niche }: { content: any; niche: string 
         </div>
 
         {!score ? (
-          <Button onClick={() => scoreHook(getHook())} disabled={loading} className="h-16 px-12 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-lg w-full">
+          <Button onClick={() => scoreHook(getHook())} disabled={loading} className="h-16 px-12 bg-violet-600 hover:bg-violet-500 text-white font-black rounded-2xl text-lg w-full">
             {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Analyze Psychological Impact"}
           </Button>
         ) : (
@@ -278,13 +279,13 @@ function HookIntelligenceView({ content, niche }: { content: any; niche: string 
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Psych Score</span>
-                <span className="text-4xl font-black text-emerald-400">{score.score}%</span>
+                <span className="text-4xl font-black text-violet-400">{score.score}%</span>
               </div>
               <div className="h-3 bg-white/5 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${score.score}%` }} className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+                <motion.div initial={{ width: 0 }} animate={{ width: `${score.score}%` }} className="h-full bg-violet-500 shadow-[0_0_15px_rgba(124,58,237,0.5)]" />
               </div>
-              <div className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block mb-2">Patterns Detected</span>
+              <div className="p-5 rounded-2xl bg-violet-500/5 border border-violet-500/10">
+                <span className="text-[10px] font-black text-violet-400 uppercase tracking-widest block mb-2">Patterns Detected</span>
                 <div className="flex flex-wrap gap-2">
                   {score.patternMatches.map((m: string) => (
                     <span key={m} className="px-2 py-1 rounded-lg bg-white/5 text-[9px] font-black text-white/60 uppercase">{m}</span>
@@ -301,10 +302,10 @@ function HookIntelligenceView({ content, niche }: { content: any; niche: string 
                  <p className="text-sm font-medium text-amber-100/80 leading-relaxed">{score.mainIssue}</p>
               </div>
               {score.quickFix && (
-                <div className="p-6 rounded-2xl bg-cyan-500/5 border border-cyan-500/10">
+                <div className="p-6 rounded-2xl bg-violet-500/5 border border-violet-500/10">
                   <div className="flex items-center gap-3 mb-3">
-                      <Sparkles className="w-4 h-4 text-cyan-400" />
-                      <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Quick Fix</span>
+                      <Sparkles className="w-4 h-4 text-violet-400" />
+                      <span className="text-[10px] font-black text-violet-400 uppercase tracking-widest">Quick Fix</span>
                   </div>
                   <p className="text-sm font-black text-white italic leading-relaxed">"{score.quickFix}"</p>
                 </div>
@@ -360,10 +361,10 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
     const virality = analysis?.viralityScore ?? directViralScore ?? 80;
 
     return [
-      { label: "Virality", score: virality, color: "bg-red-500" },
-      { label: "Hook Strength", score: hookStrength, color: "bg-pink-500" },
-      { label: "Engagement", score: engagementPotential, color: "bg-cyan-500" },
-      { label: "Shareability", score: shareability, color: "bg-emerald-500" },
+      { label: "Virality", score: virality, color: "bg-rose-500" },
+      { label: "Hook Strength", score: hookStrength, color: "bg-violet-500" },
+      { label: "Engagement", score: engagementPotential, color: "bg-indigo-500" },
+      { label: "Shareability", score: shareability, color: "bg-purple-500" },
     ];
   }, [analysis, data, directViralScore]);
 
@@ -456,8 +457,8 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
             <Lightbulb className="w-3 h-3 text-amber-400" /> Strategy to increase your score:
           </p>
           <ul className="text-xs text-white/40 mt-2 space-y-1.5 font-medium">
-            {avg < 60 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-amber-500" /> Add a stronger visceral hook in the first 5 words</li>}
-            {avg < 75 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-cyan-500" /> Include a high-friction Call to Action (e.g. "Save this")</li>}
+            {avg < 60 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-rose-500" /> Add a stronger visceral hook in the first 5 words</li>}
+            {avg < 75 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-indigo-500" /> Include a high-friction Call to Action (e.g. "Save this")</li>}
             {avg < 85 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-violet-500" /> Use more emotional, low-entropy language</li>}
           </ul>
         </motion.div>
@@ -467,21 +468,21 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
 }
 
 function ViralScoreMeter({ score }: { score: number }) {
-  const level = score >= 80 ? { label: "🔥 Viral Potential", color: "text-emerald-400", ring: "ring-emerald-500/30" }
-              : score >= 60 ? { label: "⚡ Strong Content",  color: "text-cyan-400",    ring: "ring-cyan-500/30" }
-              : score >= 40 ? { label: "📈 Good Foundation", color: "text-amber-400",    ring: "ring-amber-500/30" }
-              :               { label: "💡 Needs Polish",    color: "text-white/50",     ring: "ring-white/10" };
+  const level = score >= 80 ? { label: "🔥 Viral Potential", color: "text-indigo-400", ring: "border-indigo-500/30" }
+              : score >= 60 ? { label: "⚡ Strong Content",  color: "text-violet-400",    ring: "border-violet-500/30" }
+              : score >= 40 ? { label: "📈 Good Foundation", color: "text-amber-400",    ring: "border-amber-500/30" }
+              :               { label: "💡 Needs Polish",    color: "text-white/50",     ring: "border-white/10" };
   return (
-    <div className={`relative flex items-center justify-center w-20 h-20 rounded-full ring-4 ${level.ring} bg-black/40 shadow-glow-sm`}>
+    <div className={`relative flex items-center justify-center w-20 h-20 rounded-full border-4 ${level.ring} bg-black/40 shadow-lg`}>
       <motion.span
-        className={`text-2xl font-black ${level.color}`}
+        className={`text-2xl font-bold ${level.color}`}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, delay: 0.5 }}
       >
         {score}
       </motion.span>
-      <span className="absolute -bottom-6 text-[10px] font-black text-center whitespace-nowrap tracking-widest uppercase opacity-60">{level.label}</span>
+      <span className="absolute -bottom-6 text-[10px] font-bold text-center whitespace-nowrap tracking-widest uppercase opacity-40">{level.label}</span>
     </div>
   );
 }
@@ -547,7 +548,7 @@ function CopyButton({ text, label, size = "sm" }: CopyButtonProps) {
         }
         ${isMobile ? "w-full justify-center py-2" : "w-auto"}
         ${copied
-          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+          ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
           : "bg-white/5 hover:bg-white/10 text-white/50 hover:text-white/80 border border-white/10 hover:border-white/20"
         }`}
     >
@@ -571,7 +572,7 @@ interface SectionProps {
   tweetTotal?: number;
 }
 
-function ContentSection({ label, labelColor = "text-cyan-400/50", content, copyLabel, isHashtags, isTweet, tweetIndex, tweetTotal }: SectionProps) {
+function ContentSection({ label, labelColor = "text-violet-400/50", content, copyLabel, isHashtags, isTweet, tweetIndex, tweetTotal }: SectionProps) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -595,7 +596,7 @@ function ContentSection({ label, labelColor = "text-cyan-400/50", content, copyL
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className={`text-xs md:text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]
-        ${isHashtags ? "text-cyan-400/90 font-medium text-xs leading-loose flex flex-wrap gap-x-2" : "text-white/85"}
+        ${isHashtags ? "text-violet-400/90 font-medium text-xs leading-loose flex flex-wrap gap-x-2" : "text-white/85"}
       `}>
         {content}
       </motion.div>
@@ -780,8 +781,8 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
       {isRegenerating && (
         <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-20 flex flex-col items-center justify-center rounded-[32px]">
           <div className="relative">
-            <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" />
-            <div className="absolute inset-0 blur-xl bg-cyan-400/20 animate-pulse" />
+            <Loader2 className="w-10 h-10 text-violet-400 animate-spin mb-4" />
+            <div className="absolute inset-0 blur-xl bg-violet-400/20 animate-pulse" />
           </div>
           <span className="text-[11px] text-white/40 font-black uppercase tracking-[0.4em] animate-pulse">Recalibrating Intelligence...</span>
         </div>
@@ -899,26 +900,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                            </div>
                         </div>
                       )}
-                      <div className="sticky bottom-[72px] md:static mt-4 pt-3 pb-2 bg-gradient-to-t from-[#060312] via-[#060312]/95 to-transparent -mx-4 px-4 md:mx-0 md:px-0 md:bg-transparent md:pt-0 md:pb-0 z-20">
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={loading || !idea.trim()}
-                      className="w-full h-14 md:h-16 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-lg md:text-xl rounded-2xl shadow-xl shadow-cyan-950 transition-all duration-300 transform active:scale-[0.98] group relative overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                      {loading ? (
-                        <div className="flex items-center gap-3">
-                          <Loader2 className="h-6 w-6 animate-spin" />
-                          <span className="animate-pulse">Synthesizing...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-6 w-6 fill-white" />
-                          Generate My Content
-                        </div>
-                      )}
-                    </Button>
-                  </div>
+
                       {content.caption && (
                         <ContentSection label="Platform Narrative" content={content.caption} copyLabel="Caption" labelColor="text-pink-400/40" />
                       )}
@@ -1007,15 +989,15 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                 <div className="space-y-12">
                   {content.cta && (
                     <motion.div 
-                      whileHover={{ scale: 1.02 }}
-                      className="p-8 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 space-y-4 shadow-xl relative overflow-hidden group/cta"
+                      whileHover={{ scale: 1.01 }}
+                      className="p-6 rounded-2xl space-y-3 border shadow-md relative overflow-hidden group/cta"
+                      style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover/cta:opacity-100 transition-opacity duration-700" />
                       <div className="flex items-center justify-between relative z-10">
-                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Final Conversion CTA</span>
+                         <span className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: '#a78bfa' }}>Final Conversion CTA</span>
                          <CopyButton text={content.cta} label="CTA" size="xs" />
                       </div>
-                      <p className="text-base md:text-lg text-white/90 font-bold leading-relaxed italic relative z-10 break-words [overflow-wrap:anywhere]">"{content.cta}"</p>
+                      <p className="text-sm text-white/90 font-medium leading-relaxed italic relative z-10 break-words [overflow-wrap:anywhere]">"{content.cta}"</p>
                     </motion.div>
                   )}
 
@@ -1130,6 +1112,7 @@ export default function Generate() {
   const [regeneratingPlatform, setRegeneratingPlatform] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"limit" | "expired" | "blocked" | "pro_feature">("limit");
   const [proFeatureName, setProFeatureName] = useState("");
   const [viralMode, setViralMode] = useState(false);
@@ -1331,6 +1314,14 @@ export default function Generate() {
         setGeneratedContent(data);
         setIsFavorited(false);
         setGenerationBlockedMsg(null);
+        
+        // Auto-scroll to results
+        setTimeout(() => {
+          document.getElementById('generation-output')?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }, 100);
         const currentGenCount = incrementGenCount();
         if (checkShouldShowNPS(currentGenCount)) {
           setTimeout(() => {
@@ -1617,6 +1608,26 @@ export default function Generate() {
   const [showNPS, setShowNPS] = useState(false);
   const [npsTrigger, setNpsTrigger] = useState("10th_generation");
 
+  const handleCopyAll = () => {
+    if (!generatedContent) return;
+    const txt = buildAllPlatformsText(generatedContent);
+    navigator.clipboard.writeText(txt);
+    setCopiedAll(true);
+    toast({ title: "Campaign Copied!" });
+    setTimeout(() => setCopiedAll(false), 2000);
+  };
+
+  const handleDownload = () => {
+    if (!generatedContent) return;
+    const txt = buildAllPlatformsText(generatedContent);
+    const blob = new Blob([txt], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Campaign_${generatedContent.idea?.slice(0, 20) || 'Export'}.txt`;
+    a.click();
+  };
+
   const handleGenerate = async (values: z.infer<typeof formSchema>) => {
     if (generateMutation.isPending) return;
     (async () => {
@@ -1745,6 +1756,7 @@ export default function Generate() {
         whatYouGet={["Instagram caption + hashtags", "YouTube script", "Twitter thread", "LinkedIn post"]}
         whenToUse="Use this when you have a topic idea and need actual post-ready content for all 4 platforms."
         proTip="The more specific your idea, the better the output. Instead of 'fitness tips', try 'the one squat mistake beginners make'."
+        forceOpen={showGuide}
       />
       <AnimatedOrbs />
       
@@ -1760,16 +1772,13 @@ export default function Generate() {
 
       <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-12 space-y-12">
         
-        <div className="text-center space-y-10">
-           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-              <div className="flex items-center justify-center gap-3 mb-2">
-                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                    <Sparkles className="w-5 h-5 text-white" />
-                 </div>
-                 <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">{t("generateBtn")}</h1>
-              </div>
-              <p className="text-white/40 font-medium max-w-lg mx-auto">Transform one idea into a high-authority content ecosystem across four platforms, instantly.</p>
-           </motion.div>
+        <div className="mb-10 text-left">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
+            AI Content Studio
+          </h1>
+          <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+            Turn one idea into high-performing content for every major platform in seconds.
+          </p>
         </div>
 
         <div className="max-w-4xl mx-auto space-y-12">
@@ -1781,23 +1790,21 @@ export default function Generate() {
                <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] whitespace-nowrap">Quick Start Blueprints</h3>
                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/5" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {TEMPLATES.map((t, i) => (
                 <motion.button
                   key={t.label}
-                  whileHover={{ y: -8, scale: 1.02, rotate: 1 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ y: -4, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleTemplate(t)}
-                  className="group relative p-6 min-h-[90px] md:min-h-0 rounded-[35px] border border-white/10 bg-[#0a051d]/40 hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all duration-500 text-center flex flex-col items-center gap-4 overflow-hidden shadow-2xl backdrop-blur-md"
+                  className="group relative p-5 rounded-2xl border transition-all duration-300 text-left flex flex-col gap-3"
+                  style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="text-4xl group-hover:scale-125 transition-transform duration-700 relative z-10 filter drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{t.icon}</div>
-                  <div className="space-y-2 relative z-10 w-full">
-                    <h4 className="text-[11px] md:text-[12px] font-black text-white tracking-[0.1em] uppercase leading-none">{t.label}</h4>
-                    <div className="flex items-center justify-center gap-2">
-                       <span className="text-[8px] text-cyan-400 font-black uppercase tracking-tighter bg-cyan-500/10 px-1.5 py-0.5 rounded-md">{t.contentType}</span>
-                       <span className="text-[8px] text-white/20 font-black uppercase tracking-tighter">·</span>
-                       <span className="text-[8px] text-white/40 font-black uppercase tracking-tighter">{t.tone}</span>
+                  <div className="text-2xl mb-1 group-hover:scale-110 transition-transform duration-500">{t.icon}</div>
+                  <div className="space-y-1.5">
+                    <h4 className="text-[11px] font-bold text-white tracking-tight uppercase">{t.label}</h4>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[9px] font-bold uppercase tracking-tighter px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(124,58,237,0.1)', color: '#a78bfa' }}>{t.contentType}</span>
                     </div>
                   </div>
                 </motion.button>
@@ -1806,15 +1813,11 @@ export default function Generate() {
           </div>
 
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-1.5 rounded-[48px] bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 shadow-2xl relative overflow-visible"
+            className="rounded-3xl p-6 md:p-8"
+            style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}
           >
-            <div className="bg-[#0c0d12]/90 backdrop-blur-3xl rounded-[44px] p-8 space-y-10 overflow-visible">
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2 rounded-full bg-cyan-600 border border-cyan-400/30 shadow-lg shadow-cyan-600/20">
-                 <Sparkles className="w-3.5 h-3.5 text-white" />
-                 <span className="text-[10px] font-black text-white uppercase tracking-widest">Growth Engine Active</span>
-              </div>
 
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleGenerate)} className="space-y-10">
@@ -1832,7 +1835,16 @@ export default function Generate() {
                             <Textarea
                               {...field}
                               placeholder={t("ideaPlaceholder")}
-                              className="min-h-[80px] md:min-h-[120px] p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-black/40 border-white/5 focus:border-cyan-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner ring-0 focus:ring-0 leading-relaxed"
+                              className="w-full resize-none text-sm leading-relaxed outline-none transition-all rounded-xl px-4 py-3"
+                              style={{
+                                background: 'var(--surface-2)',
+                                border: '1px solid var(--border)',
+                                color: 'var(--text-primary)',
+                                minHeight: '80px',
+                                maxHeight: '200px',
+                              }}
+                              onFocus={e => e.target.style.borderColor = 'var(--violet)'}
+                              onBlur={e => e.target.style.borderColor = 'var(--border)'}
                             />
                           </div>
                         </FormControl>
@@ -1851,7 +1863,7 @@ export default function Generate() {
                             <FormLabel className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1">Niche</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                <SelectTrigger className="h-11 rounded-xl transition-all" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                                   <SelectValue placeholder="Niche" />
                                 </SelectTrigger>
                               </FormControl>
@@ -1870,7 +1882,7 @@ export default function Generate() {
                             <FormLabel className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1">Style</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                <SelectTrigger className="h-11 rounded-xl transition-all" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                                   <SelectValue placeholder="Style" />
                                 </SelectTrigger>
                               </FormControl>
@@ -1889,7 +1901,7 @@ export default function Generate() {
                             <FormLabel className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1">Tone</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-white/[0.03] border-white/10 text-white/80 font-bold hover:bg-white/[0.06] transition-colors">
+                                <SelectTrigger className="h-11 rounded-xl transition-all" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                                   <SelectValue placeholder="Tone" />
                                 </SelectTrigger>
                               </FormControl>
@@ -1923,23 +1935,27 @@ export default function Generate() {
                       />
                     </div>
                     
-                    <div className="sticky bottom-[72px] md:static mt-4 pt-4 pb-4 bg-gradient-to-t from-[#060312] via-[#060312]/95 to-transparent -mx-4 px-4 md:mx-0 md:px-0 md:bg-transparent md:pt-0 md:pb-0 z-20">
+                    <div className="sticky bottom-[72px] md:static z-20 pt-3 pb-2 bg-gradient-to-t from-[#060312] via-[#060312]/95 to-transparent -mx-4 px-4 md:mx-0 md:px-0 md:bg-transparent md:pt-0 md:pb-0">
                         <Button
                           type="submit"
                           disabled={isLoading}
                           onClick={() => { haptic('medium'); }}
-                          className={`w-full h-14 md:h-16 text-base md:text-xl font-black rounded-2xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-xl shadow-cyan-950 transition-all duration-300 transform active:scale-[0.98] group relative overflow-hidden`}
+                          className="w-full h-12 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-[0.98] group relative overflow-hidden"
+                          style={{ 
+                            background: 'var(--violet)', 
+                            color: 'white',
+                            boxShadow: '0 4px 20px rgba(124,58,237,0.3)'
+                          }}
                         >
-                          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                           {isLoading ? (
-                            <div className="flex items-center gap-3">
-                               <Loader2 className="w-6 h-6 animate-spin" />
-                               <span>Architecting Campaign...</span>
+                            <div className="flex items-center gap-2">
+                               <Loader2 className="w-4 h-4 animate-spin" />
+                               <span>Architecting...</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-3 relative z-10">
-                               <Zap className="w-6 h-6 fill-white" />
-                               <span className="tracking-widest uppercase">{t("generateBtn")}</span>
+                            <div className="flex items-center gap-2">
+                               <Zap className="w-4 h-4" />
+                               <span className="tracking-wide uppercase">Generate Campaign</span>
                             </div>
                           )}
                         </Button>
@@ -1986,17 +2002,11 @@ export default function Generate() {
             >
               <Tabs value={activeResultTab} onValueChange={setActiveResultTab} className="space-y-12 pt-12">
                 <div className="sticky top-[64px] md:static bg-[#060312]/95 backdrop-blur-md z-30 -mx-4 px-4 py-2 md:mx-0 md:px-0 md:bg-transparent md:pt-0 md:pb-0">
-                  <div className="flex justify-center">
-                    <TabsList className="bg-white/5 border border-white/5 p-1 rounded-2xl md:rounded-[2rem] h-auto flex-wrap justify-center">
-                      <TabsTrigger value="campaign" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
-                         <Sparkles className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">The Campaign</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="duel" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
-                         <ArrowRightLeft className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">Hook Duel</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="intelligence" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white rounded-xl md:rounded-[1.5rem] px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
-                         <BarChart3 className="w-3.5 h-3.5 md:mr-2" /> <span className="hidden md:inline">Intelligence</span>
-                      </TabsTrigger>
+                  <div className="flex justify-center w-full">
+                    <TabsList className="p-1 rounded-xl w-full max-w-md" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                      <TabsTrigger value="campaign" className="flex-1 px-4 py-2 rounded-lg text-xs font-bold data-[state=active]:bg-violet-500 data-[state=active]:text-white">Full Campaign</TabsTrigger>
+                      <TabsTrigger value="intelligence" className="flex-1 px-4 py-2 rounded-lg text-xs font-bold data-[state=active]:bg-violet-500 data-[state=active]:text-white">Hook Intel</TabsTrigger>
+                      <TabsTrigger value="ab-test" className="flex-1 px-4 py-2 rounded-lg text-xs font-bold data-[state=active]:bg-violet-500 data-[state=active]:text-white">A/B Duel</TabsTrigger>
                     </TabsList>
                   </div>
                 </div>
@@ -2035,15 +2045,14 @@ export default function Generate() {
                       )}
                     </AnimatePresence>
                     {/* Campaign Strategy Bar */}
-                    <div className="flex flex-wrap items-center justify-between gap-6 p-8 rounded-[40px] glass-panel-premium border-cyan-500/20 relative overflow-hidden group shadow-2xl">
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <div className="flex items-center gap-5 relative z-10">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
-                           <Activity className="w-6 h-6 text-emerald-400" />
+                    <div className="flex flex-wrap items-center justify-between gap-6 p-6 rounded-2xl relative overflow-hidden group border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center border" style={{ background: 'rgba(124,58,237,0.1)', borderColor: 'rgba(124,58,237,0.2)' }}>
+                           <Activity className="w-5 h-5 text-violet-400" />
                         </div>
                         <div>
-                          <h4 className="text-xl font-black text-white leading-none tracking-tight">Campaign Fully Architected</h4>
-                          <p className="text-[10px] text-emerald-400/80 uppercase font-black tracking-[0.2em] mt-2">All Platform Nodes Synchronized</p>
+                          <h4 className="text-lg font-bold text-white leading-none tracking-tight">Campaign Fully Architected</h4>
+                          <p className="text-[10px] uppercase font-bold tracking-[0.2em] mt-2" style={{ color: 'rgba(124,58,237,0.6)' }}>All Platforms Synchronized</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 relative z-10">
@@ -2070,26 +2079,31 @@ export default function Generate() {
 
                     {/* Platform Results Tabs */}
                     <div id="generation-output" className="space-y-12">
-                      <div className="flex bg-white/5 p-1 rounded-2xl md:rounded-full border border-white/5 overflow-x-auto no-scrollbar">
-                        {platforms.map((p) => {
-                          const config = PLATFORM_CONFIG[p];
-                          const Icon = config.icon;
-                          const isActive = activePlatform === p;
-                          return (
-                            <button
-                              key={p}
-                              onClick={() => setActivePlatform(p)}
-                              className={`flex-1 min-w-[120px] flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl md:rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                                isActive 
-                                  ? "bg-white text-black shadow-2xl scale-[1.02]" 
-                                  : "text-white/30 hover:text-white/60 hover:bg-white/5"
-                              }`}
-                            >
-                              <Icon className={`w-4 h-4 ${isActive ? "text-black" : config.iconColor}`} />
-                              {config.label}
-                            </button>
-                          );
-                        })}
+                      <div className="relative group">
+                        <div className="flex p-1 rounded-2xl border overflow-x-auto no-scrollbar" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
+                          {platforms.map((p) => {
+                            const config = PLATFORM_CONFIG[p];
+                            const Icon = config.icon;
+                            const isActive = activePlatform === p;
+                            return (
+                              <button
+                                key={p}
+                                onClick={() => setActivePlatform(p)}
+                                className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-xs font-bold transition-all ${
+                                  isActive 
+                                    ? "bg-violet-500 text-white shadow-lg" 
+                                    : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                                }`}
+                              >
+                                <Icon className={`w-4 h-4`} />
+                                {config.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* Mobile Scroll Indicators */}
+                        <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-[#060312] to-transparent pointer-events-none md:hidden z-20" />
+                        <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-[#060312] to-transparent pointer-events-none md:hidden z-20 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
 
                       <div className="space-y-12">

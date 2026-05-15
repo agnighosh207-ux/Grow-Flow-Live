@@ -69,7 +69,7 @@ export default function ComparisonPage({ slug }: { slug: string }) {
           <thead>
             <tr className="bg-white/[0.03]">
               <th className="p-8 text-white font-black italic text-xl">Feature</th>
-              <th className="p-8 text-cyan-400 font-black italic text-xl text-center bg-cyan-500/5">GrowFlow AI</th>
+              <th className="p-8 text-violet-400 font-black italic text-xl text-center bg-violet-500/5">GrowFlow AI</th>
               <th className="p-8 text-white/40 font-black italic text-xl text-center">{config.competitor}</th>
             </tr>
           </thead>
@@ -77,8 +77,8 @@ export default function ComparisonPage({ slug }: { slug: string }) {
             {features.map((f) => (
               <tr key={f.name} className="hover:bg-white/[0.01] transition-colors">
                 <td className="p-8 text-white/70 font-medium">{f.name}</td>
-                <td className="p-8 text-center bg-cyan-500/5">
-                   {f.gf === true ? <Check className="w-6 h-6 text-cyan-400 mx-auto" /> : <span className="text-cyan-400 font-bold">{f.gf}</span>}
+                <td className="p-8 text-center bg-violet-500/5">
+                   {f.gf === true ? <Check className="w-6 h-6 text-violet-400 mx-auto" /> : <span className="text-violet-400 font-bold">{f.gf}</span>}
                 </td>
                 <td className="p-8 text-center">
                    {f.comp === true ? <Check className="w-6 h-6 text-white/20 mx-auto" /> : f.comp === false ? <X className="w-6 h-6 text-red-500/40 mx-auto" /> : <span className="text-white/40 font-medium">{f.comp}</span>}
@@ -90,12 +90,12 @@ export default function ComparisonPage({ slug }: { slug: string }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div className="p-8 rounded-3xl bg-cyan-500/5 border border-cyan-500/10 space-y-6">
+        <div className="p-8 rounded-3xl bg-violet-500/5 border border-violet-500/10 space-y-6">
           <h3 className="text-2xl font-black text-white italic">Why GrowFlow Wins</h3>
           <ul className="space-y-4">
             {config.ourAdvantages.map(adv => (
               <li key={adv} className="flex items-center gap-3 text-white/70">
-                <Check className="w-5 h-5 text-cyan-400 shrink-0" />
+                <Check className="w-5 h-5 text-violet-400 shrink-0" />
                 {adv}
               </li>
             ))}
@@ -114,7 +114,7 @@ export default function ComparisonPage({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <div className="p-10 rounded-3xl bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 text-center space-y-4">
+      <div className="p-10 rounded-3xl bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border border-violet-500/30 text-center space-y-4">
         <h3 className="text-2xl font-black text-white italic">The Verdict</h3>
         <p className="text-xl text-white/80 leading-relaxed font-medium">{config.verdict}</p>
       </div>
@@ -124,7 +124,7 @@ export default function ComparisonPage({ slug }: { slug: string }) {
         <Button 
           size="lg"
           onClick={() => navigate("/sign-up")}
-          className="h-16 px-12 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xl shadow-glow transition-all"
+          className="h-16 px-12 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-black text-xl shadow-glow transition-all"
         >
           START FOR FREE
         </Button>

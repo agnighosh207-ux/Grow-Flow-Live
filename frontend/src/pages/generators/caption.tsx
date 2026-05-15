@@ -6,6 +6,8 @@ import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { useAuth } from "@clerk/react";
 import { PageWrapper } from "@/components/shared/PageWrapper";
+import { PageHeader } from "@/components/shared/PageHeader";
+import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 const PLATFORMS = ["Instagram", "Twitter", "LinkedIn", "YouTube", "Blog/Article", "General"] as const;
 
@@ -111,7 +113,7 @@ function CaptionCard({ title, subtitle, caption, changes, accent, delay }: {
         <div className="mt-3 pt-3 border-t border-white/6 space-y-1">
           {changes.map((c, i) => (
             <div key={i} className="flex items-start gap-1.5 text-[11px] text-white/40">
-              <ChevronRight className="w-3 h-3 mt-0.5 shrink-0 text-cyan-400/60" />
+              <ChevronRight className="w-3 h-3 mt-0.5 shrink-0 text-violet-400/60" />
               {c}
             </div>
           ))}
@@ -133,14 +135,13 @@ export default function CaptionEnhancer() {
   const [result, setResult] = useState<EnhanceResult | null>(null);
   const [activeTab, setActiveTab] = useState<"full" | "micro">("full");
   const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("preferred_language", language);
   }, [language]);
   const { data: sub } = useSubscriptionStatus();
   const isFreeUser = !sub?.planType || sub.planType === "free";
-
-
 
   const enhance = async () => {
     if (!caption.trim()) {
@@ -178,15 +179,26 @@ export default function CaptionEnhancer() {
   };
 
   return (
-    <PageWrapper maxWidth="sm" className="pb-24 md:pb-8 space-y-5">
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
-            <Wand2 className="w-6 h-6 text-emerald-400" />
-            Caption Enhancer
-          </h1>
-          <p className="text-white/50 text-sm">Paste any caption — get a viral rewrite + surgical micro-edit</p>
-          <div className="h-px bg-gradient-to-r from-cyan-500/30 via-teal-500/20 to-transparent mt-5" />
-        </div>
+    <PageWrapper maxWidth="sm" className="pb-24 md:pb-8 space-y-8">
+        <FeatureGuideBanner 
+          toolKey="caption" 
+          title="Caption Enhancer" 
+          icon={<Wand2 className="w-5 h-5 text-violet-400" />}
+          tagline="Surgically improve your existing captions to maximize engagement, clicks, and followers."
+          whatYouGet={["Viral rewrite variations", "Surgical micro-edits", "Hook score analysis", "Diagnosis of issues"]}
+          whenToUse="Use this when you have a good idea but the caption feels 'flat' or isn't performing as expected."
+          proTip="Try the 'Micro-Edit' if you want to keep your original voice but just need better formatting and a stronger CTA."
+          forceOpen={showGuide}
+        />
+        <PageHeader 
+          icon={<Wand2/>} 
+          iconBg="bg-violet-500/10" 
+          iconColor="text-violet-400" 
+          title="Caption Enhancer" 
+          subtitle="Paste any caption — get a viral rewrite + surgical micro-edit"
+          onInfoClick={() => setShowGuide(prev => !prev)}
+        />
+
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="rounded-2xl bg-white/[0.03] border border-white/8 p-5 space-y-4">
@@ -198,7 +210,7 @@ export default function CaptionEnhancer() {
               onChange={(e) => setCaption(e.target.value)}
               placeholder="Paste any caption here — Instagram, LinkedIn, YouTube description, tweet, anything. The worse it is, the more dramatic the transformation."
               rows={5}
-              className="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-white/7 resize-none leading-relaxed"
+              className="w-full px-3.5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/25 text-sm focus:outline-none focus:border-violet-500/50 focus:bg-white/7 resize-none leading-relaxed"
               style={{ color: "#ffffff" }}
             />
             <div className="flex justify-between mt-1">
@@ -228,7 +240,7 @@ export default function CaptionEnhancer() {
                   })()}
                 </span>
                 {platform === "Twitter" && caption.match(/https?:\/\/[^\s]+/) && (
-                  <span className="text-[9px] text-cyan-400/50 font-medium tracking-tight">
+                  <span className="text-[9px] text-violet-400/50 font-medium tracking-tight">
                     (Links auto-shortened to 23 chars)
                   </span>
                 )}
@@ -246,7 +258,7 @@ export default function CaptionEnhancer() {
                 <select
                   value={platform}
                   onChange={(e) => setPlatform(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
                   style={{ color: "#ffffff" }}
                 >
                   {PLATFORMS.map((p) => <option key={p} value={p} className="bg-[#1a1a2e]">{p}</option>)}
@@ -260,7 +272,7 @@ export default function CaptionEnhancer() {
                 <select
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-violet-500/50 appearance-none cursor-pointer"
                   style={{ color: "#ffffff" }}
                 >
                   {GOALS.map((g) => <option key={g} value={g} className="bg-[#1a1a2e]">{g}</option>)}
@@ -279,7 +291,7 @@ export default function CaptionEnhancer() {
                   onClick={() => setFocus(opt.value)}
                   className={`text-left px-3 py-2 rounded-xl border text-xs transition-all leading-snug ${
                     focus === opt.value
-                      ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-200"
+                      ? "bg-violet-500/15 border-violet-500/40 text-violet-200"
                       : "bg-white/3 border-white/8 text-white/40 hover:bg-white/5 hover:text-white/60"
                   }`}
                 >
@@ -300,7 +312,7 @@ export default function CaptionEnhancer() {
           <button
             onClick={enhance}
             disabled={loading || !caption.trim() || caption.trim().length < 20}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Analyzing & enhancing...</>
@@ -359,7 +371,7 @@ export default function CaptionEnhancer() {
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                   className="rounded-2xl bg-white/[0.03] border border-white/8 p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-4 h-4 text-cyan-400" />
+                    <TrendingUp className="w-4 h-4 text-violet-400" />
                     <span className="text-sm font-semibold text-white/80">Hook Score</span>
                     <span className="ml-auto text-xs text-white/30">out of 10</span>
                   </div>
@@ -394,7 +406,7 @@ export default function CaptionEnhancer() {
                   subtitle={result.fullRewrite.whyItWorks}
                   caption={result.fullRewrite.caption}
                   changes={result.fullRewrite.changesMade}
-                  accent="bg-cyan-500/12 text-cyan-300 border-cyan-500/20"
+                  accent="bg-violet-500/12 text-violet-300 border-violet-500/20"
                   delay={0.2}
                 />
               )}

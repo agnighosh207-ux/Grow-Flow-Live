@@ -134,11 +134,11 @@ const FEATURES: Feature[] = [
 
 const INFINITY_EXCLUSIVES = [
   { icon: Brain, color: "text-violet-400", label: "AI Content Coach", desc: "Weekly personalized growth report analyzing your content patterns, strengths, and exact 3-task action plan." },
-  { icon: Wand2, color: "text-cyan-400", label: "AI Ghostwriter", desc: "Trains on your past content to write in your exact voice. The more you use it, the better it sounds like you." },
+  { icon: Wand2, color: "text-violet-400", label: "AI Ghostwriter", desc: "Trains on your past content to write in your exact voice. The more you use it, the better it sounds like you." },
   { icon: Flame, color: "text-orange-400", label: "Viral Score™", desc: "Every piece of content gets scored 0-100 for virality potential by AI before you post it." },
   { icon: TrendingUp, color: "text-emerald-400", label: "Trend Engine", desc: "Perplexity-powered live search finds what's trending right now in your niche, not last week." },
   { icon: Sparkles, color: "text-pink-400", label: "Multi-Variation Output", desc: "Get 3 completely different angles on every topic — A/B test before you post." },
-  { icon: CalendarDays, color: "text-blue-400", label: "Full Content Suite", desc: "Calendar, Repurposer, Competitor Intelligence, Hashtag Strategist — everything a content agency uses." },
+  { icon: CalendarDays, color: "text-violet-400", label: "Full Content Suite", desc: "Calendar, Repurposer, Competitor Intelligence, Hashtag Strategist — everything a content agency uses." },
 ];
 
 function CellContent({ value, infinityLabel }: { value: boolean | string; infinityLabel?: string }) {
@@ -158,13 +158,17 @@ function CellContent({ value, infinityLabel }: { value: boolean | string; infini
 
 const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3, agency: 4 };
 
-function TopUpSection() {
+function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const PACKS = [
+  const PACKS = currency === "USD" ? [
+    { key: "small",  credits: 10, price: "$0.99", popular: false, desc: "Quick boost" },
+    { key: "medium", credits: 25, price: "$1.99", popular: true,  desc: "Best value" },
+    { key: "large",  credits: 60, price: "$3.99", popular: false, desc: "Power pack" },
+  ] : [
     { key: "small",  credits: 10, price: "₹49",  popular: false, desc: "Quick boost" },
     { key: "medium", credits: 25, price: "₹99",  popular: true,  desc: "Best value" },
     { key: "large",  credits: 60, price: "₹199", popular: false, desc: "Power pack" },
@@ -173,28 +177,38 @@ function TopUpSection() {
   const handleTopup = async (packKey: string) => {
     setLoadingPack(packKey);
     try {
+      if (import.meta.env.DEV) console.log("[TopUp] Loading Razorpay...");
       const loaded = await loadRazorpay();
-      if (!loaded) throw new Error("Razorpay could not load. Try disabling ad blockers.");
+      if (!loaded || !window.Razorpay) {
+        throw new Error("Razorpay could not load. Please check your internet or disable ad blockers.");
+      }
       
       const token = await getToken();
+      if (import.meta.env.DEV) console.log("[TopUp] Creating order...", { packKey, currency });
       const res = await fetch("/api/subscription/credits/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ pack: packKey }),
+        body: JSON.stringify({ pack: packKey, currency }),
       });
       const data = await res.json();
-      if (!data.orderId) throw new Error(data.error || "Failed to create order");
+      if (!res.ok) throw new Error(data.error || "Failed to create order");
+
+      if (import.meta.env.DEV) console.log("[TopUp] Order created:", data.orderId);
+
+      const razorpayKey = data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID;
 
       const options = {
-        key: data.keyId,
+        key: razorpayKey,
         amount: data.amount,
-        currency: "INR",
+        currency: data.currency || "INR",
         name: "GrowFlow AI",
         description: `Credit Top-Up: ${data.label}`,
         order_id: data.orderId,
         theme: { color: "#7c3aed" },
         handler: async (response: any) => {
+          setLoadingPack(packKey); // Keep loading during verification
           try {
+            if (import.meta.env.DEV) console.log("[TopUp] Verifying payment...");
             const verifyRes = await fetch("/api/subscription/credits/verify-topup", {
               method: "POST",
               headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -208,47 +222,172 @@ function TopUpSection() {
               throw new Error(verifyData.error || "Verification failed");
             }
           } catch (err: any) {
-            toast({ variant: "destructive", title: "Top-up failed", description: err.message });
+            toast({ variant: "destructive", title: "Verification failed", description: err.message });
           } finally {
             setLoadingPack(null);
           }
         },
-        modal: { ondismiss: () => setLoadingPack(null) },
+        modal: { 
+          ondismiss: () => setLoadingPack(null),
+          escape: true,
+          backdropclose: false
+        },
       };
-      new window.Razorpay(options).open();
+
+      if (import.meta.env.DEV) console.log("[TopUp] Opening Razorpay...");
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        console.error("Top-up failed:", response.error);
+        toast({ variant: "destructive", title: "Payment Failed", description: response.error.description });
+        setLoadingPack(null);
+      });
+      rzp.open();
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
+      console.error("Top-up error:", err);
+      toast({ variant: "destructive", title: "Top-up Error", description: err.message });
       setLoadingPack(null);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 mb-6">
-      <div className="text-center mb-5">
-        <h3 className="text-lg font-bold text-white">Need More Credits?</h3>
-        <p className="text-white/40 text-sm mt-1">One-time top-up. No subscription. Use anytime.</p>
+    <div className="max-w-2xl mx-auto mt-16 mb-12 relative">
+      <div className="absolute inset-0 bg-violet-600/5 blur-3xl -z-10 rounded-full" />
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-3">
+          <Zap className="w-3.5 h-3.5 text-violet-400" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">One-time Boost</span>
+        </div>
+        <h3 className="text-2xl font-black text-white">Need More Credits?</h3>
+        <p className="text-white/40 text-sm mt-1">One-time top-up. Use anytime. No recurring charge.</p>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {PACKS.map(pack => (
-          <div key={pack.key} className={`relative rounded-2xl border p-4 text-center transition-all ${pack.popular ? 'border-violet-500/50 bg-violet-500/5' : 'border-white/8 bg-white/[0.02] hover:border-white/15'}`}>
+          <div key={pack.key} className={`relative rounded-[2rem] border p-6 text-center transition-all duration-300 ${pack.popular ? 'border-violet-500/40 bg-violet-500/5 shadow-xl shadow-violet-900/10' : 'border-white/8 bg-white/[0.02] hover:border-white/20'}`}>
             {pack.popular && (
-              <div className="absolute -top-2.5 inset-x-0 flex justify-center">
-                <span className="bg-violet-500 text-white text-[9px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider">Best Value</span>
+              <div className="absolute -top-3 inset-x-0 flex justify-center">
+                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">Most Popular</span>
               </div>
             )}
-            <div className="text-2xl font-black text-white mt-1">{pack.credits}</div>
-            <div className="text-[10px] text-white/40 mb-3">credits</div>
-            <button
+            <div className="text-4xl font-black text-white mt-2">{pack.credits}</div>
+            <div className="text-xs font-bold text-white/40 mb-1 uppercase tracking-widest">credits</div>
+            <p className="text-[10px] text-white/20 mb-5 italic">{pack.desc}</p>
+            <Button
               onClick={() => handleTopup(pack.key)}
               disabled={!!loadingPack}
-              className={`w-full py-2 rounded-xl text-sm font-bold transition-all ${pack.popular ? 'bg-violet-500 hover:bg-violet-400 text-white' : 'bg-white/5 hover:bg-white/10 text-white/70 border border-white/10'} disabled:opacity-50`}
+              className={`w-full h-12 rounded-2xl text-sm font-black transition-all ${pack.popular ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/20' : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'} disabled:opacity-50`}
             >
-              {loadingPack === pack.key ? "..." : pack.price}
-            </button>
+              {loadingPack === pack.key ? <RefreshCw className="w-4 h-4 animate-spin" /> : pack.price}
+            </Button>
           </div>
         ))}
       </div>
       <p className="text-center text-[10px] text-white/20 mt-3">Credits never expire · Secure payment via Razorpay</p>
+    </div>
+  );
+}
+
+const TESTIMONIALS = [
+  { name: "Rahul S.", handle: "@rahul_growth", content: "Upgraded to Creator and it paid for itself in two days. The Viral Score feature actually works.", rating: 5, type: "creator" },
+  { name: "Priya M.", handle: "@priyamarketing", content: "I was spending ₹10k/mo on a writer. Infinity replaced them and the quality is honestly better because of the Brand Voice feature.", rating: 5, type: "infinity" },
+  { name: "Aditya K.", handle: "@adityadesign", content: "The 7-day trial convinced me. Setting up the autopay was smooth and the templates are fire.", rating: 5, type: "starter" }
+];
+
+function UrgencyHeader() {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    const base = 1247;
+    const sessionRandom = Math.floor(Math.random() * 23);
+    setCount(base + sessionRandom);
+    
+    const interval = setInterval(() => {
+      setCount(prev => prev + (Math.random() > 0.7 ? 1 : 0));
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center gap-3 mb-8 mt-4">
+      <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="text-emerald-400 text-sm font-bold">
+          {count.toLocaleString()} creators already growing with GrowFlow
+        </span>
+      </div>
+      <div className="flex items-center gap-4 text-xs text-white/30">
+        <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-violet-400" /> 7-day free trial</span>
+        <span className="flex items-center gap-1"><RefreshCw className="w-3 h-3 text-violet-400" /> Cancel anytime</span>
+        <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-violet-400" /> Instant access</span>
+      </div>
+    </div>
+  );
+}
+
+function LaunchPricingBanner() {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
+  
+  useEffect(() => {
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + 7);
+    deadline.setHours(23, 59, 59, 0);
+    const deadlineMs = deadline.getTime();
+    
+    const tick = () => {
+      const diff = deadlineMs - Date.now();
+      if (diff <= 0) return;
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+      });
+    };
+    tick();
+    const interval = setInterval(tick, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-center max-w-2xl mx-auto">
+      <p className="text-amber-400 font-black text-sm uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
+        <Flame className="w-4 h-4" /> Launch Pricing — Limited Time Only <Flame className="w-4 h-4" />
+      </p>
+      <p className="text-white/50 text-xs mb-3">
+        Current prices are 40% off our regular pricing. Lock in now before it increases.
+      </p>
+      <div className="flex items-center justify-center gap-3">
+        {[
+          { value: timeLeft.days, label: "Days" },
+          { value: timeLeft.hours, label: "Hours" },
+          { value: timeLeft.minutes, label: "Min" },
+        ].map(({ value, label }) => (
+          <div key={label} className="bg-amber-500/20 border border-amber-500/30 rounded-xl px-4 py-2 min-w-[60px]">
+            <div className="text-2xl font-black text-amber-300">{String(value).padStart(2, '0')}</div>
+            <div className="text-[9px] font-bold text-amber-500/60 uppercase">{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TestimonialSection() {
+  return (
+    <div className="mb-16 mt-8">
+      <h2 className="text-2xl font-bold text-center mb-8">Don't just take our word for it</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {TESTIMONIALS.map((t) => (
+          <div key={t.name} className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 flex flex-col">
+            <div className="flex items-center gap-1 mb-3">
+              {[...Array(t.rating)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+            </div>
+            <p className="text-white/70 text-sm leading-relaxed mb-4 flex-1">"{t.content}"</p>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm text-white">{t.name}</span>
+              <span className="text-white/30 text-xs">{t.handle}</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -266,9 +405,20 @@ export default function PricingPage() {
     }
     return "INR";
   });
-  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; plan: "starter" | "creator" | "infinity" | "agency"; billing: BillingPeriod; currency: "INR" | "USD" }>({ 
-    open: false, plan: "starter", billing: "monthly", currency: "INR" 
+  const [upgradeModal, setUpgradeModal] = useState<{ 
+    open: boolean; 
+    plan: "starter" | "creator" | "infinity" | "agency"; 
+    billing: BillingPeriod; 
+    currency: "INR" | "USD";
+    reason?: "limit" | "pro_feature" | "checkout";
+  }>({ 
+    open: false, plan: "starter", billing: "monthly", currency: "INR", reason: "checkout" 
   });
+  
+  useEffect(() => {
+    loadRazorpay().catch(console.error);
+    document.title = "Pricing & Credits — GrowFlow AI";
+  }, []);
   
   useEffect(() => {
     localStorage.setItem("pricing_currency", currency);
@@ -276,6 +426,7 @@ export default function PricingPage() {
 
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [exitIntentShown, setExitIntentShown] = useState(false);
+  const [showAgencyModal, setShowAgencyModal] = useState(false);
 
   const { data: sub, isLoading: subLoading } = useSubscriptionStatus();
   const { isSignedIn, isLoaded } = useAuth();
@@ -284,7 +435,7 @@ export default function PricingPage() {
 
   const currentPlan = sub?.planType ?? "free";
   const currentRank = PLAN_RANK[currentPlan] ?? 0;
-  const isActivePaidUser = sub?.plan === "active" || sub?.plan === "trial";
+  const isActivePaidUser = (sub?.plan === "active" || sub?.plan === "trial") && !sub?.isAdmin;
 
   useEffect(() => {
     const handleMouseLeave = (e: MouseEvent) => {
@@ -343,7 +494,7 @@ export default function PricingPage() {
       return;
     }
     // Only open the modal for upgrade or new users
-    setUpgradeModal({ open: true, plan, billing, currency });
+    setUpgradeModal({ open: true, plan, billing, currency, reason: "checkout" });
   };
 
   const billingLabel = (period: BillingPeriod) => {
@@ -367,24 +518,24 @@ export default function PricingPage() {
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-[#12121C] border border-white/10 rounded-[40px] pt-10 pb-8 px-8 md:pt-14 md:pb-12 md:px-12 max-w-sm text-center relative overflow-hidden shadow-[0_0_80px_rgba(0,242,255,0.1)]"
+              className="bg-[#12121C] border border-white/10 rounded-[40px] pt-10 pb-8 px-8 md:pt-14 md:pb-12 md:px-12 max-w-sm text-center relative overflow-hidden shadow-[0_0_80px_rgba(124,58,237,0.1)]"
 
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
               
-              <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 flex items-center justify-center mx-auto mb-6">
-                <Gift className="w-8 h-8 text-cyan-400" />
+              <div className="w-16 h-16 rounded-2xl bg-violet-500/20 flex items-center justify-center mx-auto mb-6">
+                <Gift className="w-8 h-8 text-violet-400" />
               </div>
               
               <h2 className="text-3xl font-black text-white mb-2 italic">Wait! Don't leave empty-handed.</h2>
               <p className="text-white/40 text-sm mb-8 leading-relaxed font-medium">
-                Try the <span className="text-cyan-400 font-bold">Creator Plan</span> today and get <span className="text-white font-bold">50% extra credits</span> for your first month.
+                Try the <span className="text-violet-400 font-bold">Creator Plan</span> today and get <span className="text-white font-bold">50% extra credits</span> for your first month.
               </p>
               
               <div className="space-y-3">
                 <Button 
                   onClick={() => { setShowExitIntent(false); handlePlanClick("creator"); }}
-                  className="w-full h-14 bg-cyan-500 hover:bg-cyan-400 text-black font-black rounded-2xl shadow-xl shadow-cyan-900/40"
+                  className="w-full h-14 bg-violet-600 hover:bg-violet-500 text-white font-black rounded-2xl shadow-xl shadow-violet-900/40"
                 >
                   Claim My Bonus Offer
                 </Button>
@@ -403,13 +554,13 @@ export default function PricingPage() {
       </AnimatePresence>
       {/* Background orbs */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-cyan-700/20 blur-[140px]" />
-        <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[400px] rounded-full bg-teal-800/15 blur-[140px]" />
+        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-violet-700/20 blur-[140px]" />
+        <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[400px] rounded-full bg-indigo-800/15 blur-[140px]" />
         <div className="absolute top-[40%] left-[50%] w-[400px] h-[400px] rounded-full bg-pink-800/10 blur-[140px]" />
         
         {/* Floating Graphics */}
-        <motion.div className="absolute top-[15%] right-[5%] opacity-[0.07] animate-float" style={{ animationDelay: '0.5s' }}><Brain className="w-64 h-64 text-cyan-400" /></motion.div>
-        <motion.div className="absolute bottom-[20%] left-[10%] opacity-[0.05] animate-float" style={{ animationDelay: '2s' }}><Zap className="w-48 h-48 text-teal-400" /></motion.div>
+        <motion.div className="absolute top-[15%] right-[5%] opacity-[0.07] animate-float" style={{ animationDelay: '0.5s' }}><Brain className="w-64 h-64 text-violet-400" /></motion.div>
+        <motion.div className="absolute bottom-[20%] left-[10%] opacity-[0.05] animate-float" style={{ animationDelay: '2s' }}><Zap className="w-48 h-48 text-indigo-400" /></motion.div>
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-10 pb-24">
@@ -446,18 +597,17 @@ export default function PricingPage() {
                    Save up to 20% with yearly | Most popular among serious creators
                 </span>
 
-                {/* Currency Toggle */}
-                <div className="bg-[#0A051A] border border-white/10 rounded-2xl p-1 flex gap-1">
+                  <div className="bg-[#0A051A] border border-white/10 rounded-2xl p-1 flex gap-1">
                   <button
                     onClick={() => setCurrency("INR")}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "INR" ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/20" : "text-white/30 hover:text-white/50"}`}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "INR" ? "bg-violet-500/20 text-violet-400 border border-violet-500/20" : "text-white/30 hover:text-white/50"}`}
                   >
-                    <span className="w-4 h-3 bg-cyan-400/20 rounded-sm flex items-center justify-center text-[8px]">IN</span>
+                    <span className="w-4 h-3 bg-violet-400/20 rounded-sm flex items-center justify-center text-[8px]">IN</span>
                     INR
                   </button>
                   <button
                     onClick={() => setCurrency("USD")}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "USD" ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/20" : "text-white/30 hover:text-white/50"}`}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "USD" ? "bg-violet-500/20 text-violet-400 border border-violet-500/20" : "text-white/30 hover:text-white/50"}`}
                   >
                     <Globe className="w-3.5 h-3.5" />
                     USD
@@ -465,385 +615,199 @@ export default function PricingPage() {
                 </div>
               </div>
 
-              <h1 className="text-4xl sm:text-6xl font-black mb-4 tracking-tighter">
-                Pick your{" "}
-                <span className="bg-gradient-to-r from-cyan-400 via-emerald-400 to-cyan-500 bg-clip-text text-transparent">
-                  growth plan
-                </span>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
+                Simple, transparent <br />
+                <span className="text-violet-500">pricing</span>
               </h1>
-              <p className="text-white/40 text-lg max-w-xl mx-auto font-medium">
-                Start free with 5 monthly generations. Upgrade when you're ready to scale.
+              <p className="text-sm md:text-lg max-w-xl mx-auto font-medium" style={{ color: 'var(--text-muted)' }}>
+                Unlock high-performance AI tools and scale your content production.
               </p>
             </motion.div>
           </div>
         </div>
 
-        <div className="flex items-center justify-center mb-12">
-          <div className="flex items-center justify-center">
-            <div className="inline-flex flex-wrap items-center justify-center bg-white/5 border border-white/10 rounded-2xl p-1 gap-1">
-              {BILLING_OPTIONS.map((opt) => (
-                <button
-                  key={opt.key}
-                  onClick={() => setBilling(opt.key)}
-                  className={`px-3 md:px-5 py-2.5 rounded-xl text-[10px] md:text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
-                    billing === opt.key
-                      ? (opt.key === 'yearly' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/10 text-white shadow-sm")
-                      : "text-white/40 hover:text-white/60"
-                  }`}
-                >
-                  {opt.label}
-                  {opt.badge && (
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full transition-colors ${
-                      billing === opt.key 
-                        ? (opt.key === 'yearly' ? 'bg-emerald-400 text-emerald-950' : 'bg-cyan-400 text-cyan-950') 
-                        : 'bg-emerald-500/10 text-emerald-400/50'
-                    }`}>
-                      {opt.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+        <div className="flex flex-col items-center justify-center mb-12">
+          <UrgencyHeader />
+          <div className="flex items-center justify-center p-1 rounded-xl" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+            {BILLING_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setBilling(opt.key)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                  billing === opt.key
+                    ? "bg-violet-500 text-white shadow-lg"
+                    : "text-white/40 hover:text-white/70"
+                }`}
+              >
+                {opt.label}
+                {opt.badge && (
+                  <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300">
+                    {opt.badge}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
+        <LaunchPricingBanner />
+
         {/* Plan Cards */}
         <div className="overflow-x-auto pb-4 -mx-4 px-4 md:overflow-visible md:mx-0 md:px-0 mb-16">
-          <div className="flex gap-4 min-w-max md:min-w-0 md:grid md:grid-cols-4 items-start">
+          <div className="flex gap-4 min-w-max md:min-w-0 md:grid md:grid-cols-4 items-end">
             {/* Explorer */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
               className="w-[280px] md:w-auto flex-shrink-0"
             >
-              <Hover3DCard className="h-full">
-                <div className="hyper-hover-card rounded-2xl border border-white/5 bg-white/[0.02] p-6 flex flex-col h-full">
-                  <div className="mb-6">
-                    <p className="text-xs font-semibold tracking-widest uppercase text-white/20 mb-2">Explorer</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-white">₹0</span>
-                      <span className="text-white/40 text-sm">/ forever</span>
-                    </div>
-                    <p className="text-white/40 text-xs mt-1">Try it all before you commit</p>
+              <div className="flex flex-col h-full" style={{ background: '#0e0e14', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '28px' }}>
+                <div className="mb-6">
+                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">Explorer</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-white">₹0</span>
+                    <span className="text-white/40 text-xs">/ forever</span>
                   </div>
-
-                  <div className="space-y-2.5 flex-1 mb-6">
-                    {[
-                      "5 free monthly generations",
-                      "All 4 platforms unlocked",
-                      "Basic English Output",
-                      "Full content history",
-                    ].map((f) => (
-                      <div key={f} className="flex items-start gap-2.5">
-                        <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                        <span className="text-white/70 text-sm">{f}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <p className="text-[10px] text-white/20 mb-4 text-center italic">No credit card required</p>
-
-                  <Link href="/sign-up" className="w-full">
-                    <Button
-                      variant="outline"
-                      className="w-full py-6 bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold rounded-xl"
-                    >
-                      Start Exploring
-                    </Button>
-                  </Link>
                 </div>
-              </Hover3DCard>
+                <div className="space-y-3 flex-1 mb-6">
+                  {["5 monthly generations", "4 platform types", "Basic tools"].map((f) => (
+                    <div key={f} className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-violet-400 mt-0.5" />
+                      <span className="text-white/60 text-xs">{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/sign-up" className="w-full">
+                  <Button className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10">
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
             </motion.div>
+
             {/* Starter */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 }}
-              className="w-[300px] md:w-auto flex-shrink-0"
+              className="w-[280px] md:w-auto flex-shrink-0"
             >
-              <Hover3DCard className="h-full">
-                <div className="hyper-hover-card rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-950/30 to-teal-950/20 p-6 flex flex-col h-full">
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-xs font-semibold tracking-widest uppercase text-emerald-400">Starter</p>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {billing === "monthly" && (
-                          <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.starter)}</span>
-                      )}
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-emerald-100">{formatPrice(starterPrice)}</span>
-                        <span className="text-white/40 text-sm">/ mo</span>
-                        {billing === "monthly" && (
-                          <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
-                        )}
-                      </div>
-                    </div>
-                    {billing !== "monthly" && (
-                      <p className="text-white/40 text-xs mt-1">
-                        {formatPrice(totals.starter[billing])} billed {billingLabel(billing)}
-                        {" "}·{" "}
-                        <span className="text-emerald-400">Save {formatPrice((prices.starter.monthly * getBillingMonths(billing)) - totals.starter[billing])}</span>
-                      </p>
-                    )}
-                    <p className="text-white/40 text-[11px] mt-0.5">Introductory pricing for early users</p>
-                    <p className="text-white/55 text-sm mt-1">For creators just getting started</p>
+              <div className="flex flex-col h-full" style={{ background: '#0e0e14', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '28px' }}>
+                <div className="mb-6">
+                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">Starter</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-white">{formatPrice(starterPrice)}</span>
+                    <span className="text-white/40 text-xs">/ mo</span>
                   </div>
-
-                  <div className="space-y-2.5 flex-1 mb-6">
-                    {[
-                      "25 content generations / month",
-                      "1 Regeneration per topic",
-                      "All 4 platforms unlocked",
-                      "English + 1 Premium Language",
-                      "Idea Generator + Strategy Planner",
-                      "Viral Hooks Generator",
-                      "Improve Competitor Content",
-                      "Saved Favorites & History",
-                    ].map((f) => (
-                      <div key={f} className="flex items-start gap-2.5">
-                        <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                        <span className="text-white/70 text-sm">{f}</span>
-                      </div>
-                    ))}
-                    <div className="pt-2 border-t border-emerald-500/10 mt-1">
-                      <p className="text-emerald-400/60 text-xs">✦ Perfect to try before upgrading</p>
-                    </div>
-                    <div className="rounded-lg border border-amber-500/25 bg-amber-500/8 px-3 py-2 flex items-start gap-2 mt-2">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                      <p className="text-amber-300/80 text-[11px] leading-relaxed">
-                        Basic tools only. No viral score or multi-variation.
-                      </p>
-                    </div>
-                  </div>
-
-                  <MagneticButton>
-                    <Button
-                      className={`w-full border transition-all ${
-                        getPlanState("starter") === "current"
-                          ? "bg-emerald-600/30 border-emerald-500/40 text-emerald-300 cursor-default"
-                          : getPlanState("starter") === "downgrade"
-                          ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
-                          : "bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/30 text-emerald-200 hover:text-white"
-                      }`}
-                      onClick={() => handlePlanClick("starter")}
-                    >
-                      {getPlanState("starter") === "current" ? "✓ Current Plan" : getPlanState("starter") === "downgrade" ? "Lower Plan" : "Get Starter →"}
-                      {getPlanState("starter") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
-                    </Button>
-                  </MagneticButton>
                 </div>
-              </Hover3DCard>
+                <div className="space-y-3 flex-1 mb-6">
+                  {["25 generations / month", "Idea Gen + Strategy", "All 4 platforms", "Priority Support"].map((f) => (
+                    <div key={f} className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-violet-400 mt-0.5" />
+                      <span className="text-white/60 text-xs">{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button 
+                  onClick={() => handlePlanClick("starter")}
+                  className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10"
+                >
+                  {getPlanState("starter") === "current" ? "Current Plan" : "Get Started"}
+                </Button>
+              </div>
             </motion.div>
 
             {/* Creator */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="w-[300px] md:w-auto flex-shrink-0 -translate-y-2 md:-translate-y-4 relative"
+              className="w-[300px] md:w-auto flex-shrink-0 relative z-10"
             >
-              <div className="absolute -top-3.5 inset-x-0 flex justify-center z-10">
-                <span className="bg-gradient-to-r from-cyan-500 to-teal-500 text-black text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">
-                  ⚡ Most Popular
-                </span>
-              </div>
-              <Hover3DCard className="h-full">
-                <div className="hyper-hover-card relative rounded-2xl border border-cyan-500/40 bg-gradient-to-b from-blue-950/20 to-cyan-950/40 p-6 flex flex-col ring-1 ring-cyan-500/20 shadow-[0_0_60px_rgba(139,92,246,0.18)] h-full">
-                  <div className="mb-6 mt-2">
-                    <p className="text-xs font-semibold tracking-widest uppercase text-cyan-400 mb-2">Creator</p>
-                    <div className="flex flex-col gap-1">
-                      {billing === "monthly" && (
-                          <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.creator)}</span>
-                      )}
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-white">{formatPrice(creatorPrice)}</span>
-                        <span className="text-white/40 text-sm">/ mo</span>
-                        {billing === "monthly" && (
-                          <span className="text-xs text-emerald-400 ml-2 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">(Launching Offer)</span>
-                        )}
-                      </div>
-                    </div>
-                    {billing !== "monthly" && (
-                      <p className="text-white/40 text-xs mt-1">
-                        {formatPrice(totals.creator[billing])} billed {billingLabel(billing)}
-                        {" "}·{" "}
-                        <span className="text-emerald-400">Save {formatPrice((prices.creator.monthly * getBillingMonths(billing)) - totals.creator[billing])}</span>
-                      </p>
-                    )}
-                    <p className="text-[11px] text-cyan-400/70 font-medium mt-0.5">{currency === "INR" ? "Best for Indian creators 🇮🇳" : "Best for global growth 🌍"}</p>
-                  </div>
-
-                  <div className="space-y-2.5 flex-1 mb-4">
-                    {[
-                      "150 content generations / month",
-                      "3 Regenerations per topic",
-                      "Multi-Variation (3 outputs per gen)",
-                      "Viral Score™ enabled",
-                      "Trend Engine (Live Insights)",
-                      "All 4 platforms",
-                      "Hooks, CTAs & hashtags",
-                      "Idea Generator + 7-Day Strategy",
-                      "🌍 Multi-language content (Hindi, Hinglish, Bengali)",
-                      "Improve Competitor Content",
-                      "Download as .txt",
-                    ].map((f) => (
-                      <div key={f} className="flex items-start gap-2.5">
-                        <Check className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
-                        <span className="text-white/75 text-sm">{f}</span>
-                      </div>
-                    ))}
-
-                    <div className="pt-3 border-t border-white/8 mt-1 space-y-1.5">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-2">Unlock more with Infinity</p>
-                      {[
-                        { icon: Wand2, label: "AI Writing Styles", color: "text-cyan-400/60" },
-                        { icon: CalendarDays, label: "Content Calendar", color: "text-blue-400/60" }
-                      ].map(({ icon: Icon, label, color }) => (
-                        <div key={label} className="flex items-center gap-2 opacity-60">
-                          <Lock className="w-3 h-3 text-white/20 shrink-0" />
-                          <Icon className={`w-3 h-3 ${color} shrink-0`} />
-                          <span className="text-white/35 text-xs line-through">{label}</span>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => handlePlanClick("infinity")}
-                        className="mt-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 font-medium"
-                      >
-                        Unlock with Infinity →
-                      </button>
-                    </div>
-                  </div>
-
-                  <MagneticButton>
-                    <Button
-                      className={`w-full border transition-all ${
-                        getPlanState("creator") === "current"
-                          ? "bg-cyan-600/30 border-cyan-500/40 text-cyan-300 cursor-default"
-                          : getPlanState("creator") === "downgrade"
-                          ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
-                          : "shine-effect bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border-cyan-500/30 text-white shadow-lg shadow-cyan-500/25"
-                      }`}
-                      onClick={() => handlePlanClick("creator")}
-                    >
-                      {getPlanState("creator") === "current" ? "✓ Current Plan" : getPlanState("creator") === "downgrade" ? "Lower Plan" : "Get Creator →"}
-                      {getPlanState("creator") === "upgrade" && <ChevronRight className="w-4 h-4 ml-1" />}
-                    </Button>
-                  </MagneticButton>
+              <div className="flex flex-col h-full" style={{ 
+                background: 'linear-gradient(160deg, rgba(124,58,237,0.08) 0%, #0e0e14 40%)',
+                border: '1px solid rgba(124,58,237,0.3)',
+                borderRadius: '20px',
+                padding: '28px',
+                boxShadow: '0 0 40px rgba(124,58,237,0.12), 0 0 0 1px rgba(124,58,237,0.1)',
+                marginBottom: '-8px'
+              }}>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-violet-500 text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
+                  Most Popular
                 </div>
-              </Hover3DCard>
+                <div className="mb-6">
+                  <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-1">Creator</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-white">{formatPrice(creatorPrice)}</span>
+                    <span className="text-white/40 text-xs">/ mo</span>
+                  </div>
+                </div>
+                <div className="space-y-3 flex-1 mb-6">
+                  {["150 generations / month", "Viral Score™ AI Rating", "Trend Engine Access", "Content Repurposer"].map((f) => (
+                    <div key={f} className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-violet-400 mt-0.5" />
+                      <span className="text-white/70 text-xs font-medium">{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button 
+                  onClick={() => handlePlanClick("creator")}
+                  className="w-full h-11 rounded-xl text-xs font-bold transition-all"
+                  style={{ background: 'var(--violet)', color: 'white', boxShadow: '0 4px 15px rgba(124,58,237,0.3)' }}
+                >
+                  {getPlanState("creator") === "current" ? "Current Plan" : "Upgrade to Creator"}
+                </Button>
+              </div>
             </motion.div>
 
-            {/* Infinity */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="w-[300px] md:w-auto flex-shrink-0"
+              className="w-[280px] md:w-auto flex-shrink-0"
             >
-              <Hover3DCard className="h-full">
-                <div className="hyper-hover-card relative rounded-2xl border border-teal-500/30 bg-gradient-to-b from-teal-950/40 to-pink-950/20 p-6 flex flex-col h-full">
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-teal-600 to-pink-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                      <Crown className="w-3.5 h-3.5" />
-                      UNLIMITED POWER
-                    </span>
+              <div className="flex flex-col h-full" style={{ background: '#0e0e14', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '28px' }}>
+                <div className="mb-6">
+                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">Infinity</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-white">{formatPrice(infinityPrice)}</span>
+                    <span className="text-white/40 text-xs">/ mo</span>
                   </div>
-
-                  <div className="mb-6 mt-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-xs font-semibold tracking-widest uppercase text-teal-300">Infinity</p>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {billing === "monthly" && (
-                          <span className="text-sm text-white/50 line-through">{formatPrice(strikePrices.infinity)}</span>
-                      )}
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">
-                          {formatPrice(infinityPrice)}
-                        </span>
-                        <span className="text-white/40 text-sm">/ mo</span>
-                        {billing === "monthly" && (
-                          <span className="text-xs text-teal-400 ml-2 font-semibold bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">(Launching Offer)</span>
-                        )}
-                      </div>
-                    </div>
-                    {billing !== "monthly" && (
-                      <p className="text-white/40 text-xs mt-1">
-                        {formatPrice(totals.infinity[billing])} billed {billingLabel(billing)}
-                        {" "}·{" "}
-                        <span className="text-emerald-400">Save {formatPrice((prices.infinity.monthly * getBillingMonths(billing)) - totals.infinity[billing])}</span>
-                      </p>
-                    )}
-                    <p className="text-white/60 text-sm mt-1">For agencies & super users</p>
-                    <p className="text-[11px] text-teal-400/70 font-medium mt-0.5">Introductory pricing for early users</p>
-                  </div>
-
-                  <div className="space-y-2.5 flex-1 mb-6">
-                    <p className="text-[11px] text-teal-400 font-semibold uppercase tracking-wider mb-1.5">
-                      Everything in Creator, plus:
-                    </p>
-                    {[
-                      { label: "Unlimited generations*", icon: InfinityIcon, desc: "Fair usage limits apply" },
-                      { label: "Unlimited Regenerations", icon: RefreshCw },
-                      { label: "AI Writing Styles", icon: Wand2 },
-                      { label: "Trending Topics Feed", icon: TrendingUp },
-                      { label: "Content Calendar", icon: CalendarDays },
-                      { label: "Performance Insights", icon: BarChart3 },
-                      { label: "Priority AI (2× faster)", icon: Zap },
-                      { label: "Priority Support", icon: Shield },
-                    ].map(({ label, icon: Icon, desc }) => (
-                      <div key={label} className="flex items-start gap-2.5">
-                        <Icon className="w-4 h-4 text-teal-400 mt-0.5 shrink-0" />
-                        <div>
-                          <span className="text-white/85 text-sm">{label}</span>
-                          {desc && <p className="text-white/40 text-[10px] m-0">{desc}</p>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <MagneticButton>
-                    <Button
-                      className={`w-full border transition-all ${
-                        getPlanState("infinity") === "current"
-                          ? "bg-teal-600/30 border-teal-500/40 text-teal-300 cursor-default"
-                          : "shine-effect bg-gradient-to-r from-teal-600/80 to-pink-600/80 hover:from-teal-500 hover:to-pink-500 border border-white/20 text-white shadow-[0_0_20px_rgba(20,184,166,0.3)]"
-                      }`}
-                      onClick={() => handlePlanClick("infinity")}
-                    >
-                      {getPlanState("infinity") === "current" ? "✓ Current Plan" : "Unlock Infinity →"}
-                      {getPlanState("infinity") !== "current" && <ChevronRight className="w-4 h-4 ml-1" />}
-                    </Button>
-                  </MagneticButton>
-                  <p className="text-center text-white/35 text-xs mt-2.5">Cancel anytime</p>
                 </div>
-              </Hover3DCard>
+                <div className="space-y-3 flex-1 mb-6">
+                  {["Unlimited Generations*", "AI Content Coach", "Custom Brand Voice", "Ghostwriter Mode"].map((f) => (
+                    <div key={f} className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-violet-400 mt-0.5" />
+                      <span className="text-white/60 text-xs">{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button 
+                  onClick={() => handlePlanClick("infinity")}
+                  className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10"
+                >
+                  {getPlanState("infinity") === "current" ? "Current Plan" : "Get Infinity"}
+                </Button>
+              </div>
             </motion.div>
           </div>
         </div>
 
         {/* Agency Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-16 border border-violet-500/30 rounded-2xl p-8 bg-violet-500/5 relative overflow-hidden group"
-        >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none group-hover:bg-violet-500/20 transition-all duration-1000" />
-          
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-            <div className="space-y-4 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-3">
-                 <div className="w-12 h-12 rounded-2xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center shadow-lg shadow-violet-500/10">
-                    <Users className="w-6 h-6 text-violet-400" />
-                 </div>
-                 <div>
-                    <h3 className="text-2xl font-bold text-white">For Agencies & Teams</h3>
-                    <p className="text-violet-400/60 text-xs font-black uppercase tracking-widest">Enterprise Grade Scale</p>
-                 </div>
-              </div>
+          <div className="mb-16 border rounded-2xl p-8 relative overflow-hidden group" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+              <div className="space-y-4 text-center md:text-left">
+                <div className="flex items-center justify-center md:justify-start gap-3">
+                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center border" style={{ background: 'rgba(124,58,237,0.1)', borderColor: 'rgba(124,58,237,0.2)' }}>
+                      <Users className="w-6 h-6 text-violet-400" />
+                   </div>
+                   <div>
+                      <h3 className="text-2xl font-bold text-white">For Agencies & Teams</h3>
+                      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(124,58,237,0.6)' }}>Enterprise Grade Scale</p>
+                   </div>
+                </div>
               <p className="text-white/50 text-sm max-w-lg leading-relaxed">
                 Empower your entire team with collaborative content generation. Manage members, monitor usage, and maintain consistent brand voice across all accounts.
               </p>
@@ -861,27 +825,31 @@ export default function PricingPage() {
                 </div>
                 <p className="text-violet-400/40 text-[10px] font-bold uppercase tracking-tighter mt-1">Billed monthly</p>
               </div>
-              <Button 
-                onClick={() => handlePlanClick("agency")}
-                disabled={getPlanState("agency") === "current"}
-                className={`w-full md:w-auto h-12 ${getPlanState("agency") === "current" ? "bg-white/5 text-white/30" : "bg-violet-600 hover:bg-violet-500 text-white"} font-bold px-10 rounded-xl shadow-lg shadow-violet-900/40 transition-all hover:scale-105 active:scale-95`}
-              >
-                {getPlanState("agency") === "current" ? "✓ Active Plan" : "Get Agency Plan"}
-              </Button>
+                <Button 
+                  onClick={() => setShowAgencyModal(true)}
+                  disabled={getPlanState("agency") === "current"}
+                  className="w-full md:w-auto h-11 px-8 rounded-xl text-xs font-bold transition-all"
+                  style={{ background: 'var(--violet)', color: 'white', boxShadow: '0 4px 15px rgba(124,58,237,0.3)' }}
+                >
+                  {getPlanState("agency") === "current" ? "Active Plan" : "Get Agency Plan"}
+                </Button>
             </div>
           </div>
         </motion.div>
+        <div className="mb-16">
+          <TopUpSection currency={currency} />
+        </div>
 
         {/* ROI Anchor Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-16 rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/30 to-teal-950/20 p-6 md:p-8"
+          className="mb-16 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/30 to-indigo-950/20 p-6 md:p-8"
         >
           <div className="flex items-center gap-2 mb-2">
-            {currency === "INR" ? <IndianRupee className="w-4 h-4 text-cyan-400" /> : <DollarSign className="w-4 h-4 text-cyan-400" />}
-            <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">What {formatPrice(creatorPrice)} actually gets you</p>
+            {currency === "INR" ? <IndianRupee className="w-4 h-4 text-violet-400" /> : <DollarSign className="w-4 h-4 text-violet-400" />}
+            <p className="text-xs font-bold uppercase tracking-widest text-violet-400">What {formatPrice(creatorPrice)} actually gets you</p>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
             Creator pays for itself in one post.
@@ -913,7 +881,7 @@ export default function PricingPage() {
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold mb-2">
               Why creators choose{" "}
-              <span className="bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
                 Infinity
               </span>
             </h2>
@@ -941,6 +909,16 @@ export default function PricingPage() {
           </div>
         </motion.div>
 
+        <div className="mb-10 text-center flex flex-col items-center">
+          <div className="inline-flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-5 py-2 mb-2">
+            <Shield className="w-5 h-5 text-emerald-400" />
+            <span className="text-sm font-bold text-emerald-400">30-Day Money-Back Guarantee</span>
+          </div>
+          <p className="text-xs text-white/40 max-w-sm">If you don't grow your audience in the first 30 days, we'll refund your payment fully. No questions asked.</p>
+        </div>
+
+        <TestimonialSection />
+
         {/* Feature Comparison Table */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -962,13 +940,13 @@ export default function PricingPage() {
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400">Starter</p>
                 <p className="text-emerald-100 font-bold mt-0.5 text-xs">{formatPrice(starterPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span></p>
               </div>
-              <div className="p-3 text-center bg-cyan-950/30 relative">
+              <div className="p-3 text-center bg-violet-950/30 relative">
                 <div className="flex justify-center mb-0.5">
-                  <span className="text-[8px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full px-1.5 py-0.5 font-semibold">
+                  <span className="text-[8px] bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full px-1.5 py-0.5 font-semibold">
                     POPULAR
                   </span>
                 </div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-cyan-400 text-shadow-sm">Creator</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-violet-400 text-shadow-sm">Creator</p>
                 <p className="text-white font-bold mt-0.5 text-xs">
                   {formatPrice(creatorPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span>
                 </p>
@@ -983,8 +961,8 @@ export default function PricingPage() {
 
             {(["core", "tools", "infinity"] as const).map((section) => (
               <div key={section} className="min-w-[560px]">
-                <div className={`px-4 py-2 border-b border-white/5 ${section === "infinity" ? "bg-cyan-950/20" : "bg-white/[0.01]"}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wider ${section === "infinity" ? "text-cyan-400" : "text-white/30"}`}>
+                <div className={`px-4 py-2 border-b border-white/5 ${section === "infinity" ? "bg-violet-950/20" : "bg-white/[0.01]"}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wider ${section === "infinity" ? "text-violet-400" : "text-white/30"}`}>
                     {section === "core" ? "Core" : section === "tools" ? "Tools" : "Infinity Exclusives ✦"}
                   </p>
                 </div>
@@ -1000,10 +978,10 @@ export default function PricingPage() {
                     <div className="p-3 flex items-center justify-center bg-emerald-950/10">
                       <CellContent value={feature.starter} />
                     </div>
-                    <div className={`p-3 flex items-center justify-center bg-cyan-950/10`}>
+                    <div className={`p-3 flex items-center justify-center bg-violet-950/10`}>
                       <CellContent value={feature.creator} />
                     </div>
-                    <div className={`p-3 flex items-center justify-center ${section === "infinity" ? "bg-cyan-950/5" : ""}`}>
+                    <div className={`p-3 flex items-center justify-center ${section === "infinity" ? "bg-violet-950/5" : ""}`}>
                       <CellContent value={feature.infinity} infinityLabel={feature.infinityLabel} />
                     </div>
                   </div>
@@ -1036,7 +1014,7 @@ export default function PricingPage() {
               <div>
                 <Button
                   size="sm"
-                  className="w-full bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 border border-cyan-500/30 text-white text-xs shadow-lg shadow-cyan-500/25"
+                  className="w-full bg-violet-600 hover:bg-violet-500 border border-violet-500/30 text-white text-xs shadow-lg shadow-violet-500/25"
                   onClick={() => handlePlanClick("creator")}
                 >
                   Get Creator
@@ -1064,7 +1042,7 @@ export default function PricingPage() {
             className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
           >
             <h3 className="font-bold mb-4 flex items-center gap-2 text-lg">
-              <Shield className="w-4 h-4 text-cyan-400" />
+              <Shield className="w-4 h-4 text-violet-400" />
               You're always protected
             </h3>
             <div className="space-y-3.5">
@@ -1074,8 +1052,8 @@ export default function PricingPage() {
                 { icon: Star, label: "4.1/5 rating", desc: "2,400+ creators love GrowFlow AI" },
               ].map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon className="w-3.5 h-3.5 text-cyan-400" />
+                  <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="w-3.5 h-3.5 text-violet-400" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white">{label}</p>
@@ -1116,8 +1094,15 @@ export default function PricingPage() {
         billingPeriod={upgradeModal.billing}
         currency={upgradeModal.currency}
       />
+
+      <UpgradeModal
+        open={showAgencyModal}
+        onClose={() => setShowAgencyModal(false)}
+        targetPlan="agency"
+        reason="upgrade"
+      />
       
-      <TopUpSection />
+      
 
         {/* FAQ Section */}
         <div className="max-w-2xl mx-auto mt-16">

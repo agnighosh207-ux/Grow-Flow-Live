@@ -167,27 +167,31 @@ export default function GhostwriterPage() {
       setWriting(false);
     }
   };
+  const [showGuide, setShowGuide] = useState(false);
 
   return (
-    <PageWrapper maxWidth="xl" className="pb-24 md:pb-8 space-y-10">
+    <PageWrapper maxWidth="xl" className="pb-24 md:pb-8 relative overflow-x-hidden min-h-screen">
       <FeatureGuideBanner 
         toolKey="ghostwriter" 
         title="AI Ghostwriter" 
-        icon={<PenTool className="w-5 h-5 text-rose-500" />}
-        tagline="Capture your unique writing DNA and generate content that sounds exactly like you."
-        whatYouGet={["Voice DNA profile", "Tonal fingerprint", "Content matching your style"]}
-        whenToUse="Use this when you want AI to write for you without the 'AI feel'. It's your digital twin."
-        proTip="The more content you generate in the main 'Generator', the more accurate your Voice DNA profile becomes."
+        icon={<Brain className="w-5 h-5 text-violet-400" />}
+        tagline="Teach the AI your exact brand voice, vocabulary, and rhythm for indistinguishable content."
+        whatYouGet={["Voice extraction from text", "Style-matched generations", "Indistinguishable AI content", "Multi-platform export"]}
+        whenToUse="Use this when you want AI to write content that sounds exactly like you, rather than generic AI output."
+        proTip="The more text you provide (at least 500 words), the better the AI can mimic your specific quirks and sentence structures."
         planRequired="Infinity"
+        forceOpen={showGuide}
       />
-      <PageHeader 
-        icon={<PenTool/>} 
-        iconBg="bg-orange-500/10" 
-        iconColor="text-orange-400" 
-        title="AI Ghostwriter" 
-        subtitle="Write like a pro. In your voice."
-        badge="Infinity"
-        action={
+      <div className="relative z-10 py-12 space-y-12">
+        <PageHeader 
+          icon={<Brain />}
+          iconBg="bg-indigo-500/10"
+          iconColor="text-indigo-400"
+          title="AI Ghostwriter"
+          subtitle="Your voice, amplified by intelligence."
+          badge="Infinity"
+          onInfoClick={() => setShowGuide(prev => !prev)}
+          action={
           <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl overflow-x-auto no-scrollbar">
              <Sheet>
                <SheetTrigger asChild>
@@ -421,13 +425,14 @@ export default function GhostwriterPage() {
                 )}
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
-                    <label className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <label htmlFor="content-focus" className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                       Content Focus
                     </label>
                     <span className="text-[10px] font-bold text-muted-foreground italic">Try: "The future of AI in 2025"</span>
                   </div>
                   <div className="relative">
                     <Textarea 
+                      id="content-focus"
                       placeholder="Tell the Ghostwriter what to write about... be as specific as you want." 
                       className="min-h-[120px] md:min-h-[160px] text-base md:text-xl font-medium bg-transparent border-none focus-visible:ring-0 p-0 placeholder:text-white/10 resize-none"
                       value={topic}
@@ -442,9 +447,9 @@ export default function GhostwriterPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4 border-t border-white/5">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Platform Target</label>
+                    <label htmlFor="platform-target" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Platform Target</label>
                     <Select value={platform} onValueChange={setPlatform}>
-                      <SelectTrigger className="bg-white/5 border-white/10 h-12 rounded-xl text-white font-bold text-base">
+                      <SelectTrigger id="platform-target" className="bg-white/5 border-white/10 h-12 rounded-xl text-white font-bold text-base">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-900 border-white/10 text-white">
@@ -575,8 +580,9 @@ export default function GhostwriterPage() {
                 </Card>
               </motion.div>
             )}
-        </div>
-      </motion.div>
+          </div>
+        </motion.div>
+      </div>
     </PageWrapper>
   );
 }
