@@ -117,11 +117,11 @@ Return JSON:
 });
 
 const writeSchema = z.object({
-  topic: z.string().default(""),
-  platform: z.string().default(""),
-  length: z.string().default("medium"),
-  useVoice: z.boolean().default(false),
-  language: z.string().default("English"),
+  topic: z.preprocess((v) => String(v || ""), z.string().default("")),
+  platform: z.preprocess((v) => String(v || ""), z.string().default("")),
+  length: z.preprocess((v) => String(v || "medium"), z.string().default("medium")),
+  useVoice: z.preprocess((v) => v === "true" || v === true, z.boolean().default(false)),
+  language: z.preprocess((v) => String(v || "English"), z.string().default("English")),
 });
 
 router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {

@@ -50,10 +50,10 @@ router.post("/folders", requireAuth, requirePlanOrTrial("personal-vault"), async
 });
 
 const querySchema = z.object({
-  folderId: z.string().nullable().optional(),
-  search: z.string().default(""),
-  platform: z.string().nullable().optional(),
-  tags: z.string().nullable().optional(),
+  folderId: z.preprocess((v) => (v === null || v === "null" ? null : String(v)), z.string().nullable().optional()),
+  search: z.preprocess((v) => String(v || ""), z.string().default("")),
+  platform: z.preprocess((v) => (v === null || v === "null" ? null : String(v)), z.string().nullable().optional()),
+  tags: z.preprocess((v) => (v === null || v === "null" ? null : String(v)), z.string().nullable().optional()),
   limit: z.coerce.number().default(20),
 });
 

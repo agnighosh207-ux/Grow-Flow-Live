@@ -18,14 +18,8 @@ import { ToastAction } from "@/components/ui/toast";
 
 import {
   Sparkles, RefreshCw, Copy, Zap, Share2, Loader2, Flame, Activity, Check, Download, 
-  Hash, Wand2, X, ChevronDown, ChevronUp, Crown, Users, TrendingUp, History, 
-  Trash2, AlertCircle, Globe, Clock, Layers, ArrowRight, Star, Linkedin as LinkedinIcon, 
-  MessageSquare, Instagram, Youtube, FileText, Layout, Lightbulb, 
-  Target, Rocket, Brain, BarChart3, PieChart, Info, Shield, ShieldCheck, 
-  ExternalLink, Zap as ZapIcon, Lock, Menu, Plus, Minus, Search, 
-  Filter, Play, Settings, Save, MoreHorizontal, MoreVertical, Edit2, 
-  Eye, EyeOff, Send, Mail, Github, Twitter, Facebook, ArrowLeft,
-  ArrowRight as ArrowRightIcon, GitBranch, Trophy, CalendarDays, PenTool
+  Hash, Wand2, X, ChevronDown, ChevronUp, Crown, Users, Info, Lock, 
+  GitBranch, Trophy, CalendarDays, PenTool, Linkedin
 } from "lucide-react";
 import { haptic } from "@/lib/utils";
 import { SiInstagram, SiYoutube } from "react-icons/si";
@@ -666,7 +660,7 @@ const PLATFORM_CONFIG: Record<Platform, PlatformConfig> = {
     iconColor: "text-slate-300",
   },
   linkedin: {
-    icon: LinkedinIcon,
+    icon: Linkedin,
     label: "LinkedIn",
     accentColor: "from-blue-500 to-blue-600",
     borderColor: "border-blue-500/20",
@@ -850,7 +844,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                 )}
                 {platform === "linkedin" && (
                   <DropdownMenuItem onClick={handleShareLinkedIn} className="text-xs text-white/70 hover:text-white cursor-pointer focus:bg-white/5 p-3 rounded-xl">
-                    <LinkedinIcon className="w-4 h-4 mr-3 text-blue-400" /> Share on LinkedIn
+                    <Linkedin className="w-4 h-4 mr-3 text-blue-400" /> Share on LinkedIn
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(fullText + "\n\n—\nGenerated with GrowFlow AI"); toast({ title: "Copied with attribution!" }); }} className="text-xs text-emerald-400 hover:text-emerald-300 cursor-pointer focus:bg-emerald-500/10 p-3 rounded-xl">
@@ -1193,17 +1187,6 @@ export default function Generate() {
   const [regeneratingPlatform, setRegeneratingPlatform] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [hookScore, setHookScore] = useState<any>(null);
-  const [isScoringHook, setIsScoringHook] = useState(false);
-  const [viralMode, setViralMode] = useState(false);
-  const [styleMode, setStyleMode] = useState(false);
-  const [batchMode, setBatchMode] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
-  const [generationBlockedMsg, setGenerationBlockedMsg] = useState<string>('');
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [npsTrigger, setNpsTrigger] = useState<string | null>(null);
-  const [showNPS, setShowNPS] = useState(false);
-  const [showPostGenUpsell, setShowPostGenUpsell] = useState(false);
   const [ratingTrigger, setRatingTrigger] = useState<string>("gen-3");
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"limit" | "expired" | "blocked" | "pro_feature">("limit");
@@ -1222,11 +1205,11 @@ export default function Generate() {
       contentType: prefillType,
       tone: prefillTone,
       niche: "General",
-      language: typeof globalThis !== "undefined" ? localStorage.getItem("preferred_language") ?? "English" : "English",
+      language: typeof globalThis !== "undefined" ? DOMPurify.sanitize(localStorage.getItem("preferred_language") ?? "English") : "English",
     }
   });
   
-  const { data: trendsData, isLoading: trendsLoading } = useQuery({
+  useQuery({
     queryKey: ["trend-sidebar", "General"],
     queryFn: async () => {
       const token = await getToken();
@@ -1254,7 +1237,7 @@ export default function Generate() {
   const [savedPrefs, setSavedPrefs] = useState<{ niche: string | null; tonePreference: string | null; platformPreference: string | null } | null>(null);
   const prefsLoadedRef = useRef(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-  const ideaValue = form.watch("idea");
+
   
   useEffect(() => {
     if (generatedContent && !batchLoading) {
@@ -1262,11 +1245,11 @@ export default function Generate() {
     }
   }, [generatedContent, batchLoading]);
   const { toast } = useToast();
-  const { data: sub, refetch: refetchSub } = useSubscriptionStatus();
-  const [, navigate] = useLocation();
+  const { data: sub } = useSubscriptionStatus();
+  useLocation();
 
   const isFreeUser = !sub || (sub.planType === "free" && sub.plan === "free") || sub.plan === "blocked";
-  const paidStatuses = ["active", "trial", "pending", "past_due"];
+
   
   const generationsUsed = sub?.monthlyGenerationsUsed ?? 0;
   const generationLimit = sub?.generationLimit ?? (isFreeUser ? 10 : 25);
@@ -1303,7 +1286,7 @@ export default function Generate() {
       const used = sub.monthlyGenerationsUsed ?? 0;
       const backupKey = "generation_count_backup";
       try {
-        const stored = parseInt(localStorage.getItem(backupKey) ?? "0", 10);
+        const stored = Number.parseInt(localStorage.getItem(backupKey) ?? "0", 10);
         if (used === 0 && stored > 0) {
           console.warn(`[GrowFlow] Generation count discrepancy: backend=0, localStorage=${stored}. Backend is authoritative.`);
         }
