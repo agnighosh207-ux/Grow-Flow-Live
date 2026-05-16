@@ -116,28 +116,29 @@ Return JSON:
   }
 });
 
+const writeSchema = z.object({
+  topic: z.string().default(""),
+  platform: z.string().default(""),
+  length: z.string().default("medium"),
+  useVoice: z.boolean().default(false),
+  language: z.string().default("English"),
+});
+
 router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  const writeSchema = z.object({
-    topic: z.string().default(""),
-    platform: z.string().default(""),
-    length: z.string().default("medium"),
-    useVoice: z.boolean().default(false),
-    language: z.string().default("English"),
-  });
+  try {
+    const validated = writeSchema.parse(req.body);
+    const { topic, platform, length, useVoice, language } = validated;
+    const planType = req.user?.planType ?? "free";
 
-  const validated = writeSchema.parse(req.body);
-  const { topic, platform, length, useVoice, language } = validated;
-  const planType = req.user?.planType ?? "free";
-
-  // Free users only get English
-  if ((!planType || planType === "free") && language && language !== "English") {
-    res.status(403).json({
-      error: "language_locked",
-      message: "Upgrade to Starter or higher to generate content in regional languages.",
-      requiredPlan: "starter"
-    });
-    return;
-  }
+    // Free users only get English
+    if ((!planType || planType === "free") && language && language !== "English") {
+      res.status(403).json({
+        error: "language_locked",
+        message: "Upgrade to Starter or higher to generate content in regional languages.",
+        requiredPlan: "starter"
+      });
+      return;
+    }
   const userId = req.userId;
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), 25000);
@@ -164,7 +165,8 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
       voiceProfile = user?.voiceProfile;
     }
 
-    const maxTokens = length === "short" ? 400 : length === "medium" ? 800 : 1500;
+    const tokenConfig: Record<string, number> = { short: 400, medium: 800, long: 1500 };
+    const maxTokens = tokenConfig[length] || 800;
     
     const systemPrompt = voiceProfile 
       ? `You are ghostwriting for a specific creator. Match their voice exactly: ${JSON.stringify(voiceProfile)}. Do not deviate from their style. Platform: ${platform}. Return ONLY valid JSON.`
@@ -228,6 +230,7 @@ router.get("/history", requireAuth, requirePlanOrTrial("ghostwriter"), async (re
       .limit(20);
     res.json(history);
   } catch (err) {
+    console.error("HISTORY FETCH ERROR:", err);
     res.status(500).json({ error: "Failed to fetch history" });
   }
 });
@@ -244,6 +247,7 @@ router.patch("/voice-profile", requireAuth, requirePlanOrTrial("ghostwriter"), a
       .where(eq(usersTable.id, req.userId));
     res.json({ success: true });
   } catch (err) {
+    console.error("VOICE UPDATE ERROR:", err);
     res.status(500).json({ error: "Failed to update voice profile" });
   }
 });
@@ -267,6 +271,7 @@ router.get("/voice-profile", requireAuth, requirePlanOrTrial("ghostwriter"), asy
       daysSinceUpdate: Math.floor(profileAge / 86400000) 
     });
   } catch (err) {
+    console.error("VOICE FETCH ERROR:", err);
     res.status(500).json({ error: "Failed to fetch voice profile" });
   }
 });

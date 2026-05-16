@@ -19,7 +19,7 @@ import { ToastAction } from "@/components/ui/toast";
 import {
   Sparkles, RefreshCw, Copy, Zap, Share2, Loader2, Flame, Activity, Check, Download, 
   Hash, Wand2, X, ChevronDown, ChevronUp, Crown, Users, Lock, Info, Trophy, 
-  PenTool, CalendarDays, GitBranch, Lightbulb, Linkedin
+  PenTool, CalendarDays, GitBranch, Lightbulb, Linkedin as LinkedinIcon
 } from "lucide-react";
 import { haptic } from "@/lib/utils";
 import { SiInstagram, SiYoutube } from "react-icons/si";
@@ -183,7 +183,7 @@ function AbDuelView({ idea, niche, tone, onResult, result }: Readonly<{ idea: st
       <div className="space-y-12">
         <div className={`p-10 rounded-[3rem] border shadow-2xl flex flex-col lg:flex-row items-center gap-12 ${config.bg}`}>
            <div className={`p-8 rounded-[2rem] ${config.iconBg}`}>
-             {result.prediction.winner !== 'too_close' ? <Trophy className="w-16 h-16" /> : <GitBranch className="w-16 h-16" />}
+             {result.prediction.winner === 'too_close' ? <GitBranch className="w-16 h-16" /> : <Trophy className="w-16 h-16" />}
            </div>
            <div className="flex-1 space-y-4 text-center lg:text-left">
               <h3 className="text-4xl font-black text-white tracking-tight">
@@ -353,11 +353,9 @@ function ContentScoreBadge({ score, label, color, delay = 0 }: { score: number; 
   );
 }
 
-function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; analysis?: ContentAnalysis | null; analysisLoading?: boolean }) {
+function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data: any; analysis?: ContentAnalysis | null; analysisLoading?: boolean }>) {
   const { toast } = useToast();
   const directViralScore = data?.content?.viral_score;
-  const directFeedback = data?.content?.viral_feedback;
-  const directSuggestion = data?.content?.viral_suggestion;
 
   const scores = useMemo(() => {
     const hookStrength = analysis?.hookStrength ?? data?.content?.hook_strength ?? 82;
@@ -415,7 +413,7 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
 
   const handleCopyNotion = () => {
     const items = getExportItems();
-    const tsv = ["Platform\tContent\tStatus", ...items.map(item => `${item.platform}\t${item.content.replace(/\n/g, " ")}\tDraft`)].join("\n");
+    const tsv = ["Platform\tContent\tStatus", ...items.map(item => `${item.platform}\t${item.content.replaceAll("\n", " ")}\tDraft`)].join("\n");
     navigator.clipboard.writeText(tsv);
     toast({ title: "Copied for Notion", description: "Paste this into any Notion database." });
   };
@@ -473,10 +471,13 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: { data: any; an
 }
 
 function ViralScoreMeter({ score }: { score: number }) {
-  const level = score >= 80 ? { label: "🔥 Viral Potential", color: "text-indigo-400", ring: "border-indigo-500/30" }
-              : score >= 60 ? { label: "⚡ Strong Content",  color: "text-[#8B91E3]",    ring: "border-[rgba(94,106,210,0.3)]" }
-              : score >= 40 ? { label: "📈 Good Foundation", color: "text-amber-400",    ring: "border-amber-500/30" }
-              :               { label: "💡 Needs Polish",    color: "text-white/50",     ring: "border-white/10" };
+  const getLevelConfig = (s: number) => {
+    if (s >= 80) return { label: "🔥 Viral Potential", color: "text-indigo-400", ring: "border-indigo-500/30" };
+    if (s >= 60) return { label: "⚡ Strong Content",  color: "text-[#8B91E3]",    ring: "border-[rgba(94,106,210,0.3)]" };
+    if (s >= 40) return { label: "📈 Good Foundation", color: "text-amber-400",    ring: "border-amber-500/30" };
+    return { label: "💡 Needs Polish",    color: "text-white/50",     ring: "border-white/10" };
+  };
+  const level = getLevelConfig(score);
   return (
     <div className={`relative flex items-center justify-center w-20 h-20 rounded-full border-4 ${level.ring} bg-black/40 shadow-lg`}>
       <motion.span
@@ -650,7 +651,7 @@ const PLATFORM_CONFIG: Record<Platform, PlatformConfig> = {
     iconColor: "text-slate-300",
   },
   linkedin: {
-    icon: Linkedin,
+    icon: LinkedinIcon,
     label: "LinkedIn",
     accentColor: "from-blue-500 to-blue-600",
     borderColor: "border-blue-500/20",
@@ -661,11 +662,11 @@ const PLATFORM_CONFIG: Record<Platform, PlatformConfig> = {
 };
 
 interface PlatformCardProps {
-  platform: Platform;
-  content: any;
-  onRegenerate: () => void;
-  isRegenerating: boolean;
-  index: number;
+  readonly platform: Platform;
+  readonly content: any;
+  readonly onRegenerate: () => void;
+  readonly isRegenerating: boolean;
+  readonly index: number;
 }
 
 function buildPlatformText(platform: Platform, content: any): string {
@@ -727,7 +728,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
     a.download = `growflow-${platform}-${date}.txt`;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
     URL.revokeObjectURL(url);
     toast({ title: "Content downloaded!" });
   };
@@ -1097,19 +1098,19 @@ export default function Generate() {
   const queryClient = useQueryClient();
   const { getToken } = useAuth();
   const { user } = useUser();
-  const rawSearch = typeof window !== "undefined" ? window.location.search : "";
-  const safeSearch = DOMPurify.sanitize(rawSearch);
-  const searchParams = new URLSearchParams(safeSearch);
+  const rawSearch = typeof globalThis !== "undefined" ? globalThis.location.search : "";
+  const searchParams = new URLSearchParams(rawSearch);
   
-  const sanitizeXSS = (val: string | null) => {
+  const sanitizeValue = (key: string) => {
+    const val = searchParams.get(key);
     if (!val) return "";
-    return DOMPurify.sanitize(val);
+    return DOMPurify.sanitize(val, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
   };
   
-  const prefillIdea = sanitizeXSS(searchParams.get("idea"));
-  const rawType = searchParams.get("contentType");
+  const prefillIdea = sanitizeValue("idea");
+  const rawType = sanitizeValue("contentType");
   const prefillType = (["Educational", "Story", "Viral"].includes(rawType || "") ? rawType : "Educational") as any;
-  const rawTone = searchParams.get("tone");
+  const rawTone = sanitizeValue("tone");
   const prefillTone = (["Casual", "Professional", "Aggressive"].includes(rawTone || "") ? rawTone : "Professional") as any;
   const autoGenerate = searchParams.get("auto") === "1";
 

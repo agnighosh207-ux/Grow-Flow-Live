@@ -16,6 +16,7 @@ router.get("/folders", requireAuth, async (req: any, res): Promise<void> => {
     res.json(folders);
     return;
   } catch (err) {
+    console.error("FOLDERS FETCH ERROR:", err);
     res.status(500).json({ error: "Failed to fetch folders" });
     return;
   }
@@ -42,22 +43,24 @@ router.post("/folders", requireAuth, requirePlanOrTrial("personal-vault"), async
     res.json({ success: true, id });
     return;
   } catch (err) {
+    console.error("FOLDER CREATE ERROR:", err);
     res.status(500).json({ error: "Failed to create folder" });
     return;
   }
 });
 
+const querySchema = z.object({
+  folderId: z.string().nullable().optional(),
+  search: z.string().default(""),
+  platform: z.string().nullable().optional(),
+  tags: z.string().nullable().optional(),
+  limit: z.coerce.number().default(20),
+});
+
 // Items (Content Bank)
 router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
-  const querySchema = z.object({
-    folderId: z.string().nullable().optional(),
-    search: z.string().default(""),
-    platform: z.string().nullable().optional(),
-    tags: z.string().nullable().optional(),
-    limit: z.coerce.number().default(20),
-  });
-
-  const validated = querySchema.parse(req.query);
+  try {
+    const validated = querySchema.parse(req.query);
   const { folderId, search, platform, tags, limit } = validated;
   const conditions = [eq(contentGenerationsTable.userId, req.userId)];
 
@@ -112,6 +115,7 @@ router.patch("/items/:id", requireAuth, requirePlanOrTrial("personal-vault"), as
     res.json({ success: true });
     return;
   } catch (err) {
+    console.error("VAULT UPDATE ERROR:", err);
     res.status(500).json({ error: "Failed to update content item" });
     return;
   }
