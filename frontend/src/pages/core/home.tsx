@@ -5,7 +5,7 @@ import {
   Sparkles, Zap, Globe, Clock, ArrowRight, Star, TrendingUp,
   CalendarDays, BarChart3, Layers, Check, Shield, Lock, Users,
   Play, Linkedin as LinkedinIcon, Loader2, Copy, ChevronUp,
-  RefreshCw, ChevronRight
+  RefreshCw, ChevronRight, X, Languages
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/layout/Logo";
@@ -239,6 +239,14 @@ export default function Home() {
   const [demoIdea, setDemoIdea] = useState("");
   const [demoResult, setDemoResult] = useState("");
   const [demoLoading, setDemoLoading] = useState(false);
+  const [showLanguagesModal, setShowLanguagesModal] = useState(false);
+  const [guestLimitReached, setGuestLimitReached] = useState(false);
+
+  const LANGUAGES = [
+    "English", "Hindi", "Hinglish", "Bengali", "Gujarati", "Kannada",
+    "Malayalam", "Marathi", "Punjabi", "Odia", "Assamese", "Tamil",
+    "Telugu", "Urdu", "Bhojpuri", "Spanish", "French", "German"
+  ];
 
   const handleDemoGenerate = async () => {
     if (!demoIdea.trim() || demoLoading) return;
@@ -250,6 +258,16 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idea: demoIdea.slice(0, 120) })
       });
+
+      if (res.status === 403) {
+        const data = await res.json();
+        if (data.error === "GUEST_LIMIT_REACHED") {
+          setGuestLimitReached(true);
+          setDemoLoading(false);
+          return;
+        }
+      }
+
       const data = await res.json();
       setDemoResult(data.caption || data.content || "Could not generate. Please try again.");
     } catch {
@@ -357,12 +375,13 @@ export default function Home() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full border text-sm"
+          onClick={() => setShowLanguagesModal(true)}
+          className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full border text-sm cursor-pointer transition-all hover:scale-105 active:scale-95 group"
           style={{ background: 'rgba(94,106,210,0.1)', borderColor: 'rgba(94,106,210,0.2)', color: '#8B91E3' }}
         >
           <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#8B91E3" }} />
           AI-powered · Built for Indian creators · 18+ languages
-          <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+          <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
         </motion.div>
 
         <motion.h1
@@ -672,7 +691,23 @@ export default function Home() {
             </div>
 
             {/* Output area */}
-            <div className="p-4 md:p-6">
+            <div className="p-4 md:p-6 relative min-h-[160px]">
+              {guestLimitReached && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 bg-[rgba(10,5,30,0.95)] backdrop-blur-sm animate-fade-in">
+                  <div className="w-16 h-16 rounded-full bg-[rgba(94,106,210,0.1)] border border-[rgba(94,106,210,0.2)] flex items-center justify-center mb-4">
+                    <Lock className="w-8 h-8 text-[#8B91E3]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Guest limit reached</h3>
+                  <p className="text-white/40 text-sm mb-6 max-w-[280px]">
+                    You've reached the free guest generation limit. Sign up now to get 50+ monthly credits and unlock all platforms.
+                  </p>
+                  <Link href="/sign-up">
+                    <button className="btn-primary px-8 h-12 rounded-xl text-sm font-bold">
+                      Get Started Free <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </Link>
+                </div>
+              )}
               {!demoResult && !demoLoading && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="w-12 h-12 rounded-2xl bg-[rgba(94,106,210,0.1)] border border-[rgba(94,106,210,0.2)] flex items-center justify-center mb-3">
@@ -1239,6 +1274,61 @@ export default function Home() {
           )}
         </AnimatePresence>
       </footer>
+      <AnimatePresence>
+        {showLanguagesModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLanguagesModal(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-[#0e0a25] border border-white/10 rounded-[2rem] p-8 shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-6">
+                <button onClick={() => setShowLanguagesModal(false)}
+                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-[rgba(94,106,210,0.1)] border border-[rgba(94,106,210,0.2)] flex items-center justify-center">
+                  <Languages className="w-7 h-7 text-[#8B91E3]" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Supported Languages</h2>
+                  <p className="text-white/40 text-sm">Deeply optimized for the Indian creator economy.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {LANGUAGES.map((lang) => (
+                  <div key={lang} className="px-4 py-3 rounded-xl bg-white/5 border border-white/[0.06] text-white/70 text-sm font-medium flex items-center justify-between">
+                    {lang}
+                    <Check className="w-3.5 h-3.5 text-[#8B91E3]" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-white/[0.06] text-center">
+                <p className="text-white/30 text-xs mb-4 italic">
+                  *Our AI generates content using native scripts (Hindi, Bengali, etc.) for authentic audience connection.
+                </p>
+                <button onClick={() => setShowLanguagesModal(false)}
+                  className="btn-primary w-full h-12 rounded-xl font-bold">
+                  Awesome!
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

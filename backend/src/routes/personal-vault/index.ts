@@ -61,36 +61,33 @@ const querySchema = z.object({
 router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const validated = querySchema.parse(req.query);
-  const { folderId, search, platform, tags, limit } = validated;
-  const conditions = [eq(contentGenerationsTable.userId, req.userId)];
+    const { folderId, search, platform, tags, limit } = validated;
+    const conditions = [eq(contentGenerationsTable.userId, req.userId)];
 
-  if (folderId) conditions.push(eq(contentGenerationsTable.folderId, String(folderId)));
-  if (platform) conditions.push(eq(contentGenerationsTable.platform, String(platform)));
-  
-  if (search) {
-    const searchCondition = or(
-      ilike(contentGenerationsTable.idea, `%${search}%`),
-      sql`${contentGenerationsTable.content}::text ILIKE ${`%${search}%`}`
-    );
-    if (searchCondition) conditions.push(searchCondition);
-  }
-  if (tags) {
-    const tagList = String(tags).split(",");
-    conditions.push(sql`${contentGenerationsTable.tags} && ${tagList}`);
-  }
+    if (folderId) conditions.push(eq(contentGenerationsTable.folderId, String(folderId)));
+    if (platform) conditions.push(eq(contentGenerationsTable.platform, String(platform)));
+    
+    if (search) {
+      const searchCondition = or(
+        ilike(contentGenerationsTable.idea, `%${search}%`),
+        sql`${contentGenerationsTable.content}::text ILIKE ${`%${search}%`}`
+      );
+      if (searchCondition) conditions.push(searchCondition);
+    }
+    if (tags) {
+      const tagList = String(tags).split(",");
+      conditions.push(sql`${contentGenerationsTable.tags} && ${tagList}`);
+    }
 
-  try {
     const items = await db.select().from(contentGenerationsTable)
       .where(and(...conditions))
       .orderBy(desc(contentGenerationsTable.createdAt))
       .limit(Number(limit));
     
     res.json(items);
-    return;
   } catch (err) {
-    console.error("Content bank fetch error:", err);
-    res.status(500).json({ error: "Failed to fetch content bank items" });
-    return;
+    console.error("VAULT LIST ERROR:", err);
+    res.status(500).json({ error: "Failed to fetch bank items" });
   }
 });
 

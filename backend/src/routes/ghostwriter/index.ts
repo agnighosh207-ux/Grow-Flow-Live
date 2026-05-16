@@ -125,6 +125,15 @@ const writeSchema = z.object({
 });
 
 router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const userId = req.userId;
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 25000);
+  
+  req.on('close', () => {
+    clearTimeout(timeoutId);
+    abortController.abort();
+  });
+
   try {
     const validated = writeSchema.parse(req.body);
     const { topic, platform, length, useVoice, language } = validated;
@@ -139,26 +148,18 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
       });
       return;
     }
-  const userId = req.userId;
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 25000);
-  req.on('close', () => {
-    clearTimeout(timeoutId);
-    abortController.abort();
-  });
 
-  if (!topic || typeof topic !== "string") {
-    await refundGenerationCredit(userId, req.user?.planTier);
-    res.status(400).json({ error: "Topic must be a valid string" });
-    return;
-  }
-  if (!platform || typeof platform !== "string") {
-    await refundGenerationCredit(userId, req.user?.planTier);
-    res.status(400).json({ error: "Platform must be a valid string" });
-    return;
-  }
+    if (!topic || typeof topic !== "string") {
+      await refundGenerationCredit(userId, req.user?.planTier);
+      res.status(400).json({ error: "Topic must be a valid string" });
+      return;
+    }
+    if (!platform || typeof platform !== "string") {
+      await refundGenerationCredit(userId, req.user?.planTier);
+      res.status(400).json({ error: "Platform must be a valid string" });
+      return;
+    }
 
-  try {
     let voiceProfile = null;
     if (useVoice) {
       const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
@@ -179,7 +180,7 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
       ],
       userPlan: req.user?.planType || "FREE",
       userId,
-      language, // Fixed: Pass language to engine
+      language,
       maxTokens,
       signal: abortController.signal,
     });

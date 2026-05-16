@@ -8,6 +8,7 @@ import { clerkMiddleware } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 import { authSyncMiddleware } from "./middlewares/authSyncMiddleware";
 import { enforceGenerationLimit } from "./middlewares/generationLimiter";
@@ -207,6 +208,7 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: true, limit: '50kb' }));
+app.use(cookieParser());
 
 // ─── 6. Auth (with timeout protection) ──────────────────────────────────────
 app.use(clerkMiddleware());

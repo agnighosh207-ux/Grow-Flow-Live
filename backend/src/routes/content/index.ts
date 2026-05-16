@@ -22,6 +22,7 @@ import {
   CONTENT_TYPE_INSTRUCTIONS, TONE_INSTRUCTIONS, NICHE_ADAPTATION, 
   SYSTEM_PROMPT_BASE, QUALITY_RULES, PLATFORM_REQUIREMENTS 
 } from "./prompts";
+import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
 
@@ -29,13 +30,32 @@ import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const demoLimiter = rateLimit({ windowMs: 60*1000, limit: 5, keyGenerator: (req: any, res: any) => ipKeyGenerator(req, res) });
 
-router.post("/demo", demoLimiter, async (req, res) => {
+router.post("/demo", demoLimiter, async (req: any, res) => {
   try {
     const { idea } = req.body;
     if (!idea || typeof idea !== "string" || idea.length > 120) {
       res.status(400).json({ error: "Invalid input" });
       return;
     }
+
+    // --- GUEST TRACKING ---
+    const guestId = req.cookies?.gf_guest_id || req.ip || "unknown";
+    const cacheKey = `guest_demo:${guestId}`;
+    let count = 0;
+
+    if (redis) {
+      const cached = await redis.get(cacheKey);
+      count = cached ? parseInt(cached) : 0;
+    }
+
+    if (count >= 2) {
+      res.status(403).json({ 
+        error: "GUEST_LIMIT_REACHED", 
+        message: "You've used your 2 free generations. Please log in to continue." 
+      });
+      return;
+    }
+
     const sanitized = idea.replace(/[`"\\<>]/g, "").trim();
     const result = await generateContent({
       messages: [
@@ -48,6 +68,15 @@ router.post("/demo", demoLimiter, async (req, res) => {
     });
     
     const caption = result.choices[0]?.message?.content || "";
+
+    // Increment count if successful
+    if (caption && redis) {
+      await redis.set(cacheKey, count + 1, "EX", 86400 * 7); // 7 days
+      if (!req.cookies?.gf_guest_id) {
+        res.cookie("gf_guest_id", guestId, { maxAge: 86400 * 7 * 1000, httpOnly: true });
+      }
+    }
+
     res.json({ caption });
   } catch (err) {
     logger.error({ err }, "Demo generation failed");
