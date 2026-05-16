@@ -71,65 +71,68 @@ app.get("/api/health", (_req, res) => {
 app.set("trust proxy", 1);
 app.use(helmet({
   contentSecurityPolicy: {
-    directives: {
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
         "'unsafe-inline'",
-        // Clerk JS CDN (live & dev)
+        "'unsafe-eval'",
+        "blob:", // Required for Clerk/Razorpay workers and dynamic scripts
         "https://clerk.growflowai.space",
         "https://*.clerk.accounts.dev",
+        "https://*.clerk.com",
         "https://cdn.jsdelivr.net",
-        // Razorpay
         "https://checkout.razorpay.com",
         "https://cdn.razorpay.com",
+        "https://*.razorpay.com",
       ],
-      // Clerk creates blob: workers for its background sync
       workerSrc: ["'self'", "blob:"],
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
         "https://fonts.googleapis.com",
+        "https://*.googleapis.com",
       ],
       fontSrc: [
         "'self'",
         "https://fonts.gstatic.com",
+        "https://*.gstatic.com",
         "data:",
       ],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      imgSrc: ["'self'", "data:", "https:", "blob:", "https://*.clerk.com", "https://img.clerk.com"],
       connectSrc: [
         "'self'",
-        // Clerk APIs + avatars
         "https://api.clerk.com",
         "https://clerk.growflowai.space",
         "https://*.clerk.accounts.dev",
+        "https://*.clerk.com",
         "https://img.clerk.com",
-        // Google OAuth & CDN
         "https://accounts.google.com",
         "https://oauth2.googleapis.com",
         "https://*.googleapis.com",
-        // Google Fonts (fetched by service worker)
         "https://fonts.googleapis.com",
         "https://fonts.gstatic.com",
-        // App domains
         "https://growflowai.space",
         "https://www.growflowai.space",
         "https://api.growflowai.space",
         "wss://growflowai.space",
-        // AI providers
         "https://api.groq.com",
+        "https://*.razorpay.com",
       ],
       frameSrc: [
+        "'self'",
         "https://checkout.razorpay.com",
         "https://api.razorpay.com",
+        "https://*.razorpay.com",
         "https://accounts.google.com",
         "https://*.clerk.accounts.dev",
+        "https://*.clerk.com",
       ],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
   },
   crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false, 
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
@@ -343,7 +346,15 @@ if (isProd) {
   
   // SPA catch-all
   app.get(/(.*)/, (req, res, next) => {
+    // 1. Skip API routes
     if (req.path.startsWith("/api/")) return next();
+
+    // 2. CRITICAL: If the request looks like a static asset (has an extension) 
+    // but wasn't caught by express.static, it's a 404.
+    // This prevents MIME type mismatch errors (serving index.html as .css/.js)
+    if (req.path.includes('.') && !req.path.endsWith('.html')) {
+      return res.status(404).send('Not Found');
+    }
     
     // Ensure index.html is NEVER cached so users always get the latest version
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');

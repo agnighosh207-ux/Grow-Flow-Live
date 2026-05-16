@@ -18,8 +18,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first for API calls
-  if (event.request.url.includes('/api/')) {
+  const url = new URL(event.request.url);
+  const isApi = url.pathname.startsWith('/api/');
+  const isPage = STATIC_ASSETS.includes(url.pathname) || !url.pathname.includes('.');
+
+  // 1. API Calls: Network First
+  if (isApi) {
     event.respondWith(
       fetch(event.request).catch(() => 
         new Response(JSON.stringify({ error: "You are offline" }), {
@@ -29,9 +33,32 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  // Cache first for static assets
+
+  // 2. Page Routes (index.html): Network First
+  // This ensures that when we deploy a new version with new hashes, 
+  // the browser fetches the new index.html first.
+  if (isPage) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, cloned));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 3. Static Assets (CSS, JS, Images): Cache First
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(event.request).then(cached => {
+      return cached || fetch(event.request).then(response => {
+        const cloned = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, cloned));
+        return response;
+      });
+    })
   );
 });
 
