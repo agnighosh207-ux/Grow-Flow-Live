@@ -71,6 +71,7 @@ app.get("/api/health", (_req, res) => {
 app.set("trust proxy", 1);
 app.use(helmet({
   contentSecurityPolicy: {
+    directives: {
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",

@@ -17,9 +17,14 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 
 import {
-  Sparkles, RefreshCw, Copy, Zap, Share2, Loader2, Flame, Activity, Check, Download, 
+  Sparkles, RefreshCw, Copy, Zap, Share2, Loader2, Flame, Activity, Check, Download,
   Hash, Wand2, X, ChevronDown, ChevronUp, Crown, Users, Info, Lock, 
-  GitBranch, Trophy, CalendarDays, PenTool, Linkedin
+  GitBranch, Trophy, CalendarDays, PenTool, Linkedin, Lightbulb, 
+  Target, Rocket, Brain, BarChart3, PieChart, Shield, ShieldCheck, 
+  ExternalLink, Zap as ZapIcon, Menu, Plus, Minus, Search, 
+  Filter, Play, Settings, Save, MoreHorizontal, MoreVertical, Edit2, 
+  Eye, EyeOff, Send, Mail, Github, Twitter, Facebook, ArrowLeft,
+  ArrowRight as ArrowRightIcon
 } from "lucide-react";
 import { haptic } from "@/lib/utils";
 import { SiInstagram, SiYoutube } from "react-icons/si";
@@ -1187,6 +1192,17 @@ export default function Generate() {
   const [regeneratingPlatform, setRegeneratingPlatform] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [hookScore, setHookScore] = useState<any>(null);
+  const [isScoringHook, setIsScoringHook] = useState(false);
+  const [viralMode, setViralMode] = useState(false);
+  const [styleMode, setStyleMode] = useState(false);
+  const [batchMode, setBatchMode] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [generationBlockedMsg, setGenerationBlockedMsg] = useState<string>('');
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [npsTrigger, setNpsTrigger] = useState<string | null>(null);
+  const [showNPS, setShowNPS] = useState(false);
+  const [showPostGenUpsell, setShowPostGenUpsell] = useState(false);
   const [ratingTrigger, setRatingTrigger] = useState<string>("gen-3");
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<"limit" | "expired" | "blocked" | "pro_feature">("limit");
