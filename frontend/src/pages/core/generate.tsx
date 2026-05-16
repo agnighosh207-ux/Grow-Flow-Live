@@ -18,8 +18,14 @@ import { ToastAction } from "@/components/ui/toast";
 
 import {
   Sparkles, RefreshCw, Copy, Zap, Share2, Loader2, Flame, Activity, Check, Download, 
-  Hash, Wand2, X, ChevronDown, ChevronUp, Crown, Users, Lock, Info, Trophy, 
-  PenTool, CalendarDays, GitBranch, Lightbulb, Linkedin as LinkedinIcon
+  Hash, Wand2, X, ChevronDown, ChevronUp, Crown, Users, TrendingUp, History, 
+  Trash2, AlertCircle, Globe, Clock, Layers, ArrowRight, Star, Linkedin as LinkedinIcon, 
+  MessageSquare, Instagram, Youtube, FileText, Layout, Lightbulb, 
+  Target, Rocket, Brain, BarChart3, PieChart, Info, Shield, ShieldCheck, 
+  ExternalLink, Zap as ZapIcon, Lock, Menu, Plus, Minus, Search, 
+  Filter, Play, Settings, Save, MoreHorizontal, MoreVertical, Edit2, 
+  Eye, EyeOff, Send, Mail, Github, Twitter, Facebook, ArrowLeft,
+  ArrowRight as ArrowRightIcon, GitBranch, Trophy, CalendarDays, PenTool
 } from "lucide-react";
 import { haptic } from "@/lib/utils";
 import { SiInstagram, SiYoutube } from "react-icons/si";
@@ -138,6 +144,60 @@ function SectionCard({
   );
 }
 
+function ABTestResults({ result }: Readonly<{ result: any }>) {
+  if (!result) return null;
+  const getWinnerConfig = (winner: string) => {
+    if (winner === 'A') return { 
+      bg: 'bg-indigo-950/20 border-indigo-500/30', 
+      iconBg: 'bg-indigo-500/20 text-indigo-400', 
+      label: "Variant A Wins" 
+    };
+    if (winner === 'B') return { 
+      bg: 'bg-[rgba(94,106,210,0.20)] border-[rgba(94,106,210,0.3)]', 
+      iconBg: 'bg-[rgba(94,106,210,0.15)] text-[#8B91E3]', 
+      label: "Variant B Wins" 
+    };
+    return { 
+      bg: 'bg-zinc-900/40 border-white/10', 
+      iconBg: 'bg-zinc-500/20 text-zinc-400', 
+      label: "Statistical Deadlock" 
+    };
+  };
+  const config = getWinnerConfig(result.prediction.winner);
+
+  return (
+    <div className="space-y-12">
+      <div className={`p-10 rounded-[3rem] border shadow-2xl flex flex-col lg:flex-row items-center gap-12 ${config.bg}`}>
+         <div className={`p-8 rounded-[2rem] ${config.iconBg}`}>
+           {result.prediction.winner === 'too_close' ? <GitBranch className="w-16 h-16" /> : <Trophy className="w-16 h-16" />}
+         </div>
+         <div className="flex-1 space-y-4 text-center lg:text-left">
+            <h3 className="text-4xl font-black text-white tracking-tight">
+              {config.label}
+            </h3>
+            <p className="text-lg font-medium text-white/60 leading-relaxed">{result.prediction.reasoning}</p>
+         </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+         <SectionCard icon={Users} title={`Variant A: ${result.versionA.audienceTarget}`} color="bg-indigo-500/10 text-indigo-400">
+            <p className="text-xl font-black text-white leading-tight mb-6 italic">"{result.versionA.hook}"</p>
+            <div className="flex items-center justify-between pt-6 border-t border-white/5">
+               <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Strength</span>
+               <span className="text-sm font-black text-indigo-400">{result.versionA.predictedStrength}</span>
+            </div>
+         </SectionCard>
+         <SectionCard icon={Users} title={`Variant B: ${result.versionB.audienceTarget}`} color="bg-[rgba(94,106,210,0.1)] text-[#8B91E3]">
+            <p className="text-xl font-black text-white leading-tight mb-6 italic">"{result.versionB.hook}"</p>
+            <div className="flex items-center justify-between pt-6 border-t border-white/5">
+               <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Strength</span>
+               <span className="text-sm font-black text-[#8B91E3]">{result.versionB.predictedStrength}</span>
+            </div>
+         </SectionCard>
+      </div>
+    </div>
+  );
+}
+
 function AbDuelView({ idea, niche, tone, onResult, result }: Readonly<{ idea: string; niche: string; tone: string; onResult: (r: any) => void; result: any }>) {
   const [audienceA, setAudienceA] = useState("");
   const [audienceB, setAudienceB] = useState("");
@@ -160,57 +220,12 @@ function AbDuelView({ idea, niche, tone, onResult, result }: Readonly<{ idea: st
   };
 
   if (result) {
-    const getWinnerConfig = (winner: string) => {
-      if (winner === 'A') return { 
-        bg: 'bg-indigo-950/20 border-indigo-500/30', 
-        iconBg: 'bg-indigo-500/20 text-indigo-400', 
-        label: "Variant A Wins" 
-      };
-      if (winner === 'B') return { 
-        bg: 'bg-[rgba(94,106,210,0.20)] border-[rgba(94,106,210,0.3)]', 
-        iconBg: 'bg-[rgba(94,106,210,0.15)] text-[#8B91E3]', 
-        label: "Variant B Wins" 
-      };
-      return { 
-        bg: 'bg-zinc-900/40 border-white/10', 
-        iconBg: 'bg-zinc-500/20 text-zinc-400', 
-        label: "Statistical Deadlock" 
-      };
-    };
-    const config = getWinnerConfig(result.prediction.winner);
-
     return (
-      <div className="space-y-12">
-        <div className={`p-10 rounded-[3rem] border shadow-2xl flex flex-col lg:flex-row items-center gap-12 ${config.bg}`}>
-           <div className={`p-8 rounded-[2rem] ${config.iconBg}`}>
-             {result.prediction.winner === 'too_close' ? <GitBranch className="w-16 h-16" /> : <Trophy className="w-16 h-16" />}
-           </div>
-           <div className="flex-1 space-y-4 text-center lg:text-left">
-              <h3 className="text-4xl font-black text-white tracking-tight">
-                {config.label}
-              </h3>
-              <p className="text-lg font-medium text-white/60 leading-relaxed">{result.prediction.reasoning}</p>
-              <Button variant="ghost" onClick={() => onResult(null)} className="text-white/40 hover:text-white uppercase text-[10px] font-black tracking-widest">
-                New Duel
-              </Button>
-           </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-           <SectionCard icon={Users} title={`Variant A: ${result.versionA.audienceTarget}`} color="bg-indigo-500/10 text-indigo-400">
-              <p className="text-xl font-black text-white leading-tight mb-6 italic">"{result.versionA.hook}"</p>
-              <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                 <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Strength</span>
-                 <span className="text-sm font-black text-indigo-400">{result.versionA.predictedStrength}</span>
-              </div>
-           </SectionCard>
-           <SectionCard icon={Users} title={`Variant B: ${result.versionB.audienceTarget}`} color="bg-[rgba(94,106,210,0.1)] text-[#8B91E3]">
-              <p className="text-xl font-black text-white leading-tight mb-6 italic">"{result.versionB.hook}"</p>
-              <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                 <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Strength</span>
-                 <span className="text-sm font-black text-[#8B91E3]">{result.versionB.predictedStrength}</span>
-              </div>
-           </SectionCard>
-        </div>
+      <div className="space-y-6">
+        <ABTestResults result={result} />
+        <Button variant="ghost" onClick={() => onResult(null)} className="text-white/40 hover:text-white uppercase text-[10px] font-black tracking-widest w-full">
+           New Duel
+        </Button>
       </div>
     );
   }
@@ -224,14 +239,14 @@ function AbDuelView({ idea, niche, tone, onResult, result }: Readonly<{ idea: st
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-3 text-left">
           <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 ml-1">Audience A</Label>
-          <Input placeholder="e.g. Agency owners" value={audienceA} onChange={(e) => setAudienceA(e.target.value)} className="h-14 rounded-2xl bg-black/40 border-white/10" />
+          <Input placeholder="e.g. Agency owners" value={audienceA} onChange={(e) => setAudienceA(e.target.value)} className="h-14 rounded-2xl bg-black/40 border-white/10 text-white" />
         </div>
         <div className="space-y-3 text-left">
           <Label className="text-[10px] font-black uppercase tracking-widest text-[#8B91E3] ml-1">Audience B</Label>
-          <Input placeholder="e.g. Freelance designers" value={audienceB} onChange={(e) => setAudienceB(e.target.value)} className="h-14 rounded-2xl bg-black/40 border-white/10" />
+          <Input placeholder="e.g. Freelance designers" value={audienceB} onChange={(e) => setAudienceB(e.target.value)} className="h-14 rounded-2xl bg-black/40 border-white/10 text-white" />
         </div>
       </div>
-      <Button onClick={handleDuel} disabled={loading || !audienceA || !audienceB} className="h-16 px-12 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl text-lg w-full">
+      <Button onClick={handleDuel} disabled={loading || !audienceA || !audienceB} style={{ background: '#5E6AD2', height: '64px' }} className="px-12 text-white font-black rounded-2xl text-lg w-full transition-all hover:opacity-90">
         {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Run Duel Simulation"}
       </Button>
     </Card>
@@ -258,8 +273,8 @@ function HookIntelligenceView({ content, niche }: { content: any; niche: string 
   };
 
   const getHook = () => {
-    if (content.isBatch) return content.strategy?.coreMessage;
-    return content.content?.instagram?.hook || content.content?.twitter?.hook || content.idea;
+    if (content?.isBatch) return content.strategy?.coreMessage;
+    return content?.content?.instagram?.hook || content?.content?.twitter?.hook || content?.idea;
   };
 
   return (
@@ -380,7 +395,7 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data
     const items = [];
     if (data.instagram) items.push({ platform: "Instagram", content: data.instagram.caption, idea: data.idea });
     if (data.linkedin) items.push({ platform: "LinkedIn", content: data.linkedin.post, idea: data.idea });
-    if (data.twitter && data.twitter.tweets) items.push({ platform: "Twitter", content: data.twitter.tweets.join("\n\n"), idea: data.idea });
+    if (data.twitter?.tweets) items.push({ platform: "Twitter", content: data.twitter.tweets.join("\n\n"), idea: data.idea });
     if (data.youtube) items.push({ platform: "YouTube", content: data.youtube.script, idea: data.idea });
     return items;
   };
@@ -390,7 +405,7 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data
     const headers = ["Schedule Date", "Platform", "Content", "Status"];
     const rows = items.map((item, idx) => {
       const d = new Date(); d.setDate(d.getDate() + idx);
-      return [`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`, item.platform, `"${item.content.replace(/"/g, '""')}"`, "draft"].join(",");
+      return [`${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`, item.platform, `"${item.content.replaceAll('"', '""')}"`, "draft"].join(",");
     });
     const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -403,7 +418,7 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data
     const formatDate = (date: Date) => date.toISOString().replace(/-|:|\.\d+/g, "");
     const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", ...items.map((item, idx) => {
       const d = new Date(); d.setDate(d.getDate() + idx);
-      return `BEGIN:VEVENT\nDTSTART:${formatDate(d)}\nSUMMARY:Post on ${item.platform}\nDESCRIPTION:${item.content.replace(/\n/g, "\\n")}\nEND:VEVENT`;
+      return `BEGIN:VEVENT\nDTSTART:${formatDate(d)}\nSUMMARY:Post on ${item.platform}\nDESCRIPTION:${item.content.replaceAll("\n", "\\n")}\nEND:VEVENT`;
     }), "END:VCALENDAR"].join("\n");
     const blob = new Blob([ics], { type: "text/calendar" });
     const url = URL.createObjectURL(blob);
@@ -578,7 +593,7 @@ interface SectionProps {
   tweetTotal?: number;
 }
 
-function ContentSection({ label, labelColor = "text-[#8B91E3]/60", content, copyLabel, isHashtags, isTweet, tweetIndex, tweetTotal }: SectionProps) {
+function ContentSection({ label, labelColor = "text-[#8B91E3]/60", content, copyLabel, isHashtags, isTweet, tweetIndex, tweetTotal }: Readonly<SectionProps>) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -699,12 +714,11 @@ function buildPlatformText(platform: Platform, content: any): string {
   }
 }
 
-function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }: PlatformCardProps) {
+function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }: Readonly<PlatformCardProps>) {
   const [expanded, setExpanded] = useState(true);
-  const [repurposedText, setRepurposedText] = useState<string | null>(null);
   const [isRepurposing, setIsRepurposing] = useState(false);
+  const [repurposedText, setRepurposedText] = useState<string | null>(null);
   const { toast } = useToast();
-  const { data: sub } = useSubscriptionStatus();
   
   const config = PLATFORM_CONFIG[platform];
   const Icon = config.icon;
@@ -744,7 +758,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
     setIsRepurposing(true);
     setRepurposedText(null);
     try {
-      const token = await (window as any).Clerk?.session?.getToken();
+      const token = await (globalThis as any).Clerk?.session?.getToken();
       const res = await fetch("/api/repurpose", {
         method: "POST",
         headers: { 
@@ -836,7 +850,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                 )}
                 {platform === "linkedin" && (
                   <DropdownMenuItem onClick={handleShareLinkedIn} className="text-xs text-white/70 hover:text-white cursor-pointer focus:bg-white/5 p-3 rounded-xl">
-                    <Linkedin className="w-4 h-4 mr-3 text-blue-400" /> Share on LinkedIn
+                    <LinkedinIcon className="w-4 h-4 mr-3 text-blue-400" /> Share on LinkedIn
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(fullText + "\n\n—\nGenerated with GrowFlow AI"); toast({ title: "Copied with attribution!" }); }} className="text-xs text-emerald-400 hover:text-emerald-300 cursor-pointer focus:bg-emerald-500/10 p-3 rounded-xl">
@@ -1093,26 +1107,85 @@ function buildAllPlatformsText(data: any): string {
   return lines.join("\n");
 }
 
+function handleGenerateError(error: any, retryCount: number, setRetryCount: (v: any) => void, toast: any, mutation: any, lastValues: any) {
+  const isOffline = typeof globalThis !== "undefined" && !globalThis.navigator.onLine;
+  const errorMsg = (error?.message || error?.data?.message || "").toLowerCase();
+  const is5xx = (error?.status ?? 0) >= 500 || error?.status === 429 || errorMsg.includes("503") || errorMsg.includes("ai temporarily unavailable") || errorMsg.includes("network");
+
+  if (is5xx && retryCount < 3) {
+    toast({
+      variant: "destructive",
+      title: "AI Overloaded",
+      description: "The AI is currently experiencing high load. Would you like to retry?",
+      action: (
+        <ToastAction altText="Retry" onClick={() => {
+          if (mutation.isPending) return;
+          setRetryCount((prev: number) => prev + 1);
+          if (lastValues.current) {
+            mutation.mutate(lastValues.current);
+          }
+        }}>
+          <div className="flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry</span>
+          </div>
+        </ToastAction>
+      )
+    });
+    return;
+  }
+
+  if (is5xx && retryCount >= 3) {
+    toast({
+      variant: "destructive",
+      title: "High System Load",
+      description: "AI is experiencing high load. Please try again in a few minutes.",
+    });
+    return;
+  }
+
+  toast({
+    variant: "destructive",
+    title: isOffline ? "No internet connection" : is5xx ? "AI temporarily unavailable" : "Generation failed",
+    description: isOffline
+      ? "Check your connection and try again."
+      : is5xx
+      ? (
+        <div className="space-y-2">
+          <p>Our AI is temporarily overloaded. Please try again in a moment.</p>
+          <p className="text-[10px] text-white/40">
+            Check <a href="https://status.growflowai.space" target="_blank" rel="noreferrer" className="text-[#8B91E3] underline">status.growflowai.space</a> for real-time availability.
+          </p>
+        </div>
+      )
+      : "Something went wrong. Please try again.",
+  });
+}
+
 export default function Generate() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { getToken } = useAuth();
   const { user } = useUser();
-  const rawSearch = typeof globalThis !== "undefined" ? globalThis.location.search : "";
-  const searchParams = new URLSearchParams(rawSearch);
-  
-  const sanitizeValue = (key: string) => {
-    const val = searchParams.get(key);
-    if (!val) return "";
-    return DOMPurify.sanitize(val, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-  };
-  
-  const prefillIdea = sanitizeValue("idea");
-  const rawType = sanitizeValue("contentType");
-  const prefillType = (["Educational", "Story", "Viral"].includes(rawType || "") ? rawType : "Educational") as any;
-  const rawTone = sanitizeValue("tone");
-  const prefillTone = (["Casual", "Professional", "Aggressive"].includes(rawTone || "") ? rawTone : "Professional") as any;
-  const autoGenerate = searchParams.get("auto") === "1";
+  const { prefillIdea, prefillType, prefillTone, autoGenerate } = useMemo(() => {
+    const rawSearch = typeof globalThis !== "undefined" ? globalThis.location.search : "";
+    const searchParams = new URLSearchParams(rawSearch);
+    
+    const sanitizeValue = (key: string) => {
+      const val = searchParams.get(key);
+      if (!val) return "";
+      return DOMPurify.sanitize(val, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    };
+    
+    const pIdea = sanitizeValue("idea");
+    const rType = sanitizeValue("contentType");
+    const pType = (["Educational", "Story", "Viral"].includes(rType) ? rType : "Educational") as any;
+    const rTone = sanitizeValue("tone");
+    const pTone = (["Casual", "Professional", "Aggressive"].includes(rTone) ? rTone : "Professional") as any;
+    const auto = searchParams.get("auto") === "1";
+    
+    return { prefillIdea: pIdea, prefillType: pType, prefillTone: pTone, autoGenerate: auto };
+  }, []);
 
   const [generatedContent, setGeneratedContent] = useState<any>(null);
   const [contentAnalysis, setContentAnalysis] = useState<ContentAnalysis | null>(null);
@@ -1149,7 +1222,7 @@ export default function Generate() {
       contentType: prefillType,
       tone: prefillTone,
       niche: "General",
-      language: typeof globalThis !== "undefined" ? localStorage.getItem("preferred_language") || "English" : "English",
+      language: typeof globalThis !== "undefined" ? localStorage.getItem("preferred_language") ?? "English" : "English",
     }
   });
   
@@ -1185,10 +1258,7 @@ export default function Generate() {
   
   useEffect(() => {
     if (generatedContent && !batchLoading) {
-      const el = document.getElementById("generation-output");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      globalThis.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [generatedContent, batchLoading]);
   const { toast } = useToast();
@@ -1320,10 +1390,7 @@ export default function Generate() {
         
         // Auto-scroll to results
         setTimeout(() => {
-          document.getElementById('generation-output')?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-          });
+          globalThis.scrollTo({ top: 0, behavior: 'smooth' });
         }, 100);
         const currentGenCount = incrementGenCount();
         if (checkShouldShowNPS(currentGenCount)) {
@@ -1394,58 +1461,7 @@ export default function Generate() {
           return;
         }
         setGenerationBlockedMsg('');
-        const isOffline = typeof globalThis !== "undefined" && !globalThis.navigator.onLine;
-        const errorMsg = (error?.message || error?.data?.message || "").toLowerCase();
-        const is5xx = (error?.status ?? 0) >= 500 || error?.status === 429 || errorMsg.includes("503") || errorMsg.includes("ai temporarily unavailable") || errorMsg.includes("network");
-
-        if (is5xx && retryCount < 3) {
-          toast({
-            variant: "destructive",
-            title: "AI Overloaded",
-            description: "The AI is currently experiencing high load. Would you like to retry?",
-            action: (
-              <ToastAction altText="Retry" onClick={() => {
-                if (generateMutation.isPending) return;
-                setRetryCount(prev => prev + 1);
-                if (lastSubmittedValues.current) {
-                  generateMutation.mutate(lastSubmittedValues.current);
-                }
-              }}>
-                <div className="flex items-center gap-1.5">
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Retry</span>
-                </div>
-              </ToastAction>
-            )
-          });
-          return;
-        }
-
-        if (is5xx && retryCount >= 3) {
-          toast({
-            variant: "destructive",
-            title: "High System Load",
-            description: "AI is experiencing high load. Please try again in a few minutes.",
-          });
-          return;
-        }
-
-        toast({
-          variant: "destructive",
-          title: isOffline ? "No internet connection" : is5xx ? "AI temporarily unavailable" : "Generation failed",
-          description: isOffline
-            ? "Check your connection and try again."
-            : is5xx
-            ? (
-              <div className="space-y-2">
-                <p>Our AI is temporarily overloaded. Please try again in a moment.</p>
-                <p className="text-[10px] text-white/40">
-                  Check <a href="https://status.growflowai.space" target="_blank" rel="noreferrer" className="text-[#8B91E3] underline">status.growflowai.space</a> for real-time availability.
-                </p>
-              </div>
-            )
-            : "Something went wrong. Please try again.",
-        });
+        handleGenerateError(error, retryCount, setRetryCount, toast, generateMutation, lastSubmittedValues);
       }
     }
   });
@@ -1591,13 +1607,13 @@ export default function Generate() {
       fetch("/api/settings/preferences", {
         headers: token ? { "Authorization": `Bearer ${token}` } : {},
       }).then(async (r) => {
-        if (!r.ok) throw new Error("Failed to load preferences");
+        if (!r.ok) return;
         const text = await r.text();
-        return text ? JSON.parse(text) : {};
-      }).then(data => {
+        if (!text) return;
+        const data = JSON.parse(text);
         if (data.languagePreference) form.setValue("language", data.languagePreference);
-      }).catch((err) => {
-        console.error("Failed to load language preferences:", err);
+      }).catch(() => {
+        // Silently fail preference loading
       });
     })();
   }, []);
@@ -1628,26 +1644,31 @@ export default function Generate() {
     a.click();
   };
 
-  const handleGenerate = async (values: z.infer<typeof formSchema>) => {
-    if (generateMutation.isPending) return;
-    (async () => {
-      const token = await getToken();
-      fetch("/api/settings/preferences", {
+  const syncLanguagePreference = async (lang: string) => {
+    const token = await getToken();
+    try {
+      await fetch("/api/settings/preferences", {
         method: "PATCH",
         headers: { 
           "Content-Type": "application/json",
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ languagePreference: values.language }),
-      }).catch((err) => {
-        console.error("Failed to save language preference:", err);
-        toast({ 
-          variant: "destructive", 
-          title: "Preference Sync Error", 
-          description: "Your language choice couldn't be saved to your profile." 
-        });
+        body: JSON.stringify({ languagePreference: lang }),
       });
-    })();
+    } catch (err) {
+      console.error("Failed to save language preference:", err);
+      toast({ 
+        variant: "destructive", 
+        title: "Preference Sync Error", 
+        description: "Your language choice couldn't be saved to your profile." 
+      });
+    }
+  };
+
+  const handleGenerate = async (values: z.infer<typeof formSchema>) => {
+    if (generateMutation.isPending) return;
+    
+    await syncLanguagePreference(values.language);
     
     if (values.language !== "English" && isFreeUser) {
       setProFeatureName("Premium Languages");

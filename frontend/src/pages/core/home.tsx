@@ -1,18 +1,16 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, Zap, Globe, Clock, ArrowRight, Star, TrendingUp,
   CalendarDays, BarChart3, Layers, Check, Shield, Lock, Users,
-  Play, Linkedin as LinkedinIcon, Loader2, Copy, ChevronUp,
-  RefreshCw, ChevronRight, X, Languages
+  Play, Linkedin, Loader2, Copy, ChevronUp,
+  RefreshCw, ChevronRight, X, Languages, Brain
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/layout/Logo";
 import { SiInstagram, SiYoutube, SiX } from "react-icons/si";
-import { MagneticButton } from "@/components/shared/MagneticButton";
 import { Hover3DCard } from "@/components/shared/Hover3DCard";
-import { Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const TAGLINES = [
@@ -88,7 +86,7 @@ const PLATFORMS = [
   },
   {
     name: "LinkedIn",
-    icon: LinkedinIcon,
+    icon: Linkedin,
     color: "text-sky-400",
     border: "border-sky-500/20",
     bg: "from-sky-600/10 to-sky-600/0",
@@ -176,12 +174,16 @@ function Leaderboard() {
           {creators.map((c, i) => {
             const rank = i + 1;
             const isTop3 = rank <= 3;
-            const rankColor = rank === 1 ? "text-yellow-400" : rank === 2 ? "text-slate-300" : rank === 3 ? "text-orange-400" : "text-white/20";
-            const planBadge = c.planTier === "INFINITY" ? "👑" : c.planTier === "CREATOR" ? "⚡" : "🌱";
             
+            const rankColors: Record<number, string> = { 1: "text-yellow-400", 2: "text-slate-300", 3: "text-orange-400" };
+            const rankColor = rankColors[rank] || "text-white/20";
+            
+            const planBadges: Record<string, string> = { INFINITY: "👑", CREATOR: "⚡" };
+            const planBadge = planBadges[c.planTier] || "🌱";
+
             return (
               <motion.div
-                key={i}
+                key={c.id || c.name || i}
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -229,7 +231,6 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const [taglineIdx, setTaglineIdx] = useState(0);
   const [activePlatform, setActivePlatform] = useState(0);
   const [totalGenerations, setTotalGenerations] = useState(0);
   const [testimonials, setTestimonials] = useState(TESTIMONIALS);
@@ -290,13 +291,6 @@ export default function Home() {
     fetchStats();
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTaglineIdx(i => (i + 1) % TAGLINES.length);
-    }, 2800);
-    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -476,11 +470,15 @@ export default function Home() {
                   const Icon = platform.icon;
                   const isActive = activePlatform === i;
                   return (
-                    <div key={platform.name} onClick={() => setActivePlatform(i)} className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all duration-300 shrink-0 ${isActive ? "" : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5"}`}
+                    <button 
+                      key={platform.name} 
+                      onClick={() => setActivePlatform(i)} 
+                      type="button"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all duration-300 shrink-0 ${isActive ? "" : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5"}`}
                       style={isActive ? { background: "rgba(94,106,210,0.12)", borderColor: "rgba(94,106,210,0.3)", color: "#8B91E3" } : undefined}>
                       <Icon className="w-3.5 h-3.5" />
                       {platform.name}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -651,7 +649,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(94,106,210,0.1)] border border-[rgba(94,106,210,0.25)] mb-4 text-xs font-semibold text-[#8B91E3] uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#8B91E3" }} />
+              <span className="w-2 h-2 rounded-full animate-pulse mr-0.5" style={{ background: "#8B91E3" }} />{" "}
               Try it live — no signup needed
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">See it work in real time</h2>
@@ -693,19 +691,26 @@ export default function Home() {
             {/* Output area */}
             <div className="p-4 md:p-6 relative min-h-[160px]">
               {guestLimitReached && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 bg-[rgba(10,5,30,0.95)] backdrop-blur-sm animate-fade-in">
-                  <div className="w-16 h-16 rounded-full bg-[rgba(94,106,210,0.1)] border border-[rgba(94,106,210,0.2)] flex items-center justify-center mb-4">
-                    <Lock className="w-8 h-8 text-[#8B91E3]" />
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-8 bg-[rgba(10,5,30,0.96)] backdrop-blur-md animate-fade-in">
+                  <div className="w-16 h-16 rounded-3xl bg-[rgba(94,106,210,0.1)] border border-[rgba(94,106,210,0.2)] flex items-center justify-center mb-5 rotate-3 hover:rotate-0 transition-transform">
+                    <Sparkles className="w-8 h-8 text-[#8B91E3]" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Guest limit reached</h3>
-                  <p className="text-white/40 text-sm mb-6 max-w-[280px]">
-                    You've reached the free guest generation limit. Sign up now to get 50+ monthly credits and unlock all platforms.
+                  <h3 className="text-2xl font-bold text-white mb-3">Experience the Full Power</h3>
+                  <p className="text-white/50 text-sm mb-8 max-w-[340px] leading-relaxed">
+                    You've seen a glimpse of what's possible. Sign up to unlock <span className="text-[#8B91E3] font-semibold">18+ languages</span>, deep strategy engines, and join thousands of creators scaling their growth.
                   </p>
-                  <Link href="/sign-up">
-                    <button className="btn-primary px-8 h-12 rounded-xl text-sm font-bold">
-                      Get Started Free <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </Link>
+                  <div className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-[320px]">
+                    <Link href="/sign-up" className="w-full">
+                      <button className="btn-primary w-full h-12 rounded-xl text-sm font-bold shadow-lg shadow-[#5E6AD2]/20">
+                        Get Started Free <ArrowRight className="w-4 h-4 ml-1" />
+                      </button>
+                    </Link>
+                    <Link href="/sign-in" className="w-full">
+                      <button className="w-full h-12 rounded-xl text-sm font-semibold text-white/60 hover:text-white hover:bg-white/5 transition-all border border-white/5">
+                        Already have an account?
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               )}
               {!demoResult && !demoLoading && (
@@ -836,7 +841,7 @@ export default function Home() {
                          {label === "Deep Performance Intelligence" && (
                             <div className="w-full relative h-28 flex items-end justify-between px-6 sm:px-12 gap-1.5 sm:gap-3 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-4">
                                {[40, 25, 60, 45, 80, 55, 95, 70, 100, 85].map((h, j) => (
-                                 <div key={j} className="w-full rounded-t-sm bg-gradient-to-t from-[#5E6AD2]/40 to-[#5E6AD2]/90 relative group-hover:scale-y-[1.15] transition-transform origin-bottom duration-500" style={{ height: `${h}%`, transitionDelay: `${j * 40}ms` }}>
+                                 <div key={`chart-bar-${j}`} className="w-full rounded-t-sm bg-gradient-to-t from-[#5E6AD2]/40 to-[#5E6AD2]/90 relative group-hover:scale-y-[1.15] transition-transform origin-bottom duration-500" style={{ height: `${h}%`, transitionDelay: `${j * 40}ms` }}>
                                     <div className="absolute -top-1 left-0 right-0 h-1 bg-white opacity-90 shadow-[0_0_10px_rgba(94,106,210,0.8)]" />
                                  </div>
                                ))}
@@ -846,7 +851,7 @@ export default function Home() {
                          {label === "Omni-Channel Calendar" && (
                             <div className="grid grid-cols-7 gap-2 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-2">
                                {Array.from({length: 21}).map((_, j) => (
-                                  <div key={j} className={`w-5 h-5 sm:w-7 sm:h-7 rounded-[4px] ${[2, 5, 8, 12, 17, 19].includes(j) ? 'bg-[#8B91E3]/80 shadow-[0_0_12px_rgba(167,139,250,0.6)] animate-pulse' : 'bg-white/5 border border-white/5'}`} />
+                                  <button key={`cal-item-${j}`} className={`w-5 h-5 sm:w-7 sm:h-7 rounded-[4px] ${[2, 5, 8, 12, 17, 19].includes(j) ? 'bg-[#8B91E3]/80 shadow-[0_0_12px_rgba(167,139,250,0.6)] animate-pulse' : 'bg-white/5 border border-white/5'}`} />
                                ))}
                             </div>
                          )}
@@ -995,8 +1000,8 @@ export default function Home() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-white/50 mb-1.5 block">Your Rating</label>
-                  <div className="flex gap-1">
+                  <label htmlFor="review-rating" className="text-xs text-white/50 mb-1.5 block">Your Rating</label>
+                  <div id="review-rating" className="flex gap-1">
                     {[1,2,3,4,5].map(star => (
                       <Star 
                         key={star} 
@@ -1012,8 +1017,9 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/50 mb-1.5 block">Your Name</label>
+                  <label htmlFor="review-name" className="text-xs text-white/50 mb-1.5 block">Your Name</label>
                   <Input 
+                    id="review-name"
                     value={newReview.name} 
                     onChange={e => setNewReview({ ...newReview, name: e.target.value })}
                     placeholder="e.g. Alex M."
@@ -1022,8 +1028,9 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/50 mb-1.5 block">Role & Audience (Optional)</label>
+                  <label htmlFor="review-role" className="text-xs text-white/50 mb-1.5 block">Role & Audience (Optional)</label>
                   <Input 
+                    id="review-role"
                     value={newReview.role} 
                     onChange={e => setNewReview({ ...newReview, role: e.target.value })}
                     placeholder="e.g. Creator · 10k followers"
@@ -1032,8 +1039,9 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-white/50 mb-1.5 block">Your Feedback</label>
+                  <label htmlFor="review-text" className="text-xs text-white/50 mb-1.5 block">Your Feedback</label>
                   <Textarea 
+                    id="review-text"
                     value={newReview.text} 
                     onChange={e => setNewReview({ ...newReview, text: e.target.value })}
                     placeholder="What do you love? What could be better?"
@@ -1182,7 +1190,7 @@ export default function Home() {
                   { Icon: SiInstagram, label: "Instagram", color: "text-pink-400" },
                   { Icon: SiYoutube, label: "YouTube Shorts", color: "text-red-400" },
                   { Icon: SiX, label: "Twitter Thread", color: "text-blue-400" },
-                  { Icon: LinkedinIcon, label: "LinkedIn", color: "text-sky-400" },
+                  { Icon: Linkedin, label: "LinkedIn", color: "text-sky-400" },
                 ].map(({ Icon, label, color }) => (
                   <span key={label} className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-white/8 bg-white/[0.03] ${color}`}>
                     <Icon className="w-3 h-3" /> {label}

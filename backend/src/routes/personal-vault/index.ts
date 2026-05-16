@@ -68,9 +68,10 @@ router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
     if (platform) conditions.push(eq(contentGenerationsTable.platform, String(platform)));
     
     if (search) {
+      const searchPattern = `%${search}%`;
       const searchCondition = or(
-        ilike(contentGenerationsTable.idea, `%${search}%`),
-        sql`${contentGenerationsTable.content}::text ILIKE ${`%${search}%`}`
+        ilike(contentGenerationsTable.idea, searchPattern),
+        sql`${contentGenerationsTable.content}::text ILIKE ${searchPattern}`
       );
       if (searchCondition) conditions.push(searchCondition);
     }
