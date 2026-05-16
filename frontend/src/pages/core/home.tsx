@@ -32,9 +32,9 @@ const STEPS = [
   {
     num: "01",
     icon: Sparkles,
-    color: "text-violet-400",
-    bg: "from-violet-600/15 to-violet-600/0",
-    border: "border-violet-500/20",
+    color: "text-[#8B91E3]",
+    bg: "from-[#5E6AD2]/15 to-[#0A0A0F]/0",
+    border: "border-[rgba(94,106,210,0.2)]",
     title: "Drop your idea",
     desc: "Type anything — a topic, a feeling, a trend. Even a single sentence is enough to get started.",
   },
@@ -122,7 +122,7 @@ const TESTIMONIALS = [
     name: "Ananya K.",
     role: "@ananyacreates · 45k subscribers",
     avatar: "AK",
-    avatarColor: "from-blue-500 to-cyan-600",
+    avatarColor: "from-blue-500 to-[#4A52B8]-600",
     text: "The YouTube Shorts scripts are a game changer. I just drop my video idea and it gives me a punchy script with visual cues. Highly recommend for video creators.",
     stars: 5,
     metric: "2x video output",
@@ -131,18 +131,18 @@ const TESTIMONIALS = [
 ];
 
 const FEATURES = [
-  { icon: Globe, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Multi-Platform Native", desc: "No generic outputs. Everything is mapped to the exact algorithmic expectations of Twitter, LinkedIn, Instagram, and YouTube. Context is king.", span: "md:col-span-2 md:row-span-2" },
-  { icon: Zap, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Viral Hook Injector", desc: "Instantly halt the feed scroll with psychologically-mapped hooks tested against the highest performing content vectors.", span: "md:col-span-1 md:row-span-1" },
-  { icon: Clock, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Hyper-Speed Pipeline", desc: "Generate 30 days of interconnected, native content in literal seconds. Time is your most valuable asset.", span: "md:col-span-1 md:row-span-1" },
-  { icon: Layers, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Dynamic Style Modes", desc: "Shift tone algorithmically. Go from aggressive execution to deep, authoritative storytelling with one dimensional toggle.", pro: true, span: "md:col-span-1 md:row-span-1" },
-  { icon: CalendarDays, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Omni-Channel Calendar", desc: "Deploy your entire generated content matrix across all platforms from a single, unified view.", pro: true, span: "md:col-span-2 md:row-span-1" },
-  { icon: BarChart3, color: "text-[#a78bfa]", bg: "from-[#7c3aed]/20", label: "Deep Performance Intelligence", desc: "Analyze engagement vectors, content decay rates, and programmatic algorithmic growth patterns over time.", pro: true, span: "md:col-span-3 md:row-span-1" },
+  { icon: Globe, color: "text-[#8B91E3]", bg: "from-[#5E6AD2]/20", label: "Multi-Platform Native", desc: "No generic outputs. Everything is mapped to the exact algorithmic expectations of Twitter, LinkedIn, Instagram, and YouTube. Context is king.", span: "md:col-span-2 md:row-span-2" },
+  { icon: Zap, color: "text-[#8B91E3]", bg: "from-[#5E6AD2]/20", label: "Viral Hook Injector", desc: "Instantly halt the feed scroll with psychologically-mapped hooks tested against the highest performing content vectors.", span: "md:col-span-1 md:row-span-1" },
+  { icon: Clock, color: "text-[#8B91E3]", bg: "from-[#5E6AD2]/20", label: "Hyper-Speed Pipeline", desc: "Generate 30 days of interconnected, native content in literal seconds. Time is your most valuable asset.", span: "md:col-span-1 md:row-span-1" },
+  { icon: Layers, color: "text-[#8B91E3]", bg: "from-[#5E6AD2]/20", label: "Dynamic Style Modes", desc: "Shift tone algorithmically. Go from aggressive execution to deep, authoritative storytelling with one dimensional toggle.", pro: true, span: "md:col-span-1 md:row-span-1" },
+  { icon: CalendarDays, color: "text-[#8B91E3]", bg: "from-[#5E6AD2]/20", label: "Omni-Channel Calendar", desc: "Deploy your entire generated content matrix across all platforms from a single, unified view.", pro: true, span: "md:col-span-2 md:row-span-1" },
+  { icon: BarChart3, color: "text-[#8B91E3]", bg: "from-[#5E6AD2]/20", label: "Deep Performance Intelligence", desc: "Analyze engagement vectors, content decay rates, and programmatic algorithmic growth patterns over time.", pro: true, span: "md:col-span-3 md:row-span-1" },
 ];
 
 const TRUST = [
   { icon: Shield, label: "Secure Payments", desc: "Powered by Razorpay", color: "text-emerald-400" },
-  { icon: Lock, label: "Data Encrypted", desc: "End-to-end SSL/TLS", color: "text-violet-400" },
-  { icon: Users, label: "2,400+ Creators", desc: "And growing daily", color: "text-violet-400" },
+  { icon: Lock, label: "Data Encrypted", desc: "End-to-end SSL/TLS", color: "text-[#8B91E3]" },
+  { icon: Users, label: "2,400+ Creators", desc: "And growing daily", color: "text-[#8B91E3]" },
 ];
 
 import { Input } from "@/components/ui/input";
@@ -209,7 +209,7 @@ function Leaderboard() {
         
         <div className="mt-12 text-center">
           <Link href="/sign-up">
-            <div className="inline-flex items-center gap-2 text-violet-400 font-bold hover:text-violet-300 transition-colors cursor-pointer group">
+            <div className="inline-flex items-center gap-2 text-[#8B91E3] font-bold hover:text-[#8B91E3] transition-colors cursor-pointer group">
               {"Join them and start growing"} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </div>
           </Link>
@@ -294,7 +294,7 @@ export default function Home() {
       animate={{ opacity: 1, y: 0 }} 
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="min-h-screen bg-[var(--bg)] text-foreground overflow-x-hidden selection:bg-violet-500/30 font-sans"
+      className="min-h-screen bg-[var(--bg)] text-foreground overflow-x-hidden selection:bg-[rgba(94,106,210,0.30)] font-sans"
     >
       <AnimatePresence>
         {showStickyNav && (
@@ -321,11 +321,11 @@ export default function Home() {
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ transform: "translateZ(0)" }}>
         <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(109,90,255,0.10) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(94,106,210,0.1) 0%, transparent 70%)' }} />
         <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(109,90,255,0.05) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(94,106,210,0.06) 0%, transparent 70%)' }} />
         <div className="absolute top-[30%] right-[-5%] w-[400px] h-[400px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(109,90,255,0.06) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(94,106,210,0.06) 0%, transparent 70%)' }} />
         <div className="absolute inset-0 opacity-[0.02]"
           style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
       </div>
@@ -351,14 +351,16 @@ export default function Home() {
       </nav>
 
       <main className="relative z-10 flex flex-col items-center justify-center px-4 pt-16 pb-8 md:pt-28 md:pb-16 text-center max-w-4xl mx-auto">
+        <div className="absolute top-0 inset-x-0 h-px"
+          style={{ background: "linear-gradient(90deg, transparent, rgba(94,106,210,0.4), transparent)" }} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full border text-sm"
-          style={{ background: 'rgba(124,58,237,0.1)', borderColor: 'rgba(124,58,237,0.2)', color: '#a78bfa' }}
+          style={{ background: 'rgba(94,106,210,0.1)', borderColor: 'rgba(94,106,210,0.2)', color: '#8B91E3' }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#8B91E3" }} />
           AI-powered · Built for Indian creators · 18+ languages
           <ChevronRight className="w-3.5 h-3.5 opacity-60" />
         </motion.div>
@@ -373,7 +375,7 @@ export default function Home() {
           Create viral content
           <br />
           <span style={{
-            background: 'linear-gradient(135deg, #9b8aff 0%, #6d5aff 60%, #7c6aff 100%)',
+            background: 'linear-gradient(135deg, #8B91E3 0%, #5E6AD2 50%, #4A52B8 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -400,7 +402,7 @@ export default function Home() {
           className="flex flex-col sm:flex-row gap-3 justify-center mb-12"
         >
           <Link href="/sign-up">
-            <button className="btn-primary h-12 px-8 text-base rounded-xl" style={{ boxShadow: '0 0 30px rgba(124,58,237,0.3)' }}>
+            <button className="btn-primary h-12 px-8 text-base rounded-xl" style={{ boxShadow: '0 0 30px rgba(94,106,210,0.3)' }}>
               Start for free
               <ArrowRight className="w-4 h-4" />
             </button>
@@ -419,11 +421,11 @@ export default function Home() {
           className="flex flex-wrap items-center justify-center gap-4 text-xs"
           style={{ color: '#52525b' }}
         >
-          <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-violet-400" /> 7-day free trial</span>
+          <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-[#8B91E3]" /> 7-day free trial</span>
           <span className="w-1 h-1 rounded-full bg-zinc-700" />
-          <span className="flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-violet-400" /> Cancel anytime</span>
+          <span className="flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-[#8B91E3]" /> Cancel anytime</span>
           <span className="w-1 h-1 rounded-full bg-zinc-700" />
-          <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-violet-400" /> No credit card required</span>
+          <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-[#8B91E3]" /> No credit card required</span>
         </motion.div>
 
         <motion.div
@@ -455,7 +457,8 @@ export default function Home() {
                   const Icon = platform.icon;
                   const isActive = activePlatform === i;
                   return (
-                    <div key={platform.name} onClick={() => setActivePlatform(i)} className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all duration-300 shrink-0 ${isActive ? "bg-violet-500/10 border-violet-500/30 text-violet-300" : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5"}`}>
+                    <div key={platform.name} onClick={() => setActivePlatform(i)} className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer border transition-all duration-300 shrink-0 ${isActive ? "" : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5"}`}
+                      style={isActive ? { background: "rgba(94,106,210,0.12)", borderColor: "rgba(94,106,210,0.3)", color: "#8B91E3" } : undefined}>
                       <Icon className="w-3.5 h-3.5" />
                       {platform.name}
                     </div>
@@ -473,7 +476,7 @@ export default function Home() {
                   className="relative rounded-xl border p-5 sm:p-6 overflow-hidden min-h-[160px] sm:min-h-[180px] flex flex-col justify-center"
                   style={{ background: '#0e0e14', borderColor: 'rgba(255,255,255,0.06)' }}
                 >
-                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-violet-400">
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-[#8B91E3]">
                     <Zap className="w-3.5 h-3.5 fill-current" /> Generated {PLATFORMS[activePlatform].name} Drop
                   </div>
                   <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap font-medium">
@@ -486,7 +489,7 @@ export default function Home() {
           
           {/* Reflection */}
           <div className="absolute -bottom-16 inset-x-8 h-16 rounded-2xl blur-2xl opacity-30"
-            style={{ background: 'linear-gradient(180deg, rgba(124,58,237,0.3) 0%, transparent 100%)' }} />
+            style={{ background: 'linear-gradient(180deg, rgba(94,106,210,0.3) 0%, transparent 100%)' }} />
         </motion.div>
       </main>
 
@@ -509,7 +512,7 @@ export default function Home() {
               className="text-center"
             >
               <div className="text-3xl md:text-4xl font-bold mb-1" style={{ 
-                background: 'linear-gradient(135deg, #a78bfa, #7c3aed)', 
+                background: 'linear-gradient(135deg, #8B91E3, #5E6AD2)', 
                 WebkitBackgroundClip: 'text', 
                 WebkitTextFillColor: 'transparent' 
               }}>
@@ -552,7 +555,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
-              <Play className="w-3 h-3 text-violet-400 fill-violet-400" /> How it works
+              <Play className="w-3 h-3 text-[#8B91E3] fill-[#8B91E3]" /> How it works
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">From idea to content in 3 steps</h2>
             <p className="text-white/40 text-base max-w-md mx-auto">No learning curve. No complex settings. Just type and create.</p>
@@ -579,7 +582,7 @@ export default function Home() {
                 </Hover3DCard>
                 {i < STEPS.length - 1 && (
                   <div className="flex justify-center w-full py-2">
-                    <div className="w-px h-6 bg-gradient-to-b from-violet-500/40 to-transparent" />
+                    <div className="w-px h-6 bg-gradient-to-b from-[#5E6AD2]/40 to-transparent" />
                   </div>
                 )}
               </div>
@@ -587,7 +590,7 @@ export default function Home() {
           </div>
 
           <div className="hidden md:grid grid-cols-3 gap-6 relative">
-            <div className="hidden md:block absolute top-14 left-[33%] right-[33%] h-px bg-gradient-to-r from-violet-500/30 via-indigo-500/50 to-pink-500/30" />
+            <div className="hidden md:block absolute top-14 left-[33%] right-[33%] h-px bg-gradient-to-r from-[#5E6AD2]/30 via-indigo-500/50 to-pink-500/30" />
             {STEPS.map((step, i) => {
               const Icon = step.icon;
               return (
@@ -624,12 +627,12 @@ export default function Home() {
 
       {/* ─── LIVE DEMO SECTION ─────────────────────────────────── */}
       <section className="relative z-10 py-12 md:py-20 px-4 border-y border-white/[0.04]"
-        style={{ background: "rgba(124,58,237,0.015)" }}
+        style={{ background: "rgba(94,106,210,0.015)" }}
       >
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/25 mb-4 text-xs font-semibold text-violet-300 uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(94,106,210,0.1)] border border-[rgba(94,106,210,0.25)] mb-4 text-xs font-semibold text-[#8B91E3] uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#8B91E3" }} />
               Try it live — no signup needed
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">See it work in real time</h2>
@@ -649,12 +652,18 @@ export default function Home() {
                   onKeyDown={e => e.key === 'Enter' && !demoLoading && demoIdea.trim() && handleDemoGenerate()}
                   placeholder="e.g. Why I quit my 9-5 to become a creator..."
                   maxLength={120}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none transition-all"
+                  style={{ outline: "none" }}
+                  onFocus={e => e.currentTarget.style.borderColor = "rgba(94,106,210,0.5)"}
+                  onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"}
                 />
                 <button
                   onClick={handleDemoGenerate}
                   disabled={demoLoading || !demoIdea.trim()}
-                  className="bg-violet-500 hover:bg-violet-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-5 py-3 rounded-xl text-sm transition-all flex items-center gap-2 flex-shrink-0"
+                  className="disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-5 py-3 rounded-xl text-sm transition-all flex items-center gap-2 flex-shrink-0"
+                  style={{ background: "#5E6AD2" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#8B91E3"}
+                  onMouseLeave={e => e.currentTarget.style.background = "#5E6AD2"}
                 >
                   {demoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                   <span className="hidden sm:inline">{demoLoading ? "Generating..." : "Generate"}</span>
@@ -666,8 +675,8 @@ export default function Home() {
             <div className="p-4 md:p-6">
               {!demoResult && !demoLoading && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-3">
-                    <Sparkles className="w-5 h-5 text-violet-400" />
+                  <div className="w-12 h-12 rounded-2xl bg-[rgba(94,106,210,0.1)] border border-[rgba(94,106,210,0.2)] flex items-center justify-center mb-3">
+                    <Sparkles className="w-5 h-5 text-[#8B91E3]" />
                   </div>
                   <p className="text-white/30 text-sm">Your generated content will appear here</p>
                   <div className="flex gap-2 mt-4 flex-wrap justify-center">
@@ -691,7 +700,7 @@ export default function Home() {
               {demoResult && !demoLoading && (
                 <div className="space-y-1">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-bold text-violet-400 uppercase tracking-widest">Instagram Caption</span>
+                    <span className="text-[10px] font-bold text-[#8B91E3] uppercase tracking-widest">Instagram Caption</span>
                     <button onClick={() => { navigator.clipboard.writeText(demoResult); toast({ title: "Copied!" }); }}
                       className="text-[10px] text-white/30 hover:text-white/60 flex items-center gap-1 transition-colors">
                       <Copy className="w-3 h-3" /> Copy
@@ -701,7 +710,7 @@ export default function Home() {
                   <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
                     <p className="text-xs text-white/25">Want all platforms + hooks + strategy?</p>
                     <Link href="/sign-up">
-                      <button className="text-xs font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors">
+                      <button className="text-xs font-bold text-[#8B91E3] hover:text-[#8B91E3] flex items-center gap-1 transition-colors">
                         Get full access free <ArrowRight className="w-3 h-3" />
                       </button>
                     </Link>
@@ -728,7 +737,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-7 md:mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
-              <Zap className="w-3 h-3 text-violet-400 fill-violet-400" /> What you get
+              <Zap className="w-3 h-3 text-[#8B91E3] fill-[#8B91E3]" /> What you get
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Everything you need to grow</h2>
             <p className="text-white/40 text-base max-w-md mx-auto">Tools built specifically for content creators who want to post more and stress less.</p>
@@ -746,7 +755,7 @@ export default function Home() {
               >
                 <Hover3DCard className="h-full">
                   <div
-                    className={`hyper-hover-card relative rounded-[28px] border border-[#7c3aed]/20 p-8 sm:p-10 group overflow-hidden glass-panel shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-500 bg-[#050B0D]/90 isolate h-full`}
+                    className={`hyper-hover-card relative rounded-[28px] border border-[rgba(94,106,210,0.2)]/20 p-8 sm:p-10 group overflow-hidden glass-panel shadow-[0_10px_35px_rgba(0,0,0,0.5)] transition-all duration-500 bg-[#050B0D]/90 isolate h-full`}
                   >
                     {/* Advanced Light Leak Effects */}
                     <div className={`absolute top-0 left-0 w-[150%] h-[150%] bg-[radial-gradient(ellipse_at_top_left,rgba(167,139,250,0.08)_0%,transparent_50%)] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-1000 -z-10`} />
@@ -755,14 +764,14 @@ export default function Home() {
                     <div className="relative z-10 flex flex-col h-full">
                       <div className="flex items-start justify-between mb-6">
                         {/* Exquisite Icon Plaque */}
-                        <div className="relative w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#101C20] to-[#0A1114] border border-[#7c3aed]/30 flex items-center justify-center shadow-[inset_0_0_20px_rgba(167,139,250,0.1),0_0_20px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-700 ease-out">
-                          <div className="absolute inset-0 rounded-[20px] bg-[#7c3aed]/10 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <Icon className={`w-7 h-7 ${color} drop-shadow-[0_0_12px_rgba(167,139,250,0.6)] relative z-10`} />
+                        <div className="relative w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#101C20] to-[#0A1114] border border-[rgba(94,106,210,0.2)]/30 flex items-center justify-center shadow-[inset_0_0_20px_rgba(94,106,210,0.1),0_0_20px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-700 ease-out">
+                          <div className="absolute inset-0 rounded-[20px] bg-[#5E6AD2]/10 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          <Icon className={`w-7 h-7 ${color} drop-shadow-[0_0_12px_rgba(94,106,210,0.6)] relative z-10`} />
                         </div>
                         {/* Glassmorphic PRO Badge */}
                         {pro && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] text-[#7c3aed] bg-[#7c3aed]/[0.03] border border-[#7c3aed]/30 shadow-[0_0_15px_rgba(167,139,250,0.15)] backdrop-blur-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#7c3aed] animate-pulse shadow-[0_0_5px_#7c3aed]" />
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] text-[#8B91E3] bg-[#5E6AD2]/[0.03] border border-[rgba(94,106,210,0.2)]/30 shadow-[0_0_15px_rgba(94,106,210,0.15)] backdrop-blur-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#5E6AD2] animate-pulse shadow-[0_0_5px_rgba(94,106,210,0.8)]" />
                             PRO Access
                           </span>
                         )}
@@ -773,9 +782,9 @@ export default function Home() {
                          {label === "Multi-Platform Native" && (
                             <div className="flex gap-4 opacity-40 group-hover:opacity-100 transition-opacity duration-700 scale-90 sm:scale-100">
                                <div className="flex flex-col gap-2 w-16 sm:w-20">
-                                  <div className="w-full h-2 rounded-full bg-[#7c3aed]/40 shadow-[0_0_8px_#7c3aed]" />
-                                  <div className="w-3/4 h-2 rounded-full bg-[#7c3aed]/20" />
-                                  <div className="w-full h-28 rounded-lg bg-gradient-to-b from-[#7c3aed]/30 to-transparent mt-2 border-t border-[#7c3aed]/50" />
+                                  <div className="w-full h-2 rounded-full bg-[#5E6AD2]/40 shadow-[0_0_8px_rgba(94,106,210,0.8)]" />
+                                  <div className="w-3/4 h-2 rounded-full bg-[#5E6AD2]/20" />
+                                  <div className="w-full h-28 rounded-lg bg-gradient-to-b from-[#5E6AD2]/30 to-transparent mt-2 border-t border-[rgba(94,106,210,0.2)]/50" />
                                </div>
                                <div className="flex flex-col gap-2 w-16 sm:w-20 translate-y-6">
                                   <div className="w-full h-2 rounded-full bg-pink-500/40 shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
@@ -792,25 +801,25 @@ export default function Home() {
                          {label === "Deep Performance Intelligence" && (
                             <div className="w-full relative h-28 flex items-end justify-between px-6 sm:px-12 gap-1.5 sm:gap-3 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-4">
                                {[40, 25, 60, 45, 80, 55, 95, 70, 100, 85].map((h, j) => (
-                                 <div key={j} className="w-full rounded-t-sm bg-gradient-to-t from-[#7c3aed]/40 to-[#7c3aed]/90 relative group-hover:scale-y-[1.15] transition-transform origin-bottom duration-500" style={{ height: `${h}%`, transitionDelay: `${j * 40}ms` }}>
-                                    <div className="absolute -top-1 left-0 right-0 h-1 bg-white opacity-90 shadow-[0_0_10px_#7c3aed]" />
+                                 <div key={j} className="w-full rounded-t-sm bg-gradient-to-t from-[#5E6AD2]/40 to-[#5E6AD2]/90 relative group-hover:scale-y-[1.15] transition-transform origin-bottom duration-500" style={{ height: `${h}%`, transitionDelay: `${j * 40}ms` }}>
+                                    <div className="absolute -top-1 left-0 right-0 h-1 bg-white opacity-90 shadow-[0_0_10px_rgba(94,106,210,0.8)]" />
                                  </div>
                                ))}
-                               <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7c3aed]/60 to-transparent shadow-[0_0_5px_#7c3aed]" />
+                               <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#5E6AD2]/60 to-transparent shadow-[0_0_5px_rgba(94,106,210,0.8)]" />
                             </div>
                          )}
                          {label === "Omni-Channel Calendar" && (
                             <div className="grid grid-cols-7 gap-2 opacity-50 group-hover:opacity-100 transition-opacity duration-700 mt-2">
                                {Array.from({length: 21}).map((_, j) => (
-                                  <div key={j} className={`w-5 h-5 sm:w-7 sm:h-7 rounded-[4px] ${[2, 5, 8, 12, 17, 19].includes(j) ? 'bg-[#a78bfa]/80 shadow-[0_0_12px_rgba(167,139,250,0.6)] animate-pulse' : 'bg-white/5 border border-white/5'}`} />
+                                  <div key={j} className={`w-5 h-5 sm:w-7 sm:h-7 rounded-[4px] ${[2, 5, 8, 12, 17, 19].includes(j) ? 'bg-[#8B91E3]/80 shadow-[0_0_12px_rgba(167,139,250,0.6)] animate-pulse' : 'bg-white/5 border border-white/5'}`} />
                                ))}
                             </div>
                          )}
                          {label === "Viral Hook Injector" && (
                             <div className="w-full flex flex-col gap-3 opacity-40 group-hover:opacity-100 transition-opacity duration-700 mt-4 max-w-[80%] mx-auto">
-                               <div className="w-full h-1.5 rounded-full bg-[#a78bfa]/20 overflow-hidden"><div className="w-[85%] h-full bg-[#a78bfa] shadow-[0_0_10px_#a78bfa]" /></div>
+                               <div className="w-full h-1.5 rounded-full bg-[#8B91E3]/20 overflow-hidden"><div className="w-[85%] h-full bg-[#8B91E3] shadow-[0_0_10px_#8B91E3]" /></div>
                                <div className="w-4/5 h-1.5 rounded-full bg-pink-500/20 overflow-hidden"><div className="w-[60%] h-full bg-pink-500 shadow-[0_0_10px_#ec4899]" /></div>
-                               <div className="w-full h-1.5 rounded-full bg-[#a78bfa]/10 overflow-hidden"><div className="w-[40%] h-full bg-[#a78bfa]/50" /></div>
+                               <div className="w-full h-1.5 rounded-full bg-[#8B91E3]/10 overflow-hidden"><div className="w-[40%] h-full bg-[#8B91E3]/50" /></div>
                             </div>
                          )}
                          {label === "Hyper-Speed Pipeline" && (
@@ -820,16 +829,16 @@ export default function Home() {
                                    initial={{ height: 12 }}
                                    animate={{ height: [12, 48, 12] }}
                                    transition={{ duration: 1.2, repeat: Infinity, delay: j * 0.15 }}
-                                   key={j} className="w-1.5 rounded-full bg-[#a78bfa]/80 shadow-[0_0_10px_rgba(167,139,250,0.6)]" 
+                                   key={j} className="w-1.5 rounded-full bg-[#8B91E3]/80 shadow-[0_0_10px_rgba(167,139,250,0.6)]" 
                                  />
                                ))}
                             </div>
                          )}
                          {label === "Dynamic Style Modes" && (
                             <div className="relative w-24 h-24 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity duration-700">
-                               <div className="absolute inset-0 rounded-full border border-[#a78bfa]/30 border-t-[#a78bfa] animate-spin shadow-[0_0_15px_rgba(167,139,250,0.3)]" style={{ animationDuration: '3s' }} />
-                               <div className="absolute inset-3 rounded-full border border-[#a78bfa]/20 border-b-pink-500 animate-[spin_2s_linear_infinite_reverse]" />
-                               <div className="w-8 h-8 rounded-full bg-[#a78bfa]/80 shadow-[0_0_20px_#a78bfa] animate-pulse" />
+                               <div className="absolute inset-0 rounded-full border border-[#8B91E3]/30 border-t-[#8B91E3] animate-spin shadow-[0_0_15px_rgba(167,139,250,0.3)]" style={{ animationDuration: '3s' }} />
+                               <div className="absolute inset-3 rounded-full border border-[#8B91E3]/20 border-b-pink-500 animate-[spin_2s_linear_infinite_reverse]" />
+                               <div className="w-8 h-8 rounded-full bg-[#8B91E3]/80 shadow-[0_0_20px_#8B91E3] animate-pulse" />
                             </div>
                          )}
                       </div>
@@ -851,7 +860,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-white/50">
-              <TrendingUp className="w-3 h-3 text-violet-400" /> Creator stories
+              <TrendingUp className="w-3 h-3 text-[#8B91E3]" /> Creator stories
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Real results from real creators</h2>
             <p className="text-white/40 text-base">Join thousands already growing faster with GrowFlow AI.</p>
@@ -876,7 +885,7 @@ export default function Home() {
                 className="hyper-hover-card relative rounded-2xl border border-white/10 p-6 overflow-hidden group shadow-[0_5px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_40px_rgba(167,139,250,0.15)] transition-all duration-500"
                 style={{ background: "rgba(255,255,255,0.025)" }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-600/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#5E6AD2]/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-0.5">
@@ -920,9 +929,9 @@ export default function Home() {
               <p className="text-sm text-white/50">Used GrowFlow AI? We'd love to hear from you.</p>
               <button
                 onClick={() => setShowReviewModal(true)}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-violet-600/20 border border-violet-500/30 text-sm font-medium text-violet-300 hover:bg-violet-600/30 hover:text-violet-200 transition-all duration-200"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.30)] text-sm font-medium text-[#8B91E3] hover:bg-[rgba(94,106,210,0.30)] hover:text-[#8B91E3] transition-all duration-200"
               >
-                <Star className="w-3.5 h-3.5 fill-violet-400 text-violet-400" />
+                <Star className="w-3.5 h-3.5 fill-[#8B91E3] text-[#8B91E3]" />
                 Leave a Review
               </button>
               <p className="text-[11px] text-white/25">Your review helps other creators make better decisions</p>
@@ -945,7 +954,7 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              className="relative w-full max-w-md rounded-2xl border border-violet-500/25 p-6 bg-[#0a0518] shadow-2xl z-10"
+              className="relative w-full max-w-md rounded-2xl border border-[rgba(94,106,210,0.25)] p-6 bg-[#0a0518] shadow-2xl z-10"
             >
               <h3 className="text-xl font-bold text-white mb-4">Leave a Review</h3>
               
@@ -1001,7 +1010,7 @@ export default function Home() {
               <div className="flex gap-3 mt-6">
                 <Button variant="ghost" className="flex-1 text-white/50 hover:text-white" onClick={() => setShowReviewModal(false)}>Cancel</Button>
                 <Button 
-                  className="flex-1 bg-violet-600 hover:bg-violet-500 text-white" 
+                  className="flex-1 bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white" 
                   disabled={!newReview.name || !newReview.text || newReview.stars === 0}
                   onClick={() => {
                     const review = {
@@ -1104,28 +1113,28 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="text-center p-8 rounded-3xl border border-[#a78bfa]/30 bg-[#a78bfa]/5 shadow-[0_0_50px_rgba(167,139,250,0.1)] mb-6 mt-4 md:mt-0"
+            className="text-center p-8 rounded-3xl border border-[#8B91E3]/30 bg-[#8B91E3]/5 shadow-[0_0_50px_rgba(167,139,250,0.1)] mb-6 mt-4 md:mt-0"
           >
             <div className="text-white/40 text-sm mb-2 line-through font-medium">Total: ₹50,700/mo</div>
-            <div className="text-2xl md:text-4xl font-bold text-[#a78bfa] mb-2">
+            <div className="text-2xl md:text-4xl font-bold text-[#8B91E3] mb-2">
               GrowFlow AI Infinity gives you all of this for ₹799/month
             </div>
-            <p className="text-sm text-violet-300/60 font-medium">That's 98% cheaper than hiring the equivalent team.</p>
+            <p className="text-sm text-[#8B91E3]/60 font-medium">That's 98% cheaper than hiring the equivalent team.</p>
           </motion.div>
         </div>
       </section>
 
       <section className="relative z-10 py-12 md:py-24 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="relative rounded-3xl border border-violet-500/20 overflow-hidden"
-            style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(10,5,30,0.98) 50%, rgba(147,51,234,0.08) 100%)" }}
+          <div className="relative rounded-3xl border border-[rgba(94,106,210,0.2)] overflow-hidden"
+            style={{ background: "linear-gradient(135deg, rgba(94,106,210,0.12) 0%, rgba(10,5,30,0.98) 50%, rgba(147,51,234,0.08) 100%)" }}
           >
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-[-30%] left-[20%] w-[60%] h-[60%] bg-violet-600/20 blur-[80px] rounded-full" />
+              <div className="absolute top-[-30%] left-[20%] w-[60%] h-[60%] bg-[rgba(94,106,210,0.20)] blur-[80px] rounded-full" />
               <div className="absolute bottom-[-20%] right-[10%] w-[40%] h-[40%] bg-indigo-600/15 blur-[60px] rounded-full" />
             </div>
             <div className="relative z-10 p-10 md:p-14">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-700 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-violet-900/50">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#5E6AD2] to-indigo-700 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[rgba(94,106,210,0.50)]">
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Ready to grow faster?</h2>
@@ -1148,7 +1157,7 @@ export default function Home() {
               <Link href="/sign-up">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold rounded-full px-12 h-13 text-base shadow-2xl shadow-violet-900/50 border border-violet-500/20"
+                  className="bg-gradient-to-r from-[#5E6AD2] to-indigo-600 hover:from-[#5E6AD2] hover:to-indigo-500 text-white font-semibold rounded-full px-12 h-13 text-base shadow-2xl shadow-[rgba(94,106,210,0.50)] border border-[rgba(94,106,210,0.2)]"
                   style={{ height: 52 }}
                 >
                   Start Creating Free <ArrowRight className="w-4 h-4 ml-2" />
@@ -1161,7 +1170,7 @@ export default function Home() {
                   { icon: Check, label: "Cancel anytime" },
                 ].map(({ icon: Icon, label }) => (
                   <div key={label} className="flex items-center gap-1.5 text-xs text-white/30">
-                    <Icon className="w-3 h-3 text-violet-400" /> {label}
+                    <Icon className="w-3 h-3 text-[#8B91E3]" /> {label}
                   </div>
                 ))}
               </div>
@@ -1180,7 +1189,7 @@ export default function Home() {
               </p>
               <a
                 href="mailto:growflowhelp@gmail.com"
-                className="inline-flex items-center gap-2 text-xs text-white/35 hover:text-violet-400 transition-colors"
+                className="inline-flex items-center gap-2 text-xs text-white/35 hover:text-[#8B91E3] transition-colors"
               >
                 📧 growflowhelp@gmail.com
               </a>
@@ -1194,7 +1203,7 @@ export default function Home() {
                   <SiX className="w-4 h-4" />
                 </a>
                 <a href="mailto:growflowhelp@gmail.com"
-                  className="text-white/20 hover:text-violet-400 transition-colors text-xs">
+                  className="text-white/20 hover:text-[#8B91E3] transition-colors text-xs">
                   📧 Support
                 </a>
               </div>

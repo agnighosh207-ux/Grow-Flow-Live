@@ -47,7 +47,7 @@ export function ViralScoreCard({ data, analysis, analysisLoading }: { data: any;
     return [
       { label: "Virality", score: virality, color: "bg-red-500" },
       { label: "Hook Strength", score: hookStrength, color: "bg-pink-500" },
-      { label: "Engagement", score: engagementPotential, color: "bg-cyan-500" },
+      { label: "Engagement", score: engagementPotential, color: "bg-[#5E6AD2]" },
       { label: "Shareability", score: shareability, color: "bg-emerald-500" },
     ];
   }, [analysis, data, directViralScore]);
@@ -142,8 +142,8 @@ export function ViralScoreCard({ data, analysis, analysisLoading }: { data: any;
           </p>
           <ul className="text-xs text-white/40 mt-2 space-y-1.5 font-medium">
             {avg < 60 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-amber-500" /> Add a stronger visceral hook in the first 5 words</li>}
-            {avg < 75 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-cyan-500" /> Include a high-friction Call to Action (e.g. "Save this")</li>}
-            {avg < 85 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-violet-500" /> Use more emotional, low-entropy language</li>}
+            {avg < 75 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-[#5E6AD2]" /> Include a high-friction Call to Action (e.g. "Save this")</li>}
+            {avg < 85 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-[#5E6AD2]" /> Use more emotional, low-entropy language</li>}
           </ul>
         </motion.div>
       )}

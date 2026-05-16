@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { z } from "zod";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { db, contentGenerationsTable, foldersTable } from "@workspace/db";
 import { eq, and, sql, desc, or, ilike } from "drizzle-orm";
@@ -48,11 +49,16 @@ router.post("/folders", requireAuth, requirePlanOrTrial("personal-vault"), async
 
 // Items (Content Bank)
 router.get("/items", requireAuth, async (req: any, res): Promise<void> => {
-  const folderId = typeof req.query.folderId === "string" ? req.query.folderId : null;
-  const search = typeof req.query.search === "string" ? req.query.search : "";
-  const platform = typeof req.query.platform === "string" ? req.query.platform : null;
-  const tags = typeof req.query.tags === "string" ? req.query.tags : null;
-  const limit = Number(req.query.limit) || 20;
+  const querySchema = z.object({
+    folderId: z.string().nullable().optional(),
+    search: z.string().default(""),
+    platform: z.string().nullable().optional(),
+    tags: z.string().nullable().optional(),
+    limit: z.coerce.number().default(20),
+  });
+
+  const validated = querySchema.parse(req.query);
+  const { folderId, search, platform, tags, limit } = validated;
   const conditions = [eq(contentGenerationsTable.userId, req.userId)];
 
   if (folderId) conditions.push(eq(contentGenerationsTable.folderId, String(folderId)));

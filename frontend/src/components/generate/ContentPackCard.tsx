@@ -34,7 +34,7 @@ function SectionCard({
         </div>
         <span className={`text-sm font-black tracking-tight uppercase ${locked ? "text-white/30" : "text-white/90"}`}>{title}</span>
         {badge && (
-          <span className={`ml-auto text-[9px] px-2.5 py-1 rounded-lg border font-black tracking-widest uppercase ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-cyan-500/12 text-cyan-300 border-cyan-500/20"}`}>
+          <span className={`ml-auto text-[9px] px-2.5 py-1 rounded-lg border font-black tracking-widest uppercase ${locked ? "bg-white/4 text-white/20 border-white/8" : "bg-[#5E6AD2]/12 text-[#8B91E3] border-[rgba(94,106,210,0.4)]/20"}`}>
             {badge}
           </span>
         )}
@@ -84,7 +84,7 @@ export function ContentPackCard({ result, onSave }: { result: any; onSave: () =>
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
                 activeTab === tab.id 
-                  ? "bg-cyan-600 text-white shadow-lg shadow-cyan-500/20" 
+                  ? "bg-[#5E6AD2] text-white shadow-lg shadow-[rgba(94,106,210,0.20)]" 
                   : "text-white/30 hover:text-white/60"
               }`}
             >
@@ -117,14 +117,14 @@ export function ContentPackCard({ result, onSave }: { result: any; onSave: () =>
                     </div>
                  </div>
               </SectionCard>
-              <SectionCard icon={Target} title="Competitive Edge" color="bg-cyan-500/10 text-cyan-300">
+              <SectionCard icon={Target} title="Competitive Edge" color="bg-[#5E6AD2]/10 text-[#8B91E3]">
                  <div className="space-y-6">
                     <div>
-                       <h4 className="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-2">Unfair Advantage</h4>
+                       <h4 className="text-[10px] font-black text-[#8B91E3]/80 uppercase tracking-widest mb-2">Unfair Advantage</h4>
                        <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.competitorGap}</p>
                     </div>
                     <div>
-                       <h4 className="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-2">Core Value Prop</h4>
+                       <h4 className="text-[10px] font-black text-[#8B91E3]/80 uppercase tracking-widest mb-2">Core Value Prop</h4>
                        <p className="text-sm text-white/80 leading-relaxed font-medium">{result.marketAnalysis?.painPointAddressed}</p>
                     </div>
                  </div>

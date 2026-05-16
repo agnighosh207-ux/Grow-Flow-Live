@@ -123,7 +123,7 @@ export default function CompetitorIntelPage() {
     <PageWrapper maxWidth="full" className="pb-24 relative overflow-x-hidden min-h-screen">
       <FeatureGuideBanner 
         toolKey="improve"
-        icon={<Target className="w-5 h-5 text-violet-400" />}
+        icon={<Target className="w-5 h-5 text-[#8B91E3]" />}
         title="Competitor Intelligence"
         tagline="Infiltrate and outperform. Decode the psychological triggers behind any viral post."
         whatYouGet={["Force multiplier analysis", "Structural gap detection", "Psychological trigger decoding", "Your superior version generation"]}
@@ -136,8 +136,8 @@ export default function CompetitorIntelPage() {
         {/* Elite Header */}
         <PageHeader 
           icon={<Target />}
-          iconBg="bg-violet-500/10" 
-          iconColor="text-violet-400" 
+          iconBg="bg-[rgba(94,106,210,0.10)]" 
+          iconColor="text-[#8B91E3]" 
           title="Competitor Intelligence" 
           subtitle="Analyze and outperform any content creator"
           badge="Creator"
@@ -150,10 +150,10 @@ export default function CompetitorIntelPage() {
             <div className="bg-white/5 p-1.5 rounded-[2rem] border border-white/10 backdrop-blur-3xl shadow-2xl">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="bg-transparent h-12 md:h-14 whitespace-nowrap">
-                  <TabsTrigger value="single" className="rounded-xl md:rounded-[1.5rem] px-8 md:px-12 h-9 md:h-11 font-black text-[10px] md:text-xs uppercase tracking-widest transition-all data-[state=active]:bg-violet-500 data-[state=active]:text-white">
+                  <TabsTrigger value="single" className="rounded-xl md:rounded-[1.5rem] px-8 md:px-12 h-9 md:h-11 font-black text-[10px] md:text-xs uppercase tracking-widest transition-all data-[state=active]:bg-[#5E6AD2] data-[state=active]:text-white">
                     Single Scan
                   </TabsTrigger>
-                  <TabsTrigger value="batch" className="rounded-xl md:rounded-[1.5rem] px-8 md:px-12 h-9 md:h-11 font-black text-[10px] md:text-xs uppercase tracking-widest transition-all data-[state=active]:bg-violet-500 data-[state=active]:text-white">
+                  <TabsTrigger value="batch" className="rounded-xl md:rounded-[1.5rem] px-8 md:px-12 h-9 md:h-11 font-black text-[10px] md:text-xs uppercase tracking-widest transition-all data-[state=active]:bg-[#5E6AD2] data-[state=active]:text-white">
                     Batch War Room
                   </TabsTrigger>
                 </TabsList>
@@ -177,7 +177,7 @@ export default function CompetitorIntelPage() {
                   className="p-1.5 rounded-[48px] bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/10 shadow-2xl relative"
                 >
                   <div className="bg-[#0c0d12]/90 backdrop-blur-3xl rounded-[44px] p-8 md:p-12 space-y-10">
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2 rounded-full bg-violet-600 border border-violet-400/30 shadow-lg shadow-violet-600/20">
+                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-2 rounded-full bg-[#5E6AD2] border border-[rgba(94,106,210,0.30)] shadow-lg shadow-[rgba(94,106,210,0.20)]">
                        <Zap className="w-3.5 h-3.5 text-white" />
                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Infiltration Active</span>
                     </div>
@@ -190,7 +190,7 @@ export default function CompetitorIntelPage() {
                         </div>
                         <Textarea 
                           placeholder="Paste the competitor's caption, script, or post here for deep-dive structural analysis..."
-                          className="min-h-[150px] md:min-h-[220px] p-6 md:p-8 rounded-[32px] bg-black/40 border-white/5 focus:border-violet-500/40 text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner leading-relaxed"
+                          className="min-h-[150px] md:min-h-[220px] p-6 md:p-8 rounded-[32px] bg-black/40 border-white/5 focus:border-[rgba(94,106,210,0.40)] text-base md:text-xl font-medium text-white placeholder:text-white/10 resize-none transition-all shadow-inner leading-relaxed"
                           value={content}
                           onChange={(e) => setContent(e.target.value)}
                         />
@@ -241,7 +241,7 @@ export default function CompetitorIntelPage() {
                       </div>
 
                       <Button 
-                        className="w-full h-16 md:h-20 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-xl md:text-2xl font-black rounded-3xl shadow-2xl shadow-violet-600/30 group transition-all"
+                        className="w-full h-16 md:h-20 bg-gradient-to-r from-[#5E6AD2] to-indigo-900 hover:from-[#5E6AD2] hover:to-indigo-900 text-white text-xl md:text-2xl font-black rounded-3xl shadow-2xl shadow-[rgba(94,106,210,0.30)] group transition-all"
                         onClick={analyzeCompetitor}
                         disabled={analyzing || !content}
                       >
@@ -272,7 +272,7 @@ export default function CompetitorIntelPage() {
                     className="space-y-16 pt-8"
                   >
                     {/* The Opportunity Banner */}
-                    <div className="p-10 rounded-[3.5rem] bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 shadow-2xl shadow-violet-500/20 relative overflow-hidden group min-h-[200px] flex flex-col justify-center">
+                    <div className="p-10 rounded-[3.5rem] bg-gradient-to-br from-[#5E6AD2] via-indigo-500 to-indigo-600 shadow-2xl shadow-[rgba(94,106,210,0.20)] relative overflow-hidden group min-h-[200px] flex flex-col justify-center">
                       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
                       <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
                          <Target className="h-80 w-80 text-white" />
@@ -284,16 +284,16 @@ export default function CompetitorIntelPage() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                      <Card className="bg-white/[0.03] border-white/10 rounded-[2.5rem] border-l-8 border-l-violet-500 shadow-2xl">
+                      <Card className="bg-white/[0.03] border-white/10 rounded-[2.5rem] border-l-8 border-l-[#5E6AD2] shadow-2xl">
                         <CardHeader className="p-8 pb-4">
-                          <CardTitle className="text-xl font-black uppercase tracking-widest flex items-center gap-4 text-violet-400">
+                          <CardTitle className="text-xl font-black uppercase tracking-widest flex items-center gap-4 text-[#8B91E3]">
                              <TrendingUp className="h-6 w-6" /> Force Multipliers
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-8 pt-4 space-y-4">
                           {result.competitorStrengths.map((s: string, i: number) => (
-                            <div key={`strength-${i}-${s.slice(0, 5)}`} className="flex gap-5 p-5 rounded-2xl bg-violet-500/5 border border-violet-500/10 text-base font-bold text-violet-100/70 leading-relaxed shadow-inner">
-                               <CheckCircle2 className="h-6 w-6 text-violet-500 shrink-0 mt-0.5" />
+                            <div key={`strength-${i}-${s.slice(0, 5)}`} className="flex gap-5 p-5 rounded-2xl bg-[rgba(94,106,210,0.5)] border border-[rgba(94,106,210,0.10)] text-base font-bold text-[rgba(139,145,227,0.70)] leading-relaxed shadow-inner">
+                               <CheckCircle2 className="h-6 w-6 text-[#5E6AD2] shrink-0 mt-0.5" />
                                {s}
                             </div>
                           ))}
@@ -318,51 +318,51 @@ export default function CompetitorIntelPage() {
 
                     <div className="space-y-8">
                        <div className="flex items-center gap-4 justify-center md:justify-start">
-                          <Brain className="h-8 w-8 text-violet-500" />
+                          <Brain className="h-8 w-8 text-[#5E6AD2]" />
                           <h3 className="text-2xl font-black uppercase tracking-[0.3em] text-white/90">Psychological Architecture</h3>
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                           {result.psychologicalTriggers.map((t: any, i: number) => (
-                            <div key={`trigger-${i}-${t.trigger.slice(0, 5)}`} className="p-8 rounded-[2.5rem] bg-white/[0.04] border border-white/10 hover:border-violet-500/30 transition-all group cursor-default shadow-xl h-full flex flex-col justify-between">
-                               <span className="text-lg font-black text-violet-400 group-hover:scale-105 transition-transform block mb-3">{t.trigger}</span>
+                            <div key={`trigger-${i}-${t.trigger.slice(0, 5)}`} className="p-8 rounded-[2.5rem] bg-white/[0.04] border border-white/10 hover:border-[rgba(94,106,210,0.30)] transition-all group cursor-default shadow-xl h-full flex flex-col justify-between">
+                               <span className="text-lg font-black text-[#8B91E3] group-hover:scale-105 transition-transform block mb-3">{t.trigger}</span>
                                <p className="text-sm text-muted-foreground leading-relaxed italic font-medium">"{t.howTheyUsedIt}"</p>
                             </div>
                           ))}
                        </div>
                     </div>
 
-                    <Card className="bg-zinc-950 border-white/10 rounded-[4rem] shadow-[0_0_80px_rgba(124,58,237,0.1)] overflow-hidden relative group">
-                       <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500" />
+                    <Card className="bg-zinc-950 border-white/10 rounded-[4rem] shadow-[0_0_80px_rgba(94,106,210,0.1)] overflow-hidden relative group">
+                       <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-[#5E6AD2] via-indigo-500 to-indigo-500" />
                        <div className="p-12 md:p-16 space-y-12 relative">
                           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
                              <div className="space-y-3">
-                                <Badge className="bg-violet-500 text-white font-black uppercase tracking-[0.3em] text-[10px] px-5 py-1.5 rounded-full">Elite Directives</Badge>
+                                <Badge className="bg-[#5E6AD2] text-white font-black uppercase tracking-[0.3em] text-[10px] px-5 py-1.5 rounded-full">Elite Directives</Badge>
                                 <h3 className="text-5xl md:text-6xl font-black text-white tracking-tighter italic">Your Superior Version</h3>
                              </div>
                              <div className="flex gap-4">
-                                <Button size="icon" variant="ghost" className="h-16 w-16 rounded-[1.5rem] bg-white/5 hover:bg-white/10 text-violet-400 border border-white/10" onClick={() => copyText(result.superiorVersion.body)}>
+                                <Button size="icon" variant="ghost" className="h-16 w-16 rounded-[1.5rem] bg-white/5 hover:bg-white/10 text-[#8B91E3] border border-white/10" onClick={() => copyText(result.superiorVersion.body)}>
                                    <Copy className="h-7 w-7" />
                                 </Button>
                              </div>
                           </div>
 
                           <div className="grid grid-cols-1 gap-12">
-                            <div className="p-10 md:p-12 rounded-[3rem] bg-violet-500/5 border border-violet-500/10 space-y-6 shadow-inner relative overflow-hidden">
+                            <div className="p-10 md:p-12 rounded-[3rem] bg-[rgba(94,106,210,0.5)] border border-[rgba(94,106,210,0.10)] space-y-6 shadow-inner relative overflow-hidden">
                                <div className="absolute top-0 right-0 p-8 opacity-5">
-                                  <Sparkles className="h-24 w-24 text-violet-500" />
+                                  <Sparkles className="h-24 w-24 text-[#5E6AD2]" />
                                </div>
-                               <span className="text-xs font-black uppercase tracking-[0.4em] text-violet-500 bg-violet-500/10 px-5 py-2 rounded-full">The Dominant Hook</span>
+                               <span className="text-xs font-black uppercase tracking-[0.4em] text-[#5E6AD2] bg-[rgba(94,106,210,0.10)] px-5 py-2 rounded-full">The Dominant Hook</span>
                                <p className="text-4xl md:text-5xl font-black leading-tight text-white tracking-tight italic">{result.superiorVersion.hook}</p>
                             </div>
                             
                             <div className="space-y-6 px-4">
                                <span className="text-xs font-black uppercase tracking-[0.4em] text-muted-foreground italic">Narrative Overhaul</span>
-                               <p className="text-2xl leading-[1.6] text-white/90 whitespace-pre-wrap font-medium tracking-tight selection:bg-violet-500/40">{result.superiorVersion.body}</p>
+                               <p className="text-2xl leading-[1.6] text-white/90 whitespace-pre-wrap font-medium tracking-tight selection:bg-[rgba(94,106,210,0.40)]">{result.superiorVersion.body}</p>
                             </div>
 
-                            <div className="p-10 md:p-12 rounded-[3rem] bg-white/[0.02] border border-white/5 space-y-6 border-l-4 border-l-violet-500">
-                               <span className="text-xs font-black uppercase tracking-[0.4em] text-violet-400">Terminal CTA</span>
-                               <p className="text-3xl font-black italic text-violet-400 leading-tight">"{result.superiorVersion.cta}"</p>
+                            <div className="p-10 md:p-12 rounded-[3rem] bg-white/[0.02] border border-white/5 space-y-6 border-l-4 border-l-[#5E6AD2]">
+                               <span className="text-xs font-black uppercase tracking-[0.4em] text-[#8B91E3]">Terminal CTA</span>
+                               <p className="text-3xl font-black italic text-[#8B91E3] leading-tight">"{result.superiorVersion.cta}"</p>
                             </div>
                           </div>
 
@@ -375,9 +375,9 @@ export default function CompetitorIntelPage() {
                                 </div>
                              </div>
                              <div className="flex items-start gap-6">
-                                <div className="p-5 rounded-3xl bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-lg"><Zap className="h-7 w-7" /></div>
+                                <div className="p-5 rounded-3xl bg-[rgba(94,106,210,0.10)] text-[#8B91E3] border border-[rgba(94,106,210,0.20)] shadow-lg"><Zap className="h-7 w-7" /></div>
                                 <div>
-                                   <span className="text-xs font-black uppercase text-violet-400 block mb-2 tracking-widest">Killer Differentiator</span>
+                                   <span className="text-xs font-black uppercase text-[#8B91E3] block mb-2 tracking-widest">Killer Differentiator</span>
                                    <p className="text-base text-muted-foreground leading-relaxed font-medium">{result.keyDifferentiator}</p>
                                 </div>
                              </div>
@@ -401,7 +401,7 @@ export default function CompetitorIntelPage() {
                     className="py-32 flex flex-col items-center justify-center text-center space-y-12"
                    >
                       <div className="relative">
-                         <div className="absolute inset-0 bg-violet-500/20 blur-[120px] rounded-full" />
+                         <div className="absolute inset-0 bg-[rgba(94,106,210,0.20)] blur-[120px] rounded-full" />
                          <div className="p-16 rounded-[4rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl relative">
                             <BarChart3 className="h-40 w-40 text-white/5 animate-pulse" />
                          </div>
@@ -425,21 +425,21 @@ export default function CompetitorIntelPage() {
               <div className="max-w-[1400px] mx-auto space-y-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                    {batchItems.map((item, i) => (
-                      <Card key={`batch-card-${item.label}-${i}`} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden group hover:border-violet-500/30 transition-all shadow-2xl relative">
+                      <Card key={`batch-card-${item.label}-${i}`} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden group hover:border-[rgba(94,106,210,0.30)] transition-all shadow-2xl relative">
                          <CardHeader className="bg-white/[0.02] border-b border-white/5 p-8 flex flex-row justify-between items-center">
                             <Input 
                               value={item.label} 
                               onChange={(e) => updateBatchItem(i, "label", e.target.value)}
-                              className="h-10 bg-transparent border-none p-0 text-xl font-black focus-visible:ring-0 text-violet-500 tracking-tight"
+                              className="h-10 bg-transparent border-none p-0 text-xl font-black focus-visible:ring-0 text-[#5E6AD2] tracking-tight"
                             />
-                            <Button variant="ghost" size="icon" className="h-10 w-10 text-violet-500 hover:bg-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" onClick={() => removeBatchItem(i)}>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 text-[#5E6AD2] hover:bg-[rgba(94,106,210,0.10)] opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" onClick={() => removeBatchItem(i)}>
                                <Trash2 className="h-5 w-5" />
                             </Button>
                          </CardHeader>
                          <CardContent className="p-8">
                             <Textarea 
                               placeholder="Paste content piece for cross-comparison..." 
-                              className="min-h-[250px] bg-white/[0.02] border-white/5 rounded-2xl text-base leading-relaxed p-6 resize-none focus-visible:ring-violet-500/30"
+                              className="min-h-[250px] bg-white/[0.02] border-white/5 rounded-2xl text-base leading-relaxed p-6 resize-none focus-visible:ring-[rgba(94,106,210,0.3)]"
                               value={item.content}
                               onChange={(e) => updateBatchItem(i, "content", e.target.value)}
                             />
@@ -448,7 +448,7 @@ export default function CompetitorIntelPage() {
                    ))}
                    {batchItems.length < 3 && (
                       <button 
-                        className="border-2 border-dashed border-white/10 rounded-[3rem] h-full min-h-[400px] flex flex-col items-center justify-center gap-6 hover:border-violet-500/30 transition-all text-muted-foreground hover:text-white group bg-white/[0.01] hover:bg-white/[0.03] shadow-inner"
+                        className="border-2 border-dashed border-white/10 rounded-[3rem] h-full min-h-[400px] flex flex-col items-center justify-center gap-6 hover:border-[rgba(94,106,210,0.30)] transition-all text-muted-foreground hover:text-white group bg-white/[0.01] hover:bg-white/[0.03] shadow-inner"
                         onClick={addBatchItem}
                       >
                          <div className="p-6 rounded-[2rem] bg-white/5 group-hover:scale-110 transition-transform shadow-xl">
@@ -461,7 +461,7 @@ export default function CompetitorIntelPage() {
 
                 <div className="flex justify-center pt-10">
                    <Button 
-                     className="h-24 px-24 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 font-black text-3xl rounded-[2.5rem] shadow-2xl shadow-violet-600/40 group transition-all"
+                     className="h-24 px-24 bg-gradient-to-r from-[#5E6AD2] to-indigo-900 hover:from-[#5E6AD2] hover:to-indigo-900 font-black text-3xl rounded-[2.5rem] shadow-2xl shadow-[rgba(94,106,210,0.40)] group transition-all"
                      onClick={analyzeBatch}
                      disabled={batchAnalyzing || batchItems.length < 2}
                    >
@@ -473,17 +473,17 @@ export default function CompetitorIntelPage() {
                 {batchResults.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10">
                      {batchResults.map((r, i) => (
-                        <Card key={r.id || i} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 shadow-2xl border-l-4 border-l-violet-500" style={{ animationDelay: `${i * 150}ms` }}>
-                           <CardHeader className="bg-violet-500/10 border-b border-violet-500/20 p-8">
-                              <CardTitle className="text-2xl font-black text-violet-400">{r.label}</CardTitle>
+                        <Card key={r.id || i} className="bg-white/[0.03] border-white/10 rounded-[3rem] overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 shadow-2xl border-l-4 border-l-[#5E6AD2]" style={{ animationDelay: `${i * 150}ms` }}>
+                           <CardHeader className="bg-[rgba(94,106,210,0.10)] border-b border-[rgba(94,106,210,0.20)] p-8">
+                              <CardTitle className="text-2xl font-black text-[#8B91E3]">{r.label}</CardTitle>
                            </CardHeader>
                            <CardContent className="p-10 space-y-10">
                               <div className="space-y-4">
-                                 <span className="text-[10px] font-black uppercase text-violet-500 tracking-[0.3em] bg-violet-500/10 px-4 py-1.5 rounded-full">Strategic Strengths</span>
+                                 <span className="text-[10px] font-black uppercase text-[#5E6AD2] tracking-[0.3em] bg-[rgba(94,106,210,0.10)] px-4 py-1.5 rounded-full">Strategic Strengths</span>
                                  <p className="text-base text-muted-foreground font-medium leading-relaxed">{r.analysis.strengths}</p>
                               </div>
                               <div className="space-y-4 pt-6 border-t border-white/5">
-                                 <span className="text-[10px] font-black uppercase text-violet-500 tracking-[0.3em] bg-violet-500/10 px-4 py-1.5 rounded-full">Structural Vulnerabilities</span>
+                                 <span className="text-[10px] font-black uppercase text-[#5E6AD2] tracking-[0.3em] bg-[rgba(94,106,210,0.10)] px-4 py-1.5 rounded-full">Structural Vulnerabilities</span>
                                  <p className="text-base text-muted-foreground font-medium leading-relaxed">{r.analysis.weaknesses}</p>
                               </div>
                               <div className="p-8 rounded-[2.5rem] bg-indigo-500/5 border border-indigo-500/10 relative group shadow-inner">

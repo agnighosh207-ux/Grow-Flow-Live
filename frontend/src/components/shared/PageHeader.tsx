@@ -3,8 +3,8 @@ import { HelpCircle } from "lucide-react";
 
 interface PageHeaderProps {
   icon: ReactNode;
-  iconBg?: string;          // tailwind bg class e.g. "bg-cyan-500/10"
-  iconColor?: string;       // tailwind text class e.g. "text-cyan-400"
+  iconBg?: string;          // tailwind bg class e.g. "bg-[#5E6AD2]/10"
+  iconColor?: string;       // tailwind text class e.g. "text-[#8B91E3]"
   title: string;
   subtitle: string;
   badge?: string;           // e.g. "Creator" | "Infinity" | "Free"
@@ -13,7 +13,7 @@ interface PageHeaderProps {
   onInfoClick?: () => void; // shows/re-shows the feature guide banner
 }
 
-export function PageHeader({ icon, iconBg = "bg-violet-500/10", iconColor = "text-violet-400", title, subtitle, badge, badgeColor, action, onInfoClick }: Readonly<PageHeaderProps>) {
+export function PageHeader({ icon, iconBg = "bg-[rgba(94,106,210,0.10)]", iconColor = "text-[#8B91E3]", title, subtitle, badge, badgeColor, action, onInfoClick }: Readonly<PageHeaderProps>) {
   return (
     <div className="flex items-start justify-between gap-4 mb-6">
       <div className="flex items-center gap-3 min-w-0">
@@ -24,7 +24,7 @@ export function PageHeader({ icon, iconBg = "bg-violet-500/10", iconColor = "tex
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight truncate">{title}</h1>
             {badge && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${badgeColor || "bg-violet-500/10 text-violet-400 border-violet-500/20"}`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${badgeColor || "bg-[rgba(94,106,210,0.10)] text-[#8B91E3] border-[rgba(94,106,210,0.20)]"}`}>
                 {badge}
               </span>
             )}
@@ -36,7 +36,7 @@ export function PageHeader({ icon, iconBg = "bg-violet-500/10", iconColor = "tex
         {action}
         {onInfoClick && (
           <button onClick={onInfoClick} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all group" title="What is this tool?">
-            <HelpCircle className="w-3.5 h-3.5 text-white/40 group-hover:text-violet-400 transition-colors" />
+            <HelpCircle className="w-3.5 h-3.5 text-white/40 group-hover:text-[#8B91E3] transition-colors" />
           </button>
         )}
       </div>

@@ -43,7 +43,7 @@ export default function ContactUs() {
   };
 
   return (
-    <div className="min-h-screen bg-[#060312] text-foreground font-sans">
+    <div className="min-h-screen bg-[#0A0A0F] text-foreground font-sans">
       <Helmet>
         <title>Contact Us | GrowFlow AI</title>
         <meta name="description" content="Get in touch with GrowFlow AI support team." />
@@ -74,19 +74,19 @@ export default function ContactUs() {
 
             <div className="space-y-6">
               <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-                <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center shrink-0">
-                  <Mail className="w-5 h-5 text-cyan-400" />
+                <div className="w-10 h-10 rounded-full bg-[#5E6AD2]/10 flex items-center justify-center shrink-0">
+                  <Mail className="w-5 h-5 text-[#8B91E3]" />
                 </div>
                 <div>
                   <h3 className="text-white font-semibold">Email Support</h3>
                   <p className="text-sm text-white/40 mb-1">General & Billing Inquiries</p>
-                  <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 hover:underline">growflowhelp@gmail.com</a>
+                  <a href="mailto:growflowhelp@gmail.com" className="text-[#8B91E3] hover:underline">growflowhelp@gmail.com</a>
                 </div>
               </div>
 
               <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5 text-purple-400" />
+                <div className="w-10 h-10 rounded-full bg-indigo-600/10 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5 text-indigo-400" />
                 </div>
                 <div>
                   <h3 className="text-white font-semibold">Response Time</h3>
@@ -112,11 +112,11 @@ export default function ContactUs() {
 
             <div className="pt-6">
               <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-cyan-400" /> Follow Our Journey
+                <Globe className="w-4 h-4 text-[#8B91E3]" /> Follow Our Journey
               </h3>
               <div className="flex gap-4">
                 {['Twitter', 'Instagram', 'LinkedIn', 'YouTube'].map((social) => (
-                  <span key={social} className="text-sm text-white/30 hover:text-cyan-400 cursor-pointer transition-colors">
+                  <span key={social} className="text-sm text-white/30 hover:text-[#8B91E3] cursor-pointer transition-colors">
                     {social}
                   </span>
                 ))}
@@ -127,10 +127,10 @@ export default function ContactUs() {
           {/* Right Column: Form */}
           <div className="lg:col-span-7">
             <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-3xl p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] pointer-events-none" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#5E6AD2]/5 blur-[100px] pointer-events-none" />
               
               <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <MessageSquare className="w-6 h-6 text-cyan-400" /> Send a Message
+                <MessageSquare className="w-6 h-6 text-[#8B91E3]" /> Send a Message
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
@@ -141,7 +141,7 @@ export default function ContactUs() {
                       type="text" 
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors"
                       placeholder="John Doe"
                     />
                   </div>
@@ -152,7 +152,7 @@ export default function ContactUs() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors"
                       placeholder="john@example.com"
                     />
                   </div>
@@ -163,7 +163,7 @@ export default function ContactUs() {
                   <select 
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors appearance-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors appearance-none"
                   >
                     <option value="General Inquiry">General Inquiry</option>
                     <option value="Technical Support">Technical Support</option>
@@ -179,7 +179,7 @@ export default function ContactUs() {
                     required
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors min-h-[150px] resize-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors min-h-[150px] resize-none"
                     placeholder="How can we help you grow?"
                   />
                 </div>
@@ -187,7 +187,7 @@ export default function ContactUs() {
                 <Button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full py-6 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(8,145,178,0.3)] transition-all flex items-center justify-center gap-2"
+                  className="w-full py-6 bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(8,145,178,0.3)] transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? "Sending..." : (
                     <>
@@ -197,7 +197,7 @@ export default function ContactUs() {
                 </Button>
 
                 <p className="text-center text-xs text-white/30">
-                  By clicking submit, you agree to our <Link href="/terms-and-conditions" className="hover:text-cyan-400 underline">Terms</Link> and <Link href="/privacy-policy" className="hover:text-cyan-400 underline">Privacy Policy</Link>.
+                  By clicking submit, you agree to our <Link href="/terms-and-conditions" className="hover:text-[#8B91E3] underline">Terms</Link> and <Link href="/privacy-policy" className="hover:text-[#8B91E3] underline">Privacy Policy</Link>.
                 </p>
               </form>
             </div>

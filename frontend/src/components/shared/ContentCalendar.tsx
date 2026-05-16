@@ -42,9 +42,9 @@ export function ContentCalendar({ plan, onSelectDay }: { plan: any[]; onSelectDa
       <style>{`
         .custom-calendar .rdp {
           --rdp-cell-size: 45px;
-          --rdp-accent-color: #8b5cf6;
+          --rdp-accent-color: #5E6AD2;
           --rdp-background-color: rgba(139, 92, 246, 0.2);
-          --rdp-accent-color-dark: #7c3aed;
+          --rdp-accent-color-dark: #5E6AD2;
           --rdp-background-color-dark: rgba(124, 58, 237, 0.3);
           --rdp-outline: 2px solid var(--rdp-accent-color);
           --rdp-outline-selected: 2px solid var(--rdp-accent-color);

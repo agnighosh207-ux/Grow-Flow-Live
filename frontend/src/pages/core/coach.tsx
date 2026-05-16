@@ -120,13 +120,13 @@ export default function ContentCoachPage() {
   const getScoreColor = (score: number) => {
     if (score < 50) return "text-red-500";
     if (score < 75) return "text-amber-500";
-    return "text-violet-500";
+    return "text-[#5E6AD2]";
   };
 
   const getScoreBg = (score: number) => {
     if (score < 50) return "bg-red-500/10 border-red-500/20";
     if (score < 75) return "bg-amber-500/10 border-amber-500/20";
-    return "bg-violet-500/10 border-violet-500/20";
+    return "bg-[rgba(94,106,210,0.10)] border-[rgba(94,106,210,0.20)]";
   };
 
   const [showGuide, setShowGuide] = useState(false);
@@ -136,7 +136,7 @@ export default function ContentCoachPage() {
       <FeatureGuideBanner
         toolKey="coach"
         title="AI Content Coach"
-        icon={<Brain className="w-5 h-5 text-violet-500" />}
+        icon={<Brain className="w-5 h-5 text-[#5E6AD2]" />}
         tagline="Get a personalized weekly audit of your content and a step-by-step growth action plan."
         whatYouGet={["Weekly performance score", "Top strengths & gaps", "3 specific tasks for next week"]}
         whenToUse="Use this every Monday to review your previous week's performance and set your goals."
@@ -167,8 +167,8 @@ export default function ContentCoachPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <PageHeader 
           icon={<Brain />} 
-          iconBg="bg-violet-500/10" 
-          iconColor="text-violet-500" 
+          iconBg="bg-[rgba(94,106,210,0.10)]" 
+          iconColor="text-[#5E6AD2]" 
           title="AI Content Coach" 
           subtitle="Personalized weekly growth analysis and action plan"
           badge="Infinity"
@@ -214,9 +214,9 @@ export default function ContentCoachPage() {
 
             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
               <motion.div variants={itemVariants}>
-                <Card className="h-full border-violet-500/20 bg-violet-500/[0.02]">
+                <Card className="h-full border-[rgba(94,106,210,0.20)] bg-[#5E6AD2]/[0.02]">
                   <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-violet-500">
+                    <CardTitle className="flex items-center gap-2 text-[#5E6AD2]">
                       <CheckCircle2 className="h-5 w-5" /> Your Biggest Strength
                     </CardTitle>
                   </CardHeader>
@@ -248,11 +248,11 @@ export default function ContentCoachPage() {
                   variants={itemVariants} 
                   whileHover={{ y: -5 }}
                   onClick={() => toggleTask(task.task)}
-                  className={`cursor-pointer group p-6 rounded-2xl border transition-all duration-300 ${completedTasks.includes(task.task) ? "bg-muted/50 border-muted grayscale opacity-60" : "bg-card hover:shadow-xl hover:border-violet-500/50"}`}
+                  className={`cursor-pointer group p-6 rounded-2xl border transition-all duration-300 ${completedTasks.includes(task.task) ? "bg-muted/50 border-muted grayscale opacity-60" : "bg-card hover:shadow-xl hover:border-[rgba(94,106,210,0.50)]"}`}
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <Badge variant="outline" className="bg-violet-500/5 text-violet-500 border-violet-500/20">{task.platform}</Badge>
-                    <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${completedTasks.includes(task.task) ? "bg-violet-500 border-violet-500" : "border-muted-foreground/30"}`}>
+                    <Badge variant="outline" className="bg-[rgba(94,106,210,0.5)] text-[#5E6AD2] border-[rgba(94,106,210,0.20)]">{task.platform}</Badge>
+                    <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors ${completedTasks.includes(task.task) ? "bg-[#5E6AD2] border-[rgba(94,106,210,0.4)]" : "border-muted-foreground/30"}`}>
                       {completedTasks.includes(task.task) && <CheckCircle2 className="h-4 w-4 text-white" />}
                     </div>
                   </div>
@@ -270,14 +270,14 @@ export default function ContentCoachPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <motion.div variants={itemVariants} className="space-y-4">
               <h2 className="text-2xl font-bold">Content Patterns</h2>
-              <div className="p-8 rounded-[2.5rem] bg-violet-500/5 border border-violet-500/10 relative group shadow-inner">
+              <div className="p-8 rounded-[2.5rem] bg-[rgba(94,106,210,0.5)] border border-[rgba(94,106,210,0.10)] relative group shadow-inner">
                 <div className="absolute top-0 right-0 p-6 opacity-5">
-                  <Sparkles className="h-16 w-16 text-violet-400" />
+                  <Sparkles className="h-16 w-16 text-[#8B91E3]" />
                 </div>
-                <span className="text-[10px] font-black uppercase text-violet-400 block mb-3 tracking-[0.3em]">Master Outclass Hook</span>
+                <span className="text-[10px] font-black uppercase text-[#8B91E3] block mb-3 tracking-[0.3em]">Master Outclass Hook</span>
                 {report.contentPatterns.map((p, i) => (
                   <div key={`pattern-${i}-${p.pattern.slice(0, 10)}`} className="mb-4 last:mb-0">
-                    <h4 className="font-bold text-sm text-violet-900">{p.pattern}</h4>
+                    <h4 className="font-bold text-sm text-[#8B91E3]">{p.pattern}</h4>
                     <p className="text-sm text-muted-foreground">{p.observation}</p>
                   </div>
                 ))}
@@ -286,7 +286,7 @@ export default function ContentCoachPage() {
 
             <motion.div variants={itemVariants} className="space-y-4">
               <h2 className="text-2xl font-bold">Next Week Focus</h2>
-              <div className="p-8 rounded-3xl bg-gradient-to-br from-violet-600 to-violet-900 text-white relative overflow-hidden group">
+              <div className="p-8 rounded-3xl bg-gradient-to-br from-[#5E6AD2] to-[#0A0A0F] text-white relative overflow-hidden group">
                 <Brain className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 group-hover:scale-110 transition-transform duration-700" />
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <ArrowRight className="h-6 w-6" /> Your Main Objective
@@ -300,14 +300,14 @@ export default function ContentCoachPage() {
 
       {!loading && !report && activeView === "report" && (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <div className="h-20 w-20 rounded-full bg-violet-500/10 flex items-center justify-center mb-4">
-            <Brain className="h-10 w-10 text-violet-500" />
+          <div className="h-20 w-20 rounded-full bg-[rgba(94,106,210,0.10)] flex items-center justify-center mb-4">
+            <Brain className="h-10 w-10 text-[#5E6AD2]" />
           </div>
           <h2 className="text-2xl font-bold">No Analysis Yet</h2>
           <p className="text-muted-foreground max-w-md">
             Click the button below to have our AI analyze your recent generations and build your growth strategy.
           </p>
-          <Button onClick={() => fetchReport()} size="lg" className="bg-violet-600 hover:bg-violet-700">
+          <Button onClick={() => fetchReport()} size="lg" className="bg-[#5E6AD2] hover:bg-[#4A52B8]">
             Generate My Weekly Report
           </Button>
         </div>
@@ -317,7 +317,7 @@ export default function ContentCoachPage() {
       {activeView === "chat" && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-3">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-violet-400" /> Ask Your Coach
+            <MessageCircle className="h-5 w-5 text-[#8B91E3]" /> Ask Your Coach
           </h2>
 
           <div className="rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden">
@@ -344,7 +344,7 @@ export default function ContentCoachPage() {
             {messages.map((m, i) => (
               <div key={`msg-${i}`} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
-                  m.role === "user" ? "bg-violet-500/20 text-white border border-violet-500/30" : "bg-white/5 text-white/80 border border-white/10"
+                  m.role === "user" ? "bg-[rgba(94,106,210,0.20)] text-white border border-[rgba(94,106,210,0.30)]" : "bg-white/5 text-white/80 border border-white/10"
                 }`}>
                   {m.content}
                 </div>
@@ -372,12 +372,12 @@ export default function ContentCoachPage() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
               placeholder="Ask your coach..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-violet-500/40 transition-colors"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-[rgba(94,106,210,0.40)] transition-colors"
             />
             <button
               onClick={() => sendMessage()}
               disabled={chatLoading || !input.trim()}
-              className="bg-violet-500 hover:bg-violet-400 disabled:opacity-40 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-1.5"
+              className="bg-[#5E6AD2] hover:bg-[#8B91E3] disabled:opacity-40 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-1.5"
             >
               <Send className="w-3.5 h-3.5" />
               Send

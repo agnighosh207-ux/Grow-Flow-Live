@@ -150,7 +150,7 @@ export function OnboardingModal() {
             <div 
               key={i} 
               className={`h-1.5 rounded-full transition-all duration-500 ${
-                i <= step ? "w-8 bg-cyan-500" : "w-1.5 bg-white/10"
+                i <= step ? "w-8 style={{ background: '#5E6AD2' }}" : "w-1.5 bg-white/10"
               }`} 
             />
           ))}
@@ -180,7 +180,7 @@ export function OnboardingModal() {
 
                 <div className="space-y-6">
                   <div className="space-y-3">
-                    <label className="text-xs font-black uppercase tracking-widest text-cyan-500">What's your main niche?</label>
+                    <label className="text-xs font-black uppercase tracking-widest style={{ color: '#8B91E3' }}">What's your main niche?</label>
                     <div className="grid grid-cols-2 gap-2">
                       {NICHES.map(n => (
                         <button
@@ -188,7 +188,7 @@ export function OnboardingModal() {
                           onClick={() => setNiche(n.id)}
                           className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
                             niche === n.id 
-                              ? "bg-cyan-500 border-cyan-400 text-white shadow-lg shadow-cyan-500/20" 
+                              ? "style={{ background: '#5E6AD2' }} style={{ borderColor: 'rgba(94,106,210,0.4)' }} text-white shadow-lg style={{ boxShadow: '0 4px 16px rgba(94,106,210,0.3)' }}" 
                               : "bg-white/5 border-white/5 text-white/60 hover:border-white/20"
                           }`}
                         >
@@ -199,7 +199,7 @@ export function OnboardingModal() {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-xs font-black uppercase tracking-widest text-cyan-500">Which platform do you post on most?</label>
+                    <label className="text-xs font-black uppercase tracking-widest style={{ color: '#8B91E3' }}">Which platform do you post on most?</label>
                     <div className="grid grid-cols-4 gap-3">
                       {PLATFORMS.map(p => (
                         <button
@@ -207,7 +207,7 @@ export function OnboardingModal() {
                           onClick={() => setPlatform(p.id)}
                           className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all ${
                             platform === p.id 
-                              ? `${p.bg} ${p.border} ${p.color} ring-2 ring-cyan-500/50` 
+                              ? `${p.bg} ${p.border} ${p.color} ring-2 ring-indigo-500/50` 
                               : "bg-white/5 border-white/5 text-white/30 hover:border-white/20"
                           }`}
                         >
@@ -256,9 +256,9 @@ export function OnboardingModal() {
                   ))}
                 </div>
 
-                <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10 flex gap-3 items-center">
-                  <Lightbulb className="w-5 h-5 text-cyan-400 shrink-0" />
-                  <p className="text-xs text-cyan-200/60 font-medium leading-relaxed">
+                <div className="p-4 rounded-xl style={{ background: '#5E6AD2' }}/5 border style={{ borderColor: 'rgba(94,106,210,0.4)' }}/10 flex gap-3 items-center">
+                  <Lightbulb className="w-5 h-5 style={{ color: '#8B91E3' }} shrink-0" />
+                  <p className="text-xs text-[rgba(139,145,227,0.60)] font-medium leading-relaxed">
                     💡 Most users post their first piece of generated content within 5 minutes of signing up.
                   </p>
                 </div>
@@ -290,10 +290,10 @@ export function OnboardingModal() {
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase tracking-widest text-white/20">Your Referral Link</label>
                       <div className="h-12 bg-black/40 border border-white/10 rounded-xl px-4 flex items-center justify-between overflow-hidden">
-                        <span className="text-xs font-mono text-cyan-400/70 truncate mr-4">
+                        <span className="text-xs font-mono style={{ color: '#8B91E3' }}/70 truncate mr-4">
                           {referralLoading ? "Loading link..." : referral?.shareableLink}
                         </span>
-                        <button onClick={handleCopyLink} className="text-white hover:text-cyan-400 transition-colors">
+                        <button onClick={handleCopyLink} className="text-white hover:style={{ color: '#8B91E3' }} transition-colors">
                           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                         </button>
                       </div>
@@ -322,7 +322,7 @@ export function OnboardingModal() {
                     >
                       Skip for now
                     </button>
-                    <p className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">
+                    <p className="text-[10px] font-black style={{ color: '#8B91E3' }} uppercase tracking-widest">
                       They get 15 free Infinity days. You get 15 free Infinity days.
                     </p>
                   </div>
@@ -339,7 +339,7 @@ export function OnboardingModal() {
                 className="space-y-8"
               >
                 <div className="text-center space-y-2">
-                  <div className="inline-flex p-4 rounded-3xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mb-4">
+                  <div className="inline-flex p-4 rounded-3xl style={{ background: '#5E6AD2' }}/10 border style={{ borderColor: 'rgba(94,106,210,0.4)' }}/20 style={{ color: '#8B91E3' }} mb-4">
                     <Rocket className="w-10 h-10" />
                   </div>
                   <h2 className="text-3xl font-black text-white leading-tight">You're all set 🚀</h2>
@@ -348,7 +348,7 @@ export function OnboardingModal() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-lg">
+                      <div className="w-8 h-8 rounded-lg style={{ background: '#5E6AD2' }}/10 flex items-center justify-center text-lg">
                         {NICHES.find(n => n.id === niche)?.label.split(' ')[1]}
                       </div>
                       <div className="text-left">
@@ -356,13 +356,13 @@ export function OnboardingModal() {
                         <p className="text-sm font-bold text-white">{niche}</p>
                       </div>
                     </div>
-                    <button onClick={() => setStep(1)} className="text-xs font-bold text-cyan-500 hover:underline">Edit</button>
+                    <button onClick={() => setStep(1)} className="text-xs font-bold style={{ color: '#8B91E3' }} hover:underline">Edit</button>
                   </div>
 
                   <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 space-y-4 text-center">
                     <div className="flex justify-center gap-3">
                       {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="w-3 h-3 rounded-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)] animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
+                        <div key={i} className="w-3 h-3 rounded-full style={{ background: '#5E6AD2' }} shadow-[0_0_10px_rgba(6,182,212,0.8)] animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
                       ))}
                     </div>
                     <p className="text-xs font-black text-white/40 uppercase tracking-widest">5 Generations Available</p>
@@ -376,7 +376,7 @@ export function OnboardingModal() {
                    </div>
                    <Button 
                     onClick={handleGenerate}
-                    className="w-full h-16 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black text-xl rounded-2xl shadow-xl shadow-cyan-950"
+                    className="w-full h-16 bg-gradient-to-r style={{ background: '#5E6AD2' }}    text-white font-black text-xl rounded-2xl shadow-xl style={{ boxShadow: '0 4px 16px rgba(94,106,210,0.3)' }}"
                   >
                     Generate My First Content <Sparkles className="ml-2 w-5 h-5" />
                   </Button>

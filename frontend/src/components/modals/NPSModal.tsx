@@ -117,7 +117,7 @@ export function NPSModal({ open, onClose, trigger = "10th_generation" }: NPSModa
                         onClick={() => setScore(n)}
                         className={`w-10 h-10 md:w-11 md:h-11 rounded-xl text-xs font-black transition-all transform hover:scale-110 active:scale-95
                           ${n <= 6 ? 'hover:bg-rose-500/20 text-rose-400' : n <= 8 ? 'hover:bg-amber-500/20 text-amber-400' : 'hover:bg-emerald-500/20 text-emerald-400'}
-                          ${score === n ? 'ring-2 ring-cyan-400 bg-white/10 text-white scale-110 shadow-[0_0_20px_rgba(0,242,255,0.3)]' : 'bg-white/5'}
+                          ${score === n ? 'ring-2 ring-[#5E6AD2] bg-white/10 text-white scale-110 shadow-[0_0_20px_rgba(94,106,210,0.3)]' : 'bg-white/5'}
                         `}
                       >
                         {n}
@@ -135,13 +135,14 @@ export function NPSModal({ open, onClose, trigger = "10th_generation" }: NPSModa
                     onChange={e => setComment(e.target.value)}
                     placeholder="What's the #1 thing we could improve? (optional)"
                     rows={3}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-cyan-500/50 transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-white/20 resize-none focus:outline-none focus:border-[rgba(94,106,210,0.5)] transition-colors"
                   />
 
                   <Button
                     onClick={handleRespond}
                     disabled={score === null || submitting}
-                    className="w-full h-14 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black rounded-2xl shadow-xl transition-all"
+                    style={{ background: '#5E6AD2' }}
+                    className="w-full h-14 font-black rounded-2xl shadow-xl transition-all text-white"
                   >
                     {submitting ? "Sending..." : "Submit Response"}
                   </Button>

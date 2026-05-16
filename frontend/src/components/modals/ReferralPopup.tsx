@@ -78,9 +78,9 @@ export function ReferralPopup() {
               style={{
                 background:
                   "linear-gradient(145deg, rgba(16,6,40,0.98) 0%, rgba(10,3,28,0.98) 100%)",
-                border: "1px solid rgba(124,58,237,0.3)",
+                border: "1px solid rgba(94,106,210,0.3)",
                 boxShadow:
-                  "0 0 0 1px rgba(255,255,255,0.04), 0 24px 60px rgba(0,0,0,0.7), 0 0 80px rgba(124,58,237,0.12)",
+                  "0 0 0 1px rgba(255,255,255,0.04), 0 24px 60px rgba(0,0,0,0.7), 0 0 80px rgba(94,106,210,0.12)",
               }}
             >
               <button
@@ -95,11 +95,11 @@ export function ReferralPopup() {
                   className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
                     background:
-                      "linear-gradient(135deg, rgba(124,58,237,0.3), rgba(168,85,247,0.2))",
-                    border: "1px solid rgba(124,58,237,0.3)",
+                      "linear-gradient(135deg, rgba(94,106,210,0.3), rgba(139,145,227,0.2))",
+                    border: "1px solid rgba(94,106,210,0.3)",
                   }}
                 >
-                  <Gift className="w-5 h-5 text-cyan-300" />
+                  <Gift className="w-5 h-5 text-[#8B91E3]" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white leading-tight">
@@ -110,7 +110,7 @@ export function ReferralPopup() {
               </div>
 
               <p className="text-sm text-white/80 leading-relaxed mb-1.5">
-                Got a <span className="font-semibold text-cyan-300">Referral Code</span>?
+                Got a <span className="font-semibold text-[#8B91E3]">Referral Code</span>?
               </p>
               <p className="text-xs text-white/40 mb-5">
                 Enter it below to instantly unlock 15 days of Infinity Access for free!
@@ -122,14 +122,15 @@ export function ReferralPopup() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="e.g. A1B2C3D4"
-                  className="w-full h-11 bg-black/20 border border-white/10 rounded-xl px-4 text-center font-mono text-white text-lg tracking-widest placeholder:text-white/20 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20"
+                  className="w-full h-11 bg-black/20 border border-white/10 rounded-xl px-4 text-center font-mono text-white text-lg tracking-widest placeholder:text-white/20 focus:outline-none focus:border-[rgba(94,106,210,0.4)] focus:ring-1 focus:ring-[rgba(94,106,210,0.2)]"
                 />
               </div>
 
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="w-full h-11 font-semibold text-sm rounded-xl mb-2.5 relative overflow-hidden bg-cyan-600 hover:bg-cyan-500 text-white"
+                style={{ background: '#5E6AD2' }}
+                className="w-full h-11 font-semibold text-sm rounded-xl mb-2.5 text-white"
               >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : code ? "Claim Free Days" : "Continue to App"}
               </Button>

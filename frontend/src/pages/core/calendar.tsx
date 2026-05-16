@@ -44,7 +44,7 @@ interface CalendarItem {
 const platforms = ["Instagram", "Twitter", "LinkedIn", "YouTube"];
 const contentTypes = ["Post", "Thread", "Reel", "Short", "Video", "Carousel"];
 const colors = [
-  { name: "Violet", value: "bg-violet-600", border: "border-violet-600/20", text: "text-violet-600" },
+  { name: "Violet", value: "bg-[#5E6AD2]", border: "border-[rgba(94,106,210,0.20)]", text: "text-[#5E6AD2]" },
   { name: "Pink", value: "bg-pink-500", border: "border-pink-500/20", text: "text-pink-500" },
   { name: "Blue", value: "bg-blue-500", border: "border-blue-500/20", text: "text-blue-500" },
   { name: "Red", value: "bg-red-500", border: "border-red-500/20", text: "text-red-500" },
@@ -62,6 +62,7 @@ export default function CalendarPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const [showGuide, setShowGuide] = useState(false);
 
   // Form State
   const [newItem, setNewItem] = useState({
@@ -70,7 +71,7 @@ export default function CalendarPage() {
     contentType: "Post",
     scheduledTime: "09:00 AM",
     notes: "",
-    color: "bg-violet-600"
+    color: "bg-[#5E6AD2]"
   });
 
   // AI Schedule State
@@ -168,7 +169,7 @@ export default function CalendarPage() {
       case "Twitter": return "bg-blue-500";
       case "LinkedIn": return "bg-blue-600";
       case "YouTube": return "bg-red-500";
-      default: return "bg-violet-600";
+      default: return "bg-[#5E6AD2]";
     }
   };
 
@@ -191,7 +192,7 @@ export default function CalendarPage() {
           className={`min-h-[140px] p-2 border border-border/50 group transition-all cursor-pointer ${isCurrentMonth ? 'bg-card/30 hover:bg-card/60' : 'bg-muted/10 opacity-40'}`}
         >
           <div className="flex justify-between items-center mb-2">
-            <span className={`text-sm font-bold ${isSameDay(day, new Date()) ? 'bg-violet-600 text-white h-6 w-6 rounded-full flex items-center justify-center' : ''}`}>
+            <span className={`text-sm font-bold ${isSameDay(day, new Date()) ? 'bg-[#5E6AD2] text-white h-6 w-6 rounded-full flex items-center justify-center' : ''}`}>
               {format(day, "d")}
             </span>
             {dayItems.length > 0 && <span className="text-[10px] font-bold text-muted-foreground">{dayItems.length} items</span>}
@@ -220,14 +221,12 @@ export default function CalendarPage() {
     return days;
   };
 
-  const [showGuide, setShowGuide] = useState(false);
-
   return (
     <PageWrapper maxWidth="xl" className="py-10">
       <FeatureGuideBanner
         toolKey="calendar"
         title="Content Calendar"
-        icon={<CalendarIcon className="w-5 h-5 text-violet-400" />}
+        icon={<CalendarIcon className="w-5 h-5 text-[#8B91E3]" />}
         tagline="Visualize your multi-platform growth. Never miss a post again."
         whatYouGet={["Monthly & weekly views", "Platform-specific color coding", "AI-powered auto-scheduling", "One-click generation from planned items"]}
         whenToUse="Use this to plan your next 7-30 days of content and ensure a healthy mix of value, hype, and engagement."
@@ -238,19 +237,19 @@ export default function CalendarPage() {
       
       <PageHeader
         icon={<CalendarIcon />}
-        iconBg="bg-violet-600/10"
-        iconColor="text-violet-500"
+        iconBg="bg-[rgba(94,106,210,0.10)]"
+        iconColor="text-[#5E6AD2]"
         title="Content Calendar"
         subtitle="AI-Powered Scheduling & Planning"
         onInfoClick={() => setShowGuide(prev => !prev)}
         action={
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="gap-2 border-violet-500/20" onClick={() => setIsAIScheduleOpen(true)}>
-              <Wand2 className="h-4 w-4 text-violet-500" />
+            <Button variant="outline" className="gap-2 border-[rgba(94,106,210,0.20)]" onClick={() => setIsAIScheduleOpen(true)}>
+              <Wand2 className="h-4 w-4 text-[#5E6AD2]" />
               AI Auto-Schedule
             </Button>
 
-            <Button className="bg-violet-600 hover:bg-violet-700 gap-2 shadow-lg shadow-violet-600/20" onClick={() => { setSelectedDay(new Date()); setIsAddItemOpen(true); }}>
+            <Button className="bg-[#5E6AD2] hover:bg-[#4A52B8] gap-2 shadow-lg shadow-[rgba(94,106,210,0.20)]" onClick={() => { setSelectedDay(new Date()); setIsAddItemOpen(true); }}>
               <Plus className="h-4 w-4" />
               Add Content
             </Button>
@@ -317,7 +316,7 @@ export default function CalendarPage() {
                              <ExternalLink className="h-3 w-3" /> View Content
                            </Button>
                          ) : (
-                           <Button size="sm" className="w-full text-xs gap-2 bg-violet-600" onClick={() => generateForItem(item.id)}>
+                           <Button size="sm" className="w-full text-xs gap-2 bg-[#5E6AD2]" onClick={() => generateForItem(item.id)}>
                              <Zap className="h-3 w-3 fill-current" /> Generate Now
                            </Button>
                          )}
@@ -370,13 +369,13 @@ export default function CalendarPage() {
                         <button 
                           key={c.name} 
                           onClick={() => setNewItem({...newItem, color: c.value})}
-                          className={`h-6 w-6 rounded-full ${c.value} ${newItem.color === c.value ? 'ring-2 ring-offset-2 ring-violet-600' : ''}`} 
+                          className={`h-6 w-6 rounded-full ${c.value} ${newItem.color === c.value ? 'ring-2 ring-offset-2 ring-[#5E6AD2]' : ''}`} 
                         />
                       ))}
                     </div>
                   </div>
                 </div>
-                <Button onClick={addItem} className="w-full bg-violet-600">Save to Calendar</Button>
+                <Button onClick={addItem} className="w-full bg-[#5E6AD2]">Save to Calendar</Button>
               </div>
             </div>
           </div>
@@ -387,7 +386,7 @@ export default function CalendarPage() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-violet-600 fill-violet-600" />
+              <Zap className="h-5 w-5 text-[#5E6AD2] fill-[#5E6AD2]" />
               AI Auto-Schedule
             </DialogTitle>
             <DialogDescription>Let AI build your content strategy for the next few weeks.</DialogDescription>

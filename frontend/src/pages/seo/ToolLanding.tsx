@@ -59,7 +59,7 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] font-black uppercase tracking-[0.3em]"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(94,106,210,0.10)] border border-[rgba(94,106,210,0.20)] text-[#8B91E3] text-[10px] font-black uppercase tracking-[0.3em]"
           >
             <Sparkles className="w-3 h-3" />
             Free AI Creator Tools
@@ -92,7 +92,7 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
             <Button 
               size="lg" 
               onClick={() => navigate(config.toolPath)}
-              className="h-14 px-10 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-black text-lg shadow-glow transition-all"
+              className="h-14 px-10 rounded-2xl bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black text-lg shadow-glow transition-all"
             >
               USE THE TOOL FREE →
             </Button>
@@ -104,14 +104,14 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex-1 w-full max-w-md aspect-square rounded-[40px] bg-gradient-to-br from-violet-500/20 to-indigo-600/20 border border-violet-500/30 flex items-center justify-center relative group overflow-hidden"
+          className="flex-1 w-full max-w-md aspect-square rounded-[40px] bg-gradient-to-br from-[#5E6AD2]/20 to-indigo-600/20 border border-[rgba(94,106,210,0.30)] flex items-center justify-center relative group overflow-hidden"
         >
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
-          <div className="relative z-10 text-violet-400">
+          <div className="relative z-10 text-[#8B91E3]">
             <Zap size={120} className="animate-pulse" />
           </div>
           <div className="absolute bottom-8 left-8 right-8 p-6 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 space-y-2">
-             <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest">Live Result</p>
+             <p className="text-[10px] font-black text-[#8B91E3] uppercase tracking-widest">Live Result</p>
              <p className="text-sm text-white/80 font-medium">"Wait until you see how this AI hook doubles your watch time..."</p>
           </div>
         </motion.div>
@@ -127,7 +127,7 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
           <ul className="space-y-4">
             {config.features.map(item => (
               <li key={item} className="flex items-center gap-3 text-white/70 font-medium">
-                <Target className="w-5 h-5 text-violet-500" />
+                <Target className="w-5 h-5 text-[#5E6AD2]" />
                 {item}
               </li>
             ))}
@@ -143,7 +143,7 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
               { step: "4", text: "Copy, paste, and watch your engagement grow." }
             ].map(s => (
               <div key={s.step} className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
-                <span className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center font-black text-white shrink-0">{s.step}</span>
+                <span className="w-8 h-8 rounded-lg bg-[#5E6AD2] flex items-center justify-center font-black text-white shrink-0">{s.step}</span>
                 <p className="text-white/60 text-sm font-medium">{s.text}</p>
               </div>
             ))}
@@ -157,7 +157,7 @@ export default function ToolLandingPage({ tool }: { tool: string }) {
         <Button 
           size="lg" 
           onClick={() => navigate("/sign-up")}
-          className="h-14 px-12 rounded-2xl bg-white text-violet-900 font-black text-lg hover:scale-105 transition-all shadow-xl"
+          className="h-14 px-12 rounded-2xl bg-white text-[#8B91E3] font-black text-lg hover:scale-105 transition-all shadow-xl"
         >
           JOIN 10,000+ CREATORS →
         </Button>

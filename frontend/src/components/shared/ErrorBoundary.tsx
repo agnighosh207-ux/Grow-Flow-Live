@@ -16,14 +16,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#060312] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-4">
           <div className="text-center max-w-md">
             <div className="text-4xl mb-4">⚡</div>
             <h2 className="text-white font-bold text-xl mb-2">Something went wrong</h2>
             <p className="text-white/40 text-sm mb-6">This page encountered an error. Please refresh to try again.</p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-cyan-500 text-black font-bold px-6 py-2 rounded-xl hover:bg-cyan-400 transition-colors"
+              className="bg-[#5E6AD2] text-black font-bold px-6 py-2 rounded-xl hover:bg-[#5E6AD2] transition-colors"
             >
               Refresh Page
             </button>

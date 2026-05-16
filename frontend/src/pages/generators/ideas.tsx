@@ -17,332 +17,332 @@ import { PageHeader } from "@/components/shared/PageHeader";
 const NICHES = ["General", "Fitness", "Finance", "Tech", "Motivation", "Business", "Lifestyle"] as const;
 
 const NICHE_COLORS: Record<string, string> = {
-  General: "text-white/60",
-  Fitness: "text-emerald-400",
-  Finance: "text-yellow-400",
-  Tech: "text-blue-400",
-  Motivation: "text-orange-400",
-  Business: "text-indigo-400",
-  Lifestyle: "text-pink-400",
+ General: "text-white/60",
+ Fitness: "text-emerald-400",
+ Finance: "text-yellow-400",
+ Tech: "text-blue-400",
+ Motivation: "text-orange-400",
+ Business: "text-indigo-400",
+ Lifestyle: "text-pink-400",
 };
 
 const NICHE_BG: Record<string, string> = {
-  General: "bg-white/5 border-white/10",
-  Fitness: "bg-emerald-500/8 border-emerald-500/20",
-  Finance: "bg-yellow-500/8 border-yellow-500/20",
-  Tech: "bg-blue-500/8 border-blue-500/20",
-  Motivation: "bg-orange-500/8 border-orange-500/20",
-  Business: "bg-indigo-500/8 border-indigo-500/20",
-  Lifestyle: "bg-pink-500/8 border-pink-500/20",
+ General: "bg-white/5 border-white/10",
+ Fitness: "bg-emerald-500/8 border-emerald-500/20",
+ Finance: "bg-yellow-500/8 border-yellow-500/20",
+ Tech: "bg-blue-500/8 border-blue-500/20",
+ Motivation: "bg-orange-500/8 border-orange-500/20",
+ Business: "bg-indigo-500/8 border-indigo-500/20",
+ Lifestyle: "bg-pink-500/8 border-pink-500/20",
 };
 
 const PATTERN_COLORS: Record<string, string> = {
-  "Do This Not That": "bg-blue-500/15 text-blue-300 border-blue-500/20",
-  "Stop This Mistake": "bg-red-500/15 text-red-300 border-red-500/20",
-  "The Truth About X": "bg-amber-500/15 text-amber-300 border-amber-500/20",
-  "X vs Y Comparison": "bg-violet-500/15 text-violet-300 border-violet-500/20",
-  "Story Arc (Before → After)": "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
-  "Step-by-Step Framework": "bg-green-500/15 text-green-300 border-green-500/20",
-  "Specific Result Breakdown": "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
-  "Contrarian Opinion": "bg-orange-500/15 text-orange-300 border-orange-500/20",
-  "Little-Known Secret": "bg-violet-500/15 text-violet-300 border-violet-500/20",
-  "Common Myth Debunked": "bg-pink-500/15 text-pink-300 border-pink-500/20",
+ "Do This Not That": "bg-blue-500/15 text-blue-300 border-blue-500/20",
+ "Stop This Mistake": "bg-red-500/15 text-red-300 border-red-500/20",
+ "The Truth About X": "bg-amber-500/15 text-amber-300 border-amber-500/20",
+ "X vs Y Comparison": "bg-[rgba(94,106,210,0.15)] text-[#8B91E3] border-[rgba(94,106,210,0.20)]",
+ "Story Arc (Before → After)": "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
+ "Step-by-Step Framework": "bg-green-500/15 text-green-300 border-green-500/20",
+ "Specific Result Breakdown": "bg-indigo-500/15 text-indigo-300 border-indigo-500/20",
+ "Contrarian Opinion": "bg-orange-500/15 text-orange-300 border-orange-500/20",
+ "Little-Known Secret": "bg-[rgba(94,106,210,0.15)] text-[#8B91E3] border-[rgba(94,106,210,0.20)]",
+ "Common Myth Debunked": "bg-pink-500/15 text-pink-300 border-pink-500/20",
 };
 
 interface ContentIdea {
-  idea: string;
-  hook: string;
-  angle: string;
-  whyItWorks: string;
-  pattern: string;
+ idea: string;
+ hook: string;
+ angle: string;
+ whyItWorks: string;
+ pattern: string;
 }
 
 function IdeasGeneratorInner() {
-  const [niche, setNiche] = useState<typeof NICHES[number]>("General");
-  const [goal, setGoal] = useState("");
-  const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
-  const [showGuide, setShowGuide] = useState(false);
+ const [niche, setNiche] = useState<typeof NICHES[number]>("General");
+ const [goal, setGoal] = useState("");
+ const [language, setLanguage] = useState(localStorage.getItem("preferred_language") || "English");
+ const [showGuide, setShowGuide] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem("preferred_language", language);
-  }, [language]);
-  const [ideas, setIdeas] = useState<ContentIdea[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+ useEffect(() => {
+  localStorage.setItem("preferred_language", language);
+ }, [language]);
+ const [ideas, setIdeas] = useState<ContentIdea[]>([]);
+ const [loading, setLoading] = useState(false);
+ const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  useEffect(() => {
-    document.title = "Content Idea Generator — GrowFlow AI";
-  }, []);
+ useEffect(() => {
+  document.title = "Content Idea Generator — GrowFlow AI";
+ }, []);
 
-  const { toast } = useToast();
-  const { getToken } = useAuth();
-  const [, navigate] = useLocation();
-  const { useOneTrial } = useTrialAction();
-  const { data: sub } = useSubscriptionStatus();
-  const isFreeUser = !sub?.planType || sub.planType === "free";
+ const { toast } = useToast();
+ const { getToken } = useAuth();
+ const [, navigate] = useLocation();
+ const { useOneTrial } = useTrialAction();
+ const { data: sub } = useSubscriptionStatus();
+ const isFreeUser = !sub?.planType || sub.planType === "free";
 
 
 
-  const nicheColor = NICHE_COLORS[niche] || NICHE_COLORS.General;
-  const nicheBg = NICHE_BG[niche] || NICHE_BG.General;
+ const nicheColor = NICHE_COLORS[niche] || NICHE_COLORS.General;
+ const nicheBg = NICHE_BG[niche] || NICHE_BG.General;
 
-  async function generateIdeas() {
-    if (!goal.trim()) {
-      toast({ variant: "destructive", title: "Enter your content goal first" });
-      return;
-    }
-    setLoading(true);
-    setIdeas([]);
-    setExpandedIndex(null);
-    try {
-      const token = await getToken();
-      const res = await fetch("/api/ideas/generate", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
-        credentials: "omit",
-        body: JSON.stringify({ niche, goal, language }),
-      });
-      if (!res.ok) throw new Error("Failed");
-      const data = await res.json();
-      setIdeas(data.ideas ?? []);
-      useOneTrial();
-      // --- P-3 FIX: Invalidate cache to sync credit counter ---
-      const { queryClient } = await import("@/lib/queryClient");
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
-    } catch {
-      toast({ variant: "destructive", title: "Generation failed", description: "Please try again." });
-    } finally {
-      setLoading(false);
-    }
+ async function generateIdeas() {
+  if (!goal.trim()) {
+   toast({ variant: "destructive", title: "Enter your content goal first" });
+   return;
   }
-
-  function useIdea(idea: ContentIdea) {
-    navigate(`/generate?idea=${encodeURIComponent(idea.idea)}&contentType=Educational&tone=Casual`);
+  setLoading(true);
+  setIdeas([]);
+  setExpandedIndex(null);
+  try {
+   const token = await getToken();
+   const res = await fetch("/api/ideas/generate", {
+    method: "POST",
+    headers: { 
+     "Content-Type": "application/json",
+     ...(token ? { "Authorization": `Bearer ${token}` } : {})
+    },
+    credentials: "omit",
+    body: JSON.stringify({ niche, goal, language }),
+   });
+   if (!res.ok) throw new Error("Failed");
+   const data = await res.json();
+   setIdeas(data.ideas ?? []);
+   useOneTrial();
+   // --- P-3 FIX: Invalidate cache to sync credit counter ---
+   const { queryClient } = await import("@/lib/queryClient");
+   queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+  } catch {
+   toast({ variant: "destructive", title: "Generation failed", description: "Please try again." });
+  } finally {
+   setLoading(false);
   }
+ }
 
-  return (
-    <PageWrapper maxWidth="md" className="pb-24 md:pb-8">
-      <FeatureGuideBanner 
-        toolKey="ideas" 
-        title="Idea Generator" 
-        icon={<Lightbulb className="w-5 h-5 text-yellow-400" />}
-        tagline="Never run out of content topics. Get fresh, niche-specific ideas powered by live search."
-        whatYouGet={["10 content ideas per niche", "Platform tags per idea", "Viral angle for each"]}
-        whenToUse="Use this every Sunday to plan your content week. Save ideas you like to your calendar."
-        proTip="Ideas are cached for 15 minutes per niche — if you want fresh ones, change the goal field slightly."
-        forceOpen={showGuide}
+ function useIdea(idea: ContentIdea) {
+  navigate(`/generate?idea=${encodeURIComponent(idea.idea)}&contentType=Educational&tone=Casual`);
+ }
+
+ return (
+  <PageWrapper maxWidth="md" className="pb-24 md:pb-8">
+   <FeatureGuideBanner 
+    toolKey="ideas" 
+    title="Idea Generator" 
+    icon={<Lightbulb className="w-5 h-5 text-yellow-400" />}
+    tagline="Never run out of content topics. Get fresh, niche-specific ideas powered by live search."
+    whatYouGet={["10 content ideas per niche", "Platform tags per idea", "Viral angle for each"]}
+    whenToUse="Use this every Sunday to plan your content week. Save ideas you like to your calendar."
+    proTip="Ideas are cached for 15 minutes per niche — if you want fresh ones, change the goal field slightly."
+    forceOpen={showGuide}
+   />
+   <PageHeader 
+    icon={<Lightbulb/>} 
+    iconBg="bg-yellow-500/10" 
+    iconColor="text-yellow-400" 
+    title="Idea Generator" 
+    subtitle="Fresh content topics powered by live search"
+    onInfoClick={() => setShowGuide(prev => !prev)}
+   />
+
+   <div
+    className="rounded-2xl border border-white/8 p-5 md:p-6 lg:p-8 space-y-5"
+    style={{
+     background: "linear-gradient(135deg, rgba(234,179,8,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+     backdropFilter: "blur(20px)",
+     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+    }}
+   >
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+     <div className="space-y-2">
+      <label className="text-white/70 text-sm font-medium">Your Niche</label>
+      <Select value={niche} onValueChange={(v) => setNiche(v as typeof NICHES[number])}>
+       <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-yellow-500/40 rounded-xl text-base min-h-[44px]">
+        <SelectValue />
+       </SelectTrigger>
+       <SelectContent className="bg-[#0f0a1e] border-white/10">
+        {NICHES.map(n => (
+         <SelectItem key={n} value={n} className="text-white/80 focus:text-white focus:bg-yellow-600/20">{n}</SelectItem>
+        ))}
+       </SelectContent>
+      </Select>
+     </div>
+
+     <div className="space-y-2">
+      <label className="text-white/70 text-sm font-medium">Your Goal</label>
+      <Input
+       value={goal}
+       onChange={e => setGoal(e.target.value)}
+       placeholder="e.g. grow my audience, establish authority..."
+       className="bg-black/20 border-white/10 text-white text-base placeholder:text-white/25 focus-visible:ring-yellow-500/40 rounded-xl h-12"
+       onKeyDown={e => e.key === "Enter" && generateIdeas()}
       />
-      <PageHeader 
-        icon={<Lightbulb/>} 
-        iconBg="bg-yellow-500/10" 
-        iconColor="text-yellow-400" 
-        title="Idea Generator" 
-        subtitle="Fresh content topics powered by live search"
-        onInfoClick={() => setShowGuide(prev => !prev)}
+     </div>
+
+     <div className="sm:col-span-2">
+      <LanguageSelector
+       value={language}
+       onChange={setLanguage}
+       isFreeUser={isFreeUser}
+       onUpgradeRequired={() => toast({ title: "🔒 Premium Languages", description: "Upgrade to generate content in regional languages!", variant: "destructive" })}
       />
+     </div>
+    </div>
 
-      <div
-        className="rounded-2xl border border-white/8 p-5 md:p-6 lg:p-8 space-y-5"
-        style={{
-          background: "linear-gradient(135deg, rgba(234,179,8,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-white/70 text-sm font-medium">Your Niche</label>
-            <Select value={niche} onValueChange={(v) => setNiche(v as typeof NICHES[number])}>
-              <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-yellow-500/40 rounded-xl text-base min-h-[44px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#0f0a1e] border-white/10">
-                {NICHES.map(n => (
-                  <SelectItem key={n} value={n} className="text-white/80 focus:text-white focus:bg-yellow-600/20">{n}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="flex justify-end">
+     <Button
+      onClick={generateIdeas}
+      disabled={loading}
+      className="w-full sm:w-auto h-12 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white text-base font-semibold shadow-lg shadow-yellow-900/40 rounded-xl px-6"
+     >
+      {loading ? (
+       <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
+      ) : (
+       <><Lightbulb className="w-4 h-4 mr-2" /> Generate 10 Ideas</>
+      )}
+     </Button>
+    </div>
+   </div>
 
-          <div className="space-y-2">
-            <label className="text-white/70 text-sm font-medium">Your Goal</label>
-            <Input
-              value={goal}
-              onChange={e => setGoal(e.target.value)}
-              placeholder="e.g. grow my audience, establish authority..."
-              className="bg-black/20 border-white/10 text-white text-base placeholder:text-white/25 focus-visible:ring-yellow-500/40 rounded-xl h-12"
-              onKeyDown={e => e.key === "Enter" && generateIdeas()}
-            />
-          </div>
+   <AnimatePresence mode="wait">
+    {loading && (
+     <motion.div
+      key="loading"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="grid grid-cols-1 gap-3"
+     >
+      {Array.from({ length: 5 }).map((_, i) => (
+       <div key={i} className="h-24 rounded-xl bg-white/3 border border-white/5 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
+      ))}
+     </motion.div>
+    )}
 
-          <div className="sm:col-span-2">
-            <LanguageSelector
-              value={language}
-              onChange={setLanguage}
-              isFreeUser={isFreeUser}
-              onUpgradeRequired={() => toast({ title: "🔒 Premium Languages", description: "Upgrade to generate content in regional languages!", variant: "destructive" })}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button
-            onClick={generateIdeas}
-            disabled={loading}
-            className="w-full sm:w-auto h-12 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white text-base font-semibold shadow-lg shadow-yellow-900/40 rounded-xl px-6"
-          >
-            {loading ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
-            ) : (
-              <><Lightbulb className="w-4 h-4 mr-2" /> Generate 10 Ideas</>
-            )}
-          </Button>
-        </div>
+    {!loading && ideas.length > 0 && (
+     <motion.div
+      key="ideas"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-3 mb-8 md:mb-14"
+     >
+      <div className="flex items-center gap-2 mb-1">
+       <TrendingUp className={`w-4 h-4 ${nicheColor}`} />
+       <span className="text-white/50 text-sm">10 ideas for <span className={`font-semibold ${nicheColor}`}>{niche}</span> creators</span>
       </div>
 
-      <AnimatePresence mode="wait">
-        {loading && (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="grid grid-cols-1 gap-3"
-          >
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-24 rounded-xl bg-white/3 border border-white/5 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
-            ))}
-          </motion.div>
-        )}
+      {Array.isArray(ideas) && ideas.map((idea, i) => {
+       const isExpanded = expandedIndex === i;
+       const patternColor = PATTERN_COLORS[idea.pattern] || "bg-white/8 text-white/60 border-white/10";
 
-        {!loading && ideas.length > 0 && (
-          <motion.div
-            key="ideas"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-3 mb-8 md:mb-14"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className={`w-4 h-4 ${nicheColor}`} />
-              <span className="text-white/50 text-sm">10 ideas for <span className={`font-semibold ${nicheColor}`}>{niche}</span> creators</span>
+       return (
+        <motion.div
+         key={i}
+         initial={{ opacity: 0, y: 12 }}
+         animate={{ opacity: 1, y: 0 }}
+         transition={{ delay: i * 0.05 }}
+         className={`rounded-xl border ${nicheBg} overflow-hidden cursor-pointer`}
+         onClick={() => setExpandedIndex(isExpanded ? null : i)}
+        >
+         <div className="p-4 flex items-start gap-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 mt-0.5 ${nicheBg} border`}>
+           <span className={nicheColor}>{i + 1}</span>
+          </div>
+
+          <div className="flex-1 min-w-0">
+           <div className="flex items-start justify-between gap-2">
+            <p className="text-white text-sm font-semibold leading-snug">{idea.idea}</p>
+            <ChevronRight className={`w-4 h-4 text-white/30 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
+           </div>
+           <span className={`inline-flex mt-2 items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${patternColor}`}>
+            {idea.pattern}
+           </span>
+          </div>
+         </div>
+
+         <AnimatePresence>
+          {isExpanded && (
+           <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+           >
+            <div className="px-4 pb-4 space-y-4 border-t border-white/5 pt-4">
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+               <div className="flex items-center gap-1.5">
+                <Zap className="w-3 h-3 text-yellow-400" />
+                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Hook</span>
+               </div>
+               <p className="text-white/80 text-xs leading-relaxed italic">"{idea.hook}"</p>
+              </div>
+              <div className="space-y-1">
+               <div className="flex items-center gap-1.5">
+                <Target className="w-3 h-3 text-blue-400" />
+                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Angle</span>
+               </div>
+               <p className="text-white/80 text-xs leading-relaxed">{idea.angle}</p>
+              </div>
+              <div className="space-y-1">
+               <div className="flex items-center gap-1.5">
+                <TrendingUp className="w-3 h-3 text-emerald-400" />
+                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Why It Works</span>
+               </div>
+               <p className="text-white/80 text-xs leading-relaxed">{idea.whyItWorks}</p>
+              </div>
+             </div>
+
+             <div className="flex justify-end">
+              <Button
+               size="sm"
+               onClick={(e) => { e.stopPropagation(); useIdea(idea); }}
+               className="bg-white/8 hover:bg-white/15 text-white border border-white/10 hover:border-white/20 text-xs rounded-lg font-medium"
+              >
+               <Wand2 className="w-3.5 h-3.5 mr-1.5" />
+               Generate Content
+               <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+             </div>
             </div>
+           </motion.div>
+          )}
+         </AnimatePresence>
+        </motion.div>
+       );
+      })}
+     </motion.div>
+    )}
 
-            {Array.isArray(ideas) && ideas.map((idea, i) => {
-              const isExpanded = expandedIndex === i;
-              const patternColor = PATTERN_COLORS[idea.pattern] || "bg-white/8 text-white/60 border-white/10";
-
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className={`rounded-xl border ${nicheBg} overflow-hidden cursor-pointer`}
-                  onClick={() => setExpandedIndex(isExpanded ? null : i)}
-                >
-                  <div className="p-4 flex items-start gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 mt-0.5 ${nicheBg} border`}>
-                      <span className={nicheColor}>{i + 1}</span>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-white text-sm font-semibold leading-snug">{idea.idea}</p>
-                        <ChevronRight className={`w-4 h-4 text-white/30 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
-                      </div>
-                      <span className={`inline-flex mt-2 items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${patternColor}`}>
-                        {idea.pattern}
-                      </span>
-                    </div>
-                  </div>
-
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="px-4 pb-4 space-y-4 border-t border-white/5 pt-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5">
-                                <Zap className="w-3 h-3 text-yellow-400" />
-                                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Hook</span>
-                              </div>
-                              <p className="text-white/80 text-xs leading-relaxed italic">"{idea.hook}"</p>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5">
-                                <Target className="w-3 h-3 text-blue-400" />
-                                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Angle</span>
-                              </div>
-                              <p className="text-white/80 text-xs leading-relaxed">{idea.angle}</p>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5">
-                                <TrendingUp className="w-3 h-3 text-emerald-400" />
-                                <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Why It Works</span>
-                              </div>
-                              <p className="text-white/80 text-xs leading-relaxed">{idea.whyItWorks}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end">
-                            <Button
-                              size="sm"
-                              onClick={(e) => { e.stopPropagation(); useIdea(idea); }}
-                              className="bg-white/8 hover:bg-white/15 text-white border border-white/10 hover:border-white/20 text-xs rounded-lg font-medium"
-                            >
-                              <Wand2 className="w-3.5 h-3.5 mr-1.5" />
-                              Generate Content
-                              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        )}
-
-        {!loading && ideas.length === 0 && (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[200px]"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
-              <Sparkles className="w-5 h-5 text-white/20" />
-            </div>
-            <p className="text-white/25 text-sm font-medium">Your generated content will appear here</p>
-            <p className="text-white/15 text-xs mt-1">Fill in the details above and hit Generate</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </PageWrapper>
-  );
+    {!loading && ideas.length === 0 && (
+     <motion.div
+      key="empty"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[200px]"
+     >
+      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+       <Sparkles className="w-5 h-5" style={{ color: "var(--text-disabled)" }} />
+      </div>
+      <p className="text-white/25 text-sm font-medium">Your generated content will appear here</p>
+      <p className="text-white/15 text-xs mt-1">Fill in the details above and hit Generate</p>
+     </motion.div>
+    )}
+   </AnimatePresence>
+  </PageWrapper>
+ );
 }
 
 export default function IdeasGenerator() {
-  return (
-    <PlanGate
-      requiredPlan="starter"
-      featureName="Idea Generator"
-      toolKey="ideas"
-      freeTrials={3}
-      description="Generate 10 battle-tested content ideas with hooks, angles, and psychology."
-    >
-      <IdeasGeneratorInner />
-    </PlanGate>
-  );
+ return (
+  <PlanGate
+   requiredPlan="starter"
+   featureName="Idea Generator"
+   toolKey="ideas"
+   freeTrials={3}
+   description="Generate 10 battle-tested content ideas with hooks, angles, and psychology."
+  >
+   <IdeasGeneratorInner />
+  </PlanGate>
+ );
 }

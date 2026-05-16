@@ -138,7 +138,7 @@ export function PricingTable() {
           name: user.fullName || "User",
           email: user.primaryEmailAddress?.emailAddress || "",
         },
-        theme: { color: "#00F2FF" },
+        theme: { color: "#8B91E3" },
       };
 
       const rzp = new window.Razorpay(options);
@@ -204,13 +204,13 @@ export function PricingTable() {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4"
         >
-          Supercharge Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-400">Content Journey</span>
+          Supercharge Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5E6AD2]-400 to-sky-400">Content Journey</span>
         </motion.h2>
         <motion.p 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-lg text-cyan-200/60"
+          className="text-lg text-[rgba(139,145,227,0.60)]"
         >
           Choose the perfect plan to hack algorithms, save hours of time, and build an audience on autopilot.
         </motion.p>
@@ -223,7 +223,7 @@ export function PricingTable() {
               key={p}
               onClick={() => setBillingPeriod(p)}
               className={`px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                billingPeriod === p ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-white/30 hover:text-white/60"
+                billingPeriod === p ? "bg-[#5E6AD2] text-black shadow-lg shadow-[rgba(94,106,210,0.20)]" : "text-white/30 hover:text-white/60"
               }`}
             >
               {p === "half-yearly" ? "6-Month" : p.replace('-', ' ')}
@@ -240,7 +240,7 @@ export function PricingTable() {
               key={c}
               onClick={() => setCurrency(c)}
               className={`flex items-center gap-2 px-5 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-2xl border transition-all ${
-                currency === c ? "border-cyan-500 bg-cyan-500/10 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.15)]" : "border-white/10 text-white/30 hover:border-white/20"
+                currency === c ? "border-[rgba(94,106,210,0.4)] bg-[#5E6AD2]/10 text-[#8B91E3] shadow-[0_0_20px_rgba(6,182,212,0.15)]" : "border-white/10 text-white/30 hover:border-white/20"
               }`}
             >
               {c === "INR" ? "🇮🇳 INR" : "🌍 USD"}
@@ -260,14 +260,14 @@ export function PricingTable() {
             onMouseLeave={() => setHoveredPlan("creator")}
             className={`relative min-w-[280px] md:min-w-0 snap-start rounded-[32px] transition-all duration-500 flex flex-col bg-[rgba(16,28,32,0.3)] backdrop-blur-2xl border ${
               plan.isRecommended 
-                ? "z-20 md:scale-[1.03] lg:scale-[1.05] shadow-[0_0_50px_rgba(0,242,255,0.15)] border-cyan-400/50" 
+                ? "z-20 md:scale-[1.03] lg:scale-[1.05] shadow-[0_0_50px_rgba(0,242,255,0.15)] border-[rgba(94,106,210,0.50)]" 
                 : plan.isInfinity
-                ? "z-10 border-cyan-500/20 shadow-[0_0_40px_rgba(0,242,255,0.05)]"
+                ? "z-10 border-[rgba(94,106,210,0.4)]/20 shadow-[0_0_40px_rgba(0,242,255,0.05)]"
                 : "border-white/10 hover:border-white/20"
             }`}
           >
             {plan.isRecommended && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg z-30">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#5E6AD2] text-black text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg z-30">
                 Most Popular
               </div>
             )}
@@ -275,7 +275,7 @@ export function PricingTable() {
             <div className="p-8 flex flex-col h-full">
                <div className="mb-8">
                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400/80">{plan.label}</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8B91E3]/80">{plan.label}</span>
                     <plan.icon className="w-4 h-4 text-white/20" />
                  </div>
                  <h3 className="text-2xl font-bold text-white mb-1">{plan.name}</h3>
@@ -287,7 +287,7 @@ export function PricingTable() {
                  </div>
                  
                  {plan.isInfinity && plan.valueProp && (
-                   <div className="mt-6 p-4 rounded-2xl bg-cyan-500/[0.03] border border-cyan-500/10 text-[10px] text-cyan-300/70 italic font-medium leading-relaxed">
+                   <div className="mt-6 p-4 rounded-2xl bg-[#5E6AD2]/[0.03] border border-[rgba(94,106,210,0.4)]/10 text-[10px] text-[#8B91E3]/70 italic font-medium leading-relaxed">
                      "{plan.valueProp}"
                    </div>
                  )}
@@ -297,8 +297,8 @@ export function PricingTable() {
                  <ul className="space-y-4 mb-10">
                    {plan.features.map((f, idx) => (
                      <li key={idx} className="flex gap-3 items-start">
-                       <div className="mt-1 shrink-0 w-3.5 h-3.5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                         <Check className="w-2.5 h-2.5 text-cyan-400 stroke-[4]" />
+                       <div className="mt-1 shrink-0 w-3.5 h-3.5 rounded-full bg-[#5E6AD2]/10 flex items-center justify-center">
+                         <Check className="w-2.5 h-2.5 text-[#8B91E3] stroke-[4]" />
                        </div>
                        <span className="text-[12px] text-white/60 font-medium leading-tight">{f}</span>
                      </li>
@@ -311,7 +311,7 @@ export function PricingTable() {
                 disabled={isProcessing === plan.id}
                 className={`w-full h-12 text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-300 group ${
                   plan.isRecommended 
-                  ? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-xl shadow-cyan-500/20" 
+                  ? "bg-[#5E6AD2] hover:bg-[#5E6AD2] text-black shadow-xl shadow-[rgba(94,106,210,0.20)]" 
                   : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
                 }`}
               >
@@ -325,7 +325,7 @@ export function PricingTable() {
 
       <div className="mt-20 pt-12 border-t border-white/5 flex flex-wrap items-center justify-center gap-10">
          <div className="flex items-center gap-2.5 text-[10px] font-bold text-white/20 uppercase tracking-widest">
-           <Shield className="w-3.5 h-3.5 text-cyan-500/40" /> 
+           <Shield className="w-3.5 h-3.5 text-[#5E6AD2]/40" /> 
            Secure payments via Razorpay
          </div>
          <div className="flex items-center gap-2.5 text-[10px] font-bold text-white/20 uppercase tracking-widest">
@@ -333,7 +333,7 @@ export function PricingTable() {
            Cancel anytime, no lock-in
          </div>
          <div className="flex items-center gap-2.5 text-[10px] font-bold text-white/20 uppercase tracking-widest">
-           <span className="text-cyan-500/50">🎁</span>
+           <span className="text-[#5E6AD2]/50">🎁</span>
            7-day trial on all paid plans
          </div>
       </div>

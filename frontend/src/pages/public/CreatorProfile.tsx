@@ -34,7 +34,7 @@ export default function CreatorProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#030303] flex items-center justify-center p-6">
-        <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#8B91E3] animate-spin" />
       </div>
     );
   }
@@ -69,8 +69,8 @@ export default function CreatorProfile() {
       )}
 
       {/* Background Glows */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-500/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[rgba(94,106,210,0.5)] blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -82,13 +82,13 @@ export default function CreatorProfile() {
           <div className="bg-zinc-900/90 backdrop-blur-3xl rounded-[44px] p-10 overflow-hidden relative group">
             
             {/* Inner Glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#5E6AD2]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
 
             <div className="relative z-10 space-y-10">
               {/* Profile Header */}
               <div className="space-y-6 text-center">
                 <div className="relative inline-block">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-violet-500/30 shadow-2xl mx-auto">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[rgba(94,106,210,0.30)] shadow-2xl mx-auto">
                     <img src={data.profile.avatar} alt={data.profile.displayName} className="w-full h-full object-cover" />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center shadow-xl">
@@ -100,7 +100,7 @@ export default function CreatorProfile() {
                   <h1 className="text-3xl font-black text-white italic tracking-tight">
                     {data.profile.displayName}
                   </h1>
-                  <p className="text-violet-400 font-bold uppercase tracking-[0.2em] text-[10px]">
+                  <p className="text-[#8B91E3] font-bold uppercase tracking-[0.2em] text-[10px]">
                     GrowFlow {data.profile.planTier} Creator
                   </p>
                 </div>
@@ -150,7 +150,7 @@ export default function CreatorProfile() {
                    <div className="space-y-4">
                      {data.content.map((item: any) => (
                        <div key={item.id} className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-3">
-                          <div className="flex items-center gap-2 text-[9px] font-black text-violet-400/60 uppercase tracking-widest">
+                          <div className="flex items-center gap-2 text-[9px] font-black text-[rgba(139,145,227,0.60)] uppercase tracking-widest">
                             <Sparkles className="w-3 h-3" /> {item.contentType} • {item.platform}
                           </div>
                           <p className="text-sm text-white/80 font-medium leading-relaxed line-clamp-3">
@@ -166,7 +166,7 @@ export default function CreatorProfile() {
               <div className="pt-6 border-t border-white/5">
                 <Button 
                   onClick={() => window.location.href = `/?ref=${data.profile.username}`}
-                  className="w-full h-16 rounded-3xl bg-violet-600 hover:bg-violet-500 text-white font-black text-base shadow-2xl shadow-violet-500/20 transition-all hover:scale-[1.02] active:scale-98 group"
+                  className="w-full h-16 rounded-3xl bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black text-base shadow-2xl shadow-[rgba(94,106,210,0.20)] transition-all hover:scale-[1.02] active:scale-98 group"
                 >
                   Create Your Content with GrowFlow AI 
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />

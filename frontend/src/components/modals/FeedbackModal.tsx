@@ -129,7 +129,7 @@ export function FeedbackModal({ open, onClose, trigger = "manual" }: FeedbackMod
             transition={{ type: "spring", damping: 28, stiffness: 380 }}
             className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 p-6 text-center space-y-5"
             style={{
-              background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(10,4,28,0.98) 100%)",
+              background: "linear-gradient(135deg, rgba(94,106,210,0.12) 0%, rgba(10,4,28,0.98) 100%)",
               backdropFilter: "blur(24px)",
               boxShadow: "0 24px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)",
             }}
@@ -199,7 +199,7 @@ export function FeedbackModal({ open, onClose, trigger = "manual" }: FeedbackMod
                     placeholder="Any thoughts? (optional)"
                     rows={2}
                     maxLength={500}
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder:text-white/25 resize-none focus:outline-none focus:border-cyan-500/40 transition-colors"
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 placeholder:text-white/25 resize-none focus:outline-none focus:border-[rgba(94,106,210,0.4)] transition-colors"
                   />
 
                   {submitError && (
@@ -211,7 +211,8 @@ export function FeedbackModal({ open, onClose, trigger = "manual" }: FeedbackMod
                   <Button
                     onClick={handleRate}
                     disabled={selected === 0 || submitting}
-                    className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold rounded-xl disabled:opacity-40 transition-all"
+                    style={{ background: '#5E6AD2' }}
+                    className="w-full font-semibold rounded-xl disabled:opacity-40 transition-all text-white"
                   >
                     {submitting ? "Submitting..." : "Submit Feedback"}
                   </Button>

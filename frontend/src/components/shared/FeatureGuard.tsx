@@ -47,21 +47,21 @@ export function FeatureGuard({ children, fallback, requiredPlan = "infinity", fe
           {children}
         </div>
         <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/20 backdrop-blur-[1px] rounded-md">
-          <span className="flex items-center gap-1.5 px-2 py-1 bg-cyan-600 text-white text-xs font-semibold rounded-full shadow-lg shadow-cyan-900/50">
+          <span className="flex items-center gap-1.5 px-2 py-1 bg-[#5E6AD2] text-white text-xs font-semibold rounded-full shadow-lg shadow-[rgba(94,106,210,0.50)]">
             <Lock className="w-3 h-3" /> Locked
           </span>
         </div>
       </div>
 
       <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-        <DialogContent className="sm:max-w-md border-cyan-500/20 bg-[#0a041c]">
+        <DialogContent className="sm:max-w-md border-[rgba(94,106,210,0.4)]/20 bg-[#0a041c]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-cyan-50">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-[#8B91E3]">
+              <Sparkles className="w-5 h-5 text-[#8B91E3]" />
               Pro Feature Locked
             </DialogTitle>
-            <DialogDescription className="text-cyan-200/70 pt-2 text-sm leading-relaxed">
-              This is an <span className="font-semibold text-cyan-300 capitalize">{requiredPlan}</span> feature. Upgrade now to unlock Pro-level virality and gain access to {featureName}.
+            <DialogDescription className="text-[rgba(139,145,227,0.70)] pt-2 text-sm leading-relaxed">
+              This is an <span className="font-semibold text-[#8B91E3] capitalize">{requiredPlan}</span> feature. Upgrade now to unlock Pro-level virality and gain access to {featureName}.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-6 mt-2 border-t border-white/5">
@@ -69,7 +69,7 @@ export function FeatureGuard({ children, fallback, requiredPlan = "infinity", fe
               Cancel
             </Button>
             <Link href="/pricing" className="w-full">
-              <Button className="w-full bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(124,58,237,0.3)] h-12 rounded-xl font-bold">
+              <Button className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white shadow-[0_0_15px_rgba(94,106,210,0.3)] h-12 rounded-xl font-bold">
                 Upgrade Plan
               </Button>
             </Link>

@@ -5,7 +5,7 @@ import { Logo } from "@/components/layout/Logo";
 
 export default function RefundPolicy() {
   return (
-    <div className="min-h-screen bg-[#060312] text-foreground font-sans">
+    <div className="min-h-screen bg-[#0A0A0F] text-foreground font-sans">
       <Helmet>
         <title>Refund Policy | GrowFlow AI</title>
         <meta name="description" content="Read our refund policy and money-back guarantee." />
@@ -62,7 +62,7 @@ export default function RefundPolicy() {
               <h2 className="text-2xl font-semibold text-white mb-4">Refund Process</h2>
               <p>
                 To request a refund, please email our support team at 
-                <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 font-medium hover:underline ml-1">growflowhelp@gmail.com</a> 
+                <a href="mailto:growflowhelp@gmail.com" className="text-[#8B91E3] font-medium hover:underline ml-1">growflowhelp@gmail.com</a> 
                 with the subject line "Refund Request" and include your account email address.
               </p>
               <p>
@@ -82,7 +82,7 @@ export default function RefundPolicy() {
               <p>
                 If you have any questions regarding our refund policy, please reach out to us:
                 <br />
-                <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 font-medium hover:underline">growflowhelp@gmail.com</a>
+                <a href="mailto:growflowhelp@gmail.com" className="text-[#8B91E3] font-medium hover:underline">growflowhelp@gmail.com</a>
               </p>
             </section>
           </div>

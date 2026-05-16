@@ -65,14 +65,14 @@ export function NotificationPermissionModal() {
             className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[70] w-[calc(100vw-2rem)] max-w-sm"
           >
             <div
-              className="rounded-2xl border border-cyan-500/25 p-4 shadow-2xl shadow-cyan-950/50"
-              style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.18) 0%, rgba(10,4,28,0.97) 100%)", backdropFilter: "blur(24px)" }}
+              className="rounded-2xl border border-[rgba(94,106,210,0.4)]/25 p-4 shadow-2xl shadow-[rgba(94,106,210,0.50)]"
+              style={{ background: "linear-gradient(135deg, rgba(94,106,210,0.18) 0%, rgba(10,4,28,0.97) 100%)", backdropFilter: "blur(24px)" }}
             >
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/20 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-[#5E6AD2]/15 border border-[rgba(94,106,210,0.4)]/20 flex items-center justify-center shrink-0">
                   {state === "done"
                     ? <Bell className="w-5 h-5 text-emerald-400" />
-                    : <Bell className="w-5 h-5 text-cyan-400" />
+                    : <Bell className="w-5 h-5 text-[#8B91E3]" />
                   }
                 </div>
                 <div className="flex-1 min-w-0">
@@ -100,7 +100,7 @@ export function NotificationPermissionModal() {
                     size="sm"
                     onClick={handleAllow}
                     disabled={state === "granting"}
-                    className="flex-1 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold text-xs h-8 rounded-lg shadow-lg shadow-cyan-900/40"
+                    className="flex-1 bg-gradient-to-r from-[#5E6AD2]-600 to-teal-600 hover:from-[#5E6AD2]-500 hover:to-teal-500 text-white font-semibold text-xs h-8 rounded-lg shadow-lg shadow-[rgba(94,106,210,0.40)]"
                   >
                     <Bell className="w-3.5 h-3.5 mr-1.5" />
                     {state === "granting" ? "Just a sec..." : "Turn on notifications"}

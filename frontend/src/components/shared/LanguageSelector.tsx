@@ -69,12 +69,12 @@ export function LanguageSelector({
         }
         .language-select-item:focus, .language-select-item[data-highlighted] {
           background: rgba(124, 58, 237, 0.1) !important;
-          color: #7c3aed !important;
+          color: #5E6AD2 !important;
           outline: none !important;
         }
       `}} />
       <Select value={value} onValueChange={handleChange}>
-        <SelectTrigger className="bg-white/[0.03] backdrop-blur-md border border-white/10 text-white focus:ring-violet-500/40 rounded-xl transition-all hover:bg-white/10 h-11">
+        <SelectTrigger className="bg-white/[0.03] backdrop-blur-md border border-white/10 text-white focus:ring-[rgba(94,106,210,0.40)] rounded-xl transition-all hover:bg-white/10 h-11">
           <SelectValue placeholder="Select language" />
         </SelectTrigger>
         <SelectContent className="glass-panel-premium border-white/10 rounded-xl max-h-[330px] language-select-content shadow-2xl">
@@ -91,13 +91,13 @@ export function LanguageSelector({
                 <span className="font-medium">
                   {lang.label}
                   {lang.native ? (
-                    <span className="text-white/40 ml-1.5 text-[11px] font-normal group-focus:text-violet-400/60">
+                    <span className="text-white/40 ml-1.5 text-[11px] font-normal group-focus:text-[rgba(139,145,227,0.60)]">
                       {lang.native}
                     </span>
                   ) : ""}
                 </span>
                 {RTL_LANGUAGES.includes(lang.value) && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-medium ml-1">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-600/20 text-indigo-400 font-medium ml-1">
                     RTL
                   </span>
                 )}
@@ -112,7 +112,7 @@ export function LanguageSelector({
           Output will be in {selectedLang?.label || value}.
           {" "}Hashtags and keywords will also be in {selectedLang?.label || value}.
           {isRTL && (
-            <span className="block text-purple-400 mt-0.5">
+            <span className="block text-indigo-400 mt-0.5">
               ⚡ Content will be right-to-left (RTL)
             </span>
           )}

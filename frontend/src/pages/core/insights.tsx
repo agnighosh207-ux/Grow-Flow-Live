@@ -22,12 +22,12 @@ import {
 } from "recharts";
 
 const CONTENT_TYPE_COLORS: Record<string, string> = {
-  Educational: "bg-violet-500",
-  Story: "bg-violet-400",
-  Viral: "bg-violet-600",
+  Educational: "bg-[#5E6AD2]",
+  Story: "bg-[#8B91E3]",
+  Viral: "bg-[#5E6AD2]",
 };
 
-const CHART_COLORS = ['#7c3aed', '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe'];
+const CHART_COLORS = ['#5E6AD2', '#5E6AD2', '#8B91E3', '#c4b5fd', '#ddd6fe'];
 
 function AnimatedCounter({ value }: { value: number | string }) {
   const [count, setCount] = useState(typeof value === "number" ? 0 : value);
@@ -62,7 +62,7 @@ function StatCard({ label, value, sub, icon, delta, delay = 0 }: { label: string
     >
       <div className="flex items-center justify-between mb-3 relative z-10">
         <span className="text-xs text-white/40 font-medium uppercase tracking-widest">{label}</span>
-        <div className="w-8 h-8 rounded-lg bg-violet-600/15 border border-violet-500/20 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-[rgba(94,106,210,0.15)] border border-[rgba(94,106,210,0.20)] flex items-center justify-center">
           {icon}
         </div>
       </div>
@@ -163,14 +163,14 @@ export default function Insights() {
       <PlanGate requiredPlan="infinity" featureName="Performance Insights">
         <div className="p-4 py-12">
           <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center bg-white/[0.02]">
-            <div className="w-20 h-20 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-6">
-              <BarChart3 className="w-10 h-10 text-violet-400" />
+            <div className="w-20 h-20 rounded-full bg-[rgba(94,106,210,0.10)] border border-[rgba(94,106,210,0.20)] flex items-center justify-center mx-auto mb-6">
+              <BarChart3 className="w-10 h-10 text-[#8B91E3]" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">No data to analyze yet</h3>
             <p className="text-white/40 text-sm max-w-sm mx-auto mb-8">
               Once you generate AI content, you'll see deep analytics on your posting habits and performance.
             </p>
-            <Button onClick={() => setLocation("/generate")} className="bg-violet-600 hover:bg-violet-500 font-bold rounded-xl px-8">
+            <Button onClick={() => setLocation("/generate")} className="bg-[#5E6AD2] hover:bg-[#5E6AD2] font-bold rounded-xl px-8">
               Start Generating →
             </Button>
           </div>
@@ -185,7 +185,7 @@ export default function Insights() {
         <FeatureGuideBanner
           toolKey="insights"
           title="Performance Insights"
-          icon={<BarChart3 className="w-5 h-5 text-violet-400" />}
+          icon={<BarChart3 className="w-5 h-5 text-[#8B91E3]" />}
           tagline="Visualize your growth trajectory. Data-driven decisions for your content strategy."
           whatYouGet={["Growth momentum tracking", "Top content format analysis", "Consistency streak monitoring", "Style breakdown charts"]}
           whenToUse="Use this every weekend to review your output and see which content styles are dominating your schedule."
@@ -196,8 +196,8 @@ export default function Insights() {
         
         <PageHeader
           icon={<BarChart3 />}
-          iconBg="bg-violet-500/10"
-          iconColor="text-violet-400"
+          iconBg="bg-[rgba(94,106,210,0.10)]"
+          iconColor="text-[#8B91E3]"
           title="Performance Insights"
           subtitle="Visualize your growth and content consistency."
           badge="PRO"
@@ -205,10 +205,10 @@ export default function Insights() {
         />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Total generations" value={sub?.totalGenerations ?? 0} icon={<Zap className="w-4 h-4 text-violet-400" />} />
-          <StatCard label="Growth Momentum" value={stats?.thisWeek || 0} sub="Generations this week" icon={<TrendingUp className="w-4 h-4 text-violet-400" />} delta={stats?.delta} />
-          <StatCard label="Top Format" value={stats?.topType || "—"} icon={<Star className="w-4 h-4 text-violet-400" />} />
-          <StatCard label="Current Streak" value={`${stats?.streak || 0} Days`} icon={<Calendar className="w-4 h-4 text-violet-400" />} />
+          <StatCard label="Total generations" value={sub?.totalGenerations ?? 0} icon={<Zap className="w-4 h-4 text-[#8B91E3]" />} />
+          <StatCard label="Growth Momentum" value={stats?.thisWeek || 0} sub="Generations this week" icon={<TrendingUp className="w-4 h-4 text-[#8B91E3]" />} delta={stats?.delta} />
+          <StatCard label="Top Format" value={stats?.topType || "—"} icon={<Star className="w-4 h-4 text-[#8B91E3]" />} />
+          <StatCard label="Current Streak" value={`${stats?.streak || 0} Days`} icon={<Calendar className="w-4 h-4 text-[#8B91E3]" />} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -227,7 +227,7 @@ export default function Insights() {
                       <motion.div 
                         initial={{ width: 0 }} 
                         animate={{ width: `${pct}%` }} 
-                        className={`h-full ${CONTENT_TYPE_COLORS[type] || "bg-violet-500"}`} 
+                        className={`h-full ${CONTENT_TYPE_COLORS[type] || "bg-[#5E6AD2]"}`} 
                       />
                     </div>
                   </div>
@@ -238,10 +238,10 @@ export default function Insights() {
 
           <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-6">
             <h3 className="text-white/80 font-semibold text-sm mb-6 flex items-center gap-2">
-              <PieIcon className="w-4 h-4 text-violet-400" /> Platform & Language Breakdown
+              <PieIcon className="w-4 h-4 text-[#8B91E3]" /> Platform & Language Breakdown
             </h3>
             <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%" minHeight={160}>
+              <ResponsiveContainer width="100%" height={200} minHeight={160}>
                 <PieChart>
                   <Pie 
                     data={languageData} 
@@ -281,7 +281,7 @@ export default function Insights() {
           <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 md:col-span-2">
             <h3 className="text-white/80 font-semibold text-sm mb-6">Activity Timeline</h3>
             <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%" minHeight={160}>
+              <ResponsiveContainer width="100%" height={200} minHeight={160}>
                 <BarChart data={chartData}>
                   <XAxis 
                     dataKey="date" 
@@ -302,7 +302,7 @@ export default function Insights() {
                   />
                   <Bar 
                     dataKey="generations" 
-                    fill="#7c3aed" 
+                    fill="#5E6AD2" 
                     radius={[4, 4, 0, 0]} 
                     barSize={20}
                   />

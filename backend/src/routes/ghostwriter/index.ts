@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { z } from "zod";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
@@ -10,7 +11,7 @@ const router: IRouter = Router();
 
 router.post("/analyze-voice", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const userId = req.userId;
-  const { language: rawLanguage } = req.body;
+  const rawLanguage = req.body?.language;
   const language = typeof rawLanguage === "string" ? rawLanguage : "English";
   const planType = req.user?.planType ?? "free";
 
@@ -116,11 +117,16 @@ Return JSON:
 });
 
 router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
-  const topic = typeof req.body.topic === "string" ? req.body.topic : "";
-  const platform = typeof req.body.platform === "string" ? req.body.platform : "";
-  const length = typeof req.body.length === "string" ? req.body.length : "medium";
-  const useVoice = typeof req.body.useVoice === "boolean" ? req.body.useVoice : false;
-  const language = typeof req.body.language === "string" ? req.body.language : "English";
+  const writeSchema = z.object({
+    topic: z.string().default(""),
+    platform: z.string().default(""),
+    length: z.string().default("medium"),
+    useVoice: z.boolean().default(false),
+    language: z.string().default("English"),
+  });
+
+  const validated = writeSchema.parse(req.body);
+  const { topic, platform, length, useVoice, language } = validated;
   const planType = req.user?.planType ?? "free";
 
   // Free users only get English

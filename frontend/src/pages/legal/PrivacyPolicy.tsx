@@ -5,7 +5,7 @@ import { Logo } from "@/components/layout/Logo";
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-[#060312] text-foreground font-sans">
+    <div className="min-h-screen bg-[#0A0A0F] text-foreground font-sans">
       <Helmet>
         <title>Privacy Policy | GrowFlow AI</title>
         <meta name="description" content="Read the Privacy Policy of using GrowFlow AI." />
@@ -105,7 +105,7 @@ export default function PrivacyPolicy() {
               <p>
                 If you have any privacy concerns or wish to exercise your rights, please contact our Data Protection Officer at:
                 <br />
-                <a href="mailto:growflowhelp@gmail.com" className="text-cyan-400 font-medium hover:underline">growflowhelp@gmail.com</a>
+                <a href="mailto:growflowhelp@gmail.com" className="text-[#8B91E3] font-medium hover:underline">growflowhelp@gmail.com</a>
               </p>
             </section>
 

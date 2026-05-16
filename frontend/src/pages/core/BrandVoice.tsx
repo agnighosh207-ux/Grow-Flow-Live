@@ -84,7 +84,7 @@ export default function BrandVoicePage() {
       <FeatureGuideBanner
         toolKey="voice"
         title="Brand Voice Cloning"
-        icon={<UserCircle className="w-5 h-5 text-violet-400" />}
+        icon={<UserCircle className="w-5 h-5 text-[#8B91E3]" />}
         tagline="Generate content that sounds exactly like you. No more generic 'AI-sounding' posts."
         whatYouGet={["Linguistic DNA analysis", "Tone & length detection", "AI-generated voice profile", "Consistent brand persona"]}
         whenToUse="Use this first to teach the AI your writing style. Once cloned, select this profile during content generation."
@@ -95,12 +95,12 @@ export default function BrandVoicePage() {
       
       <div className="space-y-4 text-center">
         <div className="flex items-center justify-center gap-4">
-          <h1 className="text-4xl md:text-6xl font-black text-white italic tracking-tight">Clone Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-500">Brand Voice</span></h1>
+          <h1 className="text-4xl md:text-6xl font-black text-white italic tracking-tight">Clone Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5E6AD2] to-indigo-900">Brand Voice</span></h1>
           <button 
             onClick={() => setShowGuide(prev => !prev)}
             className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all group mt-2"
           >
-            <Sparkles className="w-4 h-4 text-white/40 group-hover:text-violet-400" />
+            <Sparkles className="w-4 h-4 text-white/40 group-hover:text-[#8B91E3]" />
           </button>
         </div>
         <p className="text-white/40 text-lg max-w-2xl mx-auto font-medium">
@@ -115,7 +115,7 @@ export default function BrandVoicePage() {
           <div className="p-8 rounded-[32px] bg-white/[0.02] border border-white/5 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black text-white italic flex items-center gap-2">
-                <MessageSquare className="text-violet-400" />
+                <MessageSquare className="text-[#8B91E3]" />
                 Your Best Posts
               </h2>
               <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Min 3 Samples</span>
@@ -128,7 +128,7 @@ export default function BrandVoicePage() {
                     placeholder={`Paste Sample Post #${i + 1}...`}
                     value={sample}
                     onChange={(e) => handleSampleChange(i, e.target.value)}
-                    className="min-h-[120px] rounded-2xl bg-black/40 border-white/10 focus:border-violet-500/50 transition-all resize-none p-4 text-sm"
+                    className="min-h-[120px] rounded-2xl bg-black/40 border-white/10 focus:border-[rgba(94,106,210,0.50)] transition-all resize-none p-4 text-sm"
                   />
                   {samples.length > 3 && (
                     <button 
@@ -153,7 +153,7 @@ export default function BrandVoicePage() {
               <Button 
                 onClick={handleAnalyze}
                 disabled={analyzing}
-                className="flex-[2] rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-black shadow-glow disabled:opacity-50"
+                className="flex-[2] rounded-xl bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black shadow-glow disabled:opacity-50"
               >
                 {analyzing ? (
                   <><Loader2 className="mr-2 animate-spin" /> Analyzing Linguistic DNA...</>
@@ -168,7 +168,7 @@ export default function BrandVoicePage() {
         {/* Profiles Side */}
         <div className="space-y-6">
           <h2 className="text-xl font-black text-white italic flex items-center gap-2">
-            <UserCircle className="text-violet-400" />
+            <UserCircle className="text-[#8B91E3]" />
             Saved Voice Profiles
           </h2>
           
@@ -189,9 +189,9 @@ export default function BrandVoicePage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="text-lg font-black text-white italic">{v.voiceName}</h3>
-                      <p className="text-xs text-violet-400/70 font-bold uppercase tracking-widest">Active Profile</p>
+                      <p className="text-xs text-[rgba(139,145,227,0.70)] font-bold uppercase tracking-widest">Active Profile</p>
                     </div>
-                    <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400">
+                    <div className="p-2 rounded-xl bg-[rgba(94,106,210,0.10)] text-[#8B91E3]">
                       <CheckCircle2 size={18} />
                     </div>
                   </div>
@@ -212,7 +212,7 @@ export default function BrandVoicePage() {
                     <p className="text-xs text-white/50 leading-relaxed italic line-clamp-2">"{v.aiDescription}"</p>
                   </div>
 
-                  <div className="absolute inset-0 bg-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="absolute inset-0 bg-[rgba(94,106,210,0.5)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 </motion.div>
               ))
             ) : (

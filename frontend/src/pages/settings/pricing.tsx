@@ -26,8 +26,31 @@ function loadRazorpay(): Promise<boolean> {
 import {
   Gift, Check, X, Zap, Star, ArrowLeft,
   Sparkles, TrendingUp, CalendarDays, Flame, Wand2,
-  Shield, IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown
+  Shield, IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown, CheckCircle2
 } from "lucide-react";
+
+function LiveCounter() {
+  const [count, setCount] = useState(1247);
+  useEffect(() => {
+    const i = setInterval(() => setCount(p => p + (Math.random() > 0.8 ? 1 : 0)), 9000);
+    return () => clearInterval(i);
+  }, []);
+  return (
+    <div className="flex items-center justify-center gap-2 mb-6">
+      <div className="flex -space-x-1.5">
+        {['S','R','A','P','K'].map((l,i) => (
+          <div key={i} className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold"
+            style={{ background: `hsl(${i*50+200},60%,35%)`, borderColor: 'var(--bg)', color: 'white' }}>
+            {l}
+          </div>
+        ))}
+      </div>
+      <span className="text-sm" style={{ color: '#9B9BA8' }}>
+        <span className="font-bold" style={{ color: '#F1F1F3' }}>{count.toLocaleString()}</span> creators growing with GrowFlow
+      </span>
+    </div>
+  );
+}
 
 type BillingPeriod = "monthly" | "quarterly" | "half-yearly" | "yearly";
 
@@ -129,12 +152,12 @@ const FEATURES: Feature[] = [
 ];
 
 const INFINITY_EXCLUSIVES = [
-  { icon: Brain, color: "text-violet-400", label: "AI Content Coach", desc: "Weekly personalized growth report analyzing your content patterns, strengths, and exact 3-task action plan." },
-  { icon: Wand2, color: "text-violet-400", label: "AI Ghostwriter", desc: "Trains on your past content to write in your exact voice. The more you use it, the better it sounds like you." },
+  { icon: Brain, color: "text-[#8B91E3]", label: "AI Content Coach", desc: "Weekly personalized growth report analyzing your content patterns, strengths, and exact 3-task action plan." },
+  { icon: Wand2, color: "text-[#8B91E3]", label: "AI Ghostwriter", desc: "Trains on your past content to write in your exact voice. The more you use it, the better it sounds like you." },
   { icon: Flame, color: "text-orange-400", label: "Viral Score™", desc: "Every piece of content gets scored 0-100 for virality potential by AI before you post it." },
   { icon: TrendingUp, color: "text-emerald-400", label: "Trend Engine", desc: "Perplexity-powered live search finds what's trending right now in your niche, not last week." },
   { icon: Sparkles, color: "text-pink-400", label: "Multi-Variation Output", desc: "Get 3 completely different angles on every topic — A/B test before you post." },
-  { icon: CalendarDays, color: "text-violet-400", label: "Full Content Suite", desc: "Calendar, Repurposer, Competitor Intelligence, Hashtag Strategist — everything a content agency uses." },
+  { icon: CalendarDays, color: "text-[#8B91E3]", label: "Full Content Suite", desc: "Calendar, Repurposer, Competitor Intelligence, Hashtag Strategist — everything a content agency uses." },
 ];
 
 function CellContent({ value, infinityLabel }: { value: boolean | string; infinityLabel?: string }) {
@@ -200,7 +223,7 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
         name: "GrowFlow AI",
         description: `Credit Top-Up: ${data.label}`,
         order_id: data.orderId,
-        theme: { color: "#7c3aed" },
+        theme: { color: "#5E6AD2" },
         handler: async (response: any) => {
           setLoadingPack(packKey); // Keep loading during verification
           try {
@@ -247,21 +270,21 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
 
   return (
     <div className="max-w-2xl mx-auto mt-16 mb-12 relative">
-      <div className="absolute inset-0 bg-violet-600/5 blur-3xl -z-10 rounded-full" />
+      <div className="absolute inset-0 bg-[#5E6AD2]/5 blur-3xl -z-10 rounded-full" />
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-3">
-          <Zap className="w-3.5 h-3.5 text-violet-400" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">One-time Boost</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 mb-3">
+          <Zap className="w-3.5 h-3.5 text-[#8B91E3]" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#8B91E3]">One-time Boost</span>
         </div>
         <h3 className="text-2xl font-black text-white">Need More Credits?</h3>
         <p className="text-white/40 text-sm mt-1">One-time top-up. Use anytime. No recurring charge.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {PACKS.map(pack => (
-          <div key={pack.key} className={`relative rounded-[2rem] border p-6 text-center transition-all duration-300 ${pack.popular ? 'border-violet-500/40 bg-violet-500/5 shadow-xl shadow-violet-900/10' : 'border-white/8 bg-white/[0.02] hover:border-white/20'}`}>
+          <div key={pack.key} className={`relative rounded-[2rem] border p-6 text-center transition-all duration-300 ${pack.popular ? 'border-[rgba(94,106,210,0.4)]/40 bg-[#5E6AD2]/5 shadow-xl shadow-[rgba(94,106,210,0.10)]' : 'border-white/8 bg-white/[0.02] hover:border-white/20'}`}>
             {pack.popular && (
               <div className="absolute -top-3 inset-x-0 flex justify-center">
-                <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">Most Popular</span>
+                <span className="bg-gradient-to-r from-[#5E6AD2] to-indigo-600 text-white text-[9px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">Most Popular</span>
               </div>
             )}
             <div className="text-4xl font-black text-white mt-2">{pack.credits}</div>
@@ -270,7 +293,7 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
             <Button
               onClick={() => handleTopup(pack.key)}
               disabled={!!loadingPack}
-              className={`w-full h-12 rounded-2xl text-sm font-black transition-all ${pack.popular ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/20' : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'} disabled:opacity-50`}
+              className={`w-full h-12 rounded-2xl text-sm font-black transition-all ${pack.popular ? 'bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white shadow-lg shadow-[rgba(94,106,210,0.20)]' : 'bg-white/5 hover:bg-white/10 text-white border border-white/10'} disabled:opacity-50`}
             >
               {loadingPack === pack.key ? <RefreshCw className="w-4 h-4 animate-spin" /> : pack.price}
             </Button>
@@ -311,9 +334,9 @@ function UrgencyHeader() {
         </span>
       </div>
       <div className="flex items-center gap-4 text-xs text-white/30">
-        <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-violet-400" /> 7-day free trial</span>
-        <span className="flex items-center gap-1"><RefreshCw className="w-3 h-3 text-violet-400" /> Cancel anytime</span>
-        <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-violet-400" /> Instant access</span>
+        <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-[#8B91E3]" /> 7-day free trial</span>
+        <span className="flex items-center gap-1"><RefreshCw className="w-3 h-3 text-[#8B91E3]" /> Cancel anytime</span>
+        <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-[#8B91E3]" /> Instant access</span>
       </div>
     </div>
   );
@@ -514,24 +537,24 @@ export default function PricingPage() {
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-[#12121C] border border-white/10 rounded-[40px] pt-10 pb-8 px-8 md:pt-14 md:pb-12 md:px-12 max-w-sm text-center relative overflow-hidden shadow-[0_0_80px_rgba(124,58,237,0.1)]"
+              className="bg-[#12121C] border border-white/10 rounded-[40px] pt-10 pb-8 px-8 md:pt-14 md:pb-12 md:px-12 max-w-sm text-center relative overflow-hidden shadow-[0_0_80px_rgba(94,106,210,0.1)]"
 
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#5E6AD2]/10 rounded-full blur-3xl -mr-16 -mt-16" />
               
-              <div className="w-16 h-16 rounded-2xl bg-violet-500/20 flex items-center justify-center mx-auto mb-6">
-                <Gift className="w-8 h-8 text-violet-400" />
+              <div className="w-16 h-16 rounded-2xl bg-[#5E6AD2]/20 flex items-center justify-center mx-auto mb-6">
+                <Gift className="w-8 h-8 text-[#8B91E3]" />
               </div>
               
               <h2 className="text-3xl font-black text-white mb-2 italic">Wait! Don't leave empty-handed.</h2>
               <p className="text-white/40 text-sm mb-8 leading-relaxed font-medium">
-                Try the <span className="text-violet-400 font-bold">Creator Plan</span> today and get <span className="text-white font-bold">50% extra credits</span> for your first month.
+                Try the <span className="text-[#8B91E3] font-bold">Creator Plan</span> today and get <span className="text-white font-bold">50% extra credits</span> for your first month.
               </p>
               
               <div className="space-y-3">
                 <Button 
                   onClick={() => { setShowExitIntent(false); handlePlanClick("creator"); }}
-                  className="w-full h-14 bg-violet-600 hover:bg-violet-500 text-white font-black rounded-2xl shadow-xl shadow-violet-900/40"
+                  className="w-full h-14 bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black rounded-2xl shadow-xl shadow-[rgba(94,106,210,0.40)]"
                 >
                   Claim My Bonus Offer
                 </Button>
@@ -550,12 +573,12 @@ export default function PricingPage() {
       </AnimatePresence>
       {/* Background orbs */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-violet-700/20 blur-[140px]" />
+        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-[rgba(94,106,210,0.20)] blur-[140px]" />
         <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[400px] rounded-full bg-indigo-800/15 blur-[140px]" />
         <div className="absolute top-[40%] left-[50%] w-[400px] h-[400px] rounded-full bg-pink-800/10 blur-[140px]" />
         
         {/* Floating Graphics */}
-        <motion.div className="absolute top-[15%] right-[5%] opacity-[0.07] animate-float" style={{ animationDelay: '0.5s' }}><Brain className="w-64 h-64 text-violet-400" /></motion.div>
+        <motion.div className="absolute top-[15%] right-[5%] opacity-[0.07] animate-float" style={{ animationDelay: '0.5s' }}><Brain className="w-64 h-64 text-[#8B91E3]" /></motion.div>
         <motion.div className="absolute bottom-[20%] left-[10%] opacity-[0.05] animate-float" style={{ animationDelay: '2s' }}><Zap className="w-48 h-48 text-indigo-400" /></motion.div>
       </div>
 
@@ -596,14 +619,14 @@ export default function PricingPage() {
                   <div className="bg-[#0A051A] border border-white/10 rounded-2xl p-1 flex gap-1">
                   <button
                     onClick={() => setCurrency("INR")}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "INR" ? "bg-violet-500/20 text-violet-400 border border-violet-500/20" : "text-white/30 hover:text-white/50"}`}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "INR" ? "bg-[#5E6AD2]/20 text-[#8B91E3] border border-[rgba(94,106,210,0.4)]/20" : "text-white/30 hover:text-white/50"}`}
                   >
-                    <span className="w-4 h-3 bg-violet-400/20 rounded-sm flex items-center justify-center text-[8px]">IN</span>
+                    <span className="w-4 h-3 bg-[rgba(94,106,210,0.20)] rounded-sm flex items-center justify-center text-[8px]">IN</span>
                     INR
                   </button>
                   <button
                     onClick={() => setCurrency("USD")}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "USD" ? "bg-violet-500/20 text-violet-400 border border-violet-500/20" : "text-white/30 hover:text-white/50"}`}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "USD" ? "bg-[#5E6AD2]/20 text-[#8B91E3] border border-[rgba(94,106,210,0.4)]/20" : "text-white/30 hover:text-white/50"}`}
                   >
                     <Globe className="w-3.5 h-3.5" />
                     USD
@@ -618,7 +641,7 @@ export default function PricingPage() {
             >
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
                 Simple, transparent <br />
-                <span className="text-violet-500">pricing</span>
+                <span className="text-[#5E6AD2]">pricing</span>
               </h1>
               <p className="text-sm md:text-lg max-w-xl mx-auto font-medium" style={{ color: 'var(--text-muted)' }}>
                 Unlock high-performance AI tools and scale your content production.
@@ -629,7 +652,21 @@ export default function PricingPage() {
       </div>
 
         <div className="flex flex-col items-center justify-center mb-12">
-          <UrgencyHeader />
+          <LiveCounter />
+          
+          <div className="mb-8 rounded-2xl p-4 text-center max-w-lg"
+            style={{ background: 'rgba(94,106,210,0.06)', border: '1px solid rgba(94,106,210,0.15)' }}>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-sm font-bold" style={{ color: '#F1F1F3' }}>
+                Launch Offer — Start free for 7 days, then pay
+              </span>
+            </div>
+            <p className="text-xs" style={{ color: '#9B9BA8' }}>
+              Set up autopay today. Your card won't be charged until day 8. Cancel anytime before.
+            </p>
+          </div>
+
           <div className="flex items-center justify-center p-1 rounded-xl" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
             {BILLING_OPTIONS.map((opt) => (
               <button
@@ -637,13 +674,13 @@ export default function PricingPage() {
                 onClick={() => setBilling(opt.key)}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   billing === opt.key
-                    ? "bg-violet-500 text-white shadow-lg"
+                    ? "bg-[#5E6AD2] text-white shadow-lg"
                     : "text-white/40 hover:text-white/70"
                 }`}
               >
                 {opt.label}
                 {opt.badge && (
-                  <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300">
+                  <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-[#5E6AD2]/20 text-[#8B91E3]">
                     {opt.badge}
                   </span>
                 )}
@@ -674,7 +711,7 @@ export default function PricingPage() {
                 <div className="space-y-3 flex-1 mb-6">
                   {["5 monthly generations", "4 platform types", "Basic tools"].map((f) => (
                     <div key={f} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-violet-400 mt-0.5" />
+                      <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
                       <span className="text-white/60 text-xs">{f}</span>
                     </div>
                   ))}
@@ -704,7 +741,7 @@ export default function PricingPage() {
                 <div className="space-y-3 flex-1 mb-6">
                   {["25 generations / month", "Idea Gen + Strategy", "All 4 platforms", "Priority Support"].map((f) => (
                     <div key={f} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-violet-400 mt-0.5" />
+                      <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
                       <span className="text-white/60 text-xs">{f}</span>
                     </div>
                   ))}
@@ -725,18 +762,18 @@ export default function PricingPage() {
               className="w-[300px] md:w-auto flex-shrink-0 relative z-10"
             >
               <div className="flex flex-col h-full" style={{ 
-                background: 'linear-gradient(160deg, rgba(124,58,237,0.08) 0%, #0e0e14 40%)',
-                border: '1px solid rgba(124,58,237,0.3)',
+                background: 'linear-gradient(160deg, rgba(94,106,210,0.08) 0%, #0e0e14 40%)',
+                border: '1px solid rgba(94,106,210,0.3)',
                 borderRadius: '20px',
                 padding: '28px',
-                boxShadow: '0 0 40px rgba(124,58,237,0.12), 0 0 0 1px rgba(124,58,237,0.1)',
+                boxShadow: '0 0 40px rgba(94,106,210,0.12), 0 0 0 1px rgba(94,106,210,0.1)',
                 marginBottom: '-8px'
               }}>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-violet-500 text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#5E6AD2] text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
                   Most Popular
                 </div>
                 <div className="mb-6">
-                  <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-1">Creator</p>
+                  <p className="text-xs font-bold text-[#8B91E3] uppercase tracking-widest mb-1">Creator</p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-bold text-white">{formatPrice(creatorPrice)}</span>
                     <span className="text-white/40 text-xs">/ mo</span>
@@ -745,7 +782,7 @@ export default function PricingPage() {
                 <div className="space-y-3 flex-1 mb-6">
                   {["150 generations / month", "Viral Score™ AI Rating", "Trend Engine Access", "Content Repurposer"].map((f) => (
                     <div key={f} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-violet-400 mt-0.5" />
+                      <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
                       <span className="text-white/70 text-xs font-medium">{f}</span>
                     </div>
                   ))}
@@ -753,7 +790,7 @@ export default function PricingPage() {
                 <Button 
                   onClick={() => handlePlanClick("creator")}
                   className="w-full h-11 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: 'var(--violet)', color: 'white', boxShadow: '0 4px 15px rgba(124,58,237,0.3)' }}
+                  style={{ background: "#5E6AD2", color: 'white', boxShadow: '0 4px 15px rgba(94,106,210,0.3)' }}
                 >
                   {getPlanState("creator") === "current" ? "Current Plan" : "Upgrade to Creator"}
                 </Button>
@@ -776,7 +813,7 @@ export default function PricingPage() {
                 <div className="space-y-3 flex-1 mb-6">
                   {["Unlimited Generations*", "AI Content Coach", "Custom Brand Voice", "Ghostwriter Mode"].map((f) => (
                     <div key={f} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-violet-400 mt-0.5" />
+                      <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
                       <span className="text-white/60 text-xs">{f}</span>
                     </div>
                   ))}
@@ -792,26 +829,35 @@ export default function PricingPage() {
           </div>
         </div>
 
+        <div className="flex items-center justify-center gap-2 mt-10 pt-6 border-t"
+          style={{ borderColor: 'var(--border)' }}>
+          <Shield className="w-4 h-4 flex-shrink-0" style={{ color: '#16A34A' }} />
+          <p className="text-xs text-center" style={{ color: '#55555F' }}>
+            <span style={{ color: '#9B9BA8', fontWeight: 600 }}>7-day free trial on all plans.</span>{' '}
+            No charge until day 8. Cancel before then — no questions asked. After trial, cancel within 7 days of any charge for a full refund.
+          </p>
+        </div>
+
         {/* Agency Section */}
-          <div className="mb-16 border rounded-2xl p-8 relative overflow-hidden group" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+          <div className="mb-16 border rounded-2xl p-8 relative overflow-hidden group mt-16" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
             <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
               <div className="space-y-4 text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start gap-3">
-                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center border" style={{ background: 'rgba(124,58,237,0.1)', borderColor: 'rgba(124,58,237,0.2)' }}>
-                      <Users className="w-6 h-6 text-violet-400" />
+                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center border" style={{ background: 'rgba(94,106,210,0.1)', borderColor: 'rgba(94,106,210,0.2)' }}>
+                      <Users className="w-6 h-6 text-[#8B91E3]" />
                    </div>
                    <div>
                       <h3 className="text-2xl font-bold text-white">For Agencies & Teams</h3>
-                      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(124,58,237,0.6)' }}>Enterprise Grade Scale</p>
+                      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(94,106,210,0.6)' }}>Enterprise Grade Scale</p>
                    </div>
                 </div>
               <p className="text-white/50 text-sm max-w-lg leading-relaxed">
                 Empower your entire team with collaborative content generation. Manage members, monitor usage, and maintain consistent brand voice across all accounts.
               </p>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-[10px] font-black uppercase tracking-wider text-violet-300">
-                <span className="bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> 5 Member Seats</span>
-                <span className="bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> 1,000 Generations / mo</span>
-                <span className="bg-violet-500/10 border border-violet-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> Team Analytics</span>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-[10px] font-black uppercase tracking-wider text-[#8B91E3]">
+                <span className="bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> 5 Member Seats</span>
+                <span className="bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> 1,000 Generations / mo</span>
+                <span className="bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> Team Analytics</span>
               </div>
             </div>
             <div className="flex flex-col items-center md:items-end gap-4 min-w-[200px]">
@@ -820,13 +866,13 @@ export default function PricingPage() {
                   <span className="text-4xl font-black text-white">{currency === "USD" ? "$39" : "₹2,999"}</span>
                   <span className="text-white/40 text-sm">/ mo</span>
                 </div>
-                <p className="text-violet-400/40 text-[10px] font-bold uppercase tracking-tighter mt-1">Billed monthly</p>
+                <p className="text-[#8B91E3]/40 text-[10px] font-bold uppercase tracking-tighter mt-1">Billed monthly</p>
               </div>
                 <Button 
                   onClick={() => setShowAgencyModal(true)}
                   disabled={getPlanState("agency") === "current"}
                   className="w-full md:w-auto h-11 px-8 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: 'var(--violet)', color: 'white', boxShadow: '0 4px 15px rgba(124,58,237,0.3)' }}
+                  style={{ background: "#5E6AD2", color: 'white', boxShadow: '0 4px 15px rgba(94,106,210,0.3)' }}
                 >
                   {getPlanState("agency") === "current" ? "Active Plan" : "Get Agency Plan"}
               </Button>
@@ -842,11 +888,11 @@ export default function PricingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-16 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/30 to-indigo-950/20 p-6 md:p-8"
+          className="mb-16 rounded-2xl border border-[rgba(94,106,210,0.4)]/20 bg-gradient-to-br from-[#5E6AD2]/30 to-indigo-950/20 p-6 md:p-8"
         >
           <div className="flex items-center gap-2 mb-2">
-            {currency === "INR" ? <IndianRupee className="w-4 h-4 text-violet-400" /> : <DollarSign className="w-4 h-4 text-violet-400" />}
-            <p className="text-xs font-bold uppercase tracking-widest text-violet-400">What {formatPrice(creatorPrice)} actually gets you</p>
+            {currency === "INR" ? <IndianRupee className="w-4 h-4 text-[#8B91E3]" /> : <DollarSign className="w-4 h-4 text-[#8B91E3]" />}
+            <p className="text-xs font-bold uppercase tracking-widest text-[#8B91E3]">What {formatPrice(creatorPrice)} actually gets you</p>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
             Creator pays for itself in one post.
@@ -878,7 +924,7 @@ export default function PricingPage() {
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold mb-2">
               Why creators choose{" "}
-              <span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#5E6AD2] to-indigo-400 bg-clip-text text-transparent">
                 Infinity
               </span>
             </h2>
@@ -937,13 +983,13 @@ export default function PricingPage() {
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400">Starter</p>
                 <p className="text-emerald-100 font-bold mt-0.5 text-xs">{formatPrice(starterPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span></p>
               </div>
-              <div className="p-3 text-center bg-violet-950/30 relative">
+              <div className="p-3 text-center bg-[rgba(94,106,210,0.30)] relative">
                 <div className="flex justify-center mb-0.5">
-                  <span className="text-[8px] bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full px-1.5 py-0.5 font-semibold">
+                  <span className="text-[8px] bg-[#5E6AD2]/20 text-[#8B91E3] border border-[rgba(94,106,210,0.4)]/30 rounded-full px-1.5 py-0.5 font-semibold">
                     POPULAR
                   </span>
                 </div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-violet-400 text-shadow-sm">Creator</p>
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-[#8B91E3] text-shadow-sm">Creator</p>
                 <p className="text-white font-bold mt-0.5 text-xs">
                   {formatPrice(creatorPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span>
                 </p>
@@ -958,8 +1004,8 @@ export default function PricingPage() {
 
             {(["core", "tools", "infinity"] as const).map((section) => (
               <div key={section} className="min-w-[560px]">
-                <div className={`px-4 py-2 border-b border-white/5 ${section === "infinity" ? "bg-violet-950/20" : "bg-white/[0.01]"}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wider ${section === "infinity" ? "text-violet-400" : "text-white/30"}`}>
+                <div className={`px-4 py-2 border-b border-white/5 ${section === "infinity" ? "bg-[rgba(94,106,210,0.20)]" : "bg-white/[0.01]"}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wider ${section === "infinity" ? "text-[#8B91E3]" : "text-white/30"}`}>
                     {section === "core" ? "Core" : section === "tools" ? "Tools" : "Infinity Exclusives ✦"}
                   </p>
                 </div>
@@ -975,10 +1021,10 @@ export default function PricingPage() {
                     <div className="p-3 flex items-center justify-center bg-emerald-950/10">
                       <CellContent value={feature.starter} />
                     </div>
-                    <div className={`p-3 flex items-center justify-center bg-violet-950/10`}>
+                    <div className={`p-3 flex items-center justify-center bg-[rgba(94,106,210,0.10)]`}>
                       <CellContent value={feature.creator} />
                     </div>
-                    <div className={`p-3 flex items-center justify-center ${section === "infinity" ? "bg-violet-950/5" : ""}`}>
+                    <div className={`p-3 flex items-center justify-center ${section === "infinity" ? "bg-[rgba(94,106,210,0.5)]" : ""}`}>
                       <CellContent value={feature.infinity} infinityLabel={feature.infinityLabel} />
                     </div>
                   </div>
@@ -1011,7 +1057,7 @@ export default function PricingPage() {
               <div>
                 <Button
                   size="sm"
-                  className="w-full bg-violet-600 hover:bg-violet-500 border border-violet-500/30 text-white text-xs shadow-lg shadow-violet-500/25"
+                  className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] border border-[rgba(94,106,210,0.4)]/30 text-white text-xs shadow-lg shadow-[rgba(94,106,210,0.25)]"
                   onClick={() => handlePlanClick("creator")}
                 >
                   Get Creator
@@ -1039,7 +1085,7 @@ export default function PricingPage() {
             className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
           >
             <h3 className="font-bold mb-4 flex items-center gap-2 text-lg">
-              <Shield className="w-4 h-4 text-violet-400" />
+              <Shield className="w-4 h-4 text-[#8B91E3]" />
               You're always protected
             </h3>
             <div className="space-y-3.5">
@@ -1049,8 +1095,8 @@ export default function PricingPage() {
                 { icon: Star, label: "4.1/5 rating", desc: "2,400+ creators love GrowFlow AI" },
               ].map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon className="w-3.5 h-3.5 text-violet-400" />
+                  <div className="w-7 h-7 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="w-3.5 h-3.5 text-[#8B91E3]" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white">{label}</p>

@@ -10,7 +10,7 @@ export function FeatureDiscoveryBanner() {
     desc: "Train AI on your voice for authentic posts.",
     path: "/ghostwriter",
     icon: Wand2,
-    color: "from-cyan-500 to-blue-500"
+    color: "from-[#5E6AD2]-500 to-blue-500"
   });
 
   const FEATURES = [
@@ -19,7 +19,7 @@ export function FeatureDiscoveryBanner() {
       desc: "Train AI on your voice for authentic posts.",
       path: "/ghostwriter",
       icon: Wand2,
-      color: "from-cyan-500 to-blue-500"
+      color: "from-[#5E6AD2]-500 to-blue-500"
     },
     {
       title: "Performance Predictor",
@@ -33,7 +33,7 @@ export function FeatureDiscoveryBanner() {
       desc: "Get personalized feedback on your strategy.",
       path: "/coach",
       icon: Brain,
-      color: "from-violet-500 to-purple-500"
+      color: "from-[#5E6AD2] to-indigo-900"
     }
   ];
 
@@ -62,16 +62,16 @@ export function FeatureDiscoveryBanner() {
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          className="bg-[#0f0720] border-b border-cyan-500/20 overflow-hidden relative group"
+          className="bg-[#0f0720] border-b border-[rgba(94,106,210,0.4)]/20 overflow-hidden relative group"
         >
           <div className="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
             <Link href={feature.path} className="flex-1 flex items-center gap-3">
-              <div className={`p-2 rounded-lg bg-gradient-to-br ${feature.color} shadow-lg shadow-cyan-500/20`}>
+              <div className={`p-2 rounded-lg bg-gradient-to-br ${feature.color} shadow-lg shadow-[rgba(94,106,210,0.20)]`}>
                 <feature.icon className="w-4 h-4 text-white" />
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
                 <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-cyan-400 animate-pulse" />
+                  <Sparkles className="w-3 h-3 text-[#8B91E3] animate-pulse" />
                   New Tool: {feature.title}
                 </span>
                 <span className="text-[10px] sm:text-xs text-white/40 font-medium">
@@ -81,7 +81,7 @@ export function FeatureDiscoveryBanner() {
             </Link>
 
             <div className="flex items-center gap-3">
-              <Link href={feature.path} className="hidden sm:flex items-center gap-1 text-[10px] font-black text-cyan-400 uppercase tracking-widest hover:text-cyan-300 transition-colors">
+              <Link href={feature.path} className="hidden sm:flex items-center gap-1 text-[10px] font-black text-[#8B91E3] uppercase tracking-widest hover:text-[#8B91E3] transition-colors">
                 Try Now <ChevronRight className="w-3 h-3" />
               </Link>
               <button 
@@ -93,7 +93,7 @@ export function FeatureDiscoveryBanner() {
             </div>
           </div>
           
-          <div className="absolute bottom-0 left-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent w-full" />
+          <div className="absolute bottom-0 left-0 h-[1px] bg-gradient-to-r from-transparent via-[#8B91E3]/50 to-transparent w-full" />
         </motion.div>
       )}
     </AnimatePresence>

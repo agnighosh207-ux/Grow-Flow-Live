@@ -32,9 +32,9 @@ const NICHES = [
 const PLATFORM_COLORS: Record<string, string> = {
   Instagram: "text-pink-400 bg-pink-500/10 border-pink-500/20",
   YouTube: "text-red-400 bg-red-500/10 border-red-500/20",
-  Twitter: "text-violet-400 bg-violet-500/10 border-violet-500/20",
+  Twitter: "text-[#8B91E3] bg-[rgba(94,106,210,0.10)] border-[rgba(94,106,210,0.20)]",
   LinkedIn: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
-  All: "text-violet-400 bg-violet-500/10 border-violet-500/20",
+  All: "text-[#8B91E3] bg-[rgba(94,106,210,0.10)] border-[rgba(94,106,210,0.20)]",
 };
 
 function TrendScoreBar({ score }: { score: number }) {
@@ -101,14 +101,14 @@ function TrendCard({ idea, index, onUseIdea }: { idea: any; index: number; onUse
         </h3>
 
         <div className="rounded-xl px-3 py-2.5 mb-3"
-          style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.14)" }}>
+          style={{ background: "rgba(94,106,210,0.08)", border: "1px solid rgba(94,106,210,0.14)" }}>
           <div className="flex items-start justify-between gap-2">
-            <p className="text-xs text-violet-200/80 leading-relaxed italic flex-1">
+            <p className="text-xs text-[rgba(139,145,227,0.80)] leading-relaxed italic flex-1">
               "{idea.hook}"
             </p>
             <button
               onClick={copyHook}
-              className="shrink-0 p-1 rounded-md text-white/25 hover:text-violet-300 transition-colors"
+              className="shrink-0 p-1 rounded-md text-white/25 hover:text-[#8B91E3] transition-colors"
             >
               {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </button>
@@ -156,7 +156,7 @@ function TrendCard({ idea, index, onUseIdea }: { idea: any; index: number; onUse
         <Button
           size="sm"
           onClick={() => onUseIdea(idea.title)}
-          className="h-7 text-xs px-3 bg-violet-600/70 hover:bg-violet-600 text-white rounded-lg transition-all duration-300 hover:shadow-[0_0_12px_rgba(124,58,237,0.4)]"
+          className="h-7 text-xs px-3 bg-[rgba(94,106,210,0.70)] hover:bg-[#5E6AD2] text-white rounded-lg transition-all duration-300 hover:shadow-[0_0_12px_rgba(94,106,210,0.4)]"
         >
           <Zap className="w-3 h-3 mr-1" /> Generate Content
         </Button>
@@ -263,7 +263,7 @@ export default function TrendEngine() {
       <FeatureGuideBanner 
         toolKey="trends" 
         title="Trend Engine" 
-        icon={<TrendingUp className="w-5 h-5 text-violet-400" />}
+        icon={<TrendingUp className="w-5 h-5 text-[#8B91E3]" />}
         tagline="Discover what's trending RIGHT NOW in your niche using live AI-powered web search."
         whatYouGet={["5 trending topics", "Why each is trending", "Suggested content angle"]}
         whenToUse="Use this when you want to create timely content that rides a current wave."
@@ -273,18 +273,18 @@ export default function TrendEngine() {
       />
       {/* Premium Weekly Trend Alerts */}
       <section className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-violet-500 to-purple-600 rounded-[3rem] blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-[#5E6AD2] to-indigo-900 rounded-[3rem] blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200" />
         <div className="relative p-10 rounded-[3rem] bg-zinc-950/40 backdrop-blur-3xl border border-white/5 shadow-2xl overflow-hidden">
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-violet-500/5 to-transparent pointer-events-none" />
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-[#5E6AD2]/5 to-transparent pointer-events-none" />
           
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-6">
             <div className="flex items-center gap-6">
-               <div className="p-5 bg-gradient-to-br from-violet-600 to-violet-700 text-white rounded-[1.5rem] shadow-[0_0_30px_rgba(124,58,237,0.3)] transform rotate-3">
+               <div className="p-5 bg-gradient-to-br from-[#5E6AD2] to-[#0A0A0F] text-white rounded-[1.5rem] shadow-[0_0_30px_rgba(94,106,210,0.3)] transform rotate-3">
                  <Flame className="w-8 h-8" />
                </div>
                <div>
                  <h2 className="text-4xl font-black text-white tracking-tighter">Weekly Intelligence Brief</h2>
-                 <p className="text-violet-400 font-bold tracking-widest text-xs uppercase mt-1">Niche-Specific Trend Analysis</p>
+                 <p className="text-[#8B91E3] font-bold tracking-widest text-xs uppercase mt-1">Niche-Specific Trend Analysis</p>
                </div>
             </div>
             <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-fit max-w-full overflow-x-auto no-scrollbar">
@@ -292,7 +292,7 @@ export default function TrendEngine() {
                 variant="ghost" 
                 onClick={fetchAlerts} 
                 disabled={alertsLoading} 
-                className="rounded-xl h-12 px-6 text-violet-300 font-black tracking-widest text-xs hover:bg-violet-500/10 transition-all"
+                className="rounded-xl h-12 px-6 text-[#8B91E3] font-black tracking-widest text-xs hover:bg-[rgba(94,106,210,0.10)] transition-all"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${alertsLoading ? 'animate-spin' : ''}`} /> RELOAD REPORT
               </Button>
@@ -300,8 +300,8 @@ export default function TrendEngine() {
           </div>
 
           {alertsSummary && (
-            <div className="mb-12 p-8 rounded-[2rem] bg-violet-500/5 border-l-4 border-violet-500/50 italic">
-               <p className="text-violet-100/80 text-xl font-medium leading-relaxed">"{alertsSummary}"</p>
+            <div className="mb-12 p-8 rounded-[2rem] bg-[rgba(94,106,210,0.5)] border-l-4 border-[rgba(94,106,210,0.50)] italic">
+               <p className="text-[rgba(139,145,227,0.80)] text-xl font-medium leading-relaxed">"{alertsSummary}"</p>
             </div>
           )}
 
@@ -315,14 +315,14 @@ export default function TrendEngine() {
                   <motion.div 
                     key={i} 
                     whileHover={{ y: -10 }}
-                    className="min-w-[380px] max-w-[380px] shrink-0 snap-center p-10 rounded-[3rem] bg-zinc-900/50 border border-white/5 hover:border-violet-500/40 hover:shadow-[0_20px_80px_rgba(124,58,237,0.15)] transition-all flex flex-col group/card"
+                    className="min-w-[380px] max-w-[380px] shrink-0 snap-center p-10 rounded-[3rem] bg-zinc-900/50 border border-white/5 hover:border-[rgba(94,106,210,0.40)] hover:shadow-[0_20px_80px_rgba(94,106,210,0.15)] transition-all flex flex-col group/card"
                   >
                     <div className="flex justify-between items-center mb-8">
-                      <div className="px-4 py-1.5 bg-violet-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-violet-500/20">{a.type}</div>
+                      <div className="px-4 py-1.5 bg-[#5E6AD2] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[rgba(94,106,210,0.20)]">{a.type}</div>
                       <span className="text-[10px] text-white/20 font-black uppercase tracking-[0.2em]">{a.platform}</span>
                     </div>
 
-                    <h3 className="text-2xl font-black text-white leading-tight mb-8 group-hover/card:text-violet-400 transition-colors italic">
+                    <h3 className="text-2xl font-black text-white leading-tight mb-8 group-hover/card:text-[#8B91E3] transition-colors italic">
                      {a.description}
                     </h3>
 
@@ -340,14 +340,14 @@ export default function TrendEngine() {
                       </div>
                    </div>
 
-                    <div className="flex-1 p-6 rounded-2xl bg-violet-500/5 border border-violet-500/10 mb-8 relative group/idea">
-                       <div className="absolute -top-3 left-6 px-3 py-1 bg-zinc-950 border border-violet-500/20 rounded-lg text-[10px] font-black text-violet-400 uppercase tracking-widest">Actionable Path</div>
-                       <p className="text-violet-100 font-bold leading-relaxed">{a.actionableIdea}</p>
+                    <div className="flex-1 p-6 rounded-2xl bg-[rgba(94,106,210,0.5)] border border-[rgba(94,106,210,0.10)] mb-8 relative group/idea">
+                       <div className="absolute -top-3 left-6 px-3 py-1 bg-zinc-950 border border-[rgba(94,106,210,0.20)] rounded-lg text-[10px] font-black text-[#8B91E3] uppercase tracking-widest">Actionable Path</div>
+                       <p className="text-[#8B91E3] font-bold leading-relaxed">{a.actionableIdea}</p>
                     </div>
 
                     <Button 
                      onClick={() => handleUseIdea(a.actionableIdea)} 
-                     className="w-full bg-violet-600 hover:bg-violet-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl h-14 shadow-xl shadow-violet-500/20 group-hover/card:scale-105 transition-transform"
+                     className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black text-xs uppercase tracking-widest rounded-2xl h-14 shadow-xl shadow-[rgba(94,106,210,0.20)] group-hover/card:scale-105 transition-transform"
                     >
                      EXECUTE STRATEGY <Zap className="w-4 h-4 ml-2" />
                     </Button>
@@ -365,8 +365,8 @@ export default function TrendEngine() {
 
       <PageHeader
         icon={<TrendingUp />}
-        iconBg="bg-violet-500/10"
-        iconColor="text-violet-400"
+        iconBg="bg-[rgba(94,106,210,0.10)]"
+        iconColor="text-[#8B91E3]"
         title="Trend Engine"
         subtitle="Discover what's trending in your niche. Get AI-powered ideas that are working right now."
         onInfoClick={() => setShowGuide(prev => !prev)}
@@ -375,7 +375,7 @@ export default function TrendEngine() {
         <div
           className="rounded-2xl border border-white/8 p-5 md:p-6 lg:p-8"
           style={{
-            background: "linear-gradient(135deg, rgba(124,58,237,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+            background: "linear-gradient(135deg, rgba(94,106,210,0.05) 0%, rgba(255,255,255,0.02) 100%)",
             backdropFilter: "blur(20px)",
             boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
           }}
@@ -394,7 +394,7 @@ export default function TrendEngine() {
                   onClick={() => setNiche(n.value)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 border ${
                     niche === n.value
-                      ? "bg-violet-500/20 text-violet-300 border-violet-500/30 shadow-[0_0_20px_rgba(124,58,237,0.3)]"
+                      ? "bg-[rgba(94,106,210,0.20)] text-[#8B91E3] border-[rgba(94,106,210,0.30)] shadow-[0_0_20px_rgba(94,106,210,0.3)]"
                       : "bg-white/4 text-white/50 border-white/8 hover:bg-white/7 hover:text-white/70 hover:border-white/20"
                   }`}
                 >
@@ -429,7 +429,7 @@ export default function TrendEngine() {
             className={`w-full sm:w-auto h-11 px-8 font-bold rounded-xl text-sm transition-all duration-300 ${
               loading 
                 ? "bg-white/10 text-white/30 cursor-not-allowed" 
-                : "bg-violet-600 hover:bg-violet-500 text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] hover:shadow-[0_0_35px_rgba(124,58,237,0.6)]"
+                : "bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white shadow-[0_0_20px_rgba(94,106,210,0.3)] hover:shadow-[0_0_35px_rgba(94,106,210,0.6)]"
             }`}
           >
             {loading ? (
@@ -478,8 +478,8 @@ export default function TrendEngine() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="mt-6 rounded-xl border border-violet-500/15 p-4 flex items-center justify-between gap-4"
-              style={{ background: "rgba(124,58,237,0.06)" }}
+              className="mt-6 rounded-xl border border-[rgba(94,106,210,0.15)] p-4 flex items-center justify-between gap-4"
+              style={{ background: "rgba(94,106,210,0.06)" }}
             >
               <div>
                 <p className="text-sm font-semibold text-white/70">Ready to create?</p>
@@ -488,7 +488,7 @@ export default function TrendEngine() {
               <Button
                 onClick={() => navigate("/generate")}
                 size="sm"
-                className="shrink-0 bg-violet-600/70 hover:bg-violet-600 text-white rounded-xl text-xs h-8 px-4"
+                className="shrink-0 bg-[rgba(94,106,210,0.70)] hover:bg-[#5E6AD2] text-white rounded-xl text-xs h-8 px-4"
               >
                 Go to Generator <ArrowRight className="w-3 h-3 ml-1.5" />
               </Button>

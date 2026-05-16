@@ -44,7 +44,7 @@ function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onCha
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none
-        ${checked ? "bg-violet-600" : "bg-white/15"}
+        ${checked ? "bg-[#5E6AD2]" : "bg-white/15"}
         ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
       `}
     >
@@ -441,7 +441,7 @@ export default function SettingsPage() {
 
   const planConfig = {
     free: { label: "Free", color: "text-white/50", bg: "bg-white/5 border-white/10", icon: <User className="w-3.5 h-3.5" /> },
-    trial: { label: "Trial", color: "text-violet-300", bg: "bg-violet-500/10 border-violet-500/20", icon: <Zap className="w-3.5 h-3.5" /> },
+    trial: { label: "Trial", color: "text-[#8B91E3]", bg: "bg-[#5E6AD2]/10 border-[rgba(94,106,210,0.4)]/20", icon: <Zap className="w-3.5 h-3.5" /> },
     active: { label: "Pro", color: "text-emerald-300", bg: "bg-emerald-500/10 border-emerald-500/20", icon: <Crown className="w-3.5 h-3.5" /> },
     blocked: { label: "Expired", color: "text-red-300", bg: "bg-red-500/10 border-red-500/20", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
   };
@@ -514,7 +514,7 @@ export default function SettingsPage() {
               activeTab === tab.id ? "bg-white/10 text-white" : "text-white/40 hover:text-white/60"
             }`}
           >
-            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "text-violet-400" : "text-white/20"}`} />
+            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "text-[#8B91E3]" : "text-white/20"}`} />
             {tab.label}
           </button>
         ))}
@@ -590,7 +590,7 @@ export default function SettingsPage() {
                       </select>
                     </div>
                   </div>
-                  <Button onClick={saveContentPrefs} className="w-full bg-violet-600 hover:bg-violet-500 text-white rounded-xl">Save Preferences</Button>
+                  <Button onClick={saveContentPrefs} className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white rounded-xl">Save Preferences</Button>
                 </div>
               </section>
               <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">

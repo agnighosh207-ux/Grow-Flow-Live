@@ -18,11 +18,16 @@ export function SignedOut({ children }: { children: React.ReactNode }) {
 export function AuthBackground({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse 90% 80% at 50% -10%, rgba(124,58,237,0.5) 0%, rgba(15,5,40,1) 55%, #080015 100%)' }}>
+      style={{ 
+        background: 'radial-gradient(ellipse at 50% 0%, rgba(94,106,210,0.08) 0%, var(--bg) 60%)',
+        minHeight: '100vh'
+      }}>
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-700/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-600/25 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-900/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl"
+          style={{ background: 'rgba(94,106,210,0.12)' }} />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[100px]"
+          style={{ background: 'rgba(94,106,210,0.06)' }} />
       </div>
       <div className="relative z-10 w-full max-w-md px-4 sm:px-0">
         {children}
@@ -33,8 +38,10 @@ export function AuthBackground({ children }: { children: React.ReactNode }) {
 
 export function PasswordRequirements() {
   return (
-    <div className="mt-3 rounded-xl border border-cyan-500/20 bg-cyan-950/60 backdrop-blur-sm px-4 py-3">
-      <p className="text-xs font-semibold text-cyan-300 mb-2">Password must include:</p>
+    <div className="mt-3 rounded-xl px-4 py-3"
+      style={{ border: '1px solid rgba(94,106,210,0.2)', background: 'rgba(94,106,210,0.06)' }}>
+      <p className="text-xs font-semibold mb-2"
+        style={{ color: '#8B91E3' }}>Password must include:</p>
       <ul className="space-y-1">
         {[
           "At least 8 characters",
@@ -44,12 +51,14 @@ export function PasswordRequirements() {
           "One special character (e.g. @, #, $, !)",
         ].map((rule) => (
           <li key={rule} className="flex items-center gap-2 text-[11px] text-white/60">
-            <span className="w-1 h-1 rounded-full bg-cyan-400 shrink-0" />
+            <span className="w-1 h-1 rounded-full shrink-0"
+              style={{ background: '#8B91E3' }} />
             {rule}
           </li>
         ))}
       </ul>
-      <p className="text-[10px] text-white/35 mt-2">Example: <span className="text-cyan-300 font-mono">MyPass@2025</span></p>
+      <p className="text-[10px] text-white/35 mt-2">Example: <span className="font-mono"
+        style={{ color: '#8B91E3' }}>MyPass@2025</span></p>
     </div>
   );
 }

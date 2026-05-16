@@ -213,7 +213,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
         subscription_id: data.subscriptionId,
         name: "GrowFlow AI",
         description: `${planLabelForCheckout} plan · ${priceForCheckout}${billingPeriod === "yearly" ? '/year' : '/month'}`,
-        theme: { color: "#7c3aed" },
+        theme: { color: "#5E6AD2" },
         prefill: {},
         handler: async (response: any) => {
           setPaymentState("pending"); // Keep loading while verifying
@@ -288,10 +288,10 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
             style={{
               background: "linear-gradient(135deg, rgba(15,8,35,0.97) 0%, rgba(20,10,45,0.97) 100%)",
               backdropFilter: "blur(24px)",
-              boxShadow: "0 0 80px -10px rgba(124,58,237,0.4)",
+              boxShadow: "0 0 80px -10px rgba(94,106,210,0.4)",
             }}
           >
-            <div className="h-1 w-full bg-violet-600" />
+            <div className="h-1 w-full bg-[#5E6AD2]" />
 
             <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
               <AnimatePresence mode="wait">
@@ -319,7 +319,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
                     >
-                      <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-3 py-1 mb-3">
+                      <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#8B91E3] bg-[rgba(94,106,210,0.10)] border border-[rgba(94,106,210,0.20)] rounded-full px-3 py-1 mb-3">
                         <Sparkles className="w-3 h-3" /> {purchasedPlanLabel} plan activated
                       </div>
                       <h2 className="text-2xl font-bold text-white mb-2">You're all set! 🎉</h2>
@@ -337,7 +337,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       </ul>
 
                       <Button
-                        className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-3"
+                        className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-semibold shadow-lg shadow-[rgba(94,106,210,0.40)] mb-3"
                         onClick={handleClose}
                       >
                         <Zap className="w-4 h-4 mr-2" /> Start creating
@@ -372,7 +372,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       You can try again — your card details are pre-filled.
                     </p>
                     <Button
-                      className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-3"
+                      className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-semibold shadow-lg shadow-[rgba(94,106,210,0.40)] mb-3"
                       onClick={() => handleCheckout()}
                     >
                       <Zap className="w-4 h-4 mr-2" /> Try again
@@ -388,8 +388,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="pro_feature" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
-                          <Lock className="w-4 h-4 text-violet-400" />
+                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-[#8B91E3]" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -401,8 +401,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       </button>
                     </div>
 
-                    <div className="rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-4 mb-5">
-                      <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-widest mb-3">
+                    <div className="rounded-xl border border-[rgba(94,106,210,0.20)] bg-[#5E6AD2]/[0.06] p-4 mb-5">
+                      <p className="text-[10px] font-semibold text-[#8B91E3] uppercase tracking-widest mb-3">
                         What you unlock
                       </p>
                       <ul className="space-y-2.5">
@@ -423,13 +423,13 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                         <span className="text-2xl font-bold text-white">{currency === "USD" ? "$27" : "₹799"}</span>
                         <span className="text-white/40 text-xs ml-1">/month</span>
                       </div>
-                      <span className="text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1 font-semibold">
+                      <span className="text-[10px] text-[#8B91E3] bg-[rgba(94,106,210,0.10)] border border-[rgba(94,106,210,0.20)] rounded-full px-2.5 py-1 font-semibold">
                         Cancel anytime
                       </span>
                     </div>
 
                     <Button
-                      className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-2"
+                      className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-semibold shadow-lg shadow-[rgba(94,106,210,0.40)] mb-2"
                       onClick={() => handleCheckout("infinity")}
                       disabled={paymentState === "pending"}
                     >
@@ -456,8 +456,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="limit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
-                          <Crown className="w-4 h-4 text-violet-400" />
+                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center">
+                          <Crown className="w-4 h-4 text-[#8B91E3]" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -473,7 +473,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
 
 
                       <Button
-                        className="w-full h-16 bg-violet-600 hover:bg-violet-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-violet-900/40"
+                        className="w-full h-16 bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black text-sm rounded-2xl shadow-xl shadow-[rgba(94,106,210,0.40)]"
                         onClick={() => handleCheckout(targetPlan)}
                         disabled={paymentState === "pending"}
                       >
@@ -505,8 +505,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="checkout" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center">
-                          <Crown className="w-4 h-4 text-violet-400" />
+                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center">
+                          <Crown className="w-4 h-4 text-[#8B91E3]" />
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -525,7 +525,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                           onClick={() => setSelectedPlan(p)}
                           className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold border transition-all duration-200 whitespace-nowrap min-w-[100px] ${
                             selectedPlan === p
-                              ? "bg-violet-600/25 border-violet-500/50 text-violet-200"
+                              ? "bg-[rgba(94,106,210,0.25)] border-[rgba(94,106,210,0.50)] text-[#8B91E3]"
                               : "border-white/8 text-white/40 hover:text-white/60 hover:border-white/15"
                           }`}
                         >
@@ -555,7 +555,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                           )}
                         </span>
                         <span className="text-white/40 text-sm mb-0.5">/month</span>
-                        <span className="ml-auto inline-flex items-center gap-1 text-xs text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-0.5 font-medium">
+                        <span className="ml-auto inline-flex items-center gap-1 text-xs text-[#8B91E3] bg-[rgba(94,106,210,0.10)] border border-[rgba(94,106,210,0.20)] rounded-full px-2.5 py-0.5 font-medium">
                           <Zap className="w-2.5 h-2.5" /> {planLabel} plan
                         </span>
                       </div>
@@ -592,7 +592,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       <ul className="space-y-1.5">
                         {highlights.map((h) => (
                           <li key={h} className="flex items-center gap-2 text-xs text-white/70">
-                            <Check className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
+                            <Check className="w-3.5 h-3.5 text-[#8B91E3] flex-shrink-0" />
                             {h}
                           </li>
                         ))}
@@ -600,7 +600,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                     </div>
 
                     <Button
-                      className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg shadow-violet-900/40 mb-2"
+                      className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-semibold shadow-lg shadow-[rgba(94,106,210,0.40)] mb-2"
                       onClick={() => handleCheckout()}
                       disabled={paymentState === "pending"}
                     >

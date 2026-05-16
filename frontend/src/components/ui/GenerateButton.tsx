@@ -96,9 +96,9 @@ export function GenerateButton({
       disabled={status !== 'idle' || disabled}
       className={cn(
         "relative overflow-hidden w-full h-12 transition-all duration-300 group",
-        status === 'idle' ? "bg-cyan-600 hover:bg-cyan-500 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)] hover:-translate-y-0.5" : "",
+        status === 'idle' ? "bg-[#5E6AD2] hover:bg-[#5E6AD2] shadow-[0_0_20px_rgba(94,106,210,0.3)] hover:shadow-[0_0_25px_rgba(94,106,210,0.5)] hover:-translate-y-0.5" : "",
         status === 'busy' ? "bg-red-950/80 border border-red-500/50 text-red-200" : "",
-        status === 'loading' ? "bg-cyan-900 border border-cyan-500/50" : "",
+        status === 'loading' ? "bg-[#5E6AD2] border border-[rgba(94,106,210,0.4)]/50" : "",
         className
       )}
       {...props}
@@ -106,7 +106,7 @@ export function GenerateButton({
       {/* Loading Progress Bar Background */}
       {status === 'loading' && (
         <div 
-          className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-cyan-600/40 to-sky-500/40 transition-all duration-200 ease-out"
+          className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-[#5E6AD2]-600/40 to-sky-500/40 transition-all duration-200 ease-out"
           style={{ width: `${progress}%` }}
         >
           <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:250px_250px] [animation:shimmer_2s_infinite]" />
@@ -117,14 +117,14 @@ export function GenerateButton({
       <span className="relative z-10 flex items-center justify-center gap-2 font-semibold">
         {status === 'idle' && (
           <>
-            <Sparkles className="w-5 h-5 text-cyan-300 group-hover:animate-pulse" />
+            <Sparkles className="w-5 h-5 text-[#8B91E3] group-hover:animate-pulse" />
             {idleText}
           </>
         )}
 
         {status === 'loading' && (
           <>
-            <Loader2 className="w-5 h-5 animate-spin text-cyan-300" />
+            <Loader2 className="w-5 h-5 animate-spin text-[#8B91E3]" />
             <span className="animate-pulse">{loadingText}</span>
           </>
         )}

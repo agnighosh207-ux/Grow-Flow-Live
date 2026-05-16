@@ -63,14 +63,14 @@ function StreakBadge({ streak }: { streak: number }) {
 
   const streakColor = streak >= 30 ? "from-amber-500 to-orange-500" :
     streak >= 14 ? "from-orange-500 to-red-500" :
-    streak >= 7 ? "from-violet-500 to-indigo-500" :
-    "from-indigo-500 to-violet-500";
+    streak >= 7 ? "from-[#5E6AD2] to-indigo-500" :
+    "from-indigo-500 to-[#0A0A0F]";
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${streak >= 7 ? "from-orange-500/15 to-amber-500/10 border-orange-500/25" : "from-violet-500/10 to-indigo-500/8 border-violet-500/20"} border p-5`}
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${streak >= 7 ? "from-orange-500/15 to-amber-500/10 border-orange-500/25" : "from-[#5E6AD2]/10 to-indigo-500/8 border-[rgba(94,106,210,0.20)]"} border p-5`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -123,6 +123,7 @@ export default function DailyActionMode() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [completing, setCompleting] = useState(false);
   const queryClient = useQueryClient();
+  const [showGuide, setShowGuide] = useState(false);
 
 
 
@@ -157,7 +158,7 @@ export default function DailyActionMode() {
       
       if (json.reward) {
         setReward(json.reward);
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#7c3aed', '#8b5cf6', '#f59e0b'] });
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#5E6AD2', '#5E6AD2', '#f59e0b'] });
       }
       
       setShowCelebration(true);
@@ -186,7 +187,7 @@ export default function DailyActionMode() {
         animate={{ scale: 1, y: 0 }}
         className="relative max-w-md w-full bg-zinc-900 border border-white/10 rounded-[40px] p-10 text-center shadow-2xl overflow-hidden"
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-500/10 to-transparent opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#5E6AD2]/10 to-transparent opacity-50" />
         
         <button 
           onClick={() => setShowCelebration(false)}
@@ -221,12 +222,12 @@ export default function DailyActionMode() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="p-6 rounded-3xl bg-violet-500/10 border border-violet-500/20 space-y-3"
+              className="p-6 rounded-3xl bg-[rgba(94,106,210,0.10)] border border-[rgba(94,106,210,0.20)] space-y-3"
             >
               <p className="text-lg font-black text-white leading-tight">
                 {reward.message}
               </p>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/20 text-violet-400 text-xs font-black uppercase tracking-widest border border-violet-500/30">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[rgba(94,106,210,0.20)] text-[#8B91E3] text-xs font-black uppercase tracking-widest border border-[rgba(94,106,210,0.30)]">
                 <Sparkles className="w-3.5 h-3.5" />
                 +{reward.credits} Credits Added!
               </div>
@@ -236,7 +237,7 @@ export default function DailyActionMode() {
           {data?.challenge?.completedDays === 30 && (
             <Button 
               onClick={() => window.open("/api/challenge/certificate", "_blank")}
-              className="w-full h-12 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-black transition-all active:scale-95"
+              className="w-full h-12 rounded-2xl bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black transition-all active:scale-95"
             >
               Download Creator Certificate 🏆
             </Button>
@@ -257,7 +258,7 @@ export default function DailyActionMode() {
     return (
       <div className="flex w-full min-h-[50vh] items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mx-auto" />
+          <div className="w-10 h-10 border-2 border-[rgba(94,106,210,0.30)] border-t-[#5E6AD2] rounded-full animate-spin mx-auto" />
           <p className="text-white/40 text-sm">Loading today's plan...</p>
         </div>
       </div>
@@ -268,8 +269,6 @@ export default function DailyActionMode() {
   const streak = typeof data?.streak === 'number' && !isNaN(data.streak) ? data.streak : 0;
   const completed = data?.completedToday ?? false;
   const today = new Date().toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" });
-
-  const [showGuide, setShowGuide] = useState(false);
 
   return (
     <PageWrapper maxWidth="sm" className="py-6 space-y-5">
@@ -303,11 +302,11 @@ export default function DailyActionMode() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="border border-violet-500/30 rounded-[32px] p-6 bg-violet-500/5 relative overflow-hidden"
+            className="border border-[rgba(94,106,210,0.30)] rounded-[32px] p-6 bg-[rgba(94,106,210,0.5)] relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 blur-3xl -mr-16 -mt-16" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[rgba(94,106,210,0.10)] blur-3xl -mr-16 -mt-16" />
             <div className="flex items-center gap-4 mb-5 relative z-10">
-              <div className="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center text-3xl shadow-glow-sm">🏆</div>
+              <div className="w-12 h-12 rounded-2xl bg-[rgba(94,106,210,0.20)] flex items-center justify-center text-3xl shadow-glow-sm">🏆</div>
               <div>
                 <p className="font-black text-white uppercase tracking-tight">30-Day Creator Challenge</p>
                 <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-0.5">Architecting Consistency</p>
@@ -315,7 +314,7 @@ export default function DailyActionMode() {
             </div>
             <div className="grid grid-cols-10 gap-1.5 mb-5 relative z-10">
               {Array.from({ length: 30 }, (_, i) => (
-                <div key={i} className={`h-2 rounded-full transition-all duration-500 ${i < (data.challenge?.completedDays || 0) ? 'bg-violet-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]' : 'bg-white/5'}`} />
+                <div key={i} className={`h-2 rounded-full transition-all duration-500 ${i < (data.challenge?.completedDays || 0) ? 'bg-[#5E6AD2] shadow-[0_0_10px_rgba(94,106,210,0.5)]' : 'bg-white/5'}`} />
               ))}
             </div>
             <div className="flex items-center justify-between relative z-10">
@@ -325,12 +324,12 @@ export default function DailyActionMode() {
               {data.challenge?.completedDays === 30 ? (
                 <button 
                   onClick={() => window.open("/api/challenge/certificate", "_blank")}
-                  className="text-[10px] text-violet-400 font-black uppercase tracking-widest bg-violet-500/10 px-2 py-0.5 rounded-md hover:bg-violet-500/20 transition-colors"
+                  className="text-[10px] text-[#8B91E3] font-black uppercase tracking-widest bg-[rgba(94,106,210,0.10)] px-2 py-0.5 rounded-md hover:bg-[rgba(94,106,210,0.20)] transition-colors"
                 >
                   Download Certificate 🏆
                 </button>
               ) : (
-                <p className="text-[10px] text-violet-400 font-black uppercase tracking-widest bg-violet-500/10 px-2 py-0.5 rounded-md">
+                <p className="text-[10px] text-[#8B91E3] font-black uppercase tracking-widest bg-[rgba(94,106,210,0.10)] px-2 py-0.5 rounded-md">
                   +50 Bonus Credits at Finish
                 </p>
               )}
@@ -342,9 +341,9 @@ export default function DailyActionMode() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="border border-violet-500/20 rounded-[32px] p-6 bg-violet-500/5 flex flex-col md:flex-row items-center gap-5"
+            className="border border-[rgba(94,106,210,0.20)] rounded-[32px] p-6 bg-[rgba(94,106,210,0.5)] flex flex-col md:flex-row items-center gap-5"
           >
-             <div className="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center text-3xl shrink-0">🚀</div>
+             <div className="w-14 h-14 rounded-2xl bg-[rgba(94,106,210,0.10)] flex items-center justify-center text-3xl shrink-0">🚀</div>
              <div className="flex-1 text-center md:text-left">
                 <p className="font-black text-white uppercase tracking-tight">Accept the 30-Day Challenge</p>
                 <p className="text-xs text-white/40 font-medium mt-1">Generate content for 30 days straight to unlock the Creator Certificate + 50 Credits.</p>
@@ -359,7 +358,7 @@ export default function DailyActionMode() {
                    toast({ variant: "destructive", title: "Failed to join challenge" });
                  }
                }}
-               className="bg-violet-600 hover:bg-violet-500 text-white font-black px-6 rounded-xl shadow-glow-sm"
+               className="bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black px-6 rounded-xl shadow-glow-sm"
              >
                JOIN NOW
              </Button>
@@ -409,12 +408,12 @@ export default function DailyActionMode() {
 
             <motion.div
               className={`rounded-2xl border p-4 space-y-0.5 ${completed ? "bg-white/[0.02] border-white/6 opacity-80" : "bg-white/[0.04] border-white/10"}`}
-              whileHover={!completed ? { borderColor: "rgba(139,92,246,0.3)" } : {}}
+              whileHover={!completed ? { borderColor: "rgba(94,106,210,0.3)" } : {}}
               transition={{ duration: 0.2 }}
             >
               <div className="flex items-start gap-3 py-2.5 border-b border-white/6">
-                <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                  <Lightbulb className="w-3.5 h-3.5 text-violet-400" />
+                <div className="w-7 h-7 rounded-lg bg-[rgba(94,106,210,0.15)] flex items-center justify-center shrink-0 mt-0.5">
+                  <Lightbulb className="w-3.5 h-3.5 text-[#8B91E3]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1">Today's Idea</p>
@@ -451,7 +450,7 @@ export default function DailyActionMode() {
                 onClick={markAsPosted}
                 disabled={completing}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-base transition-all disabled:opacity-60 shadow-lg shadow-violet-900/30"
+                className="w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl bg-gradient-to-r from-[#5E6AD2] to-indigo-600 hover:from-[#5E6AD2] hover:to-indigo-500 text-white font-bold text-base transition-all disabled:opacity-60 shadow-lg shadow-[rgba(94,106,210,0.30)]"
               >
                 {completing ? (
                   <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Marking...</>
@@ -488,9 +487,9 @@ export default function DailyActionMode() {
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="rounded-2xl bg-white/[0.03] border border-white/8 p-6 text-center space-y-3">
-            <Sparkles className="w-8 h-8 text-violet-400/50 mx-auto" />
+            <Sparkles className="w-8 h-8 text-[rgba(139,145,227,0.50)] mx-auto" />
             <p className="text-white/50 text-sm">Couldn't load today's plan.</p>
-            <button onClick={fetchToday} className="px-4 py-2 rounded-xl bg-violet-500/15 text-violet-300 text-xs font-medium hover:bg-violet-500/25 transition-all">
+            <button onClick={fetchToday} className="px-4 py-2 rounded-xl bg-[rgba(94,106,210,0.15)] text-[#8B91E3] text-xs font-medium hover:bg-[rgba(94,106,210,0.25)] transition-all">
               Try Again
             </button>
           </motion.div>

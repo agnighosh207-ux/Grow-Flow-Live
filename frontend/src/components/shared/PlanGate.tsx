@@ -81,19 +81,19 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-5 rounded-xl border border-cyan-500/25 bg-cyan-500/8 px-4 py-3 flex items-center justify-between gap-3"
+          className="mb-5 rounded-xl border border-[rgba(94,106,210,0.4)]/25 bg-[#5E6AD2]/8 px-4 py-3 flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+            <Sparkles className="w-4 h-4 text-[#8B91E3] shrink-0" />
             <p className="text-sm text-white/80 leading-tight">
               {trialsLeft === 1
-                ? <><span className="text-cyan-300 font-semibold">Last free use</span> — upgrade to keep going</>
-                : <><span className="text-cyan-300 font-semibold">{trialsLeft} free uses remaining</span> — explore before you decide</>
+                ? <><span className="text-[#8B91E3] font-semibold">Last free use</span> — upgrade to keep going</>
+                : <><span className="text-[#8B91E3] font-semibold">{trialsLeft} free uses remaining</span> — explore before you decide</>
               }
             </p>
           </div>
           <Link href="/pricing" className="w-full sm:w-auto">
-            <Button className="w-full bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_15px_rgba(124,58,237,0.3)] h-12 rounded-xl font-bold">
+            <Button className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white shadow-[0_0_15px_rgba(94,106,210,0.3)] h-12 rounded-xl font-bold">
               Upgrade Plan
             </Button>
           </Link>
@@ -148,11 +148,11 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 15 }}
-              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto border border-cyan-500/30 cursor-pointer"
-              style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(109,40,217,0.08))" }}
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto border border-[rgba(94,106,210,0.4)]/30 cursor-pointer"
+              style={{ background: "linear-gradient(135deg, rgba(94,106,210,0.2), rgba(109,40,217,0.08))" }}
               onClick={() => setShowUpgradeModal(true)}
             >
-              <Lock className="w-8 h-8 text-cyan-400" />
+              <Lock className="w-8 h-8 text-[#8B91E3]" />
             </motion.div>
 
             <motion.div
@@ -179,7 +179,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
               className="space-y-3"
             >
               <Button
-                className="w-full h-14 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold rounded-2xl shadow-lg shadow-cyan-900/40 text-base"
+                className="w-full h-14 bg-gradient-to-r from-[#5E6AD2]-600 to-teal-600 hover:from-[#5E6AD2]-500 hover:to-teal-500 text-white font-bold rounded-2xl shadow-lg shadow-[rgba(94,106,210,0.40)] text-base"
                 onClick={() => setShowUpgradeModal(true)}
               >
                 <Crown className="w-5 h-5 mr-2" />

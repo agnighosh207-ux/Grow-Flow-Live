@@ -49,7 +49,8 @@ import {
   Library,
   Grid3x3,
   ChevronLeft,
-  X
+  X,
+  Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -354,7 +355,7 @@ function NavItem({
       {!collapsed && <span className="text-sm flex-1 truncate">{label}</span>}
       {!collapsed && badge}
       {!collapsed && showNewBadge && (
-        <span className="text-[9px] font-semibold bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full">
+        <span className="text-[9px] font-semibold bg-[rgba(94,106,210,0.20)] text-[#8B91E3] px-1.5 py-0.5 rounded-full">
           New
         </span>
       )}
@@ -708,21 +709,21 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
                   onClick={() => handleNavigate(item.path)}
                   className={`group relative p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer flex flex-col items-center text-center gap-3
                     ${isActive 
-                      ? "border-violet-500/50 shadow-[0_0_30px_rgba(124,58,237,0.2)] ring-1 ring-violet-500/40" 
+                      ? "border-[rgba(94,106,210,0.50)] shadow-[0_0_30px_rgba(94,106,210,0.2)] ring-1 ring-[rgba(94,106,210,0.4)]" 
                       : isLocked 
                         ? "bg-white/[0.01] border-white/5 opacity-50" 
-                        : "bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-violet-500/40 shadow-lg"
+                        : "bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-[rgba(94,106,210,0.40)] shadow-lg"
                     }`}
-                  style={isActive ? { background: 'rgba(124,58,237,0.15)' } : undefined}
+                  style={isActive ? { background: 'rgba(94,106,210,0.15)' } : undefined}
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-500
                     ${isActive 
-                      ? "border-violet-500/60 text-white" 
+                      ? "border-[rgba(94,106,210,0.60)] text-white" 
                       : isLocked 
                         ? "bg-white/5 border-white/5 text-white/20" 
-                        : "bg-gradient-to-br from-white/10 to-transparent border-white/10 text-white/80 group-hover:text-violet-400 group-hover:border-violet-500/40 group-hover:scale-110"
+                        : "bg-gradient-to-br from-white/10 to-transparent border-white/10 text-white/80 group-hover:text-[#8B91E3] group-hover:border-[rgba(94,106,210,0.40)] group-hover:scale-110"
                     }`}
-                    style={isActive ? { background: 'rgba(124,58,237,0.2)', boxShadow: '0 0 20px rgba(124,58,237,0.4)' } : undefined}>
+                    style={isActive ? { background: 'rgba(94,106,210,0.2)', boxShadow: '0 0 20px rgba(94,106,210,0.4)' } : undefined}>
                     {isLocked ? <Lock className="w-5 h-5" /> : <Icon className="w-6 h-6" />}
                   </div>
                   <div className="flex flex-col gap-1 w-full">
@@ -730,7 +731,7 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
                       {t(item.label)}
                     </span>
                     {isNew && (
-                      <span className="absolute -top-1.5 -right-1.5 text-[9px] font-medium bg-violet-500/25 text-violet-300 px-2 py-0.5 rounded-full">
+                      <span className="absolute -top-1.5 -right-1.5 text-[9px] font-medium bg-[rgba(94,106,210,0.25)] text-[#8B91E3] px-2 py-0.5 rounded-full">
                         New
                       </span>
                     )}
@@ -965,7 +966,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       <Menu className="w-6 h-6" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="p-0 h-[88vh] border-t rounded-t-[40px] flex flex-col focus:outline-none ring-0 overflow-hidden" style={{ background: 'rgba(5,5,8,0.97)', backdropFilter: 'blur(30px)', borderColor: 'rgba(255,255,255,0.1)' }}>
+                  <SheetContent side="bottom" className="p-0 h-[88vh] border-t rounded-t-[40px] flex flex-col focus:outline-none ring-0 overflow-hidden" style={{ background: 'var(--surface-1)', borderRight: '1px solid var(--border)' }}>
                     <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mt-3 shrink-0" />
                     <div className="px-8 pt-8 pb-4 flex items-center justify-between">
                       <div className="space-y-1">
@@ -985,7 +986,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       onClick={() => setIsSheetOpen(false)}
                     />
 
-                    <div className="mt-auto bg-[#080316] border-t border-white/5 px-6 py-5 space-y-4">
+                    <div className="mt-auto bg-[var(--surface-1)] border-t border-[var(--border)] px-6 py-5 space-y-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="relative">
@@ -996,7 +997,7 @@ export function Layout({ children }: { children: ReactNode }) {
                                 {(user?.fullName || "U").charAt(0).toUpperCase()}
                               </div>
                             )}
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#080316] rounded-full" />
+                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[var(--surface-1)] rounded-full" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-white/90 truncate">{user?.fullName || "User"}</p>
@@ -1017,8 +1018,8 @@ export function Layout({ children }: { children: ReactNode }) {
                           {['en', 'hi', 'bn'].map(lang => (
                             <button key={lang}
                               onClick={() => { i18n.changeLanguage(lang); localStorage.setItem('i18nextLng', lang); setIsSheetOpen(false); }}
-                              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md transition-all ${i18n.language === lang ? 'bg-violet-500/10' : 'text-white/20 hover:text-white/40'}`}
-                              style={i18n.language === lang ? { color: '#a78bfa' } : undefined}
+                              className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md transition-all ${i18n.language === lang ? 'bg-[rgba(94,106,210,0.10)]' : 'text-white/20 hover:text-white/40'}`}
+                              style={i18n.language === lang ? { color: '#8B91E3' } : undefined}
                             >{lang === 'en' ? 'EN' : lang === 'hi' ? 'HI' : 'BN'}</button>
                           ))}
                         </div>
@@ -1048,7 +1049,7 @@ export function Layout({ children }: { children: ReactNode }) {
             </AnimatePresence>
           </main>
 
-          <nav className="fixed bottom-0 inset-x-0 flex justify-around items-center p-2 z-[100]" style={{ background: 'rgba(5,5,8,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
+          <nav className="fixed bottom-0 inset-x-0 flex justify-around items-center p-2 z-[100]" style={{ background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}>
             {BOTTOM_NAV.map((item) => {
                if (item.path === "menu") {
                  const hasNew = SIDEBAR_NAV.some(n => !localStorage.getItem(`visited_${n.path}`) && !n.pro);
@@ -1056,7 +1057,7 @@ export function Layout({ children }: { children: ReactNode }) {
                    <button key="menu" onClick={() => setIsSheetOpen(true)} className="flex flex-col items-center gap-1 p-2 text-white/40 relative">
                      <Menu className="w-5 h-5" />
                      <span className="text-[9px] font-bold uppercase">Menu</span>
-                     {hasNew && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#080316] animate-pulse" />}
+                     {hasNew && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[var(--surface-1)] animate-pulse" />}
                    </button>
                  );
                }
@@ -1070,14 +1071,14 @@ export function Layout({ children }: { children: ReactNode }) {
                     key={item.path} 
                     href={navItem.path} 
                     className={`flex flex-col items-center gap-1.5 p-2 transition-all relative ${isActive ? "" : "text-white/50 hover:text-white/80"}`}
-                    style={isActive ? { color: '#a78bfa' } : undefined}
+                    style={isActive ? { color: '#8B91E3' } : undefined}
                      onClick={() => {
                         localStorage.setItem(`visited_${navItem.path}`, "true");
                         setIsSheetOpen(false);
                      }}
                   >
                     <div className={`p-1.5 rounded-xl transition-all duration-500 ${isActive ? "text-white" : "bg-white/5 text-white/40 group-hover:bg-white/10"}`}
-                      style={isActive ? { background: 'rgba(124,58,237,0.2)', boxShadow: '0 0 20px rgba(124,58,237,0.3)' } : undefined}>
+                      style={isActive ? { background: 'rgba(94,106,210,0.2)', boxShadow: '0 0 20px rgba(94,106,210,0.3)' } : undefined}>
                       <Icon className="w-[24px] h-[24px]" />
                     </div>
                     <span className={`text-[9px] font-black uppercase tracking-[0.1em] transition-all ${isActive ? "opacity-100 scale-105 text-white" : "opacity-40"}`}>
@@ -1087,7 +1088,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       <motion.div 
                         layoutId="bottomNavActive"
                         className="absolute -bottom-2 w-1.5 h-1.5 rounded-full"
-                        style={{ background: '#7c3aed', boxShadow: '0 0 12px rgba(124,58,237,0.6)' }}
+                        style={{ background: '#5E6AD2', boxShadow: '0 0 12px rgba(94,106,210,0.6)' }}
                       />
                     )}
 
@@ -1108,21 +1109,24 @@ export function Layout({ children }: { children: ReactNode }) {
       <ReferralPopup />
 
       {showInstallBanner && (
-        <div className="fixed bottom-24 inset-x-4 z-50 bg-[#0a051d] border border-cyan-500/30 rounded-2xl p-4 shadow-2xl flex items-center gap-3 md:hidden animate-in slide-in-from-bottom duration-500">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-xl">⚡</span>
+        <div className="fixed bottom-24 inset-x-4 z-50 rounded-2xl p-4 shadow-2xl flex items-center gap-3 md:hidden animate-in slide-in-from-bottom duration-500"
+          style={{ background: 'var(--surface-2)', border: '1px solid rgba(94,106,210,0.2)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(94,106,210,0.15)', color: '#8B91E3' }}>
+            <Smartphone className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-sm">Add to Home Screen</p>
-            <p className="text-white/40 text-xs">Use GrowFlow like a native app</p>
+            <p className="text-[var(--text-muted)] text-xs">Use GrowFlow like a native app</p>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <button onClick={handleInstall} className="bg-cyan-500 text-black text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={handleInstall}
+              className="text-white text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+              style={{ background: '#5E6AD2' }}>
               Install
             </button>
-            <button onClick={() => { setShowInstallBanner(false); localStorage.setItem('install_dismissed', '1'); }} className="text-white/30 text-xs p-1">
-              ✕
-            </button>
+            <button onClick={() => { setShowInstallBanner(false); localStorage.setItem('install_dismissed', '1'); }}
+              className="text-[var(--text-muted)] text-xs p-1">✕</button>
           </div>
         </div>
       )}
@@ -1134,7 +1138,7 @@ export function Layout({ children }: { children: ReactNode }) {
           className="fixed bottom-6 right-6 z-40 hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full border text-white/50 hover:text-white/80 transition-all text-xs font-bold shadow-2xl"
           style={{ background: 'rgba(14,14,20,0.9)', backdropFilter: 'blur(12px)', borderColor: 'var(--border)' }}
         >
-          <MessageSquare className="w-4 h-4" style={{ color: '#a78bfa' }} />
+          <MessageSquare className="w-4 h-4" style={{ color: '#8B91E3' }} />
           Feedback
         </button>
       )}

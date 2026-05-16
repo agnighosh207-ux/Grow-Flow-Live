@@ -4,9 +4,9 @@ import { useLocation } from "wouter";
 import { X, PenTool, BarChart2, CalendarDays, Brain } from "lucide-react";
 
 const DISCOVERY_CARDS = [
-  { id: "ghostwriter", title: "AI Ghostwriter", msg: "Train the AI to write in your exact authentic voice.", path: "/ghostwriter", icon: PenTool, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+  { id: "ghostwriter", title: "AI Ghostwriter", msg: "Train the AI to write in your exact authentic voice.", path: "/ghostwriter", icon: PenTool, color: "text-indigo-400", bg: "bg-indigo-600/10", border: "border-[rgba(94,106,210,0.2)]" },
   { id: "predictor", title: "Performance Predictor", msg: "See how your post will perform before you hit publish.", path: "/predictor", icon: BarChart2, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-  { id: "strategy", title: "7-Day Strategy", msg: "Get a full week of strategic content ideas mapped out.", path: "/strategy", icon: CalendarDays, color: "text-cyan-400", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
+  { id: "strategy", title: "7-Day Strategy", msg: "Get a full week of strategic content ideas mapped out.", path: "/strategy", icon: CalendarDays, color: "text-[#8B91E3]", bg: "bg-[#5E6AD2]/10", border: "border-[rgba(94,106,210,0.4)]/20" },
   { id: "coach", title: "AI Content Coach", msg: "Get real-time feedback on your content strategy.", path: "/coach", icon: Brain, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
 ];
 
@@ -19,7 +19,7 @@ export function FeatureDiscoveryBanner() {
     const sessionIdx = sessionStorage.getItem("discovery_banner_idx");
     let nextIdx = 0;
     if (sessionIdx !== null) {
-      nextIdx = (parseInt(sessionIdx) + 1) % DISCOVERY_CARDS.length;
+      nextIdx = (Number.parseInt(sessionIdx, 10) + 1) % DISCOVERY_CARDS.length;
     }
     sessionStorage.setItem("discovery_banner_idx", nextIdx.toString());
     setCurrentIndex(nextIdx);
@@ -53,7 +53,7 @@ export function FeatureDiscoveryBanner() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="text-xs font-black text-white uppercase tracking-wider">{card.title}</h4>
-            <span className="text-[8px] font-black bg-cyan-500 text-black px-1.5 py-0.5 rounded-sm uppercase">Try Now</span>
+            <span className="text-[8px] font-black bg-[#5E6AD2] text-black px-1.5 py-0.5 rounded-sm uppercase">Try Now</span>
           </div>
           <p className="text-[11px] text-white/50 font-medium truncate mt-0.5">{card.msg}</p>
         </div>

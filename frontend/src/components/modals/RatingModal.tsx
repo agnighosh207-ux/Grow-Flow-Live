@@ -85,7 +85,7 @@ export function RatingModal({ open, onClose }: RatingModalProps) {
             transition={{ type: "spring", damping: 28, stiffness: 380 }}
             className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 p-6 text-center space-y-5"
             style={{
-              background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(10,4,28,0.98) 100%)",
+              background: "linear-gradient(135deg, rgba(94,106,210,0.12) 0%, rgba(10,4,28,0.98) 100%)",
               backdropFilter: "blur(24px)",
               boxShadow: "0 24px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)",
             }}
@@ -152,7 +152,7 @@ export function RatingModal({ open, onClose }: RatingModalProps) {
                   <Button
                     onClick={handleRate}
                     disabled={selected === 0}
-                    className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold rounded-xl disabled:opacity-40 transition-all"
+                    className="w-full bg-gradient-to-r from-[#5E6AD2]-600 to-teal-600 hover:from-[#5E6AD2]-500 hover:to-teal-500 text-white font-semibold rounded-xl disabled:opacity-40 transition-all"
                   >
                     Submit Rating
                   </Button>

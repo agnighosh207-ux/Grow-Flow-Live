@@ -108,7 +108,7 @@ export default function Support() {
   }
 
   return (
-    <div className="min-h-screen bg-[#060312] text-foreground font-sans pt-12 px-4 selection:bg-violet-500/30">
+    <div className="min-h-screen bg-[#0A0A0F] text-foreground font-sans pt-12 px-4 selection:bg-[#5E6AD2]/30">
       <div className="max-w-3xl mx-auto mb-8">
         <Link href="/">
           <span className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white/70 transition-colors cursor-pointer">
@@ -120,7 +120,7 @@ export default function Support() {
       <div className="space-y-8 pb-16 max-w-3xl mx-auto">
         <div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-1.5 flex items-center gap-3">
-            <HelpCircle className="w-7 h-7 text-violet-400" />
+            <HelpCircle className="w-7 h-7 text-[#8B91E3]" />
             Support
           </h1>
           <p className="text-white/50 text-sm">We usually respond within 24 hours on business days.</p>
@@ -128,8 +128,8 @@ export default function Support() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { icon: MessageSquare, label: "Message Us", desc: "Use the form below", color: "text-violet-400", bg: "bg-violet-500/8 border-violet-500/15" },
-            { icon: Mail, label: "Email", desc: "growflowhelp@gmail.com", color: "text-violet-400", bg: "bg-violet-500/8 border-violet-500/15" },
+            { icon: MessageSquare, label: "Message Us", desc: "Use the form below", color: "text-[#8B91E3]", bg: "bg-[#5E6AD2]/8 border-[rgba(94,106,210,0.4)]/15" },
+            { icon: Mail, label: "Email", desc: "growflowhelp@gmail.com", color: "text-[#8B91E3]", bg: "bg-[#5E6AD2]/8 border-[rgba(94,106,210,0.4)]/15" },
             { icon: Clock, label: "Response Time", desc: "Within 24 hours", color: "text-emerald-400", bg: "bg-emerald-500/8 border-emerald-500/15" },
           ].map(({ icon: Icon, label, desc, color, bg }) => (
             <div key={label} className={`rounded-xl border ${bg} p-4 flex items-center gap-3`}>
@@ -179,7 +179,7 @@ export default function Support() {
               animate={{ opacity: 1 }}
               className="rounded-2xl border border-white/8 p-5 md:p-6"
               style={{
-                background: "linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+                background: "linear-gradient(135deg, rgba(94,106,210,0.06) 0%, rgba(255,255,255,0.02) 100%)",
                 backdropFilter: "blur(20px)",
                 boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
               }}
@@ -209,7 +209,7 @@ export default function Support() {
                           <FormControl>
                             <Input
                               placeholder="e.g. you@example.com"
-                              className="bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-violet-500/40 rounded-xl h-11"
+                              className="bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-[#5E6AD2]/40 rounded-xl h-11"
                               {...field}
                             />
                           </FormControl>
@@ -266,7 +266,7 @@ export default function Support() {
                     <Button
                       type="submit"
                       disabled={loading}
-                      className="bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white font-semibold shadow-lg shadow-violet-900/30 rounded-xl px-8 h-11"
+                      className="bg-gradient-to-r from-[#5E6AD2] to-[#0A0A0F] hover:from-[#5E6AD2] hover:to-[#0A0A0F] text-white font-semibold shadow-lg shadow-[rgba(94,106,210,0.30)] rounded-xl px-8 h-11"
                     >
                       {loading ? (
                         <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Sending...</>

@@ -21,8 +21,8 @@ function shouldShowReport(userId: string): boolean {
   try {
     const raw = localStorage.getItem(getStorageKey(userId));
     if (!raw) return true;
-    const ts = parseInt(raw, 10);
-    if (isNaN(ts)) return true;
+    const ts = Number.parseInt(raw, 10);
+    if (Number.isNaN(ts)) return true;
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
     return Date.now() - ts >= sevenDays;
   } catch {
@@ -74,18 +74,19 @@ export function WeeklyReportCard() {
   if (!isLoaded || isLoading || !visible || !stats) return null;
 
   const consistencyPct = Math.round((stats.consistencyScore / 7) * 100);
-  const consistencyColor =
-    stats.consistencyScore >= 5
-      ? "text-emerald-400"
-      : stats.consistencyScore >= 3
-      ? "text-amber-400"
-      : "text-red-400";
-  const barColor =
-    stats.consistencyScore >= 5
-      ? "from-emerald-500 to-emerald-400"
-      : stats.consistencyScore >= 3
-      ? "from-amber-500 to-amber-400"
-      : "from-red-500 to-red-400";
+  const getConsistencyColor = (score: number) => {
+    if (score >= 5) return "text-emerald-400";
+    if (score >= 3) return "text-amber-400";
+    return "text-red-400";
+  };
+  const consistencyColor = getConsistencyColor(stats.consistencyScore);
+
+  const getBarColor = (score: number) => {
+    if (score >= 5) return "from-emerald-500 to-emerald-400";
+    if (score >= 3) return "from-amber-500 to-amber-400";
+    return "from-red-500 to-red-400";
+  };
+  const barColor = getBarColor(stats.consistencyScore);
 
   return (
     <AnimatePresence>
@@ -99,19 +100,19 @@ export function WeeklyReportCard() {
           className="relative z-10 overflow-hidden"
         >
           <div
-            className="relative rounded-2xl border border-cyan-500/25 overflow-hidden"
+            className="relative rounded-2xl border border-[rgba(94,106,210,0.4)]/25 overflow-hidden"
             style={{
               background:
-                "linear-gradient(135deg, rgba(0,242,255,0.08) 0%, rgba(20,184,166,0.04) 50%, rgba(11,18,21,0.95) 100%)",
+                "linear-gradient(135deg, rgba(94,106,210,0.15) 0%, rgba(139,145,227,0.04) 50%, rgba(11,18,21,0.95) 100%)",
             }}
           >
-            <div className="h-0.5 w-full bg-gradient-to-r from-cyan-500 via-teal-500 to-pink-500" />
+            <div className="h-0.5 w-full bg-gradient-to-r from-[#5E6AD2] via-[#8B91E3] to-[#4A52B8]" />
 
             <div className="px-5 py-4">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center shrink-0">
-                    <BarChart3 className="w-5 h-5 text-cyan-400" />
+                  <div className="w-9 h-9 rounded-xl bg-[#5E6AD2]/15 border border-[rgba(94,106,210,0.4)]/25 flex items-center justify-center shrink-0">
+                    <BarChart3 className="w-5 h-5 text-[#8B91E3]" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white leading-tight">Your Weekly Performance Report</p>
@@ -130,7 +131,7 @@ export function WeeklyReportCard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div className="rounded-xl border border-white/8 px-4 py-3 bg-white/[0.02]">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
+                    <TrendingUp className="w-3.5 h-3.5 text-[#8B91E3]" />
                     <span className="text-[11px] text-white/40 font-medium uppercase tracking-wide">Content Generated</span>
                   </div>
                   <p className="text-2xl font-bold text-white">{stats.totalGenerations}</p>
@@ -139,7 +140,7 @@ export function WeeklyReportCard() {
 
                 <div className="rounded-xl border border-white/8 px-4 py-3 bg-white/[0.02]">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <CalendarDays className="w-3.5 h-3.5 text-cyan-400" />
+                    <CalendarDays className="w-3.5 h-3.5 text-[#8B91E3]" />
                     <span className="text-[11px] text-white/40 font-medium uppercase tracking-wide">Consistency Score</span>
                   </div>
                   <p className={`text-2xl font-bold ${consistencyColor}`}>{stats.consistencyLabel}</p>
