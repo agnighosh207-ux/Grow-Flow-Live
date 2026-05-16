@@ -106,6 +106,8 @@ app.use(helmet({
         "https://*.clerk.accounts.dev",
         "https://*.clerk.com",
         "https://img.clerk.com",
+        "https://clerk-telemetry.com",
+        "https://*.clerk-telemetry.com",
         "https://accounts.google.com",
         "https://oauth2.googleapis.com",
         "https://*.googleapis.com",
@@ -117,6 +119,7 @@ app.use(helmet({
         "wss://growflowai.space",
         "https://api.groq.com",
         "https://*.razorpay.com",
+        "https://checkout.razorpay.com",
       ],
       frameSrc: [
         "'self'",
