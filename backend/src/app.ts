@@ -47,11 +47,57 @@ logger.info({
 }, "🚀 GrowFlow AI starting up");
 
 function validateClerkConfig() {
+  const sanitizeClerkPublishableKey = (key: any): string | undefined => {
+    if (!key || typeof key !== 'string') return key;
+    if (!key.startsWith('pk_test_') && !key.startsWith('pk_live_')) return key;
+    try {
+      const prefix = key.startsWith('pk_test_') ? 'pk_test_' : 'pk_live_';
+      const parts = key.split('_');
+      const encodedPart = parts[2];
+      if (!encodedPart) return key;
+
+      // Decode base64
+      const decoded = Buffer.from(encodedPart, 'base64').toString('utf8');
+
+      // Check if the decoded key has the new format containing "$" separating FAPI URL and Instance ID
+      // Example new format decoded: clerk.growflowai.space$ins_3DigvSTaLOOc0uUWDZdc81w83z
+      // The classic Clerk SDK (v4.x) only supports FAPI URL followed by "$" (e.g. clerk.growflowai.space$)
+      if (decoded.includes('$')) {
+        const decodedParts = decoded.split('$');
+        const frontendApi = decodedParts[0];
+        if (frontendApi && frontendApi.includes('.')) {
+          // Re-encode to the classic format: frontendApi + "$"
+          const cleanDecoded = `${frontendApi}$`;
+          const cleanEncoded = Buffer.from(cleanDecoded, 'utf8').toString('base64').replace(/=+$/, '');
+          return `${prefix}${cleanEncoded}`;
+        }
+      }
+    } catch (err) {
+      // Return original key on error
+    }
+    return key;
+  };
+
   const isValidKey = (key: any): boolean => {
     if (typeof key !== 'string') return false;
     if (!key.startsWith('pk_test_') && !key.startsWith('pk_live_')) return false;
     if (key.includes('xxxx') || key.length < 25) return false;
-    return true;
+    
+    // Test if `@clerk/shared`'s parser rules are satisfied
+    try {
+      const parts = key.split('_');
+      const encodedPart = parts[2];
+      if (!encodedPart) return false;
+      const decoded = Buffer.from(encodedPart, 'base64').toString('utf8');
+      
+      // Decoded must end with "$" and cannot have another "$" before that
+      if (!decoded.endsWith('$')) return false;
+      const withoutTrailing = decoded.slice(0, -1);
+      if (withoutTrailing.includes('$')) return false;
+      return withoutTrailing.includes('.');
+    } catch (err) {
+      return false;
+    }
   };
 
   const keysToTry = [
@@ -60,17 +106,27 @@ function validateClerkConfig() {
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
   ];
 
-  // Find the first valid publishable key
-  const bestKey = keysToTry.find(isValidKey);
-  
-  if (bestKey) {
-    process.env.CLERK_PUBLISHABLE_KEY = bestKey;
-  } else {
-    // If none are valid, but we have something non-empty, keep it but log a warning
+  // Try sanitizing and then validating
+  let resolvedKey: string | undefined;
+  for (const rawKey of keysToTry) {
+    if (!rawKey) continue;
+    const sanitized = sanitizeClerkPublishableKey(rawKey);
+    if (isValidKey(sanitized)) {
+      resolvedKey = sanitized;
+      break;
+    }
+  }
+
+  // If no key was valid after sanitization, fall back to the first non-empty raw key
+  if (!resolvedKey) {
     const nonEmpty = keysToTry.find(k => k && typeof k === 'string' && k.trim().length > 0 && k !== "undefined" && k !== "null");
     if (nonEmpty) {
-      process.env.CLERK_PUBLISHABLE_KEY = nonEmpty;
+      resolvedKey = sanitizeClerkPublishableKey(nonEmpty);
     }
+  }
+
+  if (resolvedKey) {
+    process.env.CLERK_PUBLISHABLE_KEY = resolvedKey;
   }
 
   const secretKey = process.env.CLERK_SECRET_KEY;
@@ -83,13 +139,13 @@ function validateClerkConfig() {
       length: publishableKey.length,
       prefix: publishableKey.substring(0, 12),
       suffix: publishableKey.substring(Math.max(0, publishableKey.length - 4))
-    }, '[CLERK] CRITICAL: Publishable key format is INVALID (contains placeholders or is too short)');
+    }, '[CLERK] CRITICAL: Publishable key format is INVALID (failed classic Clerk SDK parser rules)');
   } else {
     logger.info({
       length: publishableKey.length,
       prefix: publishableKey.substring(0, 12),
       suffix: publishableKey.substring(Math.max(0, publishableKey.length - 4))
-    }, '[CLERK] Publishable key configured and validated ✓');
+    }, '[CLERK] Publishable key configured, sanitized to classic format, and validated ✓');
   }
 
   if (!secretKey) {
