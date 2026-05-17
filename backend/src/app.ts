@@ -185,6 +185,7 @@ app.use(helmet({
         "https://checkout.razorpay.com",
         "https://cdn.razorpay.com",
         "https://*.razorpay.com",
+        "https://challenges.cloudflare.com", // Cloudflare Turnstile for Clerk CAPTCHA
       ],
       workerSrc: ["'self'", "blob:"],
       styleSrc: [
@@ -221,6 +222,7 @@ app.use(helmet({
         "https://api.groq.com",
         "https://*.razorpay.com",
         "https://checkout.razorpay.com",
+        "https://challenges.cloudflare.com", // Cloudflare Turnstile connections
       ],
       frameSrc: [
         "'self'",
@@ -230,6 +232,7 @@ app.use(helmet({
         "https://accounts.google.com",
         "https://*.clerk.accounts.dev",
         "https://*.clerk.com",
+        "https://challenges.cloudflare.com", // Cloudflare Turnstile iframe challenge
       ],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
