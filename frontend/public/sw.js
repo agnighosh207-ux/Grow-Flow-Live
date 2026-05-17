@@ -18,6 +18,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only intercept and cache GET requests (POST/PUT/DELETE/etc. are not cacheable and throw exceptions)
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   const url = new URL(event.request.url);
   const isApi = url.pathname.startsWith('/api/');
   const isPage = STATIC_ASSETS.includes(url.pathname) || !url.pathname.includes('.');
