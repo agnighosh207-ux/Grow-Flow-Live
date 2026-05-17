@@ -4,7 +4,7 @@ import { AuthBackground, PasswordRequirements } from "./AuthComponents";
 
 const envKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 export const clerkPubKey = (!envKey || envKey.startsWith('pk_test_') || envKey.includes('REPLACE_WITH_LIVE_KEY'))
-  ? 'pk_live_Y2xlcmsuZ3Jvd2Zsb3dhaS5zcGFjZSQ'
+  ? 'pk_live_Y2xlcmsuZ3Jvd2Zsb3dhaS5zcGFjZSRpbnNfM0RpZ3ZTVGFMT09jMHVVV0RaZGM4MXc4M3o='
   : envKey;
 export const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL || undefined;
 export const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
