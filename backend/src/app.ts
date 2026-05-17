@@ -61,7 +61,11 @@ function validateClerkConfig() {
   if (!publishableKey) {
     logger.error('[CLERK] CRITICAL: CLERK_PUBLISHABLE_KEY missing');
   } else {
-    logger.info('[CLERK] Publishable key configured ✓');
+    logger.info({
+      length: publishableKey.length,
+      prefix: publishableKey.substring(0, 12),
+      suffix: publishableKey.substring(Math.max(0, publishableKey.length - 4))
+    }, '[CLERK] Publishable key configured ✓');
   }
 
   if (!secretKey) {
