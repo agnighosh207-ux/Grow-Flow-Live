@@ -47,7 +47,23 @@ logger.info({
 }, "🚀 GrowFlow AI starting up");
 
 function validateClerkConfig() {
+  if (!process.env.CLERK_PUBLISHABLE_KEY) {
+    if (process.env.VITE_CLERK_PUBLISHABLE_KEY) {
+      process.env.CLERK_PUBLISHABLE_KEY = process.env.VITE_CLERK_PUBLISHABLE_KEY;
+    } else if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+      process.env.CLERK_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    }
+  }
+
   const secretKey = process.env.CLERK_SECRET_KEY;
+  const publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
+
+  if (!publishableKey) {
+    logger.error('[CLERK] CRITICAL: CLERK_PUBLISHABLE_KEY missing');
+  } else {
+    logger.info('[CLERK] Publishable key configured ✓');
+  }
+
   if (!secretKey) {
     logger.error('[CLERK] CRITICAL: CLERK_SECRET_KEY missing');
   } else if (secretKey.startsWith('sk_test_')) {
