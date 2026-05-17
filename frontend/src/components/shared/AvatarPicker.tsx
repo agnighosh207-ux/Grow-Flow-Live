@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
 import { X, Upload, Check, ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ const PREBUILT_AVATARS = [
 
 export function AvatarPicker({ open, onClose }: AvatarPickerProps) {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -32,7 +33,37 @@ export function AvatarPicker({ open, onClose }: AvatarPickerProps) {
     try {
       setIsUpdating(true);
       await user.setProfileImage({ file });
+      await user.reload();
+
+      // Sync avatarUrl to the backend database instantly
+      try {
+        const token = await getToken();
+        const localGetDeviceId = (): string => {
+          let deviceId = localStorage.getItem('gf_device_id');
+          if (!deviceId) {
+            deviceId = crypto.randomUUID();
+            localStorage.setItem('gf_device_id', deviceId);
+          }
+          return deviceId;
+        };
+        await fetch("/api/settings/profile", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+            "x-device-id": localGetDeviceId(),
+          },
+          body: JSON.stringify({ avatarUrl: user.imageUrl })
+        });
+      } catch (dbErr) {
+        console.error("Failed to sync avatar to database:", dbErr);
+      }
+
       toast({ title: "Profile picture updated successfully!" });
+      
+      // Trigger custom storage event to alert sidebar/header layouts to refresh state
+      window.dispatchEvent(new Event('storage'));
+      
       onClose();
     } catch (err: any) {
       console.error(err);

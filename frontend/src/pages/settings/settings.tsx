@@ -571,12 +571,8 @@ export default function SettingsPage() {
                       )}
                     </div>
                     <button
-                      onClick={() => {
-                        // Clerk's UserProfile handles image upload
-                        // Open Clerk's profile management
-                        window.open('https://accounts.clerk.dev/user', '_blank');
-                      }}
-                      className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2"
+                      onClick={() => setShowAvatarPicker(true)}
+                      className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2 cursor-pointer hover:scale-105 transition-transform"
                       style={{ background: '#5E6AD2', borderColor: 'var(--bg, #0A0A0F)' }}>
                       <Camera className="w-3 h-3 text-white" />
                     </button>

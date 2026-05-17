@@ -69,12 +69,18 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
     const clerkPrimaryEmail = emailFromSession?.toLowerCase();
 
     let fetchedClerkEmail: string | null = null;
-    if (!dbEmail && !clerkPrimaryEmail) {
+    let fetchedClerkImageUrl: string | null = null;
+    if ((!dbEmail && !clerkPrimaryEmail) || !user?.avatarUrl) {
       try {
         const clerkUser = await clerkClient.users.getUser(uid);
-        fetchedClerkEmail = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase() || null;
+        if (!dbEmail && !clerkPrimaryEmail) {
+          fetchedClerkEmail = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase() || null;
+        }
+        if (clerkUser.imageUrl) {
+          fetchedClerkImageUrl = clerkUser.imageUrl;
+        }
       } catch (e) {
-        logger.error({ err: String(e), uid }, "Failed to fetch user email from Clerk SDK");
+        logger.error({ err: String(e), uid }, "Failed to fetch user email or avatar from Clerk SDK");
       }
     }
 
@@ -196,12 +202,13 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       }
     }
 
-    // 5. Fast-Path for existing users (No credits reset needed)
+    // 5. Fast-Path for existing users (No credits reset or avatar sync needed)
     if (user) {
       const now = new Date();
       const needsCreditReset = !user.lastCreditReset || (now.getTime() - new Date(user.lastCreditReset).getTime() > 24 * 60 * 60 * 1000 * 30);
+      const needsAvatarSync = fetchedClerkImageUrl && user.avatarUrl !== fetchedClerkImageUrl;
       
-      if (!needsCreditReset && !isAdminEmail && !user.isFirstLogin) {
+      if (!needsCreditReset && !isAdminEmail && !user.isFirstLogin && !needsAvatarSync) {
         // Quick update in background
         db.update(usersTable).set({ lastLoginAt: now }).where(eq(usersTable.id, uid)).catch(err => logger.warn({ err, userId: uid }, "lastLoginAt update failed"));
         req.userId = uid;
@@ -246,6 +253,10 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
           updates.email = emailFromSession;
         }
 
+        if (fetchedClerkImageUrl && finalUser.avatarUrl !== fetchedClerkImageUrl) {
+          updates.avatarUrl = fetchedClerkImageUrl;
+        }
+
         if (isAdminEmail && !finalUser.isAdmin) {
             updates.isAdmin = true;
             updates.planTier = "INFINITY";
@@ -261,6 +272,7 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
         const [newUser] = await tx.insert(usersTable).values({
           id: uid,
           email: emailFromSession || fetchedClerkEmail,
+          avatarUrl: fetchedClerkImageUrl,
           lastLoginAt: now,
           generationsRemaining: isAdminEmail ? 999999 : 5,
           lastCreditReset: now,
