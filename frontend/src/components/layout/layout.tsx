@@ -8,6 +8,7 @@ import { FoundersBanner } from "@/components/banners/FoundersBanner";
 import { TopBanner } from "@/components/banners/TopBanner";
 import { FeedbackModal, checkShouldShowFeedback } from "@/components/modals/FeedbackModal";
 import { Link, useLocation } from "wouter";
+import { clerkPubKey } from "@/components/auth/AuthPages";
 import { useClerk, useUser, useAuth } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -917,7 +918,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden flex flex-col" style={{ background: 'var(--bg)' }}>
-      {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.startsWith('pk_test_') && (
+      {clerkPubKey?.startsWith('pk_test_') && (
         <div className="fixed top-0 inset-x-0 z-[999] text-center text-[10px] py-0.5 font-bold"
           style={{ background: '#D97706', color: 'black' }}>
           ⚠️ Development Mode — Using Test Clerk Keys

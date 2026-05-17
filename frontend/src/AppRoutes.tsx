@@ -188,9 +188,9 @@ export function ClerkProviderWithRoutes() {
   }, [setLocation]);
 
   useEffect(() => {
-    const key = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
+    const key = clerkPubKey || "";
     if (key.startsWith('pk_test_')) {
-      console.warn('[GrowFlow] Using TEST Clerk key. If on production, check Railway env vars.');
+      console.warn('[GrowFlow] Using TEST Clerk key. If on production, check env vars.');
       if (key.includes('test')) {
         document.title = '[TEST] GrowFlow AI';
       }

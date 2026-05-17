@@ -126,23 +126,34 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       if (maxSessions === 1) {
         // Single device enforcement
         const currentDeviceId = user.deviceId;
+        const clientDeviceId = req.headers['x-device-id'] as string;
         
-        if (currentDeviceId && currentDeviceId !== deviceFingerprint) {
-          // Someone else logged in from a different device
-          res.status(401).json({ 
-            error: "session_conflict",
-            message: "Your account was signed in on another device. You have been logged out.",
-            code: "DEVICE_CONFLICT"
-          });
-          return;
-        }
-        
-        // Update deviceId if new login
-        if (!currentDeviceId || currentDeviceId !== deviceFingerprint) {
-          await db.update(usersTable)
-            .set({ deviceId: deviceFingerprint })
-            .where(eq(usersTable.id, user.id));
-          user.deviceId = deviceFingerprint;
+        if (clientDeviceId) {
+          if (currentDeviceId && currentDeviceId !== clientDeviceId) {
+            // Check if the old device has been active recently (within the last 15 seconds).
+            // If the old device was active in the last 15 seconds, we treat it as an active simultaneous conflict.
+            // Otherwise, we allow the new device to seamlessly take over!
+            const lastActive = user.lastLoginAt ? new Date(user.lastLoginAt).getTime() : 0;
+            const isSimultaneousActive = (Date.now() - lastActive) < 15000;
+            
+            if (isSimultaneousActive) {
+              res.status(401).json({ 
+                error: "session_conflict",
+                message: "Your account was signed in on another device. You have been logged out.",
+                code: "DEVICE_CONFLICT"
+              });
+              return;
+            }
+          }
+          
+          // Update deviceId if new login / takeover
+          if (!currentDeviceId || currentDeviceId !== clientDeviceId) {
+            await db.update(usersTable)
+              .set({ deviceId: clientDeviceId, lastLoginAt: new Date() })
+              .where(eq(usersTable.id, user.id));
+            user.deviceId = clientDeviceId;
+            invalidateAuthCache(user.id);
+          }
         }
       } else if (maxSessions === 5) {
         // Count active agency sessions (active in last 30 days)
