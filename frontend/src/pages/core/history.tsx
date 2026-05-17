@@ -302,7 +302,15 @@ export default function History() {
                 <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ delay: Math.min(idx * 0.03, 0.2), duration: 0.2 }}
                   onClick={() => setSelectedItem(item)}
-                  className="group rounded-2xl border border-white/6 p-5 cursor-pointer hover:border-white/12 transition-all duration-500 relative flex flex-col"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedItem(item);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="group rounded-2xl border border-white/6 p-5 cursor-pointer hover:border-white/12 transition-all duration-500 relative flex flex-col text-left"
                   style={{ background: "rgba(255,255,255,0.025)" }}
                 >
                   {/* Delete button */}

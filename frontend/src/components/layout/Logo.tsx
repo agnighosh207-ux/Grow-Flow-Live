@@ -1,14 +1,32 @@
 import { TrendingUp } from "lucide-react";
 
 interface LogoProps {
-  size?: "sm" | "md" | "lg";
-  showText?: boolean;
+  readonly size?: "sm" | "md" | "lg";
+  readonly showText?: boolean;
 }
 
+const ICON_SIZES = {
+  sm: "w-7 h-7",
+  md: "w-8 h-8",
+  lg: "w-10 h-10",
+};
+
+const INNER_ICONS = {
+  sm: "w-3.5 h-3.5",
+  md: "w-4 h-4",
+  lg: "w-5 h-5",
+};
+
+const TEXT_SIZES = {
+  sm: "text-base",
+  md: "text-lg",
+  lg: "text-2xl",
+};
+
 export function Logo({ size = "md", showText = true }: LogoProps) {
-  const iconSize = size === "sm" ? "w-7 h-7" : size === "md" ? "w-8 h-8" : "w-10 h-10";
-  const innerIcon = size === "sm" ? "w-3.5 h-3.5" : size === "md" ? "w-4 h-4" : "w-5 h-5";
-  const textSize = size === "sm" ? "text-base" : size === "md" ? "text-lg" : "text-2xl";
+  const iconSize = ICON_SIZES[size];
+  const innerIcon = INNER_ICONS[size];
+  const textSize = TEXT_SIZES[size];
 
   return (
     <div className="flex items-center gap-2 select-none">

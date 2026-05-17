@@ -1,5 +1,4 @@
-import { Layout } from "@/components/layout/layout";
-import { Users, Copy, CheckCircle2, Gift, Link as LinkIcon, DollarSign, Target, GiftIcon, ArrowRight, Share2, UserPlus, CheckCircle, RefreshCcw, Sparkles, GitBranch, BarChart3, Lock } from "lucide-react";
+import { Users, Copy, Gift, Link as LinkIcon, Target, Share2, UserPlus, CheckCircle, RefreshCcw, GitBranch, BarChart3, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useReferralInfo } from "@/hooks/useReferral";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
@@ -71,7 +70,6 @@ export default function ReferralsPage() {
   const isErrorCode = referral?.referralCode === "ERROR" || !referral?.referralCode || referral.referralCode === "---";
 
   const referralCount = referral?.successfulReferrals || 0;
-  const rewardsEarned = referral?.totalBonusDays || 0;
   const isPaidUser = sub?.planType && sub.planType !== "free";
   
   // Progress towards standard 15 Days
@@ -144,7 +142,7 @@ export default function ReferralsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {isErrorCode ? (
                     <Button 
-                      onClick={() => window.location.reload()}
+                      onClick={() => globalThis.location.reload()}
                       className="col-span-full h-14 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-medium uppercase tracking-wider rounded-2xl transition-all"
                     >
                       <RefreshCcw className="w-4 h-4 mr-2" /> Refresh Page
@@ -388,7 +386,7 @@ export default function ReferralsPage() {
               { icon: Gift, title: "Both Earn Rewards", desc: isPaidUser ? "You get 20 credits, they get 10 credits when they subscribe." : "You both get 15 extra free days when they subscribe.", color: "text-emerald-400" }
             ].map((step, i) => (
               <motion.div 
-                key={i}
+                key={step.title}
                 initial={{ opacity: 0, y: 20 }} 
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ delay: 0.4 + (i * 0.1) }}

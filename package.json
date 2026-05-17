@@ -31,5 +31,10 @@
   "dependencies": {
     "react": "catalog:",
     "react-dom": "catalog:"
+  },
+  "pnpm": {
+    "overrides": {
+      "qs": "^6.13.0"
+    }
   }
 }
