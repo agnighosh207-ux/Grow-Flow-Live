@@ -311,6 +311,18 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Cache static assets aggressively
+app.use('/assets', (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  next();
+});
+
+// Cache API responses that don't change often
+app.use('/api/subscription/status', (req, res, next) => {
+  res.setHeader('Cache-Control', 'private, max-age=30');  // 30 second cache
+  next();
+});
+
 // ─── 9. Rate limiting ──────────────────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

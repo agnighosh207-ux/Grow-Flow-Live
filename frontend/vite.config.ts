@@ -30,25 +30,16 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-motion': ['framer-motion'],
-          'vendor-ui': [
-            '@radix-ui/react-dialog', 
-            '@radix-ui/react-tabs', 
-            '@radix-ui/react-select', 
-            '@radix-ui/react-dropdown-menu', 
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-toast',
-            '@radix-ui/react-slot',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-label'
-          ],
-          'vendor-clerk': ['@clerk/react'],
-          'vendor-charts': ['recharts'],
-          'vendor-query': ['@tanstack/react-query'],
-          'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
-          'vendor-icons': ['lucide-react', 'react-icons'],
+        manualChunks(id) {
+          if (id.includes('@clerk')) return 'vendor-clerk';
+          if (id.includes('framer-motion')) return 'vendor-motion';
+          if (id.includes('react-dom') || id.includes('react/')) return 'vendor-react';
+          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+          if (id.includes('@radix-ui')) return 'vendor-ui';
+          if (id.includes('i18next') || id.includes('react-i18next')) return 'vendor-i18n';
+          if (id.includes('lucide-react')) return 'vendor-icons';
+          if (id.includes('@tanstack')) return 'vendor-query';
+          if (id.includes('wouter')) return 'vendor-router';
         }
       }
     }

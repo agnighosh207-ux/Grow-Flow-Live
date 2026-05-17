@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, jsonb, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, jsonb, integer, pgEnum, serial } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const userPlanEnum = pgEnum("user_plan", ["FREE", "STARTER", "CREATOR", "INFINITY", "AGENCY"]);
@@ -78,3 +78,12 @@ export const usersTable = pgTable("users", {
 
 export type User = typeof usersTable.$inferSelect;
 export type InsertUser = typeof usersTable.$inferInsert;
+
+export const agencySessionsTable = pgTable("agency_sessions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  deviceId: text("device_id").notNull(),
+  deviceName: text("device_name"),
+  lastActiveAt: timestamp("last_active_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});

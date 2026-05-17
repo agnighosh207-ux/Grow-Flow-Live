@@ -9,15 +9,30 @@ import { toast } from "@/hooks/use-toast";
  * 5. Plan-limit event broadcasting (402)
  */
 
+const getDeviceId = (): string => {
+  let deviceId = localStorage.getItem('gf_device_id');
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem('gf_device_id', deviceId);
+  }
+  return deviceId;
+};
+
 async function internalFetch(url: string, options: RequestInit = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
   const finalSignal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal;
 
+  const mergedHeaders = {
+    ...options.headers,
+    'x-device-id': getDeviceId(),
+  };
+
   try {
     const response = await fetch(url, {
       ...options,
+      headers: mergedHeaders,
       signal: finalSignal
     });
     clearTimeout(timeoutId);
@@ -34,6 +49,12 @@ async function internalFetch(url: string, options: RequestInit = {}) {
         } catch (e) {
           errorMessage = errorText || errorMessage;
         }
+      }
+      
+      if (response.status === 401 && errorData.code === 'DEVICE_CONFLICT') {
+        window.dispatchEvent(new CustomEvent('session-conflict', { 
+          detail: errorMessage 
+        }));
       }
       
       if (response.status === 402) {

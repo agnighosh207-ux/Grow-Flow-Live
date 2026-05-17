@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { filterUserInput } from "../../lib/content-filter";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
@@ -69,12 +70,17 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hooks"), enforceGenera
     return;
   }
   
-  if (!topic) {
-    res.status(400).json({ error: "Topic is required" });
+  const filterResult = filterUserInput(topic, "topic");
+  if (!filterResult.allowed) {
+    res.status(400).json({ 
+      error: "invalid_input",
+      message: filterResult.reason || "Invalid input",
+      suggestion: filterResult.suggestion || "Please provide a specific topic idea"
+    });
     return;
   }
 
-  const sanitizedTopic = String(topic).substring(0, 500);
+  const sanitizedTopic = filterResult.cleanedInput || String(topic);
 
   const toneGuidance = {
     Casual: "Conversational and warm, like a trusted friend sharing something important.",

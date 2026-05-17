@@ -91,7 +91,10 @@ const FeatureGuideBanner: React.FC<FeatureGuideBannerProps> = ({
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="relative group bg-[#0a051d] border border-[rgba(94,106,210,0.30)] border-l-[6px] border-l-[#5E6AD2] rounded-2xl p-6 sm:p-7 shadow-2xl shadow-[rgba(94,106,210,0.40)] backdrop-blur-xl">
+            <div 
+              className="relative group border border-[rgba(94,106,210,0.30)] border-l-[6px] border-l-[#5E6AD2] rounded-2xl p-6 sm:p-7 shadow-2xl shadow-[rgba(94,106,210,0.40)] backdrop-blur-xl"
+              style={{ background: 'var(--surface-1)' }}
+            >
               
               {/* Dismiss Button */}
               <button

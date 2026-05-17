@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useGenerateShortcut } from "@/hooks/useGenerateShortcut";
 import { User, Sparkles, Instagram, Twitter, Linkedin, Youtube, Share2, Copy, Smartphone, Save, Check, RefreshCw, Mic, Layout, MessageSquare, Target, Award, Brain, Terminal, Shield, ChevronRight, BarChart2, Fingerprint } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { Fingerprint as FingerprintIcon } from "lucide-react";
+import { EmptyOutputState } from "@/components/shared/EmptyOutputState";
 
 const formats = [
  { id: "instagram", label: "Instagram", icon: <Instagram className="h-5 w-5" />, limit: 150 },
@@ -59,6 +62,8 @@ export default function CreatorProfilePage() {
  const { toast } = useToast();
  const [showGuide, setShowGuide] = useState(false);
 
+ usePageTitle("Bio Generator");
+
  const handleFormatToggle = (id: string) => {
   const newFormats = formData.formats.includes(id)
    ? formData.formats.filter(f => f !== id)
@@ -91,6 +96,8 @@ export default function CreatorProfilePage() {
    setGenerating(false);
   }
  };
+
+ useGenerateShortcut(generateProfile, generating);
 
  const saveToProfile = () => {
   if (!result) return;
@@ -458,13 +465,11 @@ export default function CreatorProfilePage() {
         <motion.div
          initial={{ opacity: 0 }}
          animate={{ opacity: 1 }}
-         className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[400px]"
         >
-         <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-          <Sparkles className="w-5 h-5" style={{ color: "var(--text-disabled)" }} />
-         </div>
-         <p className="text-white/25 text-sm font-medium">Your brand suite will appear here</p>
-         <p className="text-white/15 text-xs mt-1">Configure your persona and hit Build Brand Suite</p>
+         <EmptyOutputState
+           title="Your bio will appear here"
+           description="Fill in your details to generate a compelling creator bio"
+         />
         </motion.div>
        )}
       </AnimatePresence>

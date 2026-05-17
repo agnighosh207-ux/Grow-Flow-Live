@@ -14,6 +14,9 @@ import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
 
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useGenerateShortcut } from "@/hooks/useGenerateShortcut";
+
 const NICHES = ["General", "Fitness", "Finance", "Tech", "Motivation", "Business", "Lifestyle"] as const;
 
 const NICHE_COLORS: Record<string, string> = {
@@ -70,9 +73,7 @@ function IdeasGeneratorInner() {
  const [loading, setLoading] = useState(false);
  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
- useEffect(() => {
-  document.title = "Content Idea Generator — GrowFlow AI";
- }, []);
+ usePageTitle("Content Ideas");
 
  const { toast } = useToast();
  const { getToken } = useAuth();
@@ -117,6 +118,8 @@ function IdeasGeneratorInner() {
   } finally {
    setLoading(false);
   }
+
+  useGenerateShortcut(generateIdeas, loading);
  }
 
  function useIdea(idea: ContentIdea) {

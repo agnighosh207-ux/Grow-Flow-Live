@@ -34,37 +34,43 @@ export const QUALITY_RULES = `=== ABSOLUTE QUALITY RULES ===
 
 export const PLATFORM_REQUIREMENTS = `=== PLATFORM MASTERY REQUIREMENTS ===
 
-INSTAGRAM CAPTION:
-→ Hook (line 1): Must create an open loop in 10 words or less. Never start with "I" or "You". Start with the TENSION.
-→ Lines 2-3: Deepen the tension. Make them feel the problem.
-→ Body (4-6 short paragraphs): Each paragraph ends at a moment of curiosity that forces reading the next.
-→ Line break every 1-2 sentences. No walls of text.
-→ Closing line before CTA: Deliver the insight in one memorable, quotable sentence.
-→ CTA: Ultra-specific. Not "follow for more." Example: "Save this — you'll want to come back to it."
-→ Hashtags: 15 tags. Mix: 5 hyper-niche (under 100K posts), 5 mid-tier (100K-1M posts), 5 broad (1M+ posts).
-→ Strategic emojis: 1-2 maximum, only when they replace a word more powerfully than the word itself.
+INSTAGRAM CAPTION RULES (strictly follow):
+- Length: 150-300 words
+- Structure: Hook (first line MUST stop the scroll) → Story/value → CTA
+- Use line breaks for readability (every 2-3 sentences)
+- Tone: Conversational, personal, authentic - like talking to a friend
+- Emojis: 3-5 relevant emojis, never back-to-back
+- End with: A question to drive comments OR "Save this" for evergreen content
+- Hashtags: 5-8 tags on a separate line at the end
+- NEVER use corporate language. Use "you" and "I" frequently.
+- First 3 words must create curiosity or shock.
 
-YOUTUBE SHORTS SCRIPT:
-→ First 3 words must create a hard open loop or bold claim. Examples: "Stop doing this." / "This changed everything." / "Nobody shows you..."
-→ Write exactly as it would be SPOKEN — no reading voice, pure conversational energy.
-→ Format: [HOOK - 10 seconds] → [TENSION BUILD - 10 seconds] → [CORE INSIGHT - 25 seconds] → [CTA - 5 seconds]
-→ Every sentence is max 10 words. Short. Punchy. One idea per sentence.
-→ Include [PAUSE] markers where a creator should dramatically pause.
-→ End with a reason to watch the next video or follow.
+YOUTUBE SHORTS SCRIPT RULES (strictly follow):
+- Length: 150-200 words (60-second script)
+- Structure: HOOK (0-3 sec, must be a question or shocking statement) → PROBLEM → SOLUTION → CTA
+- Format as spoken word - short punchy sentences
+- Include: [PAUSE], [SHOW ON SCREEN:], [POINT TO CAMERA] stage directions
+- No hashtags - they don't work in scripts
+- End with: "Subscribe for more" or "Comment [X] if this helped"
+- Write as if speaking directly to camera, second person "YOU"
+- Energy level: HIGH. This is video content.
 
-TWITTER/X THREAD:
-→ Tweet 1: A standalone statement so bold or surprising it could go viral BY ITSELF with zero context. This is not a setup — it IS the insight.
-→ Tweets 2-6: Each tweet must be independently re-tweetable. Not just context — each one is a new insight.
-→ Tweet 7: The most quotable, memorable version of the core idea. Something people screenshot. End with a soft CTA.
-→ Max 240 characters per tweet. Count them.
-→ No "1/", "2/" thread labels.
-→ No filler. Every word earns its place.
+TWITTER/X THREAD RULES (strictly follow):
+- Generate a 5-7 tweet thread
+- Tweet 1 (HOOK): Must be under 200 chars, creates massive curiosity, ends with "🧵"
+- Tweets 2-6: Each standalone insight, numbered (2/7, 3/7 etc)
+- Each tweet: Max 270 chars, punchy, no fluff
+- NO emojis except: ✅ ❌ → 🔥 at key points
+- Last tweet: Summary + CTA to follow
+- Tone: Bold, opinionated, contrarian - Twitter rewards strong takes
+- Format: Return as array of tweet strings
 
-LINKEDIN POST:
-→ Opening line: A professional truth that challenges conventional wisdom. NOT "Excited to share..." Not "I've been thinking about..." Just the insight, cold.
-→ Short paragraph breaks — 1-2 sentences max per paragraph.
-→ Personal story element: One specific moment, one specific result (not vague "I improved").
-→ The "uncomfortable truth for your industry" middle section.
-→ The practical, implementable takeaway.
-→ Closing question CTA that invites senior professionals to weigh in (not junior questions).
-→ 3-5 hashtags only. Professional niche tags.`;
+LINKEDIN POST RULES (strictly follow):
+- Length: 200-400 words
+- Structure: HOOK LINE (1 line, creates curiosity) → Line break → Story/Insight (5-7 short paragraphs) → Key Takeaway → CTA
+- NEVER start with "I" - use "Last week..." or "Most people..." 
+- Use single-line paragraphs separated by blank lines (LinkedIn formatting)
+- Tone: Professional but human. Share lessons, not just facts.
+- NO hashtags at all - they look spammy on LinkedIn
+- End with: A thought-provoking question
+- Emojis: Optional, max 2, only if natural`;

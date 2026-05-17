@@ -43,7 +43,7 @@ export function LanguageSelector({
   const isRTL = RTL_LANGUAGES.includes(value);
 
   return (
-    <div className={className}>
+    <div className={`${className} relative z-[50]`}>
       <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 flex items-center gap-1.5">
         <Globe className="w-3 h-3" />
         {label}
@@ -77,7 +77,7 @@ export function LanguageSelector({
         <SelectTrigger className="bg-white/[0.03] backdrop-blur-md border border-white/10 text-white focus:ring-[rgba(94,106,210,0.40)] rounded-xl transition-all hover:bg-white/10 h-11">
           <SelectValue placeholder="Select language" />
         </SelectTrigger>
-        <SelectContent className="glass-panel-premium border-white/10 rounded-xl max-h-[330px] language-select-content shadow-2xl">
+        <SelectContent className="glass-panel-premium border-white/10 rounded-xl max-h-[330px] language-select-content shadow-2xl z-[9999]" style={{ zIndex: 9999 }}>
           {SUPPORTED_LANGUAGES.map((lang) => (
             <SelectItem
               key={lang.value}

@@ -26,7 +26,8 @@ function daysBetween(dateA: string | null | undefined, dateB: string | null | un
   const a = new Date(dateA);
   const b = new Date(dateB);
   if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
-  return Math.round(Math.abs(a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24));
+  const diff = Math.abs(a.getTime() - b.getTime());
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
 function computeCurrentStreak(user: any): number {

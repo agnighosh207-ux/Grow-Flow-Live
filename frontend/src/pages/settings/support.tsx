@@ -3,7 +3,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUser } from "@clerk/react";
-import { motion, AnimatePresence } from "framer-motion";
+// Framer-motion removed to improve loading speed
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,9 +13,8 @@ import { HelpCircle, Loader2, CheckCircle2, MessageSquare, Mail, Clock, ArrowLef
 import { Link } from "wouter";
 
 const formSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
   subject: z.string().min(3, "Subject must be at least 3 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters").max(500, "Message must be under 500 characters"),
+  message: z.string().min(10, "Message must be at least 10 characters").max(1000, "Message must be under 1000 characters"),
 });
 
 const FAQ_ITEMS = [
@@ -25,7 +24,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "How many generations do I get on the free plan?",
-    a: "The free Explorer plan grants you 5 free monthly generations across the platform so you can experience our AI capabilities. To unlock more power, upgrade to the Starter tier (₹149/mo) for 25 generations, Creator tier (₹449/mo) for 150 generations, or the Infinity tier (₹799/mo) for unlimited access.",
+    a: "The free Explorer plan grants you 5 free generations to try the platform. To unlock more power, upgrade to the Starter tier (₹149/mo) for 25 generations, Creator tier (₹449/mo) for 150 generations, or the Infinity tier (₹799/mo) for unlimited access.",
   },
   {
     q: "What is the 'Content Pack' Pro feature?",
@@ -58,7 +57,7 @@ const FAQ_ITEMS = [
 ];
 
 export default function Support() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -66,14 +65,20 @@ export default function Support() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: "", subject: "", message: "" },
+    defaultValues: { subject: "", message: "" },
   });
 
-  useEffect(() => {
-    if (user?.primaryEmailAddress?.emailAddress) {
-      form.setValue("email", user.primaryEmailAddress.emailAddress);
-    }
-  }, [user, form]);
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0F] text-foreground flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-[#8B91E3]" />
+      </div>
+    );
+  }
+
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress 
+    || user?.primaryEmailAddress?.emailAddress
+    || "";
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
@@ -84,7 +89,7 @@ export default function Support() {
         body: JSON.stringify({
           subject: values.subject,
           message: values.message,
-          email: values.email,
+          email: userEmail,
         }),
       });
       if (!res.ok) throw new Error("Failed");
@@ -94,7 +99,6 @@ export default function Support() {
       
       // Reset form fields
       form.reset({
-        email: values.email,
         subject: "",
         message: ""
       });
@@ -144,40 +148,35 @@ export default function Support() {
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
           {submitted ? (
-            <motion.div
+            <div
               key="success"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="rounded-2xl border border-emerald-500/20 bg-emerald-500/8 p-8 text-center space-y-4 shadow-xl"
+              className="rounded-2xl border border-white/8 p-8 text-center shadow-xl animate-in fade-in zoom-in-95 duration-300"
+              style={{
+                background: "linear-gradient(135deg, rgba(94,106,210,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+                backdropFilter: "blur(20px)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+              }}
             >
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-7 h-7 text-emerald-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-lg">Message sent!</h3>
-                <p className="text-white/55 text-sm mt-1.5 max-w-sm mx-auto">
-                  We've received your message and will get back to you at{" "}
-                  <span className="text-white/80 font-medium">{form.getValues().email}</span>{" "}
-                  within 24 hours.
+              <div className="text-center py-12">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                  style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)' }}>
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                </div>
+                <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Message sent!</h3>
+                <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+                  We'll get back to you within 24 hours.
                 </p>
+                <button onClick={() => { setSubmitted(false); form.reset({ subject: "", message: "" }); }}
+                  className="text-sm underline hover:text-[#7A82C7] transition-colors" style={{ color: '#8B91E3' }}>
+                  Send another message
+                </button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { setSubmitted(false); form.reset({ email: form.getValues().email, subject: "", message: "" }); }}
-                className="text-emerald-400/70 hover:text-emerald-400 text-xs mt-4"
-              >
-                Send another message
-              </Button>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
+            <div
               key="form"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="rounded-2xl border border-white/8 p-5 md:p-6"
+              className="rounded-2xl border border-white/8 p-5 md:p-6 animate-in fade-in duration-300"
               style={{
                 background: "linear-gradient(135deg, rgba(94,106,210,0.06) 0%, rgba(255,255,255,0.02) 100%)",
                 backdropFilter: "blur(20px)",
@@ -189,35 +188,15 @@ export default function Support() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   
-                  {user?.primaryEmailAddress?.emailAddress ? (
-                    <div className="rounded-lg bg-black/20 border border-white/5 px-4 py-3 flex items-center gap-2.5">
-                      {user?.imageUrl && (
-                        <img src={user.imageUrl} alt="" className="w-6 h-6 rounded-full border border-white/10" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-white/60 text-xs">Sending as</p>
-                        <p className="text-white/85 text-xs font-medium truncate">{user.primaryEmailAddress.emailAddress}</p>
-                      </div>
+                  <div className="rounded-lg bg-black/20 border border-white/5 px-4 py-3 flex items-center gap-2.5">
+                    {user?.imageUrl && (
+                      <img src={user.imageUrl} alt="" className="w-6 h-6 rounded-full border border-white/10" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-white/60 text-xs">Sending as</p>
+                      <p className="text-white/85 text-xs font-medium truncate">{userEmail || "Registered User"}</p>
                     </div>
-                  ) : (
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white/70 text-sm font-medium">Your Email Address</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g. you@example.com"
-                              className="bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-[#5E6AD2]/40 rounded-xl h-11"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage className="text-red-400 text-xs" />
-                        </FormItem>
-                      )}
-                    />
-                  )}
+                  </div>
 
                   <FormField
                     control={form.control}
@@ -247,13 +226,15 @@ export default function Support() {
                           <Textarea
                             placeholder="Describe your issue or question in detail..."
                             className="resize-none h-32 bg-black/20 border-white/10 text-white placeholder:text-white/25 focus-visible:ring-blue-500/40 rounded-xl text-sm"
-                            maxLength={500}
+                            maxLength={1000}
                             {...field}
                           />
-                          <div className="flex justify-between items-center mt-1">
-                            <p className="text-xs text-white/20">Be as detailed as possible — we read every message.</p>
-                            <span className={`text-xs ${(field.value || "").length > 450 ? 'text-amber-400' : 'text-white/20'}`}>
-                              {(field.value || "").length}/500
+                          <div className="flex justify-between mt-1">
+                            <p className="text-xs" style={{ color: 'var(--text-disabled)' }}>
+                              Be as detailed as possible
+                            </p>
+                            <span className="text-xs" style={{ color: (field.value || "").length > 900 ? '#D97706' : 'var(--text-disabled)' }}>
+                              {(field.value || "").length}/1000
                             </span>
                           </div>
                         </FormControl>
@@ -277,9 +258,8 @@ export default function Support() {
                   </div>
                 </form>
               </Form>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
         <div className="space-y-3 pt-6">
           <h2 className="text-white font-semibold text-xl mb-4">Frequently Asked Questions</h2>
@@ -294,19 +274,11 @@ export default function Support() {
                 <span className="text-white/80 text-[15px] font-medium">{item.q}</span>
                 <span className={`text-white/30 shrink-0 text-xl transition-transform duration-200 ${expandedFaq === i ? "rotate-45 text-white/70" : ""}`}>+</span>
               </div>
-              <AnimatePresence>
-                {expandedFaq === i && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="overflow-hidden"
-                  >
-                    <p className="px-5 pb-5 text-white/55 text-sm leading-relaxed border-t border-white/5 pt-4">{item.a}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div
+                className={`transition-all duration-200 ease-in-out overflow-hidden ${expandedFaq === i ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}
+              >
+                <p className="px-5 pb-5 text-white/55 text-sm leading-relaxed border-t border-white/5 pt-4">{item.a}</p>
+              </div>
             </div>
           ))}
         </div>

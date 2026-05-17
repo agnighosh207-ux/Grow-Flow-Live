@@ -155,7 +155,7 @@ Analyze the data and return a JSON object with the following structure:
   }
 });
 
-router.post("/chat", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/chat", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { message, history = [] } = req.body;
   if (!message || typeof message !== "string") {
     res.status(400).json({ error: "Message required" });

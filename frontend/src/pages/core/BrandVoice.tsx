@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,16 +19,29 @@ export default function BrandVoicePage() {
   const [samples, setSamples] = useState<string[]>(["", "", ""]);
   const [analyzing, setAnalyzing] = useState(false);
 
-  const { data: voices, isLoading: voicesLoading } = useQuery({
-    queryKey: ["brand-voices"],
-    queryFn: async () => {
+  const [personas, setPersonas] = useState<any[]>([]);
+  const [voicesLoading, setVoicesLoading] = useState(true);
+
+  const fetchPersonas = async () => {
+    setVoicesLoading(true);
+    try {
       const token = await getToken();
-      const res = await fetch("/api/brand-voice", {
+      const res = await fetch("/api/brand-voice/personas", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      return res.json();
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setPersonas(data.personas || []);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Failed to load personas" });
+    } finally {
+      setVoicesLoading(false);
     }
-  });
+  };
+
+  useEffect(() => {
+    fetchPersonas();
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: async (data: { samplePosts: string[] }) => {
@@ -46,7 +59,7 @@ export default function BrandVoicePage() {
     },
     onSuccess: () => {
       toast({ title: "Voice Profile Created!", description: "Your unique brand voice has been analyzed and saved." });
-      queryClient.invalidateQueries({ queryKey: ["brand-voices"] });
+      fetchPersonas();
       setAnalyzing(false);
       setSamples(["", "", ""]);
     },
@@ -177,8 +190,8 @@ export default function BrandVoicePage() {
               <div className="space-y-4">
                 {[1, 2].map(i => <div key={i} className="h-40 rounded-3xl bg-white/5 animate-pulse" />)}
               </div>
-            ) : voices?.length > 0 ? (
-              voices.map((v: any, i: number) => (
+            ) : personas?.length > 0 ? (
+              personas.map((v: any, i: number) => (
                 <motion.div
                   key={v.id}
                   initial={{ opacity: 0, x: 20 }}
@@ -216,11 +229,16 @@ export default function BrandVoicePage() {
                 </motion.div>
               ))
             ) : (
-              <div className="p-12 rounded-[32px] border border-white/5 border-dashed text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto text-white/20">
-                  <Shield size={32} />
-                </div>
-                <p className="text-white/30 font-medium italic">No voice profiles detected. <br/> Create your first one to unlock personalized generation.</p>
+              <div className="text-center py-12">
+                <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>No brand voices yet</p>
+                <p className="text-xs mb-4" style={{ color: 'var(--text-disabled)' }}>
+                  Create a brand voice to make AI always write in your style
+                </p>
+                <button onClick={() => { document.querySelector('textarea')?.focus(); }}
+                  className="px-4 py-2 rounded-xl text-white text-sm font-semibold"
+                  style={{ background: '#5E6AD2' }}>
+                  Create Your First Voice
+                </button>
               </div>
             )}
           </AnimatePresence>

@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
+import { EmptyOutputState } from "@/components/shared/EmptyOutputState";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -398,18 +399,11 @@ export default function CompetitorIntelPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="py-32 flex flex-col items-center justify-center text-center space-y-12"
                    >
-                      <div className="relative">
-                         <div className="absolute inset-0 bg-[rgba(94,106,210,0.20)] blur-[120px] rounded-full" />
-                         <div className="p-16 rounded-[4rem] bg-white/[0.03] border border-white/10 backdrop-blur-3xl relative">
-                            <BarChart3 className="h-40 w-40 text-white/5 animate-pulse" />
-                         </div>
-                      </div>
-                      <div className="space-y-4 max-w-md mx-auto">
-                         <h3 className="text-4xl font-black text-white/40 italic">Digital War Room Offline</h3>
-                         <p className="text-xl text-muted-foreground font-medium leading-relaxed">Enter competitor intelligence above to architect your structural outperformance plan.</p>
-                      </div>
+                     <EmptyOutputState
+                       title="Analysis will appear here"
+                       description="Paste competitor content to analyze what makes it work"
+                     />
                    </motion.div>
                 )}
               </AnimatePresence>

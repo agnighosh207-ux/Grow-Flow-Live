@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
+import { logger } from "../../lib/logger";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, hashtagCollectionsTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
@@ -54,6 +55,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hashtags"), enforceGen
 
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
+    invalidateAuthCache(req.userId);
   } catch (err) {
     console.error("HASHTAG GENERATE ERROR:", err);
     await refundGenerationCredit(req.userId, req.user?.planTier);
@@ -61,7 +63,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hashtags"), enforceGen
   }
 });
 
-router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+router.post("/analyze", requireAuth, requirePlanOrTrial("hashtags"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
   const { hashtags, platform, niche, language = "English" } = req.body;
 
   if (!hashtags) {
@@ -100,6 +102,7 @@ router.post("/analyze", requireAuth, enforceGenerationLimit, async (req: any, re
 
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
+    invalidateAuthCache(req.userId);
   } catch (err) {
     await refundGenerationCredit(req.userId, req.user?.planTier);
     res.status(503).json({ error: "Audit service unavailable." });
@@ -121,8 +124,9 @@ router.post("/save-collection", requireAuth, async (req: any, res): Promise<void
       tags
     }).returning();
     res.json(collection);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to save collection" });
+  } catch (err: any) {
+    logger.error({ err: err?.message, userId: req.userId }, "[Hashtags] Save collection failed");
+    res.status(500).json({ error: "Failed to save collection. Please try again." });
   }
 });
 

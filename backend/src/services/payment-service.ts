@@ -5,17 +5,15 @@ import { logger } from "../lib/logger";
 export const getRazorpayClient = () => {
   const isProd = IS_PRODUCTION;
 
-  const keyId = isProd 
-    ? (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID)
-    : (process.env.RAZORPAY_TEST_KEY_ID && !process.env.RAZORPAY_TEST_KEY_ID.includes("...") 
-        ? process.env.RAZORPAY_TEST_KEY_ID 
-        : (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID));
+  let keyId = process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID;
+  if (!isProd && process.env.RAZORPAY_TEST_KEY_ID && !process.env.RAZORPAY_TEST_KEY_ID.includes("...")) {
+    keyId = process.env.RAZORPAY_TEST_KEY_ID;
+  }
   
-  const keySecret = isProd
-    ? (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)
-    : (process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...") 
-        ? process.env.RAZORPAY_TEST_KEY_SECRET 
-        : (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET));
+  let keySecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
+  if (!isProd && process.env.RAZORPAY_TEST_KEY_SECRET && !process.env.RAZORPAY_TEST_KEY_SECRET.includes("...")) {
+    keySecret = process.env.RAZORPAY_TEST_KEY_SECRET;
+  }
 
   if (!keyId || !keySecret || keyId.includes("...") || keySecret.includes("...")) {
      logger.error("[Razorpay Service] CRITICAL: Missing or invalid API keys");
@@ -23,7 +21,7 @@ export const getRazorpayClient = () => {
   }
 
   return new Razorpay({ key_id: keyId, key_secret: keySecret });
-}
+};
 
 
 
@@ -50,7 +48,7 @@ export const createSubscription = async (userId: string, planId: string, planTie
     logger.info(`[Razorpay Service] Creating subscription for user ${userId} with plan ${planId}...`);
     const client = getRazorpayClient();
     const startTime = Date.now();
-    const subscription = await client.subscriptions.create(options as any);
+    const subscription = await client.subscriptions.create(options);
     const duration = Date.now() - startTime;
     
     logger.info(`[Razorpay Service] Subscription ${(subscription as any).id} created successfully in ${duration}ms`);

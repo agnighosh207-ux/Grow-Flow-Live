@@ -113,7 +113,7 @@ export default function AdminDashboard() {
     return () => clearTimeout(timer);
   }, [userSearchQuery]);
 
-  const isAdmin = subData?.isAdmin === true || user?.primaryEmailAddress?.emailAddress === "agnighosh207@gmail.com";
+  const isAdmin = subData?.isAdmin === true;
 
   const syncPerformed = useRef(false);
   useEffect(() => {

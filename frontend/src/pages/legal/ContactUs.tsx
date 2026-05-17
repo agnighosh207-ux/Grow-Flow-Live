@@ -10,6 +10,8 @@ import { api } from "@/lib/api-client";
 export default function ContactUs() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,17 +27,24 @@ export default function ContactUs() {
     }
 
     setLoading(true);
+    setError(null);
     try {
-      await api.post("/support/message", {
-        subject: `[Contact Form] ${formData.subject}`,
-        message: `Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`,
-        email: formData.email
+      const res = await fetch("/api/support/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: `[Contact Form] ${formData.subject}`,
+          message: `Name: ${formData.name}\n\n${formData.message}`,
+          email: formData.email,
+          category: "general"
+        })
       });
-      
+      if (!res.ok) throw new Error("Failed to send");
+      setSubmitted(true);
       toast({ title: "Message Sent", description: "We've received your inquiry and will get back to you soon." });
       setFormData({ name: "", email: "", subject: "General Inquiry", message: "" });
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setError("Failed to send. Please email us directly at growflowhelp@gmail.com");
       toast({ variant: "destructive", title: "Failed to send", description: "Something went wrong. Please try emailing us directly." });
     } finally {
       setLoading(false);
@@ -133,73 +142,95 @@ export default function ContactUs() {
                 <MessageSquare className="w-6 h-6 text-[#8B91E3]" /> Send a Message
               </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/70">Your Name</label>
-                    <input 
-                      type="text" 
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors"
-                      placeholder="John Doe"
-                    />
+              {submitted ? (
+                <div className="text-center py-12 space-y-4">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                    style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)' }}>
+                    <Mail className="w-6 h-6 text-emerald-400" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/70">Email Address *</label>
-                    <input 
-                      type="email" 
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors"
-                      placeholder="john@example.com"
-                    />
-                  </div>
+                  <h3 className="font-semibold text-lg text-white mb-1">Message sent!</h3>
+                  <p className="text-sm text-white/50 max-w-sm mx-auto mb-4">
+                    We've received your ticket and will get back to you within 24 hours.
+                  </p>
+                  <button onClick={() => setSubmitted(false)}
+                    className="text-sm underline hover:text-[#7A82C7] transition-colors" style={{ color: '#8B91E3' }}>
+                    Send another message
+                  </button>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/70">Subject</label>
-                  <select 
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors appearance-none"
-                  >
-                    <option value="General Inquiry">General Inquiry</option>
-                    <option value="Technical Support">Technical Support</option>
-                    <option value="Billing & Payments">Billing & Payments</option>
-                    <option value="Feature Request">Feature Request</option>
-                    <option value="Partnership">Partnership</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/70">Message *</label>
-                  <textarea 
-                    required
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors min-h-[150px] resize-none"
-                    placeholder="How can we help you grow?"
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full py-6 bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(8,145,178,0.3)] transition-all flex items-center justify-center gap-2"
-                >
-                  {loading ? "Sending..." : (
-                    <>
-                      <Send className="w-5 h-5" /> Submit Ticket
-                    </>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                  {error && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+                      {error}
+                    </div>
                   )}
-                </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/70">Your Name</label>
+                      <input 
+                        type="text" 
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors"
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/70">Email Address *</label>
+                      <input 
+                        type="email" 
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors"
+                        placeholder="john@example.com"
+                      />
+                    </div>
+                  </div>
 
-                <p className="text-center text-xs text-white/30">
-                  By clicking submit, you agree to our <Link href="/terms-and-conditions" className="hover:text-[#8B91E3] underline">Terms</Link> and <Link href="/privacy-policy" className="hover:text-[#8B91E3] underline">Privacy Policy</Link>.
-                </p>
-              </form>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/70">Subject</label>
+                    <select 
+                      value={formData.subject}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors appearance-none"
+                    >
+                      <option value="General Inquiry">General Inquiry</option>
+                      <option value="Technical Support">Technical Support</option>
+                      <option value="Billing & Payments">Billing & Payments</option>
+                      <option value="Feature Request">Feature Request</option>
+                      <option value="Partnership">Partnership</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/70">Message *</label>
+                    <textarea 
+                      required
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[rgba(94,106,210,0.4)]/50 transition-colors min-h-[150px] resize-none"
+                      placeholder="How can we help you grow?"
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    disabled={loading}
+                    className="w-full py-6 bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(8,145,178,0.3)] transition-all flex items-center justify-center gap-2"
+                  >
+                    {loading ? "Sending..." : (
+                      <>
+                        <Send className="w-5 h-5" /> Submit Ticket
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-center text-xs text-white/30">
+                    By clicking submit, you agree to our <Link href="/terms-and-conditions" className="hover:text-[#8B91E3] underline">Terms</Link> and <Link href="/privacy-policy" className="hover:text-[#8B91E3] underline">Privacy Policy</Link>.
+                  </p>
+                </form>
+              )}
             </div>
           </div>
         </div>

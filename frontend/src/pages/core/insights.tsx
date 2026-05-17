@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useLocation, Link } from "wouter";
 import { motion, animate } from "framer-motion";
 import { BarChart3, TrendingUp, Zap, Star, Calendar, PieChart as PieIcon } from "lucide-react";
 import { PlanGate } from "@/components/shared/PlanGate";
@@ -27,7 +28,7 @@ const CONTENT_TYPE_COLORS: Record<string, string> = {
   Viral: "bg-[#5E6AD2]",
 };
 
-const CHART_COLORS = ['#5E6AD2', '#5E6AD2', '#8B91E3', '#c4b5fd', '#ddd6fe'];
+const CHART_COLORS = ['#5E6AD2', '#8B91E3', '#4A52B8', '#16A34A', '#D97706'];
 
 function AnimatedCounter({ value }: { value: number | string }) {
   const [count, setCount] = useState(typeof value === "number" ? 0 : value);
@@ -82,6 +83,7 @@ function StatCard({ label, value, sub, icon, delta, delay = 0 }: { label: string
 }
 
 export default function Insights() {
+  usePageTitle("My Analytics");
   const [, setLocation] = useLocation();
   const { data: sub } = useSubscriptionStatus();
   const { data: historyData, isLoading: historyLoading } = useGetContentHistory({ limit: 100, offset: 0 });
@@ -156,26 +158,33 @@ export default function Insights() {
 
   const [showGuide, setShowGuide] = useState(false);
 
+  const stableTotalGenerations = useMemo(() => 
+    sub?.totalGenerations ?? 0, 
+    [sub?.totalGenerations]
+  );
+
   if (historyLoading) return <PageSkeleton />;
 
-  if (!history.length) {
+  if (!historyLoading && history.length === 0) {
     return (
-      <PlanGate requiredPlan="infinity" featureName="Performance Insights">
-        <div className="p-4 py-12">
-          <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center bg-white/[0.02]">
-            <div className="w-20 h-20 rounded-full bg-[rgba(94,106,210,0.10)] border border-[rgba(94,106,210,0.20)] flex items-center justify-center mx-auto mb-6">
-              <BarChart3 className="w-10 h-10 text-[#8B91E3]" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">No data to analyze yet</h3>
-            <p className="text-white/40 text-sm max-w-sm mx-auto mb-8">
-              Once you generate AI content, you'll see deep analytics on your posting habits and performance.
-            </p>
-            <Button onClick={() => setLocation("/generate")} className="bg-[#5E6AD2] hover:bg-[#5E6AD2] font-bold rounded-xl px-8">
-              Start Generating →
-            </Button>
-          </div>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+          style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+          <BarChart3 className="w-8 h-8" style={{ color: 'var(--text-disabled)' }} />
         </div>
-      </PlanGate>
+        <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
+          No data yet
+        </h3>
+        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+          Generate some content to see your analytics
+        </p>
+        <Link href="/generate">
+          <button className="text-sm font-semibold px-4 py-2 rounded-xl text-white"
+            style={{ background: '#5E6AD2' }}>
+            Start creating →
+          </button>
+        </Link>
+      </div>
     );
   }
 
@@ -205,7 +214,7 @@ export default function Insights() {
         />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Total generations" value={sub?.totalGenerations ?? 0} icon={<Zap className="w-4 h-4 text-[#8B91E3]" />} />
+          <StatCard label="Total generations" value={stableTotalGenerations} icon={<Zap className="w-4 h-4 text-[#8B91E3]" />} />
           <StatCard label="Growth Momentum" value={stats?.thisWeek || 0} sub="Generations this week" icon={<TrendingUp className="w-4 h-4 text-[#8B91E3]" />} delta={stats?.delta} />
           <StatCard label="Top Format" value={stats?.topType || "—"} icon={<Star className="w-4 h-4 text-[#8B91E3]" />} />
           <StatCard label="Current Streak" value={`${stats?.streak || 0} Days`} icon={<Calendar className="w-4 h-4 text-[#8B91E3]" />} />

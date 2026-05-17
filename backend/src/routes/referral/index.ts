@@ -8,7 +8,9 @@ import { logger } from "../../lib/logger";
 
 const router: IRouter = Router();
 
-router.get("/test", (req, res) => res.json({ ok: true }));
+if (process.env.NODE_ENV !== "production") {
+  router.get("/test", (req, res) => res.json({ ok: true }));
+}
 
 /**
  * Applies a referral code to the current user.

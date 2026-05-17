@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { Zap, Instagram, Twitter, Check, X, Info, RefreshCw, History, ArrowRight, TrendingUp, Sparkles } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
@@ -14,6 +15,7 @@ import { api } from "@/lib/api-client";
 import { useLocation } from "wouter";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { EmptyOutputState } from "@/components/shared/EmptyOutputState";
 
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
@@ -52,6 +54,8 @@ export default function PredictorPage() {
  useEffect(() => {
   localStorage.setItem("preferred_language", language);
  }, [language]);
+
+ usePageTitle("Viral Score");
 
  const { data: sub } = useSubscriptionStatus();
  const isFreeUser = !sub?.planType || sub.planType === "free";
@@ -234,6 +238,18 @@ export default function PredictorPage() {
      </Card>
 
      {!loading && !result && (
+       <motion.div
+        key="empty"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+       >
+        <EmptyOutputState
+          title="Viral score will appear here"
+          description="Paste your content above to predict its viral potential"
+        />
+       </motion.div>
+      )}
+      {false && !loading && !result && (
       <motion.div
        key="empty"
        initial={{ opacity: 0 }}

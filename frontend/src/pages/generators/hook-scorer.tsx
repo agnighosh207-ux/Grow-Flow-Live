@@ -1,13 +1,16 @@
 import { useState } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { useAuth } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
 import { Target, Loader2, TrendingUp, AlertCircle, CheckCircle2, Copy, Sparkles, HelpCircle } from "lucide-react";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { EmptyOutputState } from "@/components/shared/EmptyOutputState";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 
 export default function HookScorerPage() {
+ usePageTitle("Hook Scorer");
  const { getToken } = useAuth();
  const { toast } = useToast();
  const { data: sub } = useSubscriptionStatus();
@@ -169,6 +172,12 @@ export default function HookScorerPage() {
 
     {/* Empty state */}
     {!result && !loading && (
+     <EmptyOutputState
+       title="Hook score will appear here"
+       description="Paste your hook above to get a detailed analysis"
+     />
+    )}
+    {false && !result && !loading && (
      <div className="rounded-2xl border border-dashed border-white/8 p-10 text-center">
       <Target className="w-8 h-8 text-white/15 mx-auto mb-3" />
       <p className="text-white/25 text-sm">Paste your hook above and score it</p>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { PenTool, Brain, Sparkles, RefreshCw, Copy, Share2, AlertCircle, Wand2, Mic, Fingerprint, ChevronRight, History as HistoryIcon, Settings2, Trash2, X, Check } from "lucide-react";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { EmptyOutputState } from "@/components/shared/EmptyOutputState";
 
 interface VoiceProfile {
  sentenceStyle: string;
@@ -75,9 +77,7 @@ export default function GhostwriterPage() {
  const { toast } = useToast();
  const queryClient = useQueryClient();
 
- useEffect(() => {
-  document.title = "AI Ghostwriter — GrowFlow AI";
- }, []);
+ usePageTitle("AI Ghostwriter");
 
  useEffect(() => {
   fetchProfile();
@@ -504,6 +504,18 @@ export default function GhostwriterPage() {
      </motion.div>
 
       {!writing && !output && (
+        <motion.div
+         key="empty"
+         initial={{ opacity: 0 }}
+         animate={{ opacity: 1 }}
+        >
+         <EmptyOutputState
+           title="Your draft will appear here"
+           description="Enter your topic and style preferences to start writing"
+         />
+        </motion.div>
+       )}
+       {false && !writing && !output && (
        <motion.div
         key="empty"
         initial={{ opacity: 0 }}

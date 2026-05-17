@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { filterUserInput } from "../../lib/content-filter";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
-import { sendCreditWarningEmail } from "../../services/email";
+import { logger } from "../../lib/logger";
 import { generateContent } from "../../services/ai-engine";
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "node:crypto";
@@ -30,6 +31,15 @@ router.post("/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGener
     improvementFocus = "all",
     language = "English"
   } = req.body;
+
+  if (typeof originalCaption !== "string") {
+    res.status(400).json({
+      error: "invalid_input",
+      message: "originalCaption must be a string."
+    });
+    return;
+  }
+
   const planType = req.user?.planType ?? "free";
 
   // Free users only get English
@@ -42,12 +52,17 @@ router.post("/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGener
     return;
   }
 
-  if (typeof originalCaption !== "string" || !originalCaption.trim()) {
-    res.status(400).json({ error: "Original caption must be a valid string" });
+  const filterResult = filterUserInput(originalCaption, "originalCaption");
+  if (!filterResult.allowed) {
+    res.status(400).json({ 
+      error: "invalid_input",
+      message: filterResult.reason || "Invalid input",
+      suggestion: filterResult.suggestion || "Please provide a specific caption draft to enhance"
+    });
     return;
   }
 
-  const sanitizedCaption = originalCaption.substring(0, 3000);
+  const sanitizedCaption = filterResult.cleanedInput || originalCaption;
   const sanitizedGoal = (typeof goal === "string" ? goal : "increase engagement").substring(0, 300);
   const sanitizedNiche = (typeof niche === "string" ? niche : "General").substring(0, 100);
 
@@ -102,7 +117,9 @@ Return ONLY this JSON: {
         tone: "Enhancement",
         content: parsed,
       });
-    } catch (e) { /* non-critical */ }
+    } catch (e) {
+      logger.warn({ err: String(e) }, "Failed to auto-save caption generation history");
+    }
 
     res.json(parsed);
     invalidateAuthCache(req.userId);

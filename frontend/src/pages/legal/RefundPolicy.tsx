@@ -3,6 +3,29 @@ import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/layout/Logo";
 
+const sections = [
+  {
+    title: "7-Day Free Trial",
+    content: "All new subscriptions start with a 7-day free trial. Your card is saved for autopay but you are NOT charged until day 8. You can cancel anytime before day 7 with zero charge."
+  },
+  {
+    title: "Cancellation During Trial",
+    content: "Cancel anytime from Settings → Plans & Billing before your trial ends. No charge will be made. Access continues until the trial period ends."
+  },
+  {
+    title: "Refunds After Trial",
+    content: "After your trial ends and the first payment is processed, you may request a full refund within 7 days of the charge. Email support with your registered email and reason. Refunds are processed within 5-7 business days to your original payment method."
+  },
+  {
+    title: "Credit Top-Up Non-Refundable",
+    content: "One-time credit top-up purchases are non-refundable once the credits have been added to your account and used."
+  },
+  {
+    title: "How to Request a Refund",
+    content: "Email growflowhelp@gmail.com with subject 'Refund Request' and include your registered email and reason. We respond within 24 hours."
+  },
+];
+
 export default function RefundPolicy() {
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-foreground font-sans">
@@ -28,63 +51,20 @@ export default function RefundPolicy() {
           <h1 className="text-4xl font-bold text-white mb-2">Refund Policy</h1>
           <p className="text-white/40 text-sm mb-10">Last updated: May 2026</p>
 
-          <div className="space-y-10 text-white/80 leading-relaxed">
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">7-Day Money-Back Guarantee</h2>
-              <p>
-                We stand by the quality of GrowFlow AI. We offer a <strong>7-day money-back guarantee</strong> for all first-time paid subscribers. If you find that the Service does not meet your needs within the first 7 days of your initial purchase, you are eligible for a full refund.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Eligibility for Refund</h2>
-              <p>To be eligible for a refund under our guarantee, you must meet the following criteria:</p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>You must be a first-time subscriber to a GrowFlow AI paid plan.</li>
-                <li>Your refund request must be submitted within 7 calendar days of your initial payment.</li>
-                <li>You must have used <strong>fewer than 50 generations</strong> (total content creations across all tools) since subscribing.</li>
-              </ul>
-              <p className="mt-4 italic">Note: Credit Top-Up packs are strictly non-refundable due to the immediate allocation of AI compute resources.</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Non-Refundable Circumstances</h2>
-              <p>Refunds will not be issued in the following cases:</p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Requests made after the 7-day guarantee period.</li>
-                <li>Accounts with more than 50 total generations.</li>
-                <li>Renewal payments for existing subscriptions.</li>
-                <li>Accounts that have been suspended due to violations of our Terms of Service (e.g., spamming or prohibited content).</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Refund Process</h2>
-              <p>
-                To request a refund, please email our support team at 
-                <a href="mailto:growflowhelp@gmail.com" className="text-[#8B91E3] font-medium hover:underline ml-1">growflowhelp@gmail.com</a> 
-                with the subject line "Refund Request" and include your account email address.
-              </p>
-              <p>
-                Once approved, refunds are processed within <strong>5-7 business days</strong> and will be credited back to your original payment method via Razorpay.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Subscription Cancellation</h2>
-              <p>
-                You can cancel your subscription at any time through your Account Settings. Upon cancellation, your premium access will continue until the end of your current billing period. We do not provide partial refunds for the remaining days in a billing cycle after cancellation.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Contact Support</h2>
-              <p>
-                If you have any questions regarding our refund policy, please reach out to us:
-                <br />
-                <a href="mailto:growflowhelp@gmail.com" className="text-[#8B91E3] font-medium hover:underline">growflowhelp@gmail.com</a>
-              </p>
-            </section>
+          <div className="space-y-6">
+            {sections.map((section, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl border border-white/8 p-6 transition-all duration-200 hover:border-white/12 hover:scale-[1.01]"
+                style={{
+                  background: "linear-gradient(135deg, rgba(94,106,210,0.04) 0%, rgba(255,255,255,0.01) 100%)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+                }}
+              >
+                <h3 className="text-lg font-bold text-white mb-2.5">{section.title}</h3>
+                <p className="text-white/70 text-sm leading-relaxed">{section.content}</p>
+              </div>
+            ))}
           </div>
 
           <div className="mt-20 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-[13px] text-white/30 gap-4">

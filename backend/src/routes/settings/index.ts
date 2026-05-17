@@ -1,12 +1,14 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, contentGenerationsTable, favoritesTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
 import { requireAuth } from "../../middlewares/planMiddleware";
 
-router.get("/test", (req, res) => res.json({ ok: true }));
+if (process.env.NODE_ENV !== "production") {
+  router.get("/test", (req, res) => res.json({ ok: true }));
+}
 
 router.get("/", requireAuth, async (req: any, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
@@ -129,18 +131,63 @@ router.post("/cancel-deletion", requireAuth, async (req: any, res) => {
 });
 
 router.get("/export", requireAuth, async (req: any, res) => {
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
-  const generations = await db.select().from(contentGenerationsTable).where(eq(contentGenerationsTable.userId, req.userId));
-  const savedItems = await db.select().from(favoritesTable).where(eq(favoritesTable.userId, req.userId));
-  
-  const { razorpaySubscriptionId, razorpayCustomerId, isAdmin, ...safeUser } = user as any;
-  
-  res.json({
-    exportDate: new Date().toISOString(),
-    account: safeUser,
-    contentGenerations: generations,
-    savedItems: savedItems,
-  });
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId));
+    const generations = await db.select()
+      .from(contentGenerationsTable)
+      .where(eq(contentGenerationsTable.userId, req.userId))
+      .orderBy(desc(contentGenerationsTable.createdAt))
+      .limit(500);
+    const savedItems = await db.select().from(favoritesTable).where(eq(favoritesTable.userId, req.userId));
+    
+    // Build clean, readable export
+    const cleanExport = {
+      exportInfo: {
+        exportedAt: new Date().toLocaleString('en-IN'),
+        exportedBy: user?.email || "Unknown",
+        totalGenerations: generations.length,
+        savedItems: savedItems.length,
+        note: "This file contains your GrowFlow AI data. Keep it safe."
+      },
+      
+      yourAccount: {
+        name: user?.displayName || user?.firstName || "Not set",
+        email: user?.email || "Not set",
+        plan: user?.planType || "free",
+        memberSince: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-IN') : "Unknown",
+        totalGenerations: user?.totalGenerations || 0,
+        referralCode: user?.referralCode || "None",
+      },
+      
+      contentHistory: generations.map(g => ({
+        date: g.createdAt ? new Date(g.createdAt).toLocaleDateString('en-IN', { 
+          day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        }) : "Unknown",
+        type: g.contentType || "Content",
+        topic: g.idea || "Unknown topic",
+        language: g.promptLanguage || "English",
+        platforms: g.platform || "All",
+        // Only include the actual content text, not technical fields
+        instagramCaption: (g.content as any)?.instagram?.caption?.substring(0, 200) + "..." || null,
+        youtubeScript: (g.content as any)?.youtube?.script?.substring(0, 200) + "..." || null,
+        twitterThread: Array.isArray((g.content as any)?.twitter?.tweets) 
+          ? (g.content as any)?.twitter?.tweets?.[0]?.substring(0, 200) + "..."
+          : null,
+        linkedinPost: (g.content as any)?.linkedin?.post?.substring(0, 200) + "..." || null,
+      })),
+      
+      savedContent: savedItems.length > 0 
+        ? `You have ${savedItems.length} saved items. View them in the GrowFlow AI app.`
+        : "No saved items.",
+    };
+    
+    // Set headers for file download
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="growflow-my-data-${new Date().toISOString().split('T')[0]}.json"`);
+    res.json(cleanExport);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to export data" });
+  }
 });
 
 router.get("/preferences", requireAuth, async (req: any, res) => {
@@ -152,10 +199,13 @@ router.get("/preferences", requireAuth, async (req: any, res) => {
 });
 
 router.patch("/preferences", requireAuth, async (req: any, res) => {
-  const { languagePreference, emailReports, niche } = req.body;
+  const { emailReports, streakReminders, productUpdates, preferredLanguage, languagePreference, niche } = req.body;
   const updates: any = {};
-  if (typeof languagePreference === "string") updates.languagePreference = languagePreference;
   if (typeof emailReports === "boolean") updates.emailReports = emailReports;
+  if (typeof streakReminders === "boolean") updates.streakReminders = streakReminders;
+  if (typeof productUpdates === "boolean") updates.productUpdates = productUpdates;
+  if (typeof preferredLanguage === "string") updates.languagePreference = preferredLanguage;
+  if (typeof languagePreference === "string") updates.languagePreference = languagePreference;
   if (typeof niche === "string") updates.niche = niche;
 
   if (Object.keys(updates).length > 0) {

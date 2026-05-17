@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth";
-import { db, usersTable, teamsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { db, usersTable, teamsTable, agencySessionsTable } from "@workspace/db";
+import { eq, and, gte, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { getOrCreateUser } from "../../middlewares/planMiddleware";
 
 const router = Router();
 
@@ -170,6 +171,61 @@ router.delete("/member/:id", requireAuth, async (req: any, res: any) => {
   } catch (error: any) {
     console.error("Remove member error:", error);
     res.status(500).json({ error: "Failed to remove member" });
+  }
+});
+
+router.get("/sessions", requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.userId || req.auth?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const user = await getOrCreateUser(userId);
+    if (user.planType !== "agency") {
+      res.status(403).json({ error: "Agency plan required" });
+      return;
+    }
+    
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const sessions = await db.select()
+      .from(agencySessionsTable)
+      .where(
+        and(
+          eq(agencySessionsTable.userId, userId),
+          gte(agencySessionsTable.lastActiveAt, thirtyDaysAgo)
+        )
+      )
+      .orderBy(desc(agencySessionsTable.lastActiveAt));
+    
+    res.json({ 
+      sessions,
+      maxSessions: 5,
+      activeSessions: sessions.length
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
+});
+
+router.delete("/sessions/:deviceId", requireAuth, async (req: any, res) => {
+  try {
+    const userId = req.userId || req.auth?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const { deviceId } = req.params;
+    await db.delete(agencySessionsTable)
+      .where(
+        and(
+          eq(agencySessionsTable.userId, userId),
+          eq(agencySessionsTable.deviceId, deviceId)
+        )
+      );
+    res.json({ success: true, message: "Device removed. That device will be signed out on next request." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to remove session" });
   }
 });
 

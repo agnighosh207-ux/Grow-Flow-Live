@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useGenerateShortcut } from "@/hooks/useGenerateShortcut";
 import { PlanGate, useTrialAction } from "@/components/shared/PlanGate";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
@@ -14,6 +16,7 @@ import {
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { EmptyOutputState } from "@/components/shared/EmptyOutputState";
 import { SiYoutube } from "react-icons/si";
 import { ContentCalendar } from "@/components/shared/ContentCalendar";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
@@ -92,7 +95,7 @@ function StrategyPlannerInner() {
  const { data: sub } = useSubscriptionStatus();
  const isFreeUser = !sub?.planType || sub.planType === "free";
 
-
+ usePageTitle("Strategy Planner");
 
  async function generateStrategy() {
   if (!goal.trim()) {
@@ -124,6 +127,8 @@ function StrategyPlannerInner() {
    setLoading(false);
   }
  }
+
+ useGenerateShortcut(generateStrategy, loading);
 
  function useDay(day: DayPlan) {
   navigate(`/generate?idea=${encodeURIComponent(day.topic)}&contentType=${encodeURIComponent(day.contentType)}&tone=Professional`);
@@ -357,13 +362,11 @@ function StrategyPlannerInner() {
       key="empty"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[200px]"
      >
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-       <Sparkles className="w-5 h-5" style={{ color: "var(--text-disabled)" }} />
-      </div>
-      <p className="text-white/25 text-sm font-medium">Your generated content will appear here</p>
-      <p className="text-white/15 text-xs mt-1">Fill in the details above and hit Generate</p>
+      <EmptyOutputState
+        title="Your 7-day strategy will appear here"
+        description="Enter your niche and goals to get a full content plan"
+      />
      </motion.div>
     )}
    </AnimatePresence>

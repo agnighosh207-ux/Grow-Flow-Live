@@ -1,6 +1,6 @@
 import { getAuth, clerkClient } from "@clerk/express";
-import { db, usersTable, impersonationSessionsTable } from "@workspace/db";
-import { eq, and, gt, isNull } from "drizzle-orm";
+import { db, usersTable, impersonationSessionsTable, agencySessionsTable } from "@workspace/db";
+import { eq, and, gt, isNull, gte } from "drizzle-orm";
 import { WelcomeSequence } from "../lib/WelcomeSequence";
 import { ensureReferralCode } from "../utils/referral";
 import { logger } from "../lib/logger";
@@ -33,16 +33,30 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       return next(); // Skip sync for unauthenticated requests
     }
 
-    const uid = userId as string;
-    const rawEmail = auth.sessionClaims?.email;
+    const uid = userId;
+    const rawEmail = (auth.sessionClaims as any)?.email 
+      || (auth.sessionClaims as any)?.emailAddresses?.[0]
+      || (auth.sessionClaims as any)?.primaryEmailAddress;
     const emailFromSession: string | null = typeof rawEmail === 'string' ? rawEmail : null;
+
+    const deviceFingerprint = req.headers['x-device-id'] as string || 
+      req.headers['x-forwarded-for'] as string || 
+      req.ip || 
+      'unknown';
 
     // 1. Fast Cache Check
     const cached = syncCache.get(uid);
     if (cached && Date.now() - cached.timestamp < 60000 && !req.headers["x-impersonate-user"]) {
-      req.userId = uid;
-      req.user = cached.user;
-      return next();
+      const planType = cached.user?.planType || "free";
+      const cachedDeviceId = cached.user?.deviceId;
+      // Skip cache check if the device fingerprint changed for a single-session user
+      if (planType !== "agency" && cachedDeviceId && cachedDeviceId !== deviceFingerprint) {
+        // Skip cache check and hit DB
+      } else {
+        req.userId = uid;
+        req.user = cached.user;
+        return next();
+      }
     }
 
     // 2. DB Select
@@ -96,6 +110,81 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       return res.status(403).json({ error: "ACCESS_DENIED", message: "Account suspended. Contact support." });
     }
 
+    if (user) {
+      // Determine max allowed sessions by plan
+      const MAX_SESSIONS: Record<string, number> = {
+        free: 1,
+        starter: 1,
+        creator: 1,
+        infinity: 1,
+        agency: 5,  // Agency plan gets 5 devices
+      };
+
+      const planType = user.planType || "free";
+      const maxSessions = MAX_SESSIONS[planType] || 1;
+
+      if (maxSessions === 1) {
+        // Single device enforcement
+        const currentDeviceId = user.deviceId;
+        
+        if (currentDeviceId && currentDeviceId !== deviceFingerprint) {
+          // Someone else logged in from a different device
+          res.status(401).json({ 
+            error: "session_conflict",
+            message: "Your account was signed in on another device. You have been logged out.",
+            code: "DEVICE_CONFLICT"
+          });
+          return;
+        }
+        
+        // Update deviceId if new login
+        if (!currentDeviceId || currentDeviceId !== deviceFingerprint) {
+          await db.update(usersTable)
+            .set({ deviceId: deviceFingerprint })
+            .where(eq(usersTable.id, user.id));
+          user.deviceId = deviceFingerprint;
+        }
+      } else if (maxSessions === 5) {
+        // Count active agency sessions (active in last 30 days)
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const activeSessions = await db.select()
+          .from(agencySessionsTable)
+          .where(
+            and(
+              eq(agencySessionsTable.userId, user.id),
+              gte(agencySessionsTable.lastActiveAt, thirtyDaysAgo)
+            )
+          );
+
+        const existingSession = activeSessions.find(s => s.deviceId === deviceFingerprint);
+
+        if (existingSession) {
+          // Update existing session lastActive
+          await db.update(agencySessionsTable)
+            .set({ lastActiveAt: new Date() })
+            .where(eq(agencySessionsTable.id, existingSession.id));
+        } else {
+          // New device
+          if (activeSessions.length >= maxSessions) {
+            res.status(401).json({
+              error: "session_limit",
+              message: `Your Agency plan allows ${maxSessions} active devices. Please remove a device from Settings → Team to add this one.`,
+              code: "SESSION_LIMIT_REACHED",
+              activeSessions: activeSessions.length,
+              maxSessions,
+            });
+            return;
+          }
+          // Add new session
+          await db.insert(agencySessionsTable).values({
+            userId: user.id,
+            deviceId: deviceFingerprint,
+            deviceName: req.headers['user-agent']?.substring(0, 100) || "Unknown Device",
+          });
+        }
+      }
+    }
+
     // 5. Fast-Path for existing users (No credits reset needed)
     if (user) {
       const now = new Date();
@@ -116,39 +205,28 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
       let finalUser = user;
       const now = new Date();
 
-      if (!finalUser) {
-        // NEW USER
-        const [newUser] = await tx.insert(usersTable).values({
-          id: uid,
-          email: emailFromSession || fetchedClerkEmail,
-          lastLoginAt: now,
-          generationsRemaining: isAdminEmail ? 999999 : 10,
-          lastCreditReset: now,
-          planTier: isAdminEmail ? "INFINITY" : "FREE",
-          planType: isAdminEmail ? "infinity" : "free",
-          subscriptionStatus: isAdminEmail ? "active" : "free",
-          isBetaUser: isAdminEmail,
-          isAdmin: isAdminEmail,
-        }).returning();
-        finalUser = newUser;
-        
-        // Background tasks
-        WelcomeSequence.sendWelcomeToBeta(emailFromSession || "", (auth.sessionClaims?.firstName as string) || "").catch(() => {});
-        await ensureReferralCode(uid, tx);
-      } else {
+      if (finalUser) {
         // EXISTING USER - Possible credit reset or info update
         const updates: any = { lastLoginAt: now };
+        
+        const normalizedPlanType = finalUser.planType || "free";
+        const normalizedPlanTier = normalizedPlanType.toUpperCase();
+        if (finalUser.planTier !== normalizedPlanTier) {
+          updates.planTier = normalizedPlanTier;
+          logger.warn({ userId: uid, planType: normalizedPlanType, wrongTier: finalUser.planTier }, 
+            "[AUTH_SYNC] planTier/planType mismatch fixed");
+        }
         
         const resetThreshold = 24 * 60 * 60 * 1000 * 30;
         const needsCreditReset = !finalUser.lastCreditReset || (now.getTime() - new Date(finalUser.lastCreditReset).getTime() > resetThreshold);
         
         if (needsCreditReset) {
-          const tier = (finalUser.planTier || "FREE") as string;
-          // Ensure new or zero-credit users get their starting 10 credits
-          if (user.generationsRemaining === 0 && !user.lastCreditReset) {
-            updates.generationsRemaining = 10;
+          const tier = (updates.planTier || finalUser.planTier || "FREE") as string;
+          // Ensure new or zero-credit users get their starting 5 credits
+          if (finalUser.generationsRemaining === 0 && !finalUser.lastCreditReset) {
+            updates.generationsRemaining = 5;
           } else {
-            updates.generationsRemaining = TIER_CREDITS[tier] || 10;
+            updates.generationsRemaining = TIER_CREDITS[tier] || 5;
           }
           updates.lastCreditReset = now;
         }
@@ -167,6 +245,26 @@ export const authSyncMiddleware = async (req: any, res: any, next: any) => {
 
         const [updatedUser] = await tx.update(usersTable).set(updates).where(eq(usersTable.id, uid)).returning();
         finalUser = updatedUser;
+      } else {
+        // NEW USER
+        const [newUser] = await tx.insert(usersTable).values({
+          id: uid,
+          email: emailFromSession || fetchedClerkEmail,
+          lastLoginAt: now,
+          generationsRemaining: isAdminEmail ? 999999 : 5,
+          lastCreditReset: now,
+          planTier: isAdminEmail ? "INFINITY" : "FREE",
+          planType: isAdminEmail ? "infinity" : "free",
+          subscriptionStatus: isAdminEmail ? "active" : "free",
+          isBetaUser: isAdminEmail,
+          isAdmin: isAdminEmail,
+          deviceId: deviceFingerprint,
+        }).returning();
+        finalUser = newUser;
+        
+        // Background tasks
+        WelcomeSequence.sendWelcomeToBeta(emailFromSession || "", (auth.sessionClaims?.firstName as string) || "").catch(() => {});
+        await ensureReferralCode(uid, tx);
       }
 
       user = finalUser;

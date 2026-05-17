@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { 
   Calendar as CalendarIcon, Loader2, Sparkles, AlertCircle, ChevronLeft, ChevronRight, 
   CheckCircle2, Plus, Filter, LayoutGrid, LayoutList, MoreHorizontal, Clock, Trash2, 
@@ -52,6 +53,7 @@ const colors = [
 ];
 
 export default function CalendarPage() {
+  usePageTitle("Content Calendar");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [items, setItems] = useState<Record<string, CalendarItem[]>>({});
   const [loading, setLoading] = useState(false);
@@ -202,10 +204,17 @@ export default function CalendarPage() {
             {dayItems.slice(0, 3).map(item => (
               <div 
                 key={item.id}
-                className={`px-1.5 py-1 rounded-lg text-[9px] font-bold flex items-center gap-1.5 text-white/90 truncate border border-white/5 bg-white/[0.03] group/item transition-colors hover:bg-white/[0.08]`}
+                className={`px-1.5 py-1 rounded-lg text-[9px] font-bold flex flex-col items-start gap-1 text-white/90 border border-white/5 bg-white/[0.03] group/item transition-colors hover:bg-white/[0.08]`}
               >
-                <div className={`w-1.5 h-1.5 rounded-full ${getPlatformColor(item.platform)} shadow-[0_0_8px_rgba(0,0,0,0.5)]`} />
-                <span className="truncate">{item.idea}</span>
+                <div className="flex items-center gap-1.5 w-full">
+                  <div className={`w-1.5 h-1.5 rounded-full ${getPlatformColor(item.platform)} shadow-[0_0_8px_rgba(0,0,0,0.5)]`} />
+                  <span className="truncate flex-1">{item.idea}</span>
+                </div>
+                {item.scheduledTime && (
+                  <span className="text-[9px] opacity-60 flex items-center gap-0.5" style={{ color: 'var(--text-muted)' }}>
+                    🕐 {item.scheduledTime}
+                  </span>
+                )}
               </div>
             ))}
             {dayItems.length > 3 && (
@@ -267,13 +276,13 @@ export default function CalendarPage() {
 
       <Card className="border-none shadow-2xl overflow-hidden bg-background">
         <div className="overflow-x-auto -mx-4 px-4 md:overflow-visible md:mx-0 md:px-0 scrollbar-hide">
-          <div className="min-w-[560px] md:min-w-0">
-            <div className="grid grid-cols-7 border-b bg-muted/30">
+          <div className="min-w-[600px] md:min-w-0">
+            <div className="grid grid-cols-7 gap-2 border-b bg-muted/30">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
                 <div key={d} className="py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{d}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7">
+            <div className="grid grid-cols-7 gap-2 mt-2">
               {loading ? (
                 Array(35).fill(0).map((_, i) => <Skeleton key={i} className="h-[140px] rounded-none border border-border/10" />)
               ) : (

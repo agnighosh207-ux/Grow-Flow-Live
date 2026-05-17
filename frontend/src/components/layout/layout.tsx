@@ -727,9 +727,9 @@ function ToolsGrid({ isPro, onClick }: { isPro: boolean; onClick?: () => void })
                     {isLocked ? <Lock className="w-5 h-5" /> : <Icon className="w-6 h-6" />}
                   </div>
                   <div className="flex flex-col gap-1 w-full">
-                    <span className={`text-[11px] font-black leading-tight transition-colors ${isActive ? "text-white" : "text-white/80 group-hover:text-white"}`}>
-                      {t(item.label)}
-                    </span>
+                     <span className={`text-xs font-semibold text-center leading-tight break-words max-w-full transition-colors ${isActive ? "text-white" : "text-white/80 group-hover:text-white"}`}>
+                       {t(item.label)}
+                     </span>
                     {isNew && (
                       <span className="absolute -top-1.5 -right-1.5 text-[9px] font-medium bg-[rgba(94,106,210,0.25)] text-[#8B91E3] px-2 py-0.5 rounded-full">
                         New
@@ -897,13 +897,36 @@ export function Layout({ children }: { children: ReactNode }) {
     };
   }, [toast]);
 
+  // Session conflict state and handler
+  const [showSessionConflict, setShowSessionConflict] = useState(false);
+  const [sessionConflictMessage, setSessionConflictMessage] = useState("");
+
+  useEffect(() => {
+    const handleConflict = (e: any) => {
+      // Show blocking modal
+      setSessionConflictMessage(e.detail);
+      setShowSessionConflict(true);
+      // Sign out after 3 seconds
+      setTimeout(() => signOut(), 3000);
+    };
+    window.addEventListener('session-conflict', handleConflict as EventListener);
+    return () => window.removeEventListener('session-conflict', handleConflict as EventListener);
+  }, [signOut]);
+
   const isPro = !!(sub && sub.planType === "infinity" && ["active", "trial", "pending", "past_due"].includes(sub.plan));
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden flex flex-col" style={{ background: 'var(--bg)' }}>
+      {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.startsWith('pk_test_') && (
+        <div className="fixed top-0 inset-x-0 z-[999] text-center text-[10px] py-0.5 font-bold"
+          style={{ background: '#D97706', color: 'black' }}>
+          ⚠️ Development Mode — Using Test Clerk Keys
+        </div>
+      )}
       {isOffline && (
-        <div className="fixed top-0 inset-x-0 z-[200] bg-red-500 text-white text-center text-[10px] py-1.5 font-bold uppercase tracking-widest animate-in fade-in slide-in-from-top duration-300">
-          📡 No internet connection — check your network
+        <div className="fixed top-0 inset-x-0 z-[300] text-center text-xs py-2 font-bold text-white"
+          style={{ background: '#E11D48' }}>
+          📡 No internet connection
         </div>
       )}
       <ImpersonationBanner />
@@ -966,7 +989,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       <Menu className="w-6 h-6" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="p-0 h-[88vh] border-t rounded-t-[40px] flex flex-col focus:outline-none ring-0 overflow-hidden" style={{ background: 'var(--surface-1)', borderRight: '1px solid var(--border)' }}>
+                  <SheetContent side="bottom" className="p-0 h-[88vh] border-t rounded-t-[40px] flex flex-col focus:outline-none ring-0 overflow-hidden [&>button.absolute]:hidden" style={{ background: 'var(--surface-1)', borderRight: '1px solid var(--border)' }}>
                     <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mt-3 shrink-0" />
                     <div className="px-8 pt-8 pb-4 flex items-center justify-between">
                       <div className="space-y-1">
@@ -1081,7 +1104,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       style={isActive ? { background: 'rgba(94,106,210,0.2)', boxShadow: '0 0 20px rgba(94,106,210,0.3)' } : undefined}>
                       <Icon className="w-[24px] h-[24px]" />
                     </div>
-                    <span className={`text-[9px] font-black uppercase tracking-[0.1em] transition-all ${isActive ? "opacity-100 scale-105 text-white" : "opacity-40"}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-[0.1em] transition-all truncate max-w-[50px] text-center ${isActive ? "opacity-100 scale-105 text-white" : "opacity-40"}`}>
                       {t(navItem.label)}
                     </span>
                     {isActive && (
@@ -1141,6 +1164,25 @@ export function Layout({ children }: { children: ReactNode }) {
           <MessageSquare className="w-4 h-4" style={{ color: '#8B91E3' }} />
           Feedback
         </button>
+      )}
+      {showSessionConflict && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4"
+          style={{ background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(20px)' }}>
+          <div className="rounded-2xl p-8 text-center max-w-sm w-full"
+            style={{ background: 'var(--surface-1)', border: '1px solid rgba(225,29,72,0.3)' }}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'rgba(225,29,72,0.1)', border: '1px solid rgba(225,29,72,0.2)' }}>
+              <LogOut className="w-7 h-7 text-red-400" />
+            </div>
+            <h2 className="text-lg font-bold text-white mb-2">Signed in elsewhere</h2>
+            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+              {sessionConflictMessage || "Your account was signed in on another device. Signing you out now."}
+            </p>
+            <div className="text-xs" style={{ color: 'var(--text-disabled)' }}>
+              Signing out in 3 seconds...
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

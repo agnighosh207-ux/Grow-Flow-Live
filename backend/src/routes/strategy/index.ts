@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { filterUserInput } from "../../lib/content-filter";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { db, contentCalendarTable, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
@@ -49,8 +50,18 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
     });
     return;
   }
+  const filterResult = filterUserInput(goal, "goal");
+  if (!filterResult.allowed) {
+    res.status(400).json({ 
+      error: "invalid_input",
+      message: filterResult.reason || "Invalid input",
+      suggestion: filterResult.suggestion || "Please provide a specific strategic goal"
+    });
+    return;
+  }
+
   const sanitizedNiche = String(niche).substring(0, 50);
-  const sanitizedGoal = String(goal).substring(0, 500);
+  const sanitizedGoal = filterResult.cleanedInput || String(goal);
 
   const platforms = nichePlatformWeights[sanitizedNiche] || nichePlatformWeights["General"];
   const goalContext = nicheGoalContext[sanitizedNiche] || nicheGoalContext["General"];

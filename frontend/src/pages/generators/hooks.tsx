@@ -15,7 +15,11 @@ import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
+import { EmptyOutputState } from "@/components/shared/EmptyOutputState";
 import { PageHeader } from "@/components/shared/PageHeader";
+
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useGenerateShortcut } from "@/hooks/useGenerateShortcut";
 
 const HOOK_PATTERN_LABELS = [
  { type: "Curiosity Gap", color: "bg-[rgba(94,106,210,0.15)] text-[#8B91E3] border-[rgba(94,106,210,0.20)]" },
@@ -54,10 +58,7 @@ function HooksGeneratorInner() {
  const { data: sub } = useSubscriptionStatus();
  const isFreeUser = !sub?.planType || sub.planType === "free";
 
- useEffect(() => {
-  document.title = "Viral Hooks Generator — GrowFlow AI";
- }, []);
-
+ usePageTitle("Hook Writer");
  const form = useForm<z.infer<typeof formSchema>>({
   resolver: zodResolver(formSchema),
   defaultValues: { topic: "", tone: "Aggressive", language: prefLang }
@@ -86,6 +87,8 @@ function HooksGeneratorInner() {
    } as any
   });
  }
+
+ useGenerateShortcut(form.handleSubmit(onSubmit), isLoading);
 
  const handleCopy = (hook: string, index: number) => {
   navigator.clipboard.writeText(hook);
@@ -271,13 +274,13 @@ function HooksGeneratorInner() {
       key="empty"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] flex flex-col items-center justify-center py-12 px-6 text-center min-h-[200px]"
      >
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-       <Sparkles className="w-5 h-5" style={{ color: "var(--text-disabled)" }} />
-      </div>
-      <p className="text-white/25 text-sm font-medium">Your generated content will appear here</p>
-      <p className="text-white/15 text-xs mt-1">Fill in the details above and hit Generate</p>
+      <EmptyOutputState
+       title="Your hooks will appear here"
+       description="Enter a topic above and generate compelling hooks"
+       suggestions={["Why I quit my 9-5", "5 things nobody tells you about", "I tried this for 30 days"]}
+       onSuggestionClick={(s) => form.setValue("topic", s)}
+      />
      </motion.div>
     )}
    </AnimatePresence>

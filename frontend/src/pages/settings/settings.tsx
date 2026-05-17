@@ -206,6 +206,7 @@ export default function SettingsPage() {
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [scheduledDeletionAt, setScheduledDeletionAt] = useState<string | null>(null);
+  const [deletionScheduled, setDeletionScheduled] = useState(false);
   const [savedNotif, setSavedNotif] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
 
@@ -213,11 +214,20 @@ export default function SettingsPage() {
 
   async function secureFetch(url: string, options: RequestInit = {}) {
     const token = await getToken();
+    const localGetDeviceId = (): string => {
+      let deviceId = localStorage.getItem('gf_device_id');
+      if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem('gf_device_id', deviceId);
+      }
+      return deviceId;
+    };
     return fetch(url, {
       ...options,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
+        "x-device-id": localGetDeviceId(),
         ...options.headers,
       }
     });
@@ -231,14 +241,17 @@ export default function SettingsPage() {
           setPrefs(data.notifications);
         }
         if (data.profile) {
-          setProfile(data.profile);
-          // Sync niche from preferences if profile doesn't have it (fallback)
-          if (!data.profile.niche && data.preferences?.niche) {
-            setProfile(p => ({ ...p, niche: data.preferences.niche }));
-          }
+          setProfile({
+            username: data.profile.username || "",
+            displayName: data.profile.displayName || "",
+            showOnLeaderboard: data.profile.showOnLeaderboard || false,
+            avatarUrl: data.profile.avatarUrl || "",
+            niche: data.profile.niche || data.preferences?.niche || "",
+          });
         }
         if (data.account?.scheduledDeletionAt) {
           setScheduledDeletionAt(data.account.scheduledDeletionAt);
+          setDeletionScheduled(true);
         }
         setPrefsLoaded(true);
       })
@@ -253,6 +266,16 @@ export default function SettingsPage() {
           platformPreference: data.platformPreference ?? "",
           languagePreference: data.languagePreference ?? "English",
         });
+        setPrefs(prev => ({
+          ...prev,
+          emailReports: data.emailReports ?? true,
+          streakReminders: data.streakReminders ?? true,
+          productUpdates: data.productUpdates ?? true,
+        }));
+        setProfile(p => ({
+          ...p,
+          niche: p.niche || data.niche || "",
+        }));
         setContentPrefsLoaded(true);
       })
       .catch(() => setContentPrefsLoaded(true));
@@ -363,6 +386,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error();
       
       setScheduledDeletionAt(data.scheduledDeletionAt);
+      setDeletionScheduled(true);
       toast({ title: "Account deletion scheduled", description: "You have 7 days to cancel this action." });
       refetchSub();
     } catch {
@@ -378,12 +402,17 @@ export default function SettingsPage() {
       const res = await secureFetch("/api/settings/cancel-deletion", { method: "POST" });
       if (!res.ok) throw new Error();
       setScheduledDeletionAt(null);
+      setDeletionScheduled(false);
       toast({ title: "Deletion cancelled", description: "Your account is safe." });
       refetchSub();
     } catch {
       toast({ variant: "destructive", title: "Error", description: "Failed to cancel deletion." });
     }
   }
+
+  const handleCancelDeletion = async () => {
+    await cancelDeletion();
+  };
 
   async function handleExportData() {
     setExportLoading(true);
@@ -396,7 +425,7 @@ export default function SettingsPage() {
       a.href = url;
       a.download = `growflow-data-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
-      toast({ title: "Data export started", description: "Your JSON file is downloading." });
+      toast({ title: "Data exported ✅", description: "Your data has been downloaded in a readable format." });
     } catch {
       toast({ variant: "destructive", title: "Export failed", description: "Please try again later." });
     } finally {
@@ -526,6 +555,37 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
                 <h2 className="text-white/80 font-semibold text-sm mb-4">Public Profile</h2>
+                
+                {/* Profile picture section - add at TOP of profile tab content */}
+                <div className="flex flex-col items-center gap-3 mb-6 pt-2">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2"
+                      style={{ borderColor: 'rgba(94,106,210,0.3)', background: 'var(--surface-2)' }}>
+                      {user?.imageUrl ? (
+                        <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl font-black"
+                          style={{ color: '#8B91E3', background: 'rgba(94,106,210,0.1)' }}>
+                          {user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0] || "U"}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        // Clerk's UserProfile handles image upload
+                        // Open Clerk's profile management
+                        window.open('https://accounts.clerk.dev/user', '_blank');
+                      }}
+                      className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2"
+                      style={{ background: '#5E6AD2', borderColor: 'var(--bg, #0A0A0F)' }}>
+                      <Camera className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    Tap the camera to change your photo
+                  </p>
+                </div>
+
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-white/60 text-xs font-medium">Username</label>
@@ -662,10 +722,21 @@ export default function SettingsPage() {
                 <h2 className="text-red-400/80 font-semibold text-sm mb-4">Danger Zone</h2>
                 <div className="flex items-center justify-between">
                   <p className="text-white/40 text-xs max-w-[250px]">Once deleted, your content history and sub data will be purged after 7 days.</p>
-                  <Button variant="ghost" onClick={() => setShowDeleteModal(true)} className="text-red-400 hover:bg-red-500/10 border border-red-500/20">
+                  <Button variant="ghost" onClick={() => setShowDeleteModal(true)} disabled={deletionScheduled} className="text-red-400 hover:bg-red-500/10 border border-red-500/20 disabled:opacity-50">
                     Delete Account
                   </Button>
                 </div>
+                {deletionScheduled && (
+                  <div className="rounded-xl p-4 mt-3" style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.2)' }}>
+                    <p className="text-xs font-semibold mb-2" style={{ color: '#F87171' }}>
+                      Account scheduled for deletion
+                    </p>
+                    <button onClick={handleCancelDeletion}
+                      className="text-xs underline animate-pulse" style={{ color: '#8B91E3' }}>
+                      Cancel deletion →
+                    </button>
+                  </div>
+                )}
               </section>
             </div>
           )}

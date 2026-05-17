@@ -7,6 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 import { NPSModal } from "@/components/modals/NPSModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useAuth } from "@clerk/react";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 declare global { interface Window { Razorpay: any; } }
 
@@ -36,18 +39,32 @@ interface UpgradeModalProps {
 type PlanType = "starter" | "creator" | "infinity" | "agency";
 type PaymentState = "idle" | "pending" | "success" | "error";
 
-const REASONS = {
-  upgrade: {
-    title: "Upgrade your plan",
-    subtitle: "Unlock premium tools and scale your content creation faster.",
-  },
+const MODAL_COPY = {
   limit: {
     title: "You've reached your free limit",
-    subtitle: "You've reached your free limit. Upgrade to continue.",
+    subtitle: "You've used all your free generations. Upgrade to keep creating.",
+    icon: "🔋",
   },
-  expired: { title: "Trial expired", subtitle: "Your trial has ended. Subscribe to continue." },
-  blocked: { title: "Access blocked", subtitle: "Your account access is restricted. Please resubscribe." },
-  pro_feature: { title: "Unlock Infinity Plan", subtitle: "This feature is exclusive to the Infinity plan. Upgrade to unlock it and much more." },
+  pro_feature: {
+    title: "This is a premium feature",
+    subtitle: "Upgrade your plan to access this tool.",
+    icon: "⚡",
+  },
+  upgrade: {
+    title: "Unlock the full power",
+    subtitle: "Start your 7-day free trial — no charge until day 8.",
+    icon: "🚀",
+  },
+  expired: {
+    title: "Your trial has ended",
+    subtitle: "Subscribe to continue generating content.",
+    icon: "⏳",
+  },
+  blocked: {
+    title: "Your account needs attention",
+    subtitle: "Please contact support to restore access.",
+    icon: "🔒",
+  },
 };
 
 const INFINITY_BENEFITS = [
@@ -102,6 +119,8 @@ const AGENCY_HIGHLIGHTS = [
 
 export function UpgradeModal({ open, onClose, reason = "limit", featureName, message, targetPlan = "starter", billingPeriod = "monthly", currency = "INR" }: UpgradeModalProps) {
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
+  const [paymentFailedReason, setPaymentFailedReason] = useState("");
+  const { getToken } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(
     reason === "pro_feature" ? "infinity" : targetPlan
   );
@@ -110,7 +129,9 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
   );
 
   const { data: subStatus } = useSubscriptionStatus();
-  const hasUsedTrial = subStatus?.hasUsedTrial || false;
+  const sub = subStatus;
+  const hasUsedTrial = sub?.hasUsedTrial || false;
+  const isTrialEligible = !sub?.hasUsedTrial && (sub?.plan === "free" || sub?.planType === "free" || !sub?.plan);
 
   // Sync selected plan when the modal opens
   React.useEffect(() => {
@@ -129,8 +150,15 @@ export function UpgradeModal({ open, onClose, reason = "limit", featureName, mes
   const validateCoupon = useValidateCoupon();
   const [, setLocation] = useLocation();
 
-  const { title, subtitle } = REASONS[reason];
-  const effectiveTitle = reason === "pro_feature" ? "Unlock Infinity Plan" : title;
+  const hasCredits = (sub?.generationsRemaining ?? 0) > 0;
+
+  // Override the copy if user has credits but is trying to upgrade:
+  const effectiveCopy = (reason === "limit" && hasCredits) 
+    ? MODAL_COPY.upgrade  // Don't say "free limit" if they have credits
+    : MODAL_COPY[reason] || MODAL_COPY.upgrade;
+
+  const { title, subtitle, icon } = effectiveCopy;
+  const effectiveTitle = (reason === "pro_feature" && !featureName) ? "Unlock Infinity Plan" : title;
   const effectiveSubtitle = message
     ? message
     : reason === "pro_feature" && featureName
@@ -228,6 +256,11 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
             await queryClient.refetchQueries({ queryKey: ["subscription-status"] });
             await queryClient.refetchQueries({ queryKey: ["subscription"] });
             setPaymentState("success");
+            
+            // Close after 4 seconds automatically
+            setTimeout(() => {
+              handleClose();
+            }, 4000);
           } catch (err: any) {
             console.error("Verification failed:", err);
             setPaymentState("error");
@@ -246,6 +279,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
       const rzp = new globalThis.Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
         console.error("Payment failed:", response.error);
+        setPaymentFailedReason(response?.error?.description || "Payment could not be processed");
         setPaymentState("error");
         toast({ variant: "destructive", title: "Payment Failed", description: response.error.description });
       });
@@ -260,6 +294,29 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
       if (import.meta.env.DEV) console.log("[UpgradeModal] rzp.open() called.");
     } catch (err: any) {
       console.error("Checkout error:", err);
+      if (err.message === "email_required" || err.message?.includes("email")) {
+        toast({
+          variant: "destructive",
+          title: "Email verification needed",
+          description: "Syncing your account... please try again in a moment.",
+        });
+        try {
+          const token = await getToken();
+          await fetch(`${BASE}/api/subscription/sync-email`, { 
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setTimeout(() => handleCheckout(plan), 1500);
+        } catch {
+          toast({
+            variant: "destructive",
+            title: "Email required",
+            description: "Please ensure your email is verified in your account settings.",
+          });
+          setPaymentState("error");
+        }
+        return;
+      }
       toast({ variant: "destructive", title: "Checkout Error", description: err.message || "Failed to start checkout. Please try again." });
       setPaymentState("error");
     }
@@ -326,6 +383,14 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       <p className="text-white/50 text-sm leading-relaxed mb-5 max-w-xs mx-auto">
                         Your {purchasedPlanLabel} plan is now active. Start turning ideas into content across all 4 platforms.
                       </p>
+                      {isTrialEligible && (
+                        <div className="mt-2 px-4 py-2 rounded-xl mx-auto max-w-xs mb-5"
+                          style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)' }}>
+                          <p className="text-xs font-semibold text-emerald-400">
+                            ✓ 7-day free trial starts now · No charge until day 8
+                          </p>
+                        </div>
+                      )}
 
                       <ul className="space-y-1.5 text-left mb-6 max-w-xs mx-auto">
                         {(purchasedPlan === "agency" ? AGENCY_HIGHLIGHTS : purchasedPlan === "infinity" ? INFINITY_HIGHLIGHTS : purchasedPlan === "creator" ? CREATOR_HIGHLIGHTS : STARTER_HIGHLIGHTS).slice(0, 3).map(h => (
@@ -366,7 +431,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                     </span>
                     <h2 className="text-xl font-bold text-white mb-2">Payment incomplete</h2>
                     <p className="text-white/50 text-sm leading-relaxed mb-1 max-w-xs mx-auto">
-                      Your payment wasn't completed. No charge was made.
+                      {paymentFailedReason || "Your payment wasn't completed. No charge was made."}
                     </p>
                     <p className="text-white/30 text-xs mb-6">
                       You can try again — your card details are pre-filled.
@@ -388,8 +453,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="pro_feature" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center">
-                          <Lock className="w-4 h-4 text-[#8B91E3]" />
+                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center text-sm">
+                          {icon}
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -456,8 +521,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="limit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center">
-                          <Crown className="w-4 h-4 text-[#8B91E3]" />
+                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center text-sm">
+                          {icon}
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -505,8 +570,8 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                   <motion.div key="checkout" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="flex items-start justify-between mb-5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center">
-                          <Crown className="w-4 h-4 text-[#8B91E3]" />
+                        <div className="w-9 h-9 rounded-xl bg-[rgba(94,106,210,0.20)] border border-[rgba(94,106,210,0.25)] flex items-center justify-center text-sm">
+                          {icon}
                         </div>
                         <div>
                           <h2 className="font-bold text-white text-base leading-tight">{effectiveTitle}</h2>
@@ -607,14 +672,23 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       {paymentState === "pending" ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Opening checkout...</>
                       ) : (
-                        <><Zap className="w-4 h-4 mr-2" /> Start 7-Day Free Trial →</>
+                        <span className="flex items-center justify-center gap-2">
+                          <Zap className="w-4 h-4" />
+                          {isTrialEligible ? "Start 7-Day Free Trial →" : `Get ${planLabel} Plan →`}
+                        </span>
                       )}
                     </Button>
-                    <p className="text-center text-[10px] text-white/35 mt-2 mb-2">
-                      {hasUsedTrial 
-                        ? "Trial already used · Billing starts immediately · Cancel anytime"
-                        : "✓ No charge today · ✓ Cancel anytime before day 7 · ✓ Full access starts immediately"}
-                    </p>
+                    {isTrialEligible ? (
+                      <p className="text-center text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>
+                        ✓ No charge today · ✓ Cancel before day 7 · ✓ Full access immediately
+                      </p>
+                    ) : (
+                      <p className="text-center text-[10px] text-white/35 mt-2 mb-2">
+                        {hasUsedTrial 
+                          ? "Trial already used · Billing starts immediately · Cancel anytime"
+                          : "✓ No charge today · ✓ Cancel anytime before day 7 · ✓ Full access starts immediately"}
+                      </p>
+                    )}
 
 
                     <button

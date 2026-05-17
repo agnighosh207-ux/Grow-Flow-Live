@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+import { db, usersTable, agencySessionsTable } from "@workspace/db";
 import { requireAuth } from "../../middlewares/planMiddleware";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { AuthenticatedRequest } from "../../types";
@@ -53,6 +53,22 @@ router.post("/complete-onboarding", requireAuth, async (req: AuthenticatedReques
   } catch (err: any) {
     res.status(500).json({ error: "Failed to apply referral code" });
   }
+});
+
+router.post("/logout-device", requireAuth, async (req: any, res) => {
+  const { deviceId } = req.body;
+  await db.update(usersTable)
+     .set({ deviceId: null })
+     .where(eq(usersTable.id, req.userId));
+  if (deviceId) {
+    await db.delete(agencySessionsTable)
+      .where(and(
+        eq(agencySessionsTable.userId, req.userId),
+        eq(agencySessionsTable.deviceId, deviceId)
+      ));
+  }
+  invalidateAuthCache(req.userId);
+  res.json({ success: true });
 });
 
 router.post("/sync", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {

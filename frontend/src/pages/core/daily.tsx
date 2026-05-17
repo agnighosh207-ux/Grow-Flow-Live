@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame, Lightbulb, Zap, Target, CheckCircle2,
@@ -115,6 +116,7 @@ function StreakBadge({ streak }: { streak: number }) {
 }
 
 export default function DailyActionMode() {
+  usePageTitle("Daily Tasks");
   const { toast } = useToast();
   const [data, setData] = useState<DailyResponse | null>(null);
   const [loading, setLoading] = useState(true);

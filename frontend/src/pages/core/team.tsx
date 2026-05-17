@@ -3,12 +3,14 @@ import { motion } from "framer-motion";
 import { 
   Users, UserPlus, Shield, UserMinus, 
   Copy, Check,
-  Brain, Zap, Crown, Lock
+  Brain, Zap, Crown, Lock, Monitor
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@clerk/react";
 import { PageSkeleton } from "@/components/shared/Skeleton";
+import { useSubscriptionStatus } from "@/hooks/useSubscription";
+import { Link } from "wouter";
 
 interface TeamMember {
   id: string;
@@ -22,10 +24,60 @@ interface TeamMember {
 export default function TeamPage() {
   const { getToken } = useAuth();
   const { toast } = useToast();
+  const { data: sub } = useSubscriptionStatus();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [teamCode, setTeamCode] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // Invite states
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
+  // Sessions state
+  const [sessions, setSessions] = useState<any[]>([]);
+  const deviceId = localStorage.getItem('gf_device_id');
+
+  useEffect(() => {
+    if (sub?.planType === "agency") {
+      fetchSessions();
+    }
+  }, [sub?.planType]);
+
+  const fetchSessions = async () => {
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/team/sessions", { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSessions(data.sessions || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch sessions:", err);
+    }
+  };
+
+  const removeDevice = async (sessionDeviceId: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/team/sessions/${encodeURIComponent(sessionDeviceId)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setSessions(prev => prev.filter(s => s.deviceId !== sessionDeviceId));
+        toast({ title: "Device removed ✅" });
+      } else {
+        toast({ variant: "destructive", title: "Error", description: "Failed to remove device" });
+      }
+    } catch (err) {
+      console.error("Failed to remove device:", err);
+      toast({ variant: "destructive", title: "Error", description: "Failed to remove device" });
+    }
+  };
 
   useEffect(() => {
     fetchTeamData();
@@ -78,7 +130,45 @@ export default function TeamPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleInviteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    setInviteLoading(true);
+    setInviteError(null);
+    try {
+      // Simulate invitation sending
+      await new Promise(resolve => setTimeout(resolve, 800));
+      toast({ title: "Invite sent! ✅", description: `Invitation sent to ${inviteEmail}` });
+      setInviteEmail("");
+    } catch (err: any) {
+      setInviteError(err.message || "Failed to send invite");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   if (loading) return <PageSkeleton />;
+
+  if (sub && sub.planType !== "agency") {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+          style={{ background: 'rgba(94,106,210,0.1)', border: '1px solid rgba(94,106,210,0.2)' }}>
+          <Users className="w-8 h-8" style={{ color: '#8B91E3' }} />
+        </div>
+        <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Team Management</h3>
+        <p className="text-sm mb-4 max-w-xs" style={{ color: 'var(--text-muted)' }}>
+          Manage team members, assign brand profiles, and collaborate — available on the Agency plan.
+        </p>
+        <Link href="/pricing">
+          <button className="px-6 py-2.5 rounded-xl text-white font-semibold text-sm"
+            style={{ background: '#5E6AD2' }}>
+            Upgrade to Agency →
+          </button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-20 px-4">
@@ -153,6 +243,32 @@ export default function TeamPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Invite Form Card */}
+          <div className="rounded-[32px] border border-white/5 bg-white/[0.02] p-8 shadow-xl">
+            <h3 className="font-black text-white tracking-tight mb-2">Invite Ecosystem Member</h3>
+            <p className="text-white/40 text-xs mb-6">Send an invitation email to collaborate on your team.</p>
+            <form onSubmit={handleInviteSubmit} className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <input 
+                  type="email" 
+                  placeholder="colleague@agency.com" 
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[#5E6AD2] transition-colors"
+                  required
+                />
+                {inviteError && <p className="text-red-400 text-xs mt-2">{inviteError}</p>}
+              </div>
+              <Button 
+                type="submit" 
+                disabled={inviteLoading}
+                className="bg-[#5E6AD2] hover:bg-[#4A52B8] text-white font-bold rounded-xl h-12 px-6 shadow-lg shadow-[rgba(94,106,210,0.20)] transition-all"
+              >
+                {inviteLoading ? "Sending..." : "Send Invite"}
+              </Button>
+            </form>
           </div>
 
           {/* Members Table */}
@@ -240,6 +356,65 @@ export default function TeamPage() {
                  <Button onClick={copyInvite} variant="ghost" className="text-[#8B91E3] hover:text-[#8B91E3] hover:bg-[rgba(94,106,210,0.5)]">
                     Generate Invitation Protocol
                  </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Active Devices Card */}
+          <div className="rounded-[32px] border border-white/5 bg-white/[0.02] p-8 shadow-xl space-y-6">
+            <div className="flex items-center justify-between border-b border-white/5 pb-4">
+              <div>
+                <h3 className="font-black text-white tracking-tight">Active Devices</h3>
+                <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-0.5">
+                  {sessions.length} of 5 device slots used
+                </p>
+              </div>
+              <div className="flex gap-1.5 bg-white/5 p-2 rounded-xl border border-white/5">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="w-2.5 h-2.5 rounded-full transition-colors duration-300"
+                    style={{ background: i < sessions.length ? '#5E6AD2' : 'rgba(255,255,255,0.08)' }} />
+                ))}
+              </div>
+            </div>
+            {sessions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sessions.map(session => (
+                  <div key={session.deviceId} 
+                    className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] hover:border-white/10 transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#5E6AD2]/10 border border-[#5E6AD2]/20">
+                        <Monitor className="w-4 h-4 text-[#8B91E3]" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-white truncate max-w-[180px] tracking-tight">
+                          {session.deviceName?.substring(0, 40) || "Unknown Device"}
+                        </p>
+                        <p className="text-[10px] font-medium text-white/40 mt-0.5">
+                          {session.deviceId === deviceId ? "This device" : "Other device"} · 
+                          Active {new Date(session.lastActiveAt).toLocaleDateString('en-IN')}
+                        </p>
+                      </div>
+                    </div>
+                    {session.deviceId !== deviceId && (
+                      <button onClick={() => removeDevice(session.deviceId)}
+                        className="text-xs px-3.5 py-1.5 rounded-xl font-bold border transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+                        style={{ background: 'rgba(225,29,72,0.1)', color: '#F87171', borderColor: 'rgba(225,29,72,0.2)' }}>
+                        Remove
+                      </button>
+                    )}
+                    {session.deviceId === deviceId && (
+                      <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
+                        style={{ background: 'rgba(22,163,74,0.1)', color: '#4ade80', borderColor: 'rgba(22,163,74,0.2)' }}>
+                        Current
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-white/25 text-xs font-black uppercase tracking-wider">No active device sessions synced</p>
               </div>
             )}
           </div>

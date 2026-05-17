@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Copy, ArrowRight, Loader2, Zap, Smartphone } from "lucide-react";
+import { Copy, ArrowRight, Loader2, Zap, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -23,8 +23,8 @@ export default function QuickGeneratePage() {
         }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, [idea, generating]);
 
   const handleQuickGenerate = async () => {
@@ -41,8 +41,13 @@ export default function QuickGeneratePage() {
         language: "English"
       });
       setResult(data);
-    } catch (err) {
-      toast({ variant: "destructive", title: "Quick Generate Failed" });
+    } catch (err: any) {
+      console.error("Quick generate failed:", err);
+      toast({ 
+        variant: "destructive", 
+        title: "Quick Generate Failed",
+        description: err.message || "An unexpected error occurred."
+      });
     } finally {
       setGenerating(false);
     }
@@ -93,7 +98,7 @@ export default function QuickGeneratePage() {
            </div>
 
            <AnimatePresence>
-             {result && result.content?.instagram && (
+             {result?.content?.instagram && (
                <motion.div 
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}

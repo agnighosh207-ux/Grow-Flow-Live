@@ -26,7 +26,7 @@ function loadRazorpay(): Promise<boolean> {
 import {
   Gift, Check, X, Zap, Star, ArrowLeft,
   Sparkles, TrendingUp, CalendarDays, Flame, Wand2,
-  Shield, IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown, CheckCircle2
+  Shield, IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown
 } from "lucide-react";
 
 function LiveCounter() {
@@ -276,8 +276,8 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
           <Zap className="w-3.5 h-3.5 text-[#8B91E3]" />
           <span className="text-[10px] font-black uppercase tracking-widest text-[#8B91E3]">One-time Boost</span>
         </div>
-        <h3 className="text-2xl font-black text-white">Need More Credits?</h3>
-        <p className="text-white/40 text-sm mt-1">One-time top-up. Use anytime. No recurring charge.</p>
+        <h3 className="text-2xl font-black text-white">Top Up Anytime</h3>
+        <p className="text-white/40 text-sm mt-1">One-time purchase. Credits never expire.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {PACKS.map(pack => (
@@ -420,7 +420,7 @@ export default function PricingPage() {
         if (stored === "INR" || stored === "USD") return stored;
       }
     } catch (e) {
-      console.warn("localStorage access denied");
+      console.warn("localStorage access denied", e);
     }
     return "INR";
   });
@@ -445,9 +445,9 @@ export default function PricingPage() {
 
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [exitIntentShown, setExitIntentShown] = useState(false);
-  const [showAgencyModal, setShowAgencyModal] = useState(false);
+  const [showAgencyUpgrade, setShowAgencyUpgrade] = useState(false);
 
-  const { data: sub, isLoading: subLoading } = useSubscriptionStatus();
+  const { data: sub } = useSubscriptionStatus();
   const { isSignedIn, isLoaded } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -474,8 +474,6 @@ export default function PricingPage() {
   }, [exitIntentShown, isActivePaidUser]);
   
   const prices = currency === "USD" ? USD_BASE_PRICES : BASE_PRICES;
-  const totals = currency === "USD" ? USD_BILLING_TOTALS : BILLING_TOTALS;
-  const strikePrices = currency === "USD" ? USD_STRIKETHROUGH_PRICES : STRIKETHROUGH_PRICES;
   
   const starterPrice = prices.starter[billing];
   const creatorPrice = prices.creator[billing];
@@ -516,12 +514,7 @@ export default function PricingPage() {
     setUpgradeModal({ open: true, plan, billing, currency, reason: "checkout" });
   };
 
-  const billingLabel = (period: BillingPeriod) => {
-    if (period === "quarterly") return "every 3 months";
-    if (period === "half-yearly") return "every 6 months";
-    if (period === "yearly") return "yearly";
-    return "monthly";
-  };
+
 
   return (
     <div className="min-h-screen bg-[#050210] text-white overflow-x-hidden">
@@ -679,11 +672,13 @@ export default function PricingPage() {
                 }`}
               >
                 {opt.label}
-                {opt.badge && (
+                {opt.key === "yearly" ? (
+                  <span className="ml-1.5 text-[10px] font-black text-emerald-400">2 months FREE</span>
+                ) : opt.badge ? (
                   <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-[#5E6AD2]/20 text-[#8B91E3]">
                     {opt.badge}
                   </span>
-                )}
+                ) : null}
               </button>
             ))}
           </div>
@@ -709,7 +704,7 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="space-y-3 flex-1 mb-6">
-                  {["5 monthly generations", "4 platform types", "Basic tools"].map((f) => (
+                  {["5 free generations to try", "4 platform types", "Basic tools"].map((f) => (
                     <div key={f} className="flex items-start gap-2">
                       <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
                       <span className="text-white/60 text-xs">{f}</span>
@@ -750,8 +745,13 @@ export default function PricingPage() {
                   onClick={() => handlePlanClick("starter")}
                   className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10"
                 >
-                  {getPlanState("starter") === "current" ? "Current Plan" : "Get Started"}
+                  {getPlanState("starter") === "current" ? "Current Plan" : "Start 7-Day Free Trial"}
                 </Button>
+                {getPlanState("starter") !== "current" && (
+                  <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                    No charge until day 8 · Cancel anytime
+                  </p>
+                )}
               </div>
             </motion.div>
 
@@ -792,8 +792,13 @@ export default function PricingPage() {
                   className="w-full h-11 rounded-xl text-xs font-bold transition-all"
                   style={{ background: "#5E6AD2", color: 'white', boxShadow: '0 4px 15px rgba(94,106,210,0.3)' }}
                 >
-                  {getPlanState("creator") === "current" ? "Current Plan" : "Upgrade to Creator"}
+                  {getPlanState("creator") === "current" ? "Current Plan" : "Start 7-Day Free Trial"}
                 </Button>
+                {getPlanState("creator") !== "current" && (
+                  <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                    No charge until day 8 · Cancel anytime
+                  </p>
+                )}
               </div>
             </motion.div>
 
@@ -822,8 +827,13 @@ export default function PricingPage() {
                   onClick={() => handlePlanClick("infinity")}
                   className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10"
                 >
-                  {getPlanState("infinity") === "current" ? "Current Plan" : "Get Infinity"}
+                  {getPlanState("infinity") === "current" ? "Current Plan" : "Start 7-Day Free Trial"}
                 </Button>
+                {getPlanState("infinity") !== "current" && (
+                  <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                    No charge until day 8 · Cancel anytime
+                  </p>
+                )}
               </div>
             </motion.div>
           </div>
@@ -869,13 +879,13 @@ export default function PricingPage() {
                 <p className="text-[#8B91E3]/40 text-[10px] font-bold uppercase tracking-tighter mt-1">Billed monthly</p>
               </div>
                 <Button 
-                  onClick={() => setShowAgencyModal(true)}
+                  onClick={() => setShowAgencyUpgrade(true)}
                   disabled={getPlanState("agency") === "current"}
                   className="w-full md:w-auto h-11 px-8 rounded-xl text-xs font-bold transition-all"
                   style={{ background: "#5E6AD2", color: 'white', boxShadow: '0 4px 15px rgba(94,106,210,0.3)' }}
                 >
                   {getPlanState("agency") === "current" ? "Active Plan" : "Get Agency Plan"}
-              </Button>
+                </Button>
             </div>
           </div>
         </div>
@@ -1139,8 +1149,8 @@ export default function PricingPage() {
       />
 
       <UpgradeModal
-        open={showAgencyModal}
-        onClose={() => setShowAgencyModal(false)}
+        open={showAgencyUpgrade}
+        onClose={() => setShowAgencyUpgrade(false)}
         targetPlan="agency"
         reason="upgrade"
         currency={currency}

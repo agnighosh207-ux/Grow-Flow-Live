@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wand2, Copy, Check, ChevronDown, TrendingUp, AlertCircle, ChevronRight, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -140,6 +141,8 @@ export default function CaptionEnhancer() {
  useEffect(() => {
   localStorage.setItem("preferred_language", language);
  }, [language]);
+
+ usePageTitle("Caption Enhancer");
  const { data: sub } = useSubscriptionStatus();
  const isFreeUser = !sub?.planType || sub.planType === "free";
 

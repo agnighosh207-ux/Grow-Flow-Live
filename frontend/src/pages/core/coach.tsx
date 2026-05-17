@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { Brain, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, Zap, Send, MessageCircle, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ const itemVariants = {
 };
 
 export default function ContentCoachPage() {
+  usePageTitle("AI Coach");
   const [report, setReport] = useState<CoachReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);

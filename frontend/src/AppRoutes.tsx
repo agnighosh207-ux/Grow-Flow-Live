@@ -49,6 +49,8 @@ const Insights = React.lazy(() => import("@/pages/core/insights"));
 const TrendEngine = React.lazy(() => import("@/pages/core/trends"));
 const PrivacyPolicy = React.lazy(() => import("@/pages/legal/PrivacyPolicy"));
 const TermsAndConditions = React.lazy(() => import("@/pages/legal/TermsAndConditions"));
+const RefundPolicy = React.lazy(() => import("@/pages/legal/RefundPolicy"));
+const ContactUs = React.lazy(() => import("@/pages/legal/ContactUs"));
 const NotFound = React.lazy(() => import("@/pages/legal/not-found"));
 const ImproveCompetitorContent = React.lazy(() => import("@/pages/core/improve"));
 const BioGenerator = React.lazy(() => import("@/pages/generators/bio"));
@@ -147,11 +149,61 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 );
 
+const SupportWithBoundary = () => (
+  <ErrorBoundary
+    fallback={
+      <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+        <h3 className="font-bold text-white mb-2">Support page couldn't load</h3>
+        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+          Email us directly at: <a href="mailto:growflowhelp@gmail.com" 
+            className="underline" style={{ color: '#8B91E3' }}>
+            growflowhelp@gmail.com
+          </a>
+        </p>
+        <button onClick={() => window.location.reload()} 
+          className="px-4 py-2 rounded-xl text-white text-sm"
+          style={{ background: '#5E6AD2' }}>
+          Try again
+        </button>
+      </div>
+    }
+  >
+    <Support />
+  </ErrorBoundary>
+);
+
 export function ClerkProviderWithRoutes() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
+  }, []);
+
+  useEffect(() => {
+    const handlePop = () => {
+      setLocation(window.location.pathname);
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, [setLocation]);
+
+  useEffect(() => {
+    const key = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
+    if (key.startsWith('pk_test_')) {
+      console.warn('[GrowFlow] Using TEST Clerk key. If on production, check Railway env vars.');
+      if (key.includes('test')) {
+        document.title = '[TEST] GrowFlow AI';
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const prefetch = setTimeout(() => {
+      import("@/pages/core/generate");
+      import("@/pages/generators/hooks");
+      import("@/pages/core/history");
+    }, 2000);
+    return () => clearTimeout(prefetch);
   }, []);
 
   return (
@@ -182,7 +234,7 @@ export function ClerkProviderWithRoutes() {
           borderRadius: '12px',
         },
         elements: {
-          card: 'bg-[#101C20]/80 backdrop-blur-xl border border-[rgba(94,106,210,0.30)] shadow-2xl shadow-[rgba(94,106,210,0.60)] !w-full',
+          card: 'bg-[var(--surface-1)]/80 !backdrop-blur-xl border border-[rgba(94,106,210,0.30)] shadow-2xl shadow-[rgba(94,106,210,0.40)] !w-full',
           navbar: 'hidden',
           headerTitle: 'text-white text-2xl font-black',
           headerSubtitle: 'text-white/50 font-medium',
@@ -232,12 +284,14 @@ export function ClerkProviderWithRoutes() {
               <Route path="/calendar"><ProtectedRoute component={ContentCalendar} /></Route>
               <Route path="/insights"><ProtectedRoute component={Insights} /></Route>
               <Route path="/pricing"><Pricing /></Route>
-              <Route path="/support"><ProtectedRoute component={Support} /></Route>
+              <Route path="/support"><ProtectedRoute component={SupportWithBoundary} /></Route>
               <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
               <Route path="/saved"><ProtectedRoute component={Saved} /></Route>
               <Route path="/referrals"><ProtectedRoute component={ReferralsPage} /></Route>
               <Route path="/privacy-policy"><PrivacyPolicy /></Route>
               <Route path="/terms-and-conditions"><TermsAndConditions /></Route>
+              <Route path="/refund-policy"><RefundPolicy /></Route>
+              <Route path="/contact"><ContactUs /></Route>
               <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
               <Route path="/coach"><ProtectedRoute component={ContentCoach} /></Route>
               

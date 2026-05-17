@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import "./lib/i18n";
+import("./lib/i18n"); // Dynamic import — doesn't block initial render
 import { initAnalytics } from "./lib/analytics";
 
 initAnalytics();
@@ -40,6 +40,14 @@ window.fetch = async (...args) => {
 };
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+requestAnimationFrame(() => {
+  const loader = document.getElementById('app-loading');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => loader.remove(), 300);
+  }
+});
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {

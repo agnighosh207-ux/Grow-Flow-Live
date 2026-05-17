@@ -85,7 +85,18 @@ router.get("/", requireAuth, async (req: any, res): Promise<void> => {
     const voices = await db.select().from(brandVoicesTable)
       .where(eq(brandVoicesTable.userId, req.userId))
       .orderBy(desc(brandVoicesTable.createdAt));
-    res.json(voices);
+    res.json({ personas: voices });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch brand voices." });
+  }
+});
+
+router.get("/personas", requireAuth, async (req: any, res): Promise<void> => {
+  try {
+    const voices = await db.select().from(brandVoicesTable)
+      .where(eq(brandVoicesTable.userId, req.userId))
+      .orderBy(desc(brandVoicesTable.createdAt));
+    res.json({ personas: voices });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch brand voices." });
   }

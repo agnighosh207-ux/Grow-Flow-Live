@@ -11,7 +11,7 @@ function App() {
   return (
     <TooltipProvider>
       <AppErrorBoundary>
-        <WouterRouter base={basePath}>
+        <WouterRouter base={basePath || undefined}>
           <ClerkProviderWithRoutes />
         </WouterRouter>
         <MaintenanceOverlay />

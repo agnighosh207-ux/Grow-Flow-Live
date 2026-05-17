@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import { requireAuth, requirePlanOrTrial } from "../../middlewares/planMiddleware";
+import { filterUserInput } from "../../lib/content-filter";
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
@@ -149,11 +150,19 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
       return;
     }
 
-    if (!topic || typeof topic !== "string") {
+    const filterResult = filterUserInput(topic, "topic");
+    if (!filterResult.allowed) {
       await refundGenerationCredit(userId, req.user?.planTier);
-      res.status(400).json({ error: "Topic must be a valid string" });
+      res.status(400).json({ 
+        error: "invalid_input",
+        message: filterResult.reason || "Invalid input",
+        suggestion: filterResult.suggestion || "Please provide a specific topic idea"
+      });
       return;
     }
+
+    const sanitizedTopic = filterResult.cleanedInput || String(topic);
+
     if (!platform || typeof platform !== "string") {
       await refundGenerationCredit(userId, req.user?.planTier);
       res.status(400).json({ error: "Platform must be a valid string" });
@@ -176,7 +185,7 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
     const response = await generateContent({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Write a ${length || "medium"} post about: ${topic}` }
+        { role: "user", content: `Write a ${length || "medium"} post about: ${sanitizedTopic}` }
       ],
       userPlan: req.user?.planType || "FREE",
       userId,
@@ -196,7 +205,7 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
     // Save to history
     await db.insert(contentGenerationsTable).values({
       userId,
-      idea: topic,
+      idea: sanitizedTopic,
       contentType: platform,
       tone: "Your Voice",
       platform: platform.split(" ")[0],

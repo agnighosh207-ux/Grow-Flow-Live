@@ -416,31 +416,94 @@ export async function sendReviewFeedbackNotification(email: string, contentTitle
   }
 }
 
-export async function sendPaymentSuccessEmail(email: string, planName: string, amount: number, billingPeriod: string) {
-  if (!resend) return;
-  try {
-    const html = emailLayout(
-      "Payment Successful ✅",
-      `
-        <p>Your payment of <strong>₹${(amount / 100).toLocaleString('en-IN')}</strong> has been received.</p>
-        <p>Your <strong>${planName}</strong> plan (${billingPeriod}) is now active.</p>
-        <p>You can start generating unlimited content right away.</p>
-        <div style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:16px; margin:20px 0;">
-          <p style="margin:0; color:#94a3b8; font-size:13px;">Plan: ${planName}</p>
-          <p style="margin:4px 0 0; color:#94a3b8; font-size:13px;">Billing: ${billingPeriod}</p>
-          <p style="margin:4px 0 0; color:#94a3b8; font-size:13px;">Amount: ₹${(amount / 100).toLocaleString('en-IN')}</p>
+export async function sendPaymentSuccessEmail(
+  email: string, 
+  planName: string, 
+  amountPaise: number, 
+  billingPeriod: string,
+  trialEndDate?: Date
+) {
+  if (!resend) { logger.warn("[Email] Resend not configured"); return; }
+  
+  const amount = `₹${(amountPaise / 100).toLocaleString('en-IN')}`;
+  const trialMsg = trialEndDate 
+    ? `Your 7-day free trial is active. Your first charge of ${amount} will be on <strong>${trialEndDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.`
+    : `Your payment of ${amount} has been processed successfully.`;
+  
+  const planFeatures: Record<string, string[]> = {
+    starter: ["25 AI generations/month", "English & regional languages", "All basic tools", "Email support"],
+    creator: ["150 AI generations/month", "All 18+ languages", "All creator tools", "Priority support", "Live trend engine"],
+    infinity: ["Unlimited AI generations", "All 18+ languages", "All tools including AI Coach", "Priority support", "All future features"],
+    agency: ["1000 AI generations/month", "5 team seats", "5 brand profiles", "Dedicated support", "White-label exports"],
+  };
+  
+  const features = planFeatures[planName.toLowerCase()] || planFeatures.starter;
+  
+  const html = emailLayout(
+    `Welcome to GrowFlow AI ${planName.charAt(0).toUpperCase() + planName.slice(1)} 🎉`,
+    `
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="font-size:48px; margin-bottom:8px;">🎉</div>
+      <h2 style="font-size:22px; font-weight:900; color:#ffffff; margin:0;">
+        You're all set, creator!
+      </h2>
+      <p style="color:#9B9BA8; margin-top:8px;">${trialMsg}</p>
+    </div>
+    
+    <div style="background:#18181F; border:1px solid rgba(94,106,210,0.2); border-radius:16px; padding:20px; margin-bottom:20px;">
+      <p style="color:#9B9BA8; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; margin-bottom:12px;">
+        Your Plan
+      </p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="color:#ffffff; font-weight:700; font-size:18px;">
+          GrowFlow AI ${planName.charAt(0).toUpperCase() + planName.slice(1)}
+        </span>
+        <span style="color:#8B91E3; font-weight:700;">${amount}/${billingPeriod}</span>
+      </div>
+      <div style="height:1px; background:rgba(255,255,255,0.06); margin:12px 0;"></div>
+      ${features.map(f => `
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span style="color:#10b981; font-weight:700;">✓</span>
+          <span style="color:#9B9BA8; font-size:14px;">${f}</span>
         </div>
-        <div style="text-align:center;"><a href="https://growflowai.space/generate" class="btn">Start Generating Now</a></div>
-      `
-    );
+      `).join('')}
+    </div>
+    
+    ${trialEndDate ? `
+    <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); border-radius:12px; padding:16px; margin-bottom:20px;">
+      <p style="color:#fcd34d; font-weight:700; font-size:14px; margin:0 0 4px;">
+        ⏰ Trial Reminder
+      </p>
+      <p style="color:#9B9BA8; font-size:13px; margin:0;">
+        Cancel anytime before ${trialEndDate.toLocaleDateString('en-IN')} and you won't be charged a single rupee.
+        Go to Settings → Plans & Billing → Cancel to stop anytime.
+      </p>
+    </div>
+    ` : ''}
+    
+    <div style="text-align:center;">
+      <a href="https://growflowai.space/generate" 
+        style="display:inline-block; background:#5E6AD2; color:#ffffff; font-weight:700; font-size:15px; padding:14px 32px; border-radius:12px; text-decoration:none;">
+        Start Creating Now →
+      </a>
+    </div>
+    
+    <p style="color:#55555F; font-size:12px; text-align:center; margin-top:20px;">
+      Questions? Reply to this email or visit <a href="https://growflowai.space/support" style="color:#8B91E3;">growflowai.space/support</a>
+    </p>
+    `
+  );
+  
+  try {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: `Payment Confirmed — GrowFlow AI ${planName}`,
+      subject: `🎉 Welcome to GrowFlow AI ${planName.charAt(0).toUpperCase() + planName.slice(1)}!`,
       html,
     });
-  } catch (error) {
-    logger.error({ email, error: String(error) }, "Payment success email failed");
+    logger.info({ email, planName }, "[Email] Payment success email sent");
+  } catch (err) {
+    logger.error({ err: String(err), email }, "[Email] Payment success email failed");
   }
 }
 

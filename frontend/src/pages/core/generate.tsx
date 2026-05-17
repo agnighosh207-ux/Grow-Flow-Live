@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,9 +41,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { checkShouldShowNPS } from "@/components/modals/NPSModal";
-import { FeatureDiscoveryBanner } from "@/components/generate/FeatureDiscoveryBanner";
 import { ContentPackCard } from "@/components/generate/ContentPackCard";
-import { ViralScoreCard } from "@/components/generate/ViralScoreCard";
+import { FeatureDiscoveryBanner } from "@/components/generate/FeatureDiscoveryBanner";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { track, identify } from "@/lib/analytics";
 import DOMPurify from 'dompurify';
@@ -350,18 +350,23 @@ function ContentSkeleton() {
 
 function ContentScoreBadge({ score, label, color, delay = 0 }: { score: number; label: string; color: string; delay?: number }) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between items-end">
-        <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{label}</span>
-        <span className={`text-xs font-black ${color.replace('bg-', 'text-')}`}>{score}%</span>
-      </div>
-      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/[0.03]">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${score}%` }}
-          transition={{ duration: 1.5, delay, ease: "circOut" }}
-          className={`h-full rounded-full shadow-[0_0_12px_rgba(0,0,0,0.5)] ${color}`}
-        />
+    <div className="flex items-center justify-between gap-2 overflow-hidden w-full">
+      <span className="text-[10px] font-black uppercase tracking-widest truncate flex-shrink-0 max-w-[45%]"
+        style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </span>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-3)' }}>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${score}%` }}
+            transition={{ duration: 1.5, delay, ease: "circOut" }}
+            className={`h-full rounded-full ${color}`}
+          />
+        </div>
+        <span className="text-xs font-black flex-shrink-0" style={{ color: '#8B91E3' }}>
+          {score}%
+        </span>
       </div>
     </div>
   );
@@ -372,16 +377,22 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data
   const directViralScore = data?.content?.viral_score;
 
   const scores = useMemo(() => {
-    const hookStrength = analysis?.hookStrength ?? data?.content?.hook_strength ?? 82;
-    const engagementPotential = analysis?.engagementPotential ?? data?.content?.engagement_potential ?? 78;
-    const shareability = analysis?.shareability ?? data?.content?.shareability ?? 74;
-    const virality = analysis?.viralityScore ?? directViralScore ?? 80;
+    const normalizeScore = (val: number): number => {
+      if (!val || isNaN(val)) return 0;
+      // If score is between 0-1, convert to 0-100
+      return val <= 1 ? Math.round(val * 100) : Math.round(val);
+    };
+
+    const hookStrengthRaw = analysis?.hookStrength ?? data?.content?.hook_strength ?? 82;
+    const engagementRaw = analysis?.engagementPotential ?? data?.content?.engagement_potential ?? 78;
+    const shareabilityRaw = analysis?.shareability ?? data?.content?.shareability ?? 74;
+    const viralityRaw = analysis?.viralityScore ?? directViralScore ?? 80;
 
     return [
-      { label: "Virality", score: virality, color: "bg-rose-500" },
-      { label: "Hook Strength", score: hookStrength, color: "bg-[#5E6AD2]" },
-      { label: "Engagement", score: engagementPotential, color: "bg-indigo-500" },
-      { label: "Shareability", score: shareability, color: "bg-indigo-600" },
+      { label: "Virality", score: normalizeScore(viralityRaw), color: "bg-rose-500" },
+      { label: "Hook Strength", score: normalizeScore(hookStrengthRaw), color: "bg-[#5E6AD2]" },
+      { label: "Engagement", score: normalizeScore(engagementRaw), color: "bg-indigo-500" },
+      { label: "Shareability", score: normalizeScore(shareabilityRaw), color: "bg-indigo-600" },
     ];
   }, [analysis, data, directViralScore]);
 
@@ -437,14 +448,14 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
         <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Viral Potential Analytics</h4>
         
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0">
-          <Button variant="ghost" size="sm" onClick={handleExportBuffer} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto scrollbar-none pb-2 md:pb-0">
+          <Button variant="ghost" size="sm" onClick={handleExportBuffer} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white flex-shrink-0 whitespace-nowrap">
             <Download className="w-3 h-3 mr-2" /> Buffer CSV
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleExportGCal} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">
+          <Button variant="ghost" size="sm" onClick={handleExportGCal} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white flex-shrink-0 whitespace-nowrap">
             <CalendarDays className="w-3 h-3 mr-2" /> GCal (.ics)
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleCopyNotion} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">
+          <Button variant="ghost" size="sm" onClick={handleCopyNotion} className="h-8 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white flex-shrink-0 whitespace-nowrap">
              <PenTool className="w-3 h-3 mr-2" /> Notion Table
           </Button>
         </div>
@@ -468,15 +479,15 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data
         <motion.div 
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          className="p-4 rounded-2xl bg-white/[0.03] border border-white/5"
+          className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 overflow-hidden"
         >
-          <p className="text-[10px] text-white/50 font-black uppercase tracking-widest flex items-center gap-2">
+          <p className="text-[10px] text-white/50 font-black uppercase tracking-widest flex items-center gap-2 break-words leading-relaxed">
             <Lightbulb className="w-3 h-3 text-amber-400" /> Strategy to increase your score:
           </p>
           <ul className="text-xs text-white/40 mt-2 space-y-1.5 font-medium">
-            {avg < 60 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-rose-500" /> Add a stronger visceral hook in the first 5 words</li>}
-            {avg < 75 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-indigo-500" /> Include a high-friction Call to Action (e.g. "Save this")</li>}
-            {avg < 85 && <li className="flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-[#5E6AD2]" /> Use more emotional, low-entropy language</li>}
+            {avg < 60 && <li className="flex items-start gap-2 text-sm" style={{ wordBreak: 'break-word' }}><span className="w-1 h-1 rounded-full bg-rose-500 mt-1.5 shrink-0" /> Add a stronger visceral hook in the first 5 words</li>}
+            {avg < 75 && <li className="flex items-start gap-2 text-sm" style={{ wordBreak: 'break-word' }}><span className="w-1 h-1 rounded-full bg-indigo-500 mt-1.5 shrink-0" /> Include a high-friction Call to Action (e.g. "Save this")</li>}
+            {avg < 85 && <li className="flex items-start gap-2 text-sm" style={{ wordBreak: 'break-word' }}><span className="w-1 h-1 rounded-full bg-[#5E6AD2] mt-1.5 shrink-0" /> Use more emotional, low-entropy language</li>}
           </ul>
         </motion.div>
       )}
@@ -485,13 +496,14 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data
 }
 
 function ViralScoreMeter({ score }: { score: number }) {
+  const displayScore = score <= 1 ? Math.round(score * 100) : Math.round(score);
   const getLevelConfig = (s: number) => {
     if (s >= 80) return { label: "🔥 Viral Potential", color: "text-indigo-400", ring: "border-indigo-500/30" };
     if (s >= 60) return { label: "⚡ Strong Content",  color: "text-[#8B91E3]",    ring: "border-[rgba(94,106,210,0.3)]" };
     if (s >= 40) return { label: "📈 Good Foundation", color: "text-amber-400",    ring: "border-amber-500/30" };
     return { label: "💡 Needs Polish",    color: "text-white/50",     ring: "border-white/10" };
   };
-  const level = getLevelConfig(score);
+  const level = getLevelConfig(displayScore);
   return (
     <div className={`relative flex items-center justify-center w-20 h-20 rounded-full border-4 ${level.ring} bg-black/40 shadow-lg`}>
       <motion.span
@@ -500,7 +512,7 @@ function ViralScoreMeter({ score }: { score: number }) {
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, delay: 0.5 }}
       >
-        {score}
+        {displayScore}
       </motion.span>
       <span className="absolute -bottom-6 text-[10px] font-bold text-center whitespace-nowrap tracking-widest uppercase opacity-40">{level.label}</span>
     </div>
@@ -681,6 +693,9 @@ interface PlatformCardProps {
   readonly onRegenerate: () => void;
   readonly isRegenerating: boolean;
   readonly index: number;
+  readonly tone?: string;
+  readonly niche?: string;
+  readonly language?: string;
 }
 
 function buildPlatformText(platform: Platform, content: any): string {
@@ -713,7 +728,7 @@ function buildPlatformText(platform: Platform, content: any): string {
   }
 }
 
-function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }: Readonly<PlatformCardProps>) {
+function PlatformCard({ platform, content, onRegenerate, isRegenerating, index, tone, niche, language }: Readonly<PlatformCardProps>) {
   const [expanded, setExpanded] = useState(true);
   const [isRepurposing, setIsRepurposing] = useState(false);
   const [repurposedText, setRepurposedText] = useState<string | null>(null);
@@ -749,6 +764,20 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
   const repurposeAbortController = useRef<AbortController | null>(null);
 
   const handleRepurpose = async (targetFormat: string) => {
+    let targetFormatName = "YouTube Script";
+    if (targetFormat === "Convert to Thread") {
+      targetFormatName = "Twitter Thread";
+    } else if (targetFormat === "Convert to LinkedIn") {
+      targetFormatName = "LinkedIn Post";
+    } else if (targetFormat === "Convert to Script") {
+      targetFormatName = "YouTube Script";
+    }
+
+    if (!fullText || fullText.length < 50) {
+      toast({ variant: "destructive", title: "Content too short to repurpose. Minimum 50 characters required." });
+      return;
+    }
+
     if (repurposeAbortController.current) {
       repurposeAbortController.current.abort();
     }
@@ -764,12 +793,20 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
           "Content-Type": "application/json",
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ content: fullText, targetFormat }),
+        body: JSON.stringify({
+          sourceContent: fullText,
+          sourceFormat: platform,
+          targetFormats: [targetFormatName],
+          tone: tone || "Professional",
+          niche: niche || "General",
+          language: language || "English",
+        }),
         signal: repurposeAbortController.current.signal
       });
       if (!res.ok) throw new Error("Failed to repurpose content");
       const data = await res.json();
-      setRepurposedText(data.result);
+      const repurposedContent = data.repurposed?.[targetFormatName]?.content || data.result;
+      setRepurposedText(repurposedContent);
       toast({ title: "Repurposed successfully!" });
       setExpanded(true);
     } catch (err: any) {
@@ -863,8 +900,14 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-10 px-4 text-xs font-black text-[#8B91E3]/80 hover:text-[#8B91E3] bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 hover:border-[rgba(94,106,210,0.4)]/40 rounded-xl transition-all shadow-glow-sm">
-                  <Wand2 className="w-4 h-4 mr-2" /> REPURPOSE
+                <Button 
+                  disabled={isRepurposing} 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-10 px-4 text-xs font-black text-[#8B91E3]/80 hover:text-[#8B91E3] bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 hover:border-[rgba(94,106,210,0.4)]/40 rounded-xl transition-all shadow-glow-sm"
+                >
+                  {isRepurposing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wand2 className="w-4 h-4 mr-2" />}
+                  {isRepurposing ? "CONVERTING..." : "REPURPOSE"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60 glass-panel-premium border-[rgba(94,106,210,0.4)]/20 z-[100] p-2 shadow-2xl">
@@ -915,7 +958,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-pink-400">Tactical Hook</span>
                               <CopyButton text={content.hook} label="Hook" size="xs" />
                            </div>
-                           <div className="p-6 md:p-8 rounded-3xl bg-pink-500/5 border border-pink-500/10 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words [overflow-wrap:anywhere]">
+                           <div className="p-6 md:p-8 rounded-3xl bg-pink-500/5 border border-pink-500/10 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words overflow-wrap-anywhere" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                               <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-transparent opacity-0 group-hover/hook:opacity-100 transition-opacity duration-700" />
                               <span className="relative z-10">"{content.hook}"</span>
                            </div>
@@ -936,7 +979,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-400">Retention Hook</span>
                               <CopyButton text={content.hook} label="Hook" size="xs" />
                            </div>
-                           <div className="p-6 md:p-8 rounded-3xl bg-red-500/5 border border-red-500/10 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words [overflow-wrap:anywhere]">
+                           <div className="p-6 md:p-8 rounded-3xl bg-red-500/5 border border-red-500/10 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words overflow-wrap-anywhere" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                               <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover/hook:opacity-100 transition-opacity duration-700" />
                               <span className="relative z-10">"{content.hook}"</span>
                            </div>
@@ -956,7 +999,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index }
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Authority Hook</span>
                             <CopyButton text={content.headline} label="Headline" size="xs" />
                           </div>
-                          <div className="bg-blue-500/5 border border-blue-500/10 rounded-3xl p-6 md:p-8 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words [overflow-wrap:anywhere]">
+                          <div className="bg-blue-500/5 border border-blue-500/10 rounded-3xl p-6 md:p-8 text-white font-black text-xl md:text-2xl leading-tight shadow-xl relative overflow-hidden group/hook break-words overflow-wrap-anywhere" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover/hook:opacity-100 transition-opacity duration-700" />
                              <span className="relative z-10">"{content.headline}"</span>
                            </div>
@@ -1162,6 +1205,7 @@ function handleGenerateError(error: any, retryCount: number, setRetryCount: (v: 
 }
 
 export default function Generate() {
+  usePageTitle("AI Content Studio");
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { getToken } = useAuth();
@@ -1205,7 +1249,7 @@ export default function Generate() {
   const [showPostGenUpsell, setShowPostGenUpsell] = useState(false);
   const [ratingTrigger, setRatingTrigger] = useState<string>("gen-3");
   const [showRatingModal, setShowRatingModal] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<"limit" | "expired" | "blocked" | "pro_feature">("limit");
+  const [upgradeReason, setUpgradeReason] = useState<"limit" | "expired" | "blocked" | "pro_feature" | "upgrade">("limit");
   const [proFeatureName, setProFeatureName] = useState("");
   const [activeResultTab, setActiveResultTab] = useState("campaign");
   const [abTestResult, setAbTestResult] = useState<any>(null);
@@ -1266,9 +1310,16 @@ export default function Generate() {
 
   const isFreeUser = !sub || (sub.planType === "free" && sub.plan === "free") || sub.plan === "blocked";
 
-  
+  const displayCredits = sub?.planType === "infinity" || sub?.isUnlimited
+    ? "∞" 
+    : (sub?.generationsRemaining ?? 0);
+    
+  const displayLimit = sub?.planType === "infinity" || sub?.isUnlimited
+    ? "∞"
+    : sub?.generationLimit ?? 5;
+
   const generationsUsed = sub?.monthlyGenerationsUsed ?? 0;
-  const generationLimit = sub?.generationLimit ?? (isFreeUser ? 10 : 25);
+  const generationLimit = sub?.generationLimit ?? (isFreeUser ? 5 : 25);
   const showMidLimitWarning = isFreeUser && (generationLimit - generationsUsed) === 1;
 
   const isFirstTime = typeof sessionStorage !== "undefined" && !sessionStorage.getItem("has_generated") && !localStorage.getItem("has_generated");
@@ -1423,6 +1474,15 @@ export default function Generate() {
           status: error?.status,
           plan: sub?.planType
         });
+
+        if (error?.status === 400 || error?.data?.error === "invalid_input") {
+          toast({
+            variant: "destructive",
+            title: "Quality Filter Alert",
+            description: error?.data?.message || "Please provide a more specific and constructive content idea (at least 5 characters).",
+          });
+          return;
+        }
 
         if (error?.status === 403) {
           const errCode = error?.data?.error;
@@ -1743,17 +1803,18 @@ export default function Generate() {
 
   function UsageCounter() {
     if (!sub) return null;
+    const isExceeded = typeof displayCredits === "number" && typeof displayLimit === "number" && displayCredits <= 0;
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-[11px] font-semibold"
       >
-        <span className={generationsUsed >= generationLimit ? "text-red-400" : "text-[#8B91E3]"}>
-          {generationsUsed}
+        <span className={isExceeded ? "text-red-400" : "text-[#8B91E3]"}>
+          {displayCredits}
         </span>
         <span className="text-white/30">/</span>
-        <span className="text-white/50">{generationLimit} {t("credits")}</span>
+        <span className="text-white/50">{displayLimit} {t("credits")}</span>
       </motion.div>
     );
   }
@@ -2130,17 +2191,14 @@ export default function Generate() {
                           onRegenerate={() => handleRegenerate(activePlatform)}
                           isRegenerating={regeneratingPlatform === activePlatform}
                           index={0}
-                        />
-                        
-                        <ViralScoreCard 
-                          data={generatedContent} 
-                          analysis={contentAnalysis}
-                          analysisLoading={analysisLoading}
+                          tone={generatedContent?.tone || form.watch("tone")}
+                          niche={generatedContent?.niche || form.watch("niche")}
+                          language={generatedContent?.language || form.watch("language")}
                         />
 
                         {isFreeUser && (
                           <p className="text-[10px] text-white/30 px-6 font-medium text-center">
-                            Free plan includes GrowFlow watermark. <button className="text-[#8B91E3] underline font-black" onClick={() => setShowUpgradeModal(true)}>Upgrade to remove it →</button>
+                            Free plan includes GrowFlow watermark. <button className="text-[#8B91E3] underline font-black" onClick={() => { setUpgradeReason("upgrade"); setShowUpgradeModal(true); }}>Upgrade to remove it →</button>
                           </p>
                         )}
                       </div>
@@ -2255,7 +2313,7 @@ export default function Generate() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Button size="sm" variant="secondary" className="font-black px-6 rounded-xl" onClick={() => setShowUpgradeModal(true)}>Upgrade</Button>
+                  <Button size="sm" variant="secondary" className="font-black px-6 rounded-xl" onClick={() => { setUpgradeReason("upgrade"); setShowUpgradeModal(true); }}>Upgrade</Button>
                   <button onClick={() => setWarningDismissed(true)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
                 </div>
               </motion.div>

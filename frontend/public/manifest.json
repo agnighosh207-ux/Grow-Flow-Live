@@ -4,8 +4,8 @@
   "description": "AI Content Generator for Indian Creators",
   "start_url": "/generate",
   "display": "standalone",
-  "background_color": "#060312",
-  "theme_color": "#00F2FF",
+  "background_color": "#0A0A0F",
+  "theme_color": "#0A0A0F",
   "orientation": "portrait-primary",
   "icons": [
     {

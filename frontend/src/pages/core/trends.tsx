@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -166,6 +167,7 @@ function TrendCard({ idea, index, onUseIdea }: { idea: any; index: number; onUse
 }
 
 export default function TrendEngine() {
+  usePageTitle("Live Trends");
   const [niche, setNiche] = useState("General");
   const [trends, setTrends] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -260,6 +262,12 @@ export default function TrendEngine() {
 
   return (
     <div className="space-y-12 pb-24">
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason={upgradeReason}
+        targetPlan="creator"
+      />
       <FeatureGuideBanner 
         toolKey="trends" 
         title="Trend Engine" 

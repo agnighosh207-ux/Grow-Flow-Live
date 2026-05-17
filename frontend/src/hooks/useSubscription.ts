@@ -25,6 +25,7 @@ export interface SubscriptionStatus {
   currentStreak: number;
   totalGenerations: number;
   hasUsedTrial?: boolean;
+  isUnlimited?: boolean;
 }
 
 async function fetchWithAuth(url: string, token: string, options?: RequestInit & { signal?: AbortSignal }) {

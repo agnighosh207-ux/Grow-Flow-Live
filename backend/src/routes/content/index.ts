@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Response } from "express";
 import { type AuthenticatedRequest } from "../../types";
+import { filterUserInput, enhancePrompt } from "../../lib/content-filter";
 import { eq, desc, count, sql, and, gte, inArray, lt, isNull } from "drizzle-orm";
 import { db, contentGenerationsTable, usageLogsTable, featureUsageLogsTable, sharingLinksTable, brandVoicesTable } from "@workspace/db";
 import { nanoid } from "nanoid";
@@ -73,7 +74,11 @@ router.post("/demo", demoLimiter, async (req: any, res) => {
     if (caption && redis) {
       await redis.set(cacheKey, count + 1, "EX", 86400 * 7); // 7 days
       if (!req.cookies?.gf_guest_id) {
-        res.cookie("gf_guest_id", guestId, { maxAge: 86400 * 7 * 1000, httpOnly: true });
+        res.cookie("gf_guest_id", guestId, { 
+          maxAge: 86400 * 7 * 1000, 
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production"
+        });
       }
     }
 
@@ -181,12 +186,15 @@ Return ONLY valid JSON (no markdown, no code blocks):
     "hashtags": "15 hashtags: 5 niche + 5 mid-tier + 5 broad"
   },
   "youtube": {
-    "hook": "exact first 5-8 spoken words",
-    "title": "under 55 chars, curiosity-driven + searchable",
-    "script": "full script with [HOOK] [TENSION BUILD] [MAIN CONTENT] [CTA] sections, conversational spoken rhythm"
+    "script": "HOOK: ...\n[PAUSE]\n...",
+    "duration": "~60 seconds",
+    "hook": "First 3 seconds: ...",
+    "title": "under 55 chars, curiosity-driven + searchable"
   },
   "twitter": {
-    "tweets": ["tweet1 standalone viral truth max 240 chars", "tweet2", "tweet3", "tweet4", "tweet5", "tweet6", "tweet7 quotable summary"]
+    "tweets": ["tweet1 text", "tweet2 text", "etc"],
+    "thread_count": 6,
+    "hashtags": []
   },
   "linkedin": {
     "headline": "first line — professional truth delivered cold",
@@ -239,13 +247,22 @@ Return ONLY valid JSON (no markdown, no code blocks):
 router.post("/generate", requireAuth, enforceGenerationLimit, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
-  const { idea, contentType, tone, brandVoiceId } = req.body || {};
+  const { contentType, tone, brandVoiceId } = req.body || {};
   const validContentTypes = ['Educational', 'Story', 'Viral'];
   const validTones = ['Casual', 'Professional', 'Aggressive', 'Default', 'default'];
-  if (!idea || typeof idea !== 'string' || idea.length < 3) {
-    res.status(400).json({ error: "Invalid request parameters", details: [{ message: "Idea must be at least 3 characters" }] });
+  const rawIdea = req.body.idea || req.body.topic || "";
+  const filterResult = filterUserInput(rawIdea, "idea");
+
+  if (!filterResult.allowed) {
+    res.status(400).json({ 
+      error: "invalid_input",
+      message: filterResult.reason || "Invalid input",
+      suggestion: filterResult.suggestion || "Please provide a specific content idea",
+    });
     return;
   }
+
+  const idea = filterResult.cleanedInput || rawIdea;
   if (!validContentTypes.includes(contentType)) {
     res.status(400).json({ error: "Invalid request parameters", details: [{ message: "Invalid contentType" }] });
     return;
@@ -276,6 +293,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
 
   const language = typeof req.body.language === "string" ? req.body.language : "English";
 
+  const enhancedIdea = enhancePrompt(idea, resolvedNiche, contentType);
   const planType = user?.planType ?? "free";
 
   if ((!planType || planType === "free") && language && language !== "English") {
@@ -294,7 +312,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     req.on('close', () => abortController.abort());
 
     content = await generateContentWithAI({
-      idea,
+      idea: enhancedIdea,
       contentType,
       tone: resolvedTone,
       niche: resolvedNiche,

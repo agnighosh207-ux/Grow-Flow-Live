@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { motion } from "framer-motion";
 import { 
-  Flame, Sparkles, Zap, Trophy, Users, 
+  Flame, Sparkles, Zap,
   ArrowRight, Loader2, Calendar, Layout,
   Crown, Star
 } from "lucide-react";
@@ -47,14 +47,14 @@ export default function CreatorProfile() {
         </div>
         <h1 className="text-3xl font-black text-white italic">{error || "Profile Missing"}</h1>
         <p className="text-white/40 max-w-sm">We couldn't find this creator profile. It may have been moved or deleted.</p>
-        <Button onClick={() => window.location.href = "/"} className="mt-4 bg-white text-black hover:bg-zinc-200">
+        <Button onClick={() => globalThis.location.href = "/"} className="mt-4 bg-white text-black hover:bg-zinc-200">
           Back to Home
         </Button>
       </div>
     );
   }
 
-  const creationDate = new Date(data.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
 
   return (
     <div className="min-h-screen bg-[#030303] flex flex-col items-center p-6 overflow-x-hidden relative">
@@ -165,14 +165,14 @@ export default function CreatorProfile() {
               {/* CTA */}
               <div className="pt-6 border-t border-white/5">
                 <Button 
-                  onClick={() => window.location.href = `/?ref=${data.profile.username}`}
+                  onClick={() => globalThis.location.href = `/?ref=${data.profile.username}`}
                   className="w-full h-16 rounded-3xl bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-black text-base shadow-2xl shadow-[rgba(94,106,210,0.20)] transition-all hover:scale-[1.02] active:scale-98 group"
                 >
                   Create Your Content with GrowFlow AI 
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <p className="text-center text-[10px] text-white/20 font-bold uppercase tracking-widest mt-4">
-                  Free 10 credits · join the {data.profile.niche} elite
+                  Free 5 credits · join the {data.profile.niche} elite
                 </p>
               </div>
 
@@ -187,7 +187,7 @@ export default function CreatorProfile() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
         className="mt-12 flex items-center gap-2 grayscale opacity-30 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer"
-        onClick={() => window.location.href = "/"}
+        onClick={() => globalThis.location.href = "/"}
       >
         <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
            <Sparkles className="w-4 h-4 text-white" />

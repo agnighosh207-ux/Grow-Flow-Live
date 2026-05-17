@@ -1,14 +1,15 @@
 import { Router, type IRouter } from "express";
+import { clerkClient } from "@clerk/express";
 import { logger } from "../../lib/logger";
 import { eq, count, gte, and, sql } from "drizzle-orm";
 import { db, usersTable, contentGenerationsTable, couponsTable, securityLogsTable, paymentsTable } from "@workspace/db";
-import crypto from "crypto";
-import { FREE_TRIALS_PER_TOOL, isPaidOrTrial, consumeToolTrial, requireAuth, getOrCreateUser, TIER_CREDITS } from "../../middlewares/planMiddleware";
+import crypto from "node:crypto";
+import { requireAuth, TIER_CREDITS } from "../../middlewares/planMiddleware";
 import { WelcomeSequence } from "../../lib/WelcomeSequence";
 import { AuthenticatedRequest } from "../../types";
 import { Response } from "express";
-import { ensureReferralCode, grantReferralReward } from "../../utils/referral";
-import { sendWelcomeEmail, sendPaymentFailedEmail } from "../../services/email";
+import { grantReferralReward } from "../../utils/referral";
+import { sendPaymentFailedEmail } from "../../services/email";
 import { sendSequenceEmail } from "../../services/emailSequences";
 import { sendWhatsAppMessage } from "../../services/whatsapp";
 import Razorpay from "razorpay";
@@ -70,8 +71,8 @@ function getTierFromPlanId(planId: string): "starter" | "creator" | "infinity" |
 function computePlan(user: any, totalGenerations: number, monthlyGenerations: number) {
   const now = new Date();
   const planType = (user.planType || "free") as "free" | "starter" | "creator" | "infinity" | "agency";
-  const generationsRemaining = typeof user.generationsRemaining === 'number' ? user.generationsRemaining : parseInt(user.generationsRemaining || '0');
-  const dbGenerationsField = typeof user.totalGenerations === 'number' ? user.totalGenerations : parseInt(user.totalGenerations || '0');
+  const generationsRemaining = typeof user.generationsRemaining === 'number' ? user.generationsRemaining : Number.parseInt(user.generationsRemaining || '0', 10);
+  const dbGenerationsField = typeof user.totalGenerations === 'number' ? user.totalGenerations : Number.parseInt(user.totalGenerations || '0', 10);
   
   // Use logger for production-safe debugging
   logger.info({ 
@@ -88,9 +89,10 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
     return {
       plan: "active" as const, planType: "infinity",
       canGenerate: true,
-      trialDaysLeft: null, generationLimit: 999,
+      isUnlimited: true,
+      trialDaysLeft: null, generationLimit: null,
       monthlyGenerationsUsed: monthlyGenerations,
-      generationsRemaining: 9999,
+      generationsRemaining: 999999,
       totalGenerationsUsed: totalGenerations,
     };
   }
@@ -126,11 +128,13 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
         daysLeft = Math.ceil((new Date(user.planExpiry).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       }
       return {
-        plan: "active" as const, planType,
-        canGenerate: true, // Unlimited
-        trialDaysLeft: daysLeft, generationLimit: 500, // Soft display limit — actual DB limit is 9999
+        plan: "active" as const, planType: "infinity",
+        canGenerate: true,
+        isUnlimited: true,
+        trialDaysLeft: daysLeft,
+        generationLimit: null,  // null means unlimited
         monthlyGenerationsUsed: monthlyGenerations,
-        generationsRemaining: 9999,
+        generationsRemaining: 999999,  // Internal value
         totalGenerationsUsed: totalGenerations,
       };
     }
@@ -210,14 +214,13 @@ function computePlan(user: any, totalGenerations: number, monthlyGenerations: nu
   }
 
   // Fallback to free (genuinely free users, or fully canceled/blocked users)
-  const freeLimit = TIER_CREDITS.FREE;
   return {
     plan: "free" as const, planType: "free" as const,
     canGenerate: generationsRemaining > 0,
     trialDaysLeft: null, 
-    generationLimit: freeLimit,
-    monthlyGenerationsUsed: Math.max(0, freeLimit - generationsRemaining),
-    generationsRemaining: generationsRemaining,
+    generationLimit: 5,
+    monthlyGenerationsUsed: Math.max(0, 5 - generationsRemaining),
+    generationsRemaining: Math.min(generationsRemaining, 5),  // Cap at 5 for display
     totalGenerationsUsed: totalGenerations,
     currentStreak: user.currentStreak || 0,
     totalGenerations: user.totalGenerations || 0,
@@ -253,7 +256,6 @@ router.get("/status", requireAuth, async (req: AuthenticatedRequest, res: Respon
     .from(contentGenerationsTable)
     .where(eq(contentGenerationsTable.userId, req.userId));
 
-  const now = new Date();
   const monthStart = getMonthlyWindowStart(user);
   const [monthlyCount] = await db
     .select({ count: count() })
@@ -366,10 +368,29 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
       return;
     }
 
-    if (!user.email) {
+    let userEmail = user.email;
+    if (!userEmail) {
+      // Try to fetch email from Clerk API directly
+      try {
+        const clerkUser = await clerkClient.users.getUser(req.userId);
+        userEmail = clerkUser.emailAddresses?.[0]?.emailAddress || null;
+        
+        // If found, save to DB immediately
+        if (userEmail) {
+          await db.update(usersTable)
+            .set({ email: userEmail })
+            .where(eq(usersTable.id, req.userId));
+          logger.info({ userId: req.userId, email: userEmail }, "[SUBSCRIPTION] Email fetched from Clerk and saved");
+        }
+      } catch (clerkErr) {
+        logger.error({ err: String(clerkErr), userId: req.userId }, "[SUBSCRIPTION] Failed to fetch email from Clerk");
+      }
+    }
+
+    if (!userEmail) {
       res.status(400).json({ 
         error: "email_required",
-        message: "A verified email address is required to start a trial."
+        message: "Please verify your email address before subscribing. Check your Clerk account settings."
       });
       return;
     }
@@ -437,7 +458,7 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
         req.userId, 
         razorpayPlanId,
         effectivePlan.toUpperCase(), 
-        user.email || undefined,
+        userEmail || undefined,
         config.totalCount,
         isEligibleForTrial
       );
@@ -669,20 +690,20 @@ router.post("/credits/topup", requireAuth, async (req: AuthenticatedRequest, res
   // Amounts in smallest currency unit (paise for INR, cents for USD)
   const PACKS: Record<string, { credits: number; INR: number; USD: number; label: string }> = {
     small: {
-      credits: parseInt(process.env.RAZORPAY_TOPUP_SMALL_CREDITS || "10"),
-      INR: parseInt(process.env.RAZORPAY_TOPUP_SMALL_AMOUNT || "4900"),
+      credits: Number.parseInt(process.env.RAZORPAY_TOPUP_SMALL_CREDITS || "10", 10),
+      INR: Number.parseInt(process.env.RAZORPAY_TOPUP_SMALL_AMOUNT || "4900", 10),
       USD: 99, // $0.99
       label: `${process.env.RAZORPAY_TOPUP_SMALL_CREDITS || 10} credits`,
     },
     medium: {
-      credits: parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_CREDITS || "25"),
-      INR: parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_AMOUNT || "9900"),
+      credits: Number.parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_CREDITS || "25", 10),
+      INR: Number.parseInt(process.env.RAZORPAY_TOPUP_MEDIUM_AMOUNT || "9900", 10),
       USD: 199, // $1.99
       label: `${process.env.RAZORPAY_TOPUP_MEDIUM_CREDITS || 25} credits`,
     },
     large: {
-      credits: parseInt(process.env.RAZORPAY_TOPUP_LARGE_CREDITS || "60"),
-      INR: parseInt(process.env.RAZORPAY_TOPUP_LARGE_AMOUNT || "19900"),
+      credits: Number.parseInt(process.env.RAZORPAY_TOPUP_LARGE_CREDITS || "60", 10),
+      INR: Number.parseInt(process.env.RAZORPAY_TOPUP_LARGE_AMOUNT || "19900", 10),
       USD: 399, // $3.99
       label: `${process.env.RAZORPAY_TOPUP_LARGE_CREDITS || 60} credits`,
     },
@@ -1158,12 +1179,18 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
           const planName = u.planType === 'infinity' ? 'Infinity' : u.planType === 'creator' ? 'Creator' : 'Starter';
           const chargedAmount = payload.amount;
           const billingPeriod = u.billingPeriod || 'monthly';
+          const startAt = event.payload?.subscription?.entity?.start_at;
+          const isTrialActive = startAt && (startAt * 1000) > Date.now();
+          const trialEnd = isTrialActive ? new Date(startAt * 1000) : undefined;
           
-          import("../../services/email").then(({ sendPaymentSuccessEmail, sendRenewalEmail }) => {
-             // For simplicity, we call both or we can just call success if it's new. 
-             // sendPaymentSuccessEmail is more detailed as requested.
-             sendPaymentSuccessEmail(u.email!, planName, chargedAmount, billingPeriod).catch(() => {});
-             sendRenewalEmail(u.email!, planName).catch(() => {});
+          import("../../services/email").then(({ sendPaymentSuccessEmail }) => {
+             sendPaymentSuccessEmail(
+               u.email!,
+               planName.toLowerCase(),
+               chargedAmount || 0,
+               billingPeriod,
+               trialEnd
+             ).catch(() => {});
           }).catch((err: any) => logger.error({ err: String(err), email: u.email }, "Email sending error in webhook"));
         }
       }
@@ -1207,6 +1234,25 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
   }
 
   res.json({ received: true });
+});
+
+router.post("/sync-email", requireAuth, async (req: any, res) => {
+  try {
+    const clerkUser = await clerkClient.users.getUser(req.userId);
+    const email = clerkUser.emailAddresses?.[0]?.emailAddress;
+    if (!email) {
+      res.status(400).json({ error: "No email found in your account" });
+      return;
+    }
+    await db.update(usersTable)
+      .set({ email })
+      .where(eq(usersTable.id, req.userId));
+    invalidateAuthCache(req.userId);
+    res.json({ success: true, email });
+  } catch (err: any) {
+    logger.error({ err: err.message, userId: req.userId }, "Failed to sync email");
+    res.status(500).json({ error: "Failed to sync email" });
+  }
 });
 
 export default router;

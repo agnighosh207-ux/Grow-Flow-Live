@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useGenerateShortcut } from "@/hooks/useGenerateShortcut";
 import { Hash, Sparkles, Filter, ShieldAlert, CheckCircle2, Copy, Save, Trash2, LayoutGrid, Search, AlertCircle, RefreshCw, Globe, Zap, Smartphone } from "lucide-react";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { PageWrapper } from "@/components/shared/PageWrapper";
@@ -45,6 +47,8 @@ export default function HashtagsPage() {
  const isFreeUser = !sub?.planType || sub.planType === "free";
 
  const [generating, setGenerating] = useState(false);
+
+ usePageTitle("Hashtag Finder");
  const [result, setResult] = useState<any>(null);
 
  const [analyzeText, setAnalyzeText] = useState("");
@@ -114,6 +118,11 @@ export default function HashtagsPage() {
    setAnalyzing(false);
   }
  };
+
+ useGenerateShortcut(
+  activeTab === "generate" ? generateHashtags : analyzeHashtags,
+  activeTab === "generate" ? generating : analyzing
+ );
 
  const saveCollection = async () => {
   if (!collectionName || !result) return;

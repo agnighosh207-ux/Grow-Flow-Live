@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useGenerateShortcut } from "@/hooks/useGenerateShortcut";
 import { Copy, Download, ArrowRight, ArrowLeft, Instagram, Linkedin, Twitter, Youtube, FileText, Mail, CheckCircle2, Brain, ChevronRight, Share2, Layers, Smartphone, MousePointer2, RefreshCw, Zap, Sparkles } from "lucide-react";
 import FeatureGuideBanner from "@/components/shared/FeatureGuideBanner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { EmptyOutputState } from "@/components/shared/EmptyOutputState";
 
 const formats = [
  { id: "instagram_caption", label: "Instagram", icon: <Instagram className="h-6 w-6" />, color: "from-pink-500 to-rose-500 shadow-pink-500/20" },
@@ -45,6 +48,8 @@ export default function RepurposePage() {
  const isFreeUser = !sub?.planType || sub.planType === "free";
 
  const [repurposing, setRepurposing] = useState(false);
+
+ usePageTitle("Content Repurposer");
  const [result, setResult] = useState<any>(null);
 
  const { toast } = useToast();
@@ -84,6 +89,8 @@ export default function RepurposePage() {
    setRepurposing(false);
   }
  };
+
+ useGenerateShortcut(startRepurposing, repurposing);
 
  const downloadAll = () => {
   if (!result) return;
@@ -247,6 +254,12 @@ export default function RepurposePage() {
          </Button>
         </CardContent>
       </Card>
+      <div className="mt-8">
+       <EmptyOutputState
+         title="Repurposed content will appear here"
+         description="Paste your content above and select target platforms"
+       />
+      </div>
      </motion.div>
     )}
 
