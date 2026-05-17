@@ -452,6 +452,14 @@ if (isProd) {
   
   logger.info(`[BOOT] Production mode: Serving frontend from ${frontendPath}`);
   
+  // Service Worker must NEVER be cached by the browser
+  app.get('/sw.js', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.resolve(frontendPath, "sw.js"));
+  });
+
   // Static assets (hashed files) can be cached for a long time
   app.use(express.static(frontendPath, {
     maxAge: '1y',
