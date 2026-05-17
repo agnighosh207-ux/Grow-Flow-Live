@@ -229,15 +229,15 @@ export default function Support() {
                             maxLength={1000}
                             {...field}
                           />
-                          <div className="flex justify-between mt-1">
-                            <p className="text-xs" style={{ color: 'var(--text-disabled)' }}>
-                              Be as detailed as possible
-                            </p>
-                            <span className="text-xs" style={{ color: (field.value || "").length > 900 ? '#D97706' : 'var(--text-disabled)' }}>
-                              {(field.value || "").length}/1000
-                            </span>
-                          </div>
                         </FormControl>
+                        <div className="flex justify-between mt-1">
+                          <p className="text-xs" style={{ color: 'var(--text-disabled)' }}>
+                            Be as detailed as possible
+                          </p>
+                          <span className="text-xs" style={{ color: (field.value || "").length > 900 ? '#D97706' : 'var(--text-disabled)' }}>
+                            {(field.value || "").length}/1000
+                          </span>
+                        </div>
                         <FormMessage className="text-red-400 text-xs" />
                       </FormItem>
                     )}
