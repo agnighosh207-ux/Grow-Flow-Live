@@ -47,11 +47,29 @@ logger.info({
 }, "🚀 GrowFlow AI starting up");
 
 function validateClerkConfig() {
-  if (!process.env.CLERK_PUBLISHABLE_KEY) {
-    if (process.env.VITE_CLERK_PUBLISHABLE_KEY) {
-      process.env.CLERK_PUBLISHABLE_KEY = process.env.VITE_CLERK_PUBLISHABLE_KEY;
-    } else if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-      process.env.CLERK_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const isValidKey = (key: any): boolean => {
+    if (typeof key !== 'string') return false;
+    if (!key.startsWith('pk_test_') && !key.startsWith('pk_live_')) return false;
+    if (key.includes('xxxx') || key.length < 25) return false;
+    return true;
+  };
+
+  const keysToTry = [
+    process.env.CLERK_PUBLISHABLE_KEY,
+    process.env.VITE_CLERK_PUBLISHABLE_KEY,
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  ];
+
+  // Find the first valid publishable key
+  const bestKey = keysToTry.find(isValidKey);
+  
+  if (bestKey) {
+    process.env.CLERK_PUBLISHABLE_KEY = bestKey;
+  } else {
+    // If none are valid, but we have something non-empty, keep it but log a warning
+    const nonEmpty = keysToTry.find(k => k && typeof k === 'string' && k.trim().length > 0 && k !== "undefined" && k !== "null");
+    if (nonEmpty) {
+      process.env.CLERK_PUBLISHABLE_KEY = nonEmpty;
     }
   }
 
@@ -60,12 +78,18 @@ function validateClerkConfig() {
 
   if (!publishableKey) {
     logger.error('[CLERK] CRITICAL: CLERK_PUBLISHABLE_KEY missing');
+  } else if (!isValidKey(publishableKey)) {
+    logger.error({
+      length: publishableKey.length,
+      prefix: publishableKey.substring(0, 12),
+      suffix: publishableKey.substring(Math.max(0, publishableKey.length - 4))
+    }, '[CLERK] CRITICAL: Publishable key format is INVALID (contains placeholders or is too short)');
   } else {
     logger.info({
       length: publishableKey.length,
       prefix: publishableKey.substring(0, 12),
       suffix: publishableKey.substring(Math.max(0, publishableKey.length - 4))
-    }, '[CLERK] Publishable key configured ✓');
+    }, '[CLERK] Publishable key configured and validated ✓');
   }
 
   if (!secretKey) {
