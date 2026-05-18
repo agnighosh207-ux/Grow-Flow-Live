@@ -170,16 +170,17 @@ function IdeasGeneratorInner() {
       </Select>
      </div>
 
-     <div className="space-y-2">
-      <label className="text-white/70 text-sm font-medium">Your Goal</label>
-      <Input
-       value={goal}
-       onChange={e => setGoal(e.target.value)}
-       placeholder="e.g. grow my audience, establish authority..."
-       className="bg-black/20 border-white/10 text-white text-base placeholder:text-white/25 focus-visible:ring-yellow-500/40 rounded-xl h-12"
-       onKeyDown={e => e.key === "Enter" && generateIdeas()}
-      />
-     </div>
+      <div className="space-y-2">
+       <label className="text-white/70 text-sm font-medium">Your Goal</label>
+       <Input
+        value={goal}
+        onChange={e => setGoal(e.target.value)}
+        placeholder="e.g. Get more followers who will actually buy my courses"
+        className="bg-black/20 border-white/10 text-white text-base placeholder:text-white/25 focus-visible:ring-yellow-500/40 rounded-xl h-12"
+        onKeyDown={e => e.key === "Enter" && generateIdeas()}
+       />
+       <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>What do you want to achieve with your content this week?</p>
+      </div>
 
      <div className="sm:col-span-2">
       <LanguageSelector

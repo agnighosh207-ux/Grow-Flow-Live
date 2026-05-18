@@ -7,6 +7,7 @@ import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, usersTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
+import { logger } from "../../lib/logger";
 
 const router: IRouter = Router();
 
@@ -110,9 +111,34 @@ Return JSON:
     res.json(parsed);
     invalidateAuthCache(userId);
   } catch (err: any) {
-    if (abortController.signal.aborted) return;
-    console.error("GHOSTWRITER ANALYZE ERROR:", err);
-    await refundGenerationCredit(userId, req.user?.planTier);
+    if (abortController.signal.aborted) {
+      if (!res.headersSent) {
+        res.status(499).json({ error: "Request cancelled" });
+      }
+      return;
+    }
+    try { await refundGenerationCredit(userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ userId, err: err?.message }, "[AI] All providers failed or rate limited in ghostwriter analyze");
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ userId, err: err?.message }, "[AI] Voice analysis failed");
     res.status(503).json({ error: "Voice analysis unavailable. Please try again." });
   }
 });
@@ -221,9 +247,34 @@ router.post("/write", requireAuth, requirePlanOrTrial("ghostwriter"), enforceGen
     });
     invalidateAuthCache(userId);
   } catch (err: any) {
-    if (abortController.signal.aborted) return;
-    console.error("GHOSTWRITER WRITE ERROR:", err);
-    await refundGenerationCredit(userId, req.user?.planTier);
+    if (abortController.signal.aborted) {
+      if (!res.headersSent) {
+        res.status(499).json({ error: "Request cancelled" });
+      }
+      return;
+    }
+    try { await refundGenerationCredit(userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ userId, err: err?.message }, "[AI] All providers failed or rate limited in ghostwriter write");
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ userId, err: err?.message }, "[AI] Ghostwriter write failed");
     res.status(503).json({ error: "Ghostwriting service unavailable. Please try again." });
   }
 });

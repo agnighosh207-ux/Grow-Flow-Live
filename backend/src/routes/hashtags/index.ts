@@ -56,9 +56,29 @@ router.post("/generate", requireAuth, requirePlanOrTrial("hashtags"), enforceGen
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
     invalidateAuthCache(req.userId);
-  } catch (err) {
-    console.error("HASHTAG GENERATE ERROR:", err);
-    await refundGenerationCredit(req.userId, req.user?.planTier);
+  } catch (err: any) {
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited in hashtags generate");
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ userId: req.userId, err: err?.message }, "[AI] Hashtag generation failed");
     res.status(503).json({ error: "Hashtag service unavailable." });
   }
 });
@@ -103,8 +123,29 @@ router.post("/analyze", requireAuth, requirePlanOrTrial("hashtags"), enforceGene
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
     invalidateAuthCache(req.userId);
-  } catch (err) {
-    await refundGenerationCredit(req.userId, req.user?.planTier);
+  } catch (err: any) {
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited in hashtags audit");
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ userId: req.userId, err: err?.message }, "[AI] Hashtag audit failed");
     res.status(503).json({ error: "Audit service unavailable." });
   }
 });

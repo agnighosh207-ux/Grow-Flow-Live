@@ -217,15 +217,16 @@ function PlanPill({ plan, planType }: { plan?: string; planType?: string }) {
 }
 
 function CreditCounter({ sub }: { sub: any }) {
+  const [, setLocation] = useLocation();
   if (!sub || sub.plan === "blocked") return null;
   
   if (sub.planType === "infinity" || sub.plan === "infinity") {
     return (
-      <div className="mx-3 mb-3 px-3 py-2 rounded-lg border" style={{ background: 'rgba(109,90,255,0.1)', borderColor: 'rgba(109,90,255,0.2)' }}>
-        <div className="flex justify-between items-center text-xs">
-          <span className="text-white/60 font-medium">Credits Remaining</span>
-          <span className="font-bold flex items-center gap-1" style={{ color: '#9b8aff' }}><Sparkles className="w-3 h-3"/> Unlimited</span>
-        </div>
+      <div className="mx-3 mb-3 p-2.5 rounded-xl bg-violet-500/5 border border-violet-500/10 flex items-center justify-between text-[10px]">
+        <span className="text-white/40">Credits</span>
+        <span className="text-violet-400 font-black flex items-center gap-1">
+          <Zap className="w-3 h-3" /> Unlimited
+        </span>
       </div>
     );
   }
@@ -239,25 +240,19 @@ function CreditCounter({ sub }: { sub: any }) {
   const percentage = Math.min(100, Math.max(0, (remaining / total) * 100));
   
   return (
-    <div className="mx-3 mb-3 px-3 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-       <div className="flex justify-between items-center text-[11px] mb-1.5">
-          <span className="text-white/60 font-medium tracking-wide">Credits Remaining</span>
-          <span className="text-white font-bold">{remaining} <span className="text-white/40">/ {total}</span></span>
-       </div>
-       <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-          <div              
-              className={`h-full rounded-full transition-all duration-500 ${remaining < 3 ? 'bg-red-500' : ''}`}
-              style={{ 
-                width: `${percentage}%`,
-                ...(remaining >= 3 ? { background: '#6d5aff', boxShadow: '0 0 8px rgba(109,90,255,0.4)' } : {})
-              }}
-          />
-       </div>
-       {remaining < 3 && (
-         <Link href="/pricing">
-          <div className="mt-1.5 text-[9px] text-red-400 hover:text-red-300 font-semibold cursor-pointer text-right transition-colors">Upgrade for more limits →</div>
-         </Link>
-       )}
+    <div className="mx-3 mb-3 p-2.5 rounded-xl bg-white/3 border border-white/5">
+      <div className="flex items-center justify-between text-[10px] mb-1.5">
+        <span className="text-white/40">Wallet Credits</span>
+        <span className="text-white font-bold">{remaining} / {total}</span>
+      </div>
+      <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+        <div className="h-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.5)] transition-all duration-500" style={{ width: `${percentage}%` }} />
+      </div>
+      {remaining < 10 && (
+        <button onClick={() => setLocation("/pricing")} className="w-full text-center text-[9px] text-violet-400 hover:text-violet-300 mt-1.5 font-bold transition-colors">
+          ⚡ Low credits — Top up now
+        </button>
+      )}
     </div>
   );
 }
@@ -764,6 +759,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation();
   const [discoverItem, setDiscoverItem] = useState(DISCOVERY_ITEMS[0]);
   const { isSignedIn } = useClerk();
+  const [hidePastDueBanner, setHidePastDueBanner] = useState(false);
 
   // Offline detection
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -918,6 +914,26 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden flex flex-col" style={{ background: 'var(--bg)' }}>
+      {sub?.plan === "past_due" && !hidePastDueBanner && (
+        <div className="fixed top-0 left-0 right-0 z-[500] bg-red-900/90 backdrop-blur-sm 
+          border-b border-red-500/30 px-4 py-3 flex items-center gap-3">
+          <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+          <p className="text-sm text-white flex-1">
+            <strong>Payment failed.</strong> Your {sub.planType} subscription could not be charged.
+            Update your payment method to continue.
+          </p>
+          <button 
+            onClick={() => setLocation("/settings?tab=billing")}
+            className="text-xs bg-red-500 hover:bg-red-400 text-white px-3 py-1.5 rounded-lg 
+              font-semibold flex-shrink-0 transition-colors"
+          >
+            Fix Now
+          </button>
+          <button onClick={() => setHidePastDueBanner(true)} className="text-white/50 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {clerkPubKey?.startsWith('pk_test_') && (
         <div className="fixed top-0 inset-x-0 z-[999] text-center text-[10px] py-0.5 font-bold"
           style={{ background: '#D97706', color: 'black' }}>

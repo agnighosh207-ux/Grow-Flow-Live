@@ -427,7 +427,7 @@ export async function sendPaymentSuccessEmail(
   
   const amount = `₹${(amountPaise / 100).toLocaleString('en-IN')}`;
   const trialMsg = trialEndDate 
-    ? `Your 7-day free trial is active. Your first charge of ${amount} will be on <strong>${trialEndDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.`
+    ? `Your 3-day free trial is active. Your first charge of ${amount} will be on <strong>${trialEndDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.`
     : `Your payment of ${amount} has been processed successfully.`;
   
   const planFeatures: Record<string, string[]> = {

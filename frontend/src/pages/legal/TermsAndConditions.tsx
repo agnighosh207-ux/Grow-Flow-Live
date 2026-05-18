@@ -65,7 +65,7 @@ export default function TermsAndConditions() {
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">5. Refund Policy</h2>
               <p>
-                We offer a <strong>7-day money-back guarantee</strong> for first-time paid subscribers. If you are not satisfied with the service within the first 7 days of your initial subscription, you may request a full refund, provided you have used fewer than 50 generations. For more details, see our <Link href="/refund-policy" className="text-[#8B91E3] hover:underline">Refund Policy</Link>.
+                We offer a <strong>3-day money-back guarantee</strong> for first-time paid subscribers. If you are not satisfied with the service within the first 3 days of your initial subscription, you may request a full refund, provided you have used fewer than 50 generations. For more details, see our <Link href="/refund-policy" className="text-[#8B91E3] hover:underline">Refund Policy</Link>.
               </p>
             </section>
 

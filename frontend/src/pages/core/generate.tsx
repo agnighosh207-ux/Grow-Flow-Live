@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
 import { useSubscriptionStatus } from "@/hooks/useSubscription";
 import { FeedbackModal, checkShouldShowRating, checkShouldShowFeedback, incrementGenCount } from "@/components/modals/FeedbackModal";
+import { CreditWallet } from "@/components/shared/CreditWallet";
 import { useAuth, useUser } from "@clerk/react";
 import { SUPPORTED_LANGUAGES } from "@/lib/languages";
 import { api } from "@/lib/api-client";
@@ -348,7 +349,7 @@ function ContentSkeleton() {
   );
 }
 
-function ContentScoreBadge({ score, label, color, delay = 0 }: { score: number; label: string; color: string; delay?: number }) {
+const ContentScoreBadge = React.memo(function ContentScoreBadge({ score, label, color, delay = 0 }: { score: number; label: string; color: string; delay?: number }) {
   return (
     <div className="flex items-center justify-between gap-2 overflow-hidden w-full">
       <span className="text-[10px] font-black uppercase tracking-widest truncate flex-shrink-0 max-w-[45%]"
@@ -370,9 +371,9 @@ function ContentScoreBadge({ score, label, color, delay = 0 }: { score: number; 
       </div>
     </div>
   );
-}
+});
 
-function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data: any; analysis?: ContentAnalysis | null; analysisLoading?: boolean }>) {
+const CampaignScorePanel = React.memo(function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data: any; analysis?: ContentAnalysis | null; analysisLoading?: boolean }>) {
   const { toast } = useToast();
   const directViralScore = data?.content?.viral_score;
 
@@ -493,9 +494,9 @@ function CampaignScorePanel({ data, analysis, analysisLoading }: Readonly<{ data
       )}
     </div>
   );
-}
+});
 
-function ViralScoreMeter({ score }: { score: number }) {
+const ViralScoreMeter = React.memo(function ViralScoreMeter({ score }: { score: number }) {
   const displayScore = score <= 1 ? Math.round(score * 100) : Math.round(score);
   const getLevelConfig = (s: number) => {
     if (s >= 80) return { label: "🔥 Viral Potential", color: "text-indigo-400", ring: "border-indigo-500/30" };
@@ -517,7 +518,7 @@ function ViralScoreMeter({ score }: { score: number }) {
       <span className="absolute -bottom-6 text-[10px] font-bold text-center whitespace-nowrap tracking-widest uppercase opacity-40">{level.label}</span>
     </div>
   );
-}
+});
 
 const NICHES = ["General", "Fitness", "Finance", "Tech", "Motivation", "Business", "Lifestyle"] as const;
 
@@ -728,7 +729,7 @@ function buildPlatformText(platform: Platform, content: any): string {
   }
 }
 
-function PlatformCard({ platform, content, onRegenerate, isRegenerating, index, tone, niche, language }: Readonly<PlatformCardProps>) {
+const PlatformCard = React.memo(function PlatformCard({ platform, content, onRegenerate, isRegenerating, index, tone, niche, language }: Readonly<PlatformCardProps>) {
   const [expanded, setExpanded] = useState(true);
   const [isRepurposing, setIsRepurposing] = useState(false);
   const [repurposedText, setRepurposedText] = useState<string | null>(null);
@@ -1115,7 +1116,7 @@ function PlatformCard({ platform, content, onRegenerate, isRegenerating, index, 
       </AnimatePresence>
     </motion.div>
   );
-}
+});
 
 function buildAllPlatformsText(data: any): string {
   if (!data?.content) return "";
@@ -1152,15 +1153,18 @@ function buildAllPlatformsText(data: any): string {
 function handleGenerateError(error: any, retryCount: number, setRetryCount: (v: any) => void, toast: any, mutation: any, lastValues: any) {
   const isOffline = typeof globalThis !== "undefined" && !globalThis.navigator.onLine;
   const errorMsg = (error?.message || error?.data?.message || "").toLowerCase();
-  const is5xx = (error?.status ?? 0) >= 500 || error?.status === 429 || errorMsg.includes("503") || errorMsg.includes("ai temporarily unavailable") || errorMsg.includes("network");
+  const is5xx = (error?.status ?? 0) >= 500 || error?.status === 429 || errorMsg.includes("503") || errorMsg.includes("ai_overloaded") || errorMsg.includes("ai temporarily unavailable") || errorMsg.includes("network");
 
   if (is5xx && retryCount < 3) {
+    const nextAttempt = retryCount + 1;
+    const delay = Math.min(1000 * Math.pow(2, retryCount), 10000); // 2s, 4s, 8s
+
     toast({
       variant: "destructive",
-      title: "AI Overloaded",
-      description: "The AI is currently experiencing high load. Would you like to retry?",
+      title: `AI Overloaded (Attempt ${nextAttempt}/3)`,
+      description: `AI is temporarily under high load. Retrying automatically in ${delay / 1000} seconds...`,
       action: (
-        <ToastAction altText="Retry" onClick={() => {
+        <ToastAction altText="Retry Now" onClick={() => {
           if (mutation.isPending) return;
           setRetryCount((prev: number) => prev + 1);
           if (lastValues.current) {
@@ -1169,19 +1173,28 @@ function handleGenerateError(error: any, retryCount: number, setRetryCount: (v: 
         }}>
           <div className="flex items-center gap-1.5">
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Retry</span>
+            <span>Retry Now</span>
           </div>
         </ToastAction>
       )
     });
+
+    setTimeout(() => {
+      // Verify we aren't already pending or have started a new generation
+      if (lastValues.current && !mutation.isPending) {
+        setRetryCount(nextAttempt);
+        mutation.mutate(lastValues.current);
+      }
+    }, delay);
+
     return;
   }
 
   if (is5xx && retryCount >= 3) {
     toast({
       variant: "destructive",
-      title: "High System Load",
-      description: "AI is experiencing high load. Please try again in a few minutes.",
+      title: "System Busy",
+      description: "All retry attempts exhausted. Your credits have not been deducted. Please try again in a few minutes.",
     });
     return;
   }
@@ -1306,7 +1319,8 @@ export default function Generate() {
   }, [generatedContent, batchLoading]);
   const { toast } = useToast();
   const { data: sub } = useSubscriptionStatus();
-  useLocation();
+  const [, setLocation] = useLocation();
+  const cannotGenerate = sub?.plan === "free" && sub?.hasUsedTrial;
 
   const isFreeUser = !sub || (sub.planType === "free" && sub.plan === "free") || sub.plan === "blocked";
 
@@ -1403,6 +1417,7 @@ export default function Generate() {
     try {
       const last = localStorage.getItem("gf_last_settings");
       const templateFill = localStorage.getItem("gf_template_fill");
+      const quickIdea = localStorage.getItem('quick_idea');
       
       if (last) {
         const s = JSON.parse(last);
@@ -1412,6 +1427,11 @@ export default function Generate() {
       if (templateFill) {
         form.setValue("idea", templateFill);
         localStorage.removeItem("gf_template_fill");
+      }
+
+      if (quickIdea) {
+        form.setValue('idea', quickIdea);
+        localStorage.removeItem('quick_idea');
       }
     } catch {}
   }, []);
@@ -1692,15 +1712,114 @@ export default function Generate() {
     setTimeout(() => setCopiedAll(false), 2000);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!generatedContent) return;
-    const txt = buildAllPlatformsText(generatedContent);
-    const blob = new Blob([txt], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Campaign_${generatedContent.idea?.slice(0, 20) || 'Export'}.txt`;
-    a.click();
+    
+    // Show loading
+    toast({ title: "Preparing PDF...", description: "Opening print dialog..." });
+    
+    try {
+      // Create a printable HTML document
+      const campaignTitle = generatedContent.idea?.slice(0, 50) || 'Content Campaign';
+      const date = new Date().toLocaleDateString('en-IN');
+      
+      const htmlContent = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <title>GrowFlow AI — ${campaignTitle}</title>
+    <style>
+      body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1e293b; background: white; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+      h1 { font-size: 26px; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
+      .brand { color: #5E6AD2; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 24px; display: flex; align-items: center; gap: 6px; }
+      .meta { color: #64748b; font-size: 12px; margin-bottom: 32px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; }
+      .platform { margin-bottom: 40px; border-left: 4px solid #5E6AD2; padding-left: 20px; page-break-inside: avoid; }
+      .platform-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: #5E6AD2; margin-bottom: 12px; }
+      .content { font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #334155; }
+      .hashtags { font-size: 13px; color: #6366f1; margin-top: 12px; font-weight: 600; }
+      .divider { border: none; border-top: 1px solid #f1f5f9; margin: 32px 0; }
+      .footer { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 60px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+      @media print { 
+        body { padding: 20px; } 
+        .platform { page-break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="brand">✨ GrowFlow AI Content Campaign</div>
+    <h1>${campaignTitle}</h1>
+    <div class="meta">Generated on ${date} · Language: ${generatedContent.language || 'English'}</div>
+    
+    ${['instagram', 'youtube', 'twitter', 'linkedin'].map(platform => {
+      const content = generatedContent.content?.[platform] || generatedContent.platforms?.[platform] || generatedContent[platform];
+      if (!content) return '';
+      const platformNames: Record<string, string> = {
+        instagram: '📸 Instagram Caption',
+        youtube: '▶️ YouTube Shorts Script',
+        twitter: '𝕏 Twitter/X Thread',
+        linkedin: '💼 LinkedIn Post'
+      };
+      
+      let renderedContent = '';
+      if (Array.isArray(content?.tweets)) {
+        renderedContent = content.tweets.map((t: string, idx: number) => `[${idx + 1}/${content.tweets.length}] ${t}`).join('\n\n');
+      } else {
+        renderedContent = content?.caption || content?.script || content?.post || content?.thread || 
+          (typeof content === 'string' ? content : JSON.stringify(content, null, 2));
+      }
+
+      return `
+      <div class="platform">
+        <div class="platform-name">${platformNames[platform] || platform}</div>
+        <div class="content">${renderedContent}</div>
+        ${content?.hashtags ? `<div class="hashtags">${typeof content.hashtags === 'string' ? content.hashtags : Array.isArray(content.hashtags) ? content.hashtags.join(' ') : ''}</div>` : ''}
+      </div>
+      <hr class="divider">`;
+    }).join('')}
+    
+    <div class="footer">Created with GrowFlow AI · growflowai.space</div>
+  </body>
+  </html>`;
+  
+      // Open in a new window and print to PDF
+      const printWindow = window.open('', '_blank', 'width=900,height=700');
+      if (!printWindow) {
+        // Fallback: download as HTML file (can be printed from browser)
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `GrowFlow-Campaign-${Date.now()}.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({ title: "HTML exported ✅", description: "Open the file and print to save as PDF" });
+        return;
+      }
+      
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.focus();
+      
+      // Wait for content to load then print
+      setTimeout(() => {
+        printWindow.print();
+        // Note: We can't close automatically as print dialog needs the window open
+      }, 500);
+      
+      toast({ title: "PDF ready! ✅", description: "Use your browser's print dialog to save as PDF" });
+      
+    } catch (err) {
+      // Fallback: plain text download
+      const txt = buildAllPlatformsText(generatedContent);
+      const blob = new Blob([txt], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `GrowFlow-Campaign.txt`;
+      a.click();
+      toast({ title: "Downloaded as text file" });
+    }
   };
 
   const syncLanguagePreference = async (lang: string) => {
@@ -1849,6 +1968,27 @@ export default function Generate() {
       
       <FeedbackModal open={showRatingModal} onClose={() => setShowRatingModal(false)} trigger={ratingTrigger} />
 
+      {cannotGenerate && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center 
+          bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#0F0F1A] border border-red-500/20 rounded-3xl p-8 
+            max-w-sm w-full text-center">
+            <div className="text-4xl mb-4">⚠️</div>
+            <h2 className="text-lg font-black text-white mb-2">Trial Ended</h2>
+            <p className="text-white/50 text-sm mb-6">
+              Your 3-day free trial has ended. Subscribe to continue generating 
+              content. <strong className="text-white">No second trial</strong> — 
+              payment is charged immediately.
+            </p>
+            <button onClick={() => setLocation("/pricing")}
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-violet-600 
+                to-violet-500 text-white font-bold mb-3">
+              Subscribe Now →
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-12 space-y-12">
         
         <div className="mb-10 text-left">
@@ -1862,6 +2002,10 @@ export default function Generate() {
 
         <div className="max-w-4xl mx-auto space-y-12">
           <FeatureDiscoveryBanner />
+          
+          {sub?.planType !== "infinity" && (
+            <CreditWallet />
+          )}
           
           <div className="space-y-5">
             <div className="flex items-center justify-center gap-4">
@@ -2017,7 +2161,7 @@ export default function Generate() {
                     <div className="sticky bottom-[72px] md:static z-20 pt-3 pb-2 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/95 to-transparent -mx-4 px-4 md:mx-0 md:px-0 md:bg-transparent md:pt-0 md:pb-0">
                         <Button
                           type="submit"
-                          disabled={isLoading}
+                          disabled={isLoading || !currentIdea?.trim()}
                           onClick={() => { haptic('medium'); }}
                           className="w-full h-12 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-[0.98] group relative overflow-hidden"
                           style={{ 
@@ -2038,6 +2182,11 @@ export default function Generate() {
                             </div>
                           )}
                         </Button>
+                        {!currentIdea?.trim() && (
+                          <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--text-disabled)' }}>
+                            ↑ Enter your content idea to generate
+                          </p>
+                        )}
                     </div>
                   </div>
                 </form>
@@ -2150,7 +2299,7 @@ export default function Generate() {
                           className="h-12 px-8 rounded-2xl text-xs font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 flex items-center gap-3 transition-all"
                         >
                           <Download className="w-4 h-4" />
-                          Export PDF
+                          Export / Print
                         </button>
                       </div>
                     </div>

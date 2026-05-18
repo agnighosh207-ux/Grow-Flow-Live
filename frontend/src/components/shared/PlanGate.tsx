@@ -186,7 +186,7 @@ export function PlanGate({ requiredPlan, featureName, description, toolKey, free
                 Unlock {planLabel} Plan
               </Button>
               <p className="text-[11px] text-white/40 mt-4 text-center">
-                7-day free trial included. No charge until day 8.
+                3-day free trial included. No charge until day 4.
               </p>
             </motion.div>
           </div>

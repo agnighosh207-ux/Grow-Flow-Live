@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useGenerateShortcut } from "@/hooks/useGenerateShortcut";
-import { User, Sparkles, Instagram, Twitter, Linkedin, Youtube, Share2, Copy, Smartphone, Save, Check, RefreshCw, Mic, Layout, MessageSquare, Target, Award, Brain, Terminal, Shield, ChevronRight, BarChart2, Fingerprint } from "lucide-react";
+import { User, Sparkles, Instagram, Twitter, Linkedin, Youtube, Share2, Copy, Smartphone, Save, Check, RefreshCw, Mic, Layout, MessageSquare, Target, Award, Brain, Terminal, Shield, ChevronRight, BarChart2, Fingerprint, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,9 +30,9 @@ const formats = [
  { id: "youtube", label: "YouTube", icon: <Youtube className="h-5 w-5" />, limit: 1000 },
  { id: "tiktok", label: "TikTok", icon: <Share2 className="h-5 w-5" />, limit: 80 },
  { id: "linkinbio", label: "Link-in-Bio", icon: <Layout className="h-5 w-5" />, limit: 200 },
- { id: "brandStatement", label: "Brand Intel", icon: <Shield className="h-5 w-5" />, limit: 500 },
- { id: "elevator30sec", label: "30s Pitch", icon: <Mic className="h-5 w-5" />, limit: 500 },
- { id: "elevator60sec", label: "60s Pitch", icon: <Mic className="h-5 w-5" />, limit: 1000 },
+ { id: "brandStatement", label: "Brand Statement", icon: <Shield className="h-5 w-5" />, limit: 500 },
+ { id: "elevator30sec", label: "30-Second Pitch", icon: <Mic className="h-5 w-5" />, limit: 500 },
+ { id: "elevator60sec", label: "60-Second Pitch", icon: <Mic className="h-5 w-5" />, limit: 1000 },
 ];
 
 export default function CreatorProfilePage() {
@@ -87,7 +87,7 @@ export default function CreatorProfilePage() {
    setResult(data);
    const firstFormat = Object.keys(data)[0];
    if (firstFormat) setActiveTab(firstFormat);
-   toast({ title: "Brand Suite Synthesized", description: "Your cross-platform identity is ready." });
+   toast({ title: "Your bios are ready! ✅", description: "Your cross-platform identity is ready." });
    const { queryClient } = await import("@/lib/queryClient");
    queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
   } catch (err) {
@@ -103,6 +103,35 @@ export default function CreatorProfilePage() {
   if (!result) return;
   localStorage.setItem("creator_profile_bios", JSON.stringify({ ...result, timestamp: Date.now() }));
   toast({ title: "Saved to Profile", description: "Your branding assets are stored locally." });
+ };
+
+ const handleExportBio = () => {
+  if (!result) return;
+  const lines = Object.entries(result).map(([platform, content]: [string, any]) => {
+    let formattedText = "";
+    if (typeof content === "string") {
+      formattedText = content;
+    } else if (content?.bio) {
+      formattedText = content.bio;
+      if (content.tip) formattedText += `\n\n[Algorithmic Insight: ${content.tip}]`;
+    } else if (content?.script) {
+      formattedText = content.script;
+    } else if (content?.statement) {
+      formattedText = `Positioning Statement:\n${content.statement}\n\nOne-Liner:\n${content.oneLiner}`;
+    } else if (content?.headline) {
+      formattedText = `Headline: ${content.headline}\nSubheadline: ${content.subheadline}\nCTA: ${content.cta}`;
+    } else {
+      formattedText = JSON.stringify(content, null, 2);
+    }
+    return `=== ${platform.toUpperCase()} ===\n${formattedText}\n`;
+  }).join('\n');
+
+  const blob = new Blob([lines], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `GrowFlow-Bios-${formData.name || 'Export'}.txt`;
+  a.click();
+  toast({ title: "Bios exported! ✅" });
  };
 
  // Elevator pitch practice
@@ -125,11 +154,11 @@ export default function CreatorProfilePage() {
   <PageWrapper maxWidth="2xl" className="pb-24 md:pb-8">
    <FeatureGuideBanner 
     toolKey="bio" 
-    title="Bio Optimizer" 
+    title="Bio Generator" 
     icon={<FingerprintIcon className="w-5 h-5 text-indigo-400" />}
-    tagline="Your bio is your digital billboard. We help you engineer it for maximum follower conversion."
-    whatYouGet={["Cross-platform optimized bios", "Elevator pitch scripts", "Practice mode for pitches", "Brand positioning statements"]}
-    whenToUse="Use this when setting up a new profile or rebranding to ensure your 'first impression' is mathematically optimized."
+    tagline="Generate bios for Instagram, YouTube, LinkedIn, and more — all at once, in any language."
+    whatYouGet={["Instagram bio (150 chars)", "Twitter/X bio (160 chars)", "LinkedIn about section", "YouTube channel description", "30-second intro script", "Brand statement"]}
+    whenToUse="Use this when creating a new profile, rebranding, or if your current bio gets very few follows from profile visits."
     proTip="Try the Elevator Pitch practice mode to sharpen how you describe yourself in real-life networking events."
     planRequired="Creator"
     forceOpen={showGuide}
@@ -138,14 +167,21 @@ export default function CreatorProfilePage() {
     icon={<Fingerprint className="w-8 h-8" />} 
     iconBg="bg-indigo-500/10" 
     iconColor="text-indigo-400" 
-    title="Bio Optimizer" 
-    subtitle="First impressions are algorithmic destiny. Engineer yours for maximum retention."
+    title="Bio Generator" 
+    subtitle="Generate the perfect bio for every social platform in seconds"
     badge="Pro Feature"
     onInfoClick={() => setShowGuide(prev => !prev)}
     action={
-     <Button onClick={saveToProfile} variant="outline" className="h-12 px-6 border-white/10 bg-white/5 text-white font-black text-sm rounded-xl hover:bg-white/10 shadow-xl transition-all hidden md:flex">
-       <Save className="mr-2 h-5 w-5 text-indigo-400" /> Archive Suite
-     </Button>
+     <div className="flex items-center gap-3">
+       {result && (
+         <Button onClick={handleExportBio} variant="outline" className="h-12 px-6 border-white/10 bg-white/5 text-white font-black text-sm rounded-xl hover:bg-white/10 shadow-xl transition-all flex">
+           <Download className="mr-2 h-5 w-5 text-indigo-400" /> Export / Print
+         </Button>
+       )}
+       <Button onClick={saveToProfile} variant="outline" className="h-12 px-6 border-white/10 bg-white/5 text-white font-black text-sm rounded-xl hover:bg-white/10 shadow-xl transition-all hidden md:flex">
+         <Save className="mr-2 h-5 w-5 text-indigo-400" /> Save My Bios
+       </Button>
+     </div>
     }
    />
 
@@ -155,24 +191,25 @@ export default function CreatorProfilePage() {
      <Card className="bg-white/[0.03] border-white/10 backdrop-blur-[100px] shadow-2xl rounded-[3rem] overflow-hidden">
       <CardHeader className="bg-white/[0.02] border-b border-white/5 p-8">
        <CardTitle className="text-2xl font-black flex items-center gap-3">
-        <Terminal className="h-6 w-6 text-indigo-400" />
-        Persona Architecture
+        <User className="h-6 w-6 text-indigo-400" />
+        Your Creator Profile
        </CardTitle>
       </CardHeader>
       <CardContent className="p-8 space-y-8">
        <div className="space-y-3">
-        <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Master Alias</label>
+        <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Your Name</label>
         <Input 
          value={formData.name}
          onChange={(e) => setFormData({...formData, name: e.target.value})}
-         placeholder="e.g. Elena Vance"
+         placeholder="e.g. Priya Sharma, Rahul Fitness, @YourUsername"
          className="bg-white/[0.02] border-white/10 h-16 rounded-2xl text-lg font-bold focus:ring-[#5E6AD2]/50"
         />
+        <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>The name you use on social media</p>
        </div>
 
        <div className="grid grid-cols-2 gap-6">
         <div className="space-y-3">
-         <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Domain</label>
+         <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Your Niche</label>
          <Select value={formData.niche} onValueChange={(v) => setFormData({...formData, niche: v})}>
           <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
            <SelectValue />
@@ -187,7 +224,7 @@ export default function CreatorProfilePage() {
          </Select>
         </div>
         <div className="space-y-3">
-         <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Aesthetic</label>
+         <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Your Vibe / Tone</label>
          <Select value={formData.tone} onValueChange={(v: any) => setFormData({...formData, tone: v})}>
           <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base">
            <SelectValue />
@@ -213,26 +250,40 @@ export default function CreatorProfilePage() {
 
        <div className="space-y-3">
         <label className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-         <Target className="h-4 w-4 text-indigo-400" /> Core Narrative
+         <Target className="h-4 w-4 text-indigo-400" /> What you're known for / Your main content topic
         </label>
         <Input 
          value={formData.mainTopic}
          onChange={(e) => setFormData({...formData, mainTopic: e.target.value})}
-         placeholder="e.g. Future of Generative Art"
+         placeholder="e.g. Morning fitness routines, Budget travel tips, Stock market for beginners"
          className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base"
         />
        </div>
 
        <div className="space-y-3">
         <label className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-         <Award className="h-4 w-4 text-indigo-400" /> Authority Proof
+         <User className="h-4 w-4 text-indigo-400" /> Who is your target audience?
+        </label>
+        <Input 
+         value={formData.targetAudience}
+         onChange={(e) => setFormData({...formData, targetAudience: e.target.value})}
+         placeholder="e.g. Working women aged 25-35 who want to get fit at home"
+         className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base"
+        />
+        <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Who are you trying to reach? Be specific.</p>
+       </div>
+
+       <div className="space-y-3">
+        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+         <Award className="h-4 w-4 text-indigo-400" /> Your biggest win / credential (optional)
         </label>
         <Input 
          value={formData.achievement}
          onChange={(e) => setFormData({...formData, achievement: e.target.value})}
-         placeholder="e.g. Featured in NYT, TEDx Speaker"
+         placeholder="e.g. Lost 20kg, Grew to 50K followers, Certified yoga instructor"
          className="bg-white/5 border-white/10 h-14 rounded-2xl font-bold text-base"
         />
+        <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Add a real achievement to make your bio more credible</p>
        </div>
 
        <div className="space-y-6 pt-6 border-t border-white/5">
@@ -297,7 +348,7 @@ export default function CreatorProfilePage() {
                      <CardTitle className="text-4xl font-black italic">{f === "elevator30sec" ? "30-Second" : "60-Second"} Master Pitch</CardTitle>
                      <CardDescription className="text-lg font-medium">Engineered for verbal impact and retention.</CardDescription>
                    </div>
-                   <div className="flex items-center gap-5 bg-white/5 px-6 py-3 rounded-2xl border border-white/10 shadow-inner">
+                   <div className="hidden md:flex items-center gap-5 bg-white/5 px-6 py-3 rounded-2xl border border-white/10 shadow-inner">
                      <span className="text-xs font-black uppercase text-muted-foreground tracking-[0.2em]">Practice Mode</span>
                      <Switch checked={practiceMode} onCheckedChange={(v) => { setPracticeMode(v); setPracticeIndex(0); }} />
                    </div>
@@ -308,7 +359,7 @@ export default function CreatorProfilePage() {
                       <Mic className="h-48 w-48" />
                      </div>
                      {practiceMode ? (
-                      <div className="space-y-12 text-center">
+                      <div className="space-y-12 text-center hidden md:block">
                        <motion.p 
                         key={practiceIndex}
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -457,7 +508,7 @@ export default function CreatorProfilePage() {
 
           <div className="flex justify-center pt-10">
            <Button onClick={saveToProfile} className="h-20 px-16 bg-gradient-to-r from-indigo-600 to-indigo-900 text-white font-black text-2xl rounded-3xl shadow-2xl shadow-indigo-600/30 hover:scale-105 transition-all active:scale-95">
-             <Save className="mr-3 h-8 w-8" /> ARCHIVE FULL BRAND SUITE
+             <Save className="mr-3 h-8 w-8" /> Save My Bios
            </Button>
           </div>
         </motion.div>

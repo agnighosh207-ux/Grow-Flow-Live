@@ -41,12 +41,15 @@ export function extractJson(text: string): any {
 }
 
 // ── Single OpenRouter client for both Perplexity and Gemini ──────────────────
+const GEMINI_MODEL = process.env.GEMINI_MODEL_OVERRIDE || "google/gemini-flash-1.5";
+
 const openRouterClient = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
   apiKey: process.env.OPENROUTER_API_KEY || process.env.PERPLEXITY_AI_API || "",
   defaultHeaders: {
     "HTTP-Referer": "https://growflowai.space",
     "X-Title": "GrowFlow AI",
+    "OR-Organization": "growflowai",  // Add this for better rate limits
   },
   timeout: 30000,
   maxRetries: 0,
@@ -144,11 +147,11 @@ export const generateContent = async ({
 
   const jsonMode = (zodSchema || forceJsonMode) ? { response_format: { type: "json_object" as const } } : {};
 
-  // ── TIER 1: Gemini 1.5 Flash via OpenRouter ──────────────────────────────
+  // ── TIER 1: Gemini via OpenRouter ──────────────────────────────
   try {
     if (signal?.aborted) throw new Error("ABORTED");
     const response = await openRouterClient.chat.completions.create({
-      model: "google/gemini-flash-1.5",
+      model: GEMINI_MODEL,
       messages: finalMessages,
       temperature,
       max_tokens: maxTokens,
@@ -161,7 +164,7 @@ export const generateContent = async ({
       const validated = zodSchema.safeParse(parsed);
       if (!validated.success) throw new Error("SCHEMA_VALIDATION_FAILED");
     }
-    logger.debug({ userId, model: "gemini-flash-1.5" }, "[AI] Generated via Gemini");
+    logger.debug({ userId, model: GEMINI_MODEL }, "[AI] Generated via Gemini");
     return response;
   } catch (err: any) {
     if (err.name === 'AbortError' || err.message === 'ABORTED') throw err;
@@ -194,17 +197,26 @@ export const generateContent = async ({
     logger.warn({ userId, err: err.message }, "[AI] Groq primary failed, trying Groq secondary");
   }
 
-  // ── TIER 3: Groq Secondary final fallback ────────────────────────────────
-  const isInfinity = userPlan?.toUpperCase() === "INFINITY";
-  const groqModel = isInfinity ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant";
-  const response = await groqSecondary.chat.completions.create({
-    model: groqModel,
-    messages: finalMessages,
-    temperature,
-    max_tokens: maxTokens,
-    ...jsonMode,
-  }, { signal: signal as any });
-  
-  logger.info({ userId, model: groqModel }, "[AI] Generated via Groq secondary");
-  return response;
+  // ── TIER 3: Groq Secondary (different model for rate limit diversity) ─────
+  try {
+    if (signal?.aborted) throw new Error("ABORTED");
+    // Use DIFFERENT model than primary to avoid same rate limit bucket
+    const groqSecondaryModel = "llama-3.1-8b-instant"; // Always 8B for secondary
+    const response = await groqSecondary.chat.completions.create({
+      model: groqSecondaryModel,
+      messages: finalMessages,
+      temperature: Math.max(0.3, temperature - 0.1), // Slightly lower temp for reliability
+      max_tokens: Math.min(maxTokens, 2000), // Reduce tokens to improve success rate
+      ...jsonMode,
+    }, { signal: signal as any });
+    logger.info({ userId, model: groqSecondaryModel }, "[AI] Generated via Groq secondary");
+    return response;
+  } catch (err: any) {
+    if (err.name === 'AbortError' || err.message === 'ABORTED') throw err;
+    logger.error({ userId, err: err.message }, "[AI] ALL providers failed");
+  }
+
+  // ── TIER 4: Emergency minimal response ────────────────────────────────────
+  // When all AI providers fail, return a helpful error instead of crashing
+  throw new Error("ALL_PROVIDERS_FAILED");
 };

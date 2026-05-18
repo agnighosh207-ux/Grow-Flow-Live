@@ -274,6 +274,9 @@ export default function PredictorPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
          <Card className="lg:col-span-1 p-8 flex flex-col items-center justify-center text-center bg-card">
           <ScoreCircle score={result.overallScore} label="Overall Score" size="md" />
+          <p className="text-xs text-center mt-2 font-medium" style={{ color: 'var(--text-muted)' }}>
+            Score above 70 = likely to perform well · Below 50 = needs improvement
+          </p>
           <Badge className={`mt-4 px-4 py-1 text-sm font-bold ${result.verdict === 'High Performer' ? 'bg-emerald-500' : result.verdict === 'Average' ? 'bg-amber-500' : 'bg-red-500'}`}>
            {result.verdict}
           </Badge>

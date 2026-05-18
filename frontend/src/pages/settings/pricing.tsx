@@ -26,7 +26,8 @@ function loadRazorpay(): Promise<boolean> {
 import {
   Gift, Check, X, Zap, Star, ArrowLeft,
   Sparkles, TrendingUp, CalendarDays, Flame, Wand2,
-  Shield, IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown
+  Shield, IndianRupee, RefreshCw, Brain, Globe, DollarSign, Users, ChevronDown, ChevronUp,
+  Crown, Building2, Infinity
 } from "lucide-react";
 
 function LiveCounter() {
@@ -177,11 +178,24 @@ function CellContent({ value, infinityLabel }: { value: boolean | string; infini
 
 const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, creator: 2, infinity: 3, agency: 4 };
 
+function useSearchParams() {
+  const [searchParams, setSearchParams] = useState(new URLSearchParams(window.location.search));
+  useEffect(() => {
+    const updateParams = () => setSearchParams(new URLSearchParams(window.location.search));
+    window.addEventListener("popstate", updateParams);
+    return () => window.removeEventListener("popstate", updateParams);
+  }, []);
+  return [searchParams];
+}
+
 function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
   const [loadingPack, setLoadingPack] = useState<string | null>(null);
+  const [successPack, setSuccessPack] = useState<string | null>(null);
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const [searchParams] = useSearchParams();
 
   const PACKS = currency === "USD" ? [
     { key: "small",  credits: 10, price: "$0.99", popular: false, desc: "Quick boost" },
@@ -192,6 +206,14 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
     { key: "medium", credits: 25, price: "₹99",  popular: true,  desc: "Best value" },
     { key: "large",  credits: 60, price: "₹199", popular: false, desc: "Power pack" },
   ];
+
+  useEffect(() => {
+    const topupPack = searchParams.get("topup");
+    if (topupPack && ["small", "medium", "large"].includes(topupPack)) {
+      // Delay slightly to let Razorpay script load
+      setTimeout(() => handleTopup(topupPack), 800);
+    }
+  }, []);
 
   const handleTopup = async (packKey: string) => {
     setLoadingPack(packKey);
@@ -235,8 +257,13 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
             });
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
-              queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
-              toast({ title: `✅ ${data.credits} credits added!`, description: "Your credits are ready to use." });
+              setSuccessPack(packKey); // Show success state
+              await queryClient.refetchQueries({ queryKey: ["subscription-status"] });
+              setTimeout(() => setSuccessPack(null), 3000);
+              toast({ 
+                title: `✅ ${data.credits} credits added to your wallet!`,
+                description: "Open the generate page to use them right now."
+              });
             } else {
               throw new Error(verifyData.error || "Verification failed");
             }
@@ -276,8 +303,12 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
           <Zap className="w-3.5 h-3.5 text-[#8B91E3]" />
           <span className="text-[10px] font-black uppercase tracking-widest text-[#8B91E3]">One-time Boost</span>
         </div>
-        <h3 className="text-2xl font-black text-white">Top Up Anytime</h3>
-        <p className="text-white/40 text-sm mt-1">One-time purchase. Credits never expire.</p>
+        <div className="mb-4">
+          <p className="text-sm font-bold text-white mb-1">Buy Credits Instantly</p>
+          <p className="text-[11px] text-white/40">
+            One-time purchase. Credits never expire. Added to your wallet immediately.
+          </p>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {PACKS.map(pack => (
@@ -297,6 +328,25 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
             >
               {loadingPack === pack.key ? <RefreshCw className="w-4 h-4 animate-spin" /> : pack.price}
             </Button>
+
+            {successPack === pack.key ? (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="absolute inset-0 bg-[#050210] rounded-[2rem] border border-emerald-500/30 flex flex-col items-center justify-center p-6 z-20"
+              >
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                  className="w-12 h-12 rounded-full bg-emerald-500/25 border border-emerald-500/40 flex items-center justify-center mb-3 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                >
+                  <Check className="w-6 h-6 text-emerald-400" />
+                </motion.div>
+                <span className="text-sm font-black text-white">Top-up Successful!</span>
+                <span className="text-[10px] text-white/50 mt-1">Credits added to wallet</span>
+              </motion.div>
+            ) : null}
           </div>
         ))}
       </div>
@@ -308,7 +358,7 @@ function TopUpSection({ currency }: { currency: "INR" | "USD" }) {
 const TESTIMONIALS = [
   { name: "Rahul S.", handle: "@rahul_growth", content: "Upgraded to Creator and it paid for itself in two days. The Viral Score feature actually works.", rating: 5, type: "creator" },
   { name: "Priya M.", handle: "@priyamarketing", content: "I was spending ₹10k/mo on a writer. Infinity replaced them and the quality is honestly better because of the Brand Voice feature.", rating: 5, type: "infinity" },
-  { name: "Aditya K.", handle: "@adityadesign", content: "The 7-day trial convinced me. Setting up the autopay was smooth and the templates are fire.", rating: 5, type: "starter" }
+  { name: "Aditya K.", handle: "@adityadesign", content: "The 3-day trial convinced me. Setting up the autopay was smooth and the templates are fire.", rating: 5, type: "starter" }
 ];
 
 function UrgencyHeader() {
@@ -334,7 +384,7 @@ function UrgencyHeader() {
         </span>
       </div>
       <div className="flex items-center gap-4 text-xs text-white/30">
-        <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-[#8B91E3]" /> 7-day free trial</span>
+        <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-[#8B91E3]" /> 3-day free trial</span>
         <span className="flex items-center gap-1"><RefreshCw className="w-3 h-3 text-[#8B91E3]" /> Cancel anytime</span>
         <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-[#8B91E3]" /> Instant access</span>
       </div>
@@ -411,6 +461,101 @@ function TestimonialSection() {
   );
 }
 
+
+const PLANS = [
+  {
+    id: "starter",
+    name: "Starter",
+    icon: Zap,
+    tagline: "Perfect to begin your creator journey",
+    color: "#6366F1",       // indigo
+    glow: "rgba(99,102,241,0.15)",
+    border: "rgba(99,102,241,0.25)",
+    priceINR: { monthly: 149, quarterly: 129, "half-yearly": 119, yearly: 109 },
+    priceUSD: { monthly: 2, quarterly: 1.8, "half-yearly": 1.6, yearly: 1.5 },
+    credits: "25 generations/mo",
+    features: [
+      "25 content generations/month",
+      "All 4 platforms (Instagram, YouTube, Twitter, LinkedIn)",
+      "Hook Generator + Idea Engine",
+      "Basic AI Coach",
+      "Content History (30 days)",
+    ],
+    notIncluded: ["Competitor Intel", "Ghostwriter", "Team seats"],
+  },
+  {
+    id: "creator",
+    name: "Creator",
+    icon: Crown,
+    tagline: "For serious creators who post daily",
+    color: "#8B5CF6",       // violet
+    glow: "rgba(139,92,246,0.20)",
+    border: "rgba(139,92,246,0.35)",
+    badge: "MOST POPULAR",
+    priceINR: { monthly: 449, quarterly: 399, "half-yearly": 369, yearly: 329 },
+    priceUSD: { monthly: 6, quarterly: 5.5, "half-yearly": 5, yearly: 4.5 },
+    credits: "150 generations/mo",
+    features: [
+      "150 content generations/month",
+      "Everything in Starter",
+      "Competitor Intel + Repurpose",
+      "Ghostwriter + Brand Voice",
+      "A/B Test + Hook Scorer",
+      "Priority AI (faster responses)",
+    ],
+    notIncluded: ["Team seats (Agency plan)"],
+  },
+  {
+    id: "infinity",
+    name: "Infinity",
+    icon: Infinity,
+    tagline: "Unlimited everything for power creators",
+    color: "#F59E0B",       // amber
+    glow: "rgba(245,158,11,0.15)",
+    border: "rgba(245,158,11,0.30)",
+    priceINR: { monthly: 799, quarterly: 699, "half-yearly": 649, yearly: 579 },
+    priceUSD: { monthly: 10, quarterly: 9, "half-yearly": 8.5, yearly: 7.5 },
+    credits: "Unlimited",
+    features: [
+      "Unlimited generations — no caps ever",
+      "Everything in Creator",
+      "AI Coach (full analysis)",
+      "Trend Alerts + Digest emails",
+      "SambaNova 70B model (highest quality)",
+      "First access to new features",
+    ],
+    notIncluded: [],
+  },
+  {
+    id: "agency",
+    name: "Agency",
+    icon: Building2,
+    tagline: "For agencies and creator teams",
+    color: "#10B981",       // emerald
+    glow: "rgba(16,185,129,0.15)",
+    border: "rgba(16,185,129,0.25)",
+    priceINR: { monthly: 2999, yearly: 2499 },
+    priceUSD: { monthly: 38, yearly: 30 },
+    credits: "1000 generations/mo",
+    features: [
+      "1000 generations/month",
+      "5 team seats",
+      "Everything in Infinity",
+      "Team dashboard + member management",
+      "Usage analytics per member",
+      "Dedicated support",
+    ],
+    notIncluded: [],
+  },
+];
+
+const NEW_BILLING_OPTIONS = [
+  { id: "monthly",     label: "Monthly",     save: null },
+  { id: "quarterly",   label: "3 Months",    save: "Save 10%" },
+  { id: "half-yearly", label: "6 Months",    save: "Save 20%" },
+  { id: "yearly",      label: "Yearly",      save: "Save 30%" },
+];
+
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingPeriod>("yearly");
   const [currency, setCurrency] = useState<"INR" | "USD">((): "INR" | "USD" => {
@@ -451,6 +596,34 @@ export default function PricingPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+
+  const [selectedPlan, setSelectedPlan] = useState<string>("creator");
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  const plan = PLANS.find(p => p.id === selectedPlan)!;
+  const agencyBillingOptions = NEW_BILLING_OPTIONS.filter(b => 
+    b.id === "monthly" || b.id === "yearly"
+  );
+  const availableBilling = selectedPlan === "agency" 
+    ? agencyBillingOptions 
+    : NEW_BILLING_OPTIONS;
+  
+  const price = currency === "INR" 
+    ? (plan.priceINR as any)[billing] 
+    : (plan.priceUSD as any)[billing];
+
+  const isCurrentPlan = sub?.planType === selectedPlan;
+  const hasActivePlan = ["active", "trial"].includes(sub?.plan || "");
+  
+  useEffect(() => {
+    if (selectedPlan === "agency" && !["monthly", "yearly"].includes(billing)) {
+      setBilling("monthly");
+    }
+  }, [selectedPlan, billing]);
+
+  const handleCheckout = (p: string, b: string, c: string) => {
+    handlePlanClick(p as any);
+  };
 
   const currentPlan = sub?.planType ?? "free";
   const currentRank = PLAN_RANK[currentPlan] ?? 0;
@@ -514,10 +687,10 @@ export default function PricingPage() {
     setUpgradeModal({ open: true, plan, billing, currency, reason: "checkout" });
   };
 
-
-
   return (
-    <div className="min-h-screen bg-[#050210] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#080810]">
+      
+      {/* EXITS INTENT AND MODALS (kept from old layout) */}
       <AnimatePresence>
         {showExitIntent && (
           <motion.div 
@@ -525,25 +698,20 @@ export default function PricingPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[2000] flex items-start justify-center bg-black/80 backdrop-blur-md p-4 pt-[12vh]"
-
           >
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               className="bg-[#12121C] border border-white/10 rounded-[40px] pt-10 pb-8 px-8 md:pt-14 md:pb-12 md:px-12 max-w-sm text-center relative overflow-hidden shadow-[0_0_80px_rgba(94,106,210,0.1)]"
-
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#5E6AD2]/10 rounded-full blur-3xl -mr-16 -mt-16" />
-              
               <div className="w-16 h-16 rounded-2xl bg-[#5E6AD2]/20 flex items-center justify-center mx-auto mb-6">
                 <Gift className="w-8 h-8 text-[#8B91E3]" />
               </div>
-              
               <h2 className="text-3xl font-black text-white mb-2 italic">Wait! Don't leave empty-handed.</h2>
               <p className="text-white/40 text-sm mb-8 leading-relaxed font-medium">
                 Try the <span className="text-[#8B91E3] font-bold">Creator Plan</span> today and get <span className="text-white font-bold">50% extra credits</span> for your first month.
               </p>
-              
               <div className="space-y-3">
                 <Button 
                   onClick={() => { setShowExitIntent(false); handlePlanClick("creator"); }}
@@ -558,587 +726,11 @@ export default function PricingPage() {
                   Maybe later
                 </button>
               </div>
-
               <p className="text-[10px] text-white/20 mt-8 font-bold uppercase tracking-widest">Limited time founder's offer</p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Background orbs */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[15%] w-[600px] h-[500px] rounded-full bg-[rgba(94,106,210,0.20)] blur-[140px]" />
-        <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[400px] rounded-full bg-indigo-800/15 blur-[140px]" />
-        <div className="absolute top-[40%] left-[50%] w-[400px] h-[400px] rounded-full bg-pink-800/10 blur-[140px]" />
-        
-        {/* Floating Graphics */}
-        <motion.div className="absolute top-[15%] right-[5%] opacity-[0.07] animate-float" style={{ animationDelay: '0.5s' }}><Brain className="w-64 h-64 text-[#8B91E3]" /></motion.div>
-        <motion.div className="absolute bottom-[20%] left-[10%] opacity-[0.05] animate-float" style={{ animationDelay: '2s' }}><Zap className="w-48 h-48 text-indigo-400" /></motion.div>
-      </div>
-
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-10 pb-24">
-        <FoundersBanner />
-
-        {/* Back + Header */}
-        <div className="mb-10">
-          <button
-            onClick={() => globalThis.history.back()}
-            className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors text-sm mb-8"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-
-          {sub?.subscriptionStatus === "past_due" && (
-            <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 mb-6">
-              <p className="text-red-400 font-semibold text-sm">⚠️ Payment failed</p>
-              <p className="text-white/50 text-xs mt-1">Your last payment could not be processed. Please update your payment method.</p>
-              <button 
-                onClick={() => globalThis.open("https://dashboard.razorpay.com", "_blank")}
-                className="mt-3 bg-red-500 hover:bg-red-400 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all"
-              >
-                Update Payment Method →
-              </button>
-            </div>
-          )}
-
-          <div className="text-center">
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <div className="flex flex-col items-center gap-6 mb-8">
-                {/* Promo Badge */}
-                <span className="inline-flex items-center gap-2 text-[10px] font-black tracking-widest uppercase text-white/40 bg-white/5 border border-white/10 rounded-full px-5 py-2">
-                   Save up to 20% with yearly | Most popular among serious creators
-                </span>
-
-                  <div className="bg-[#0A051A] border border-white/10 rounded-2xl p-1 flex gap-1">
-                  <button
-                    onClick={() => setCurrency("INR")}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "INR" ? "bg-[#5E6AD2]/20 text-[#8B91E3] border border-[rgba(94,106,210,0.4)]/20" : "text-white/30 hover:text-white/50"}`}
-                  >
-                    <span className="w-4 h-3 bg-[rgba(94,106,210,0.20)] rounded-sm flex items-center justify-center text-[8px]">IN</span>
-                    INR
-                  </button>
-                  <button
-                    onClick={() => setCurrency("USD")}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${currency === "USD" ? "bg-[#5E6AD2]/20 text-[#8B91E3] border border-[rgba(94,106,210,0.4)]/20" : "text-white/30 hover:text-white/50"}`}
-                  >
-                    <Globe className="w-3.5 h-3.5" />
-                    USD
-                  </button>
-                </div>
-              </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
-            >
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
-                Simple, transparent <br />
-                <span className="text-[#5E6AD2]">pricing</span>
-              </h1>
-              <p className="text-sm md:text-lg max-w-xl mx-auto font-medium" style={{ color: 'var(--text-muted)' }}>
-                Unlock high-performance AI tools and scale your content production.
-              </p>
-            </motion.div>
-          </motion.div>
-        </div>
-      </div>
-
-        <div className="flex flex-col items-center justify-center mb-12">
-          <LiveCounter />
-          
-          <div className="mb-8 rounded-2xl p-4 text-center max-w-lg"
-            style={{ background: 'rgba(94,106,210,0.06)', border: '1px solid rgba(94,106,210,0.15)' }}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm font-bold" style={{ color: '#F1F1F3' }}>
-                Launch Offer — Start free for 7 days, then pay
-              </span>
-            </div>
-            <p className="text-xs" style={{ color: '#9B9BA8' }}>
-              Set up autopay today. Your card won't be charged until day 8. Cancel anytime before.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center p-1 rounded-xl" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-            {BILLING_OPTIONS.map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => setBilling(opt.key)}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                  billing === opt.key
-                    ? "bg-[#5E6AD2] text-white shadow-lg"
-                    : "text-white/40 hover:text-white/70"
-                }`}
-              >
-                {opt.label}
-                {opt.key === "yearly" ? (
-                  <span className="ml-1.5 text-[10px] font-black text-emerald-400">2 months FREE</span>
-                ) : opt.badge ? (
-                  <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full bg-[#5E6AD2]/20 text-[#8B91E3]">
-                    {opt.badge}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <LaunchPricingBanner />
-
-        {/* Plan Cards */}
-        <div className="overflow-x-auto pb-4 -mx-4 px-4 md:overflow-visible md:mx-0 md:px-0 mb-16">
-          <div className="flex gap-4 min-w-max md:min-w-0 md:grid md:grid-cols-4 items-end">
-            {/* Explorer */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-[280px] md:w-auto flex-shrink-0"
-            >
-              <div className="flex flex-col h-full" style={{ background: '#0e0e14', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '28px' }}>
-                <div className="mb-6">
-                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">Explorer</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-white">₹0</span>
-                    <span className="text-white/40 text-xs">/ forever</span>
-                  </div>
-                </div>
-                <div className="space-y-3 flex-1 mb-6">
-                  {["5 free generations to try", "4 platform types", "Basic tools"].map((f) => (
-                    <div key={f} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
-                      <span className="text-white/60 text-xs">{f}</span>
-                    </div>
-                  ))}
-                </div>
-                <Link href="/sign-up" className="w-full">
-                  <Button className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10">
-                    Get Started
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* Starter */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-[280px] md:w-auto flex-shrink-0"
-            >
-              <div className="flex flex-col h-full" style={{ background: '#0e0e14', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '28px' }}>
-                <div className="mb-6">
-                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">Starter</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-white">{formatPrice(starterPrice)}</span>
-                    <span className="text-white/40 text-xs">/ mo</span>
-                  </div>
-                </div>
-                <div className="space-y-3 flex-1 mb-6">
-                  {["25 generations / month", "Idea Gen + Strategy", "All 4 platforms", "Priority Support"].map((f) => (
-                    <div key={f} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
-                      <span className="text-white/60 text-xs">{f}</span>
-                    </div>
-                  ))}
-                </div>
-                <Button 
-                  onClick={() => handlePlanClick("starter")}
-                  className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10"
-                >
-                  {getPlanState("starter") === "current" ? "Current Plan" : "Start 7-Day Free Trial"}
-                </Button>
-                {getPlanState("starter") !== "current" && (
-                  <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                    No charge until day 8 · Cancel anytime
-                  </p>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Creator */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-[300px] md:w-auto flex-shrink-0 relative z-10"
-            >
-              <div className="flex flex-col h-full" style={{ 
-                background: 'linear-gradient(160deg, rgba(94,106,210,0.08) 0%, #0e0e14 40%)',
-                border: '1px solid rgba(94,106,210,0.3)',
-                borderRadius: '20px',
-                padding: '28px',
-                boxShadow: '0 0 40px rgba(94,106,210,0.12), 0 0 0 1px rgba(94,106,210,0.1)',
-                marginBottom: '-8px'
-              }}>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#5E6AD2] text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap">
-                  Most Popular
-                </div>
-                <div className="mb-6">
-                  <p className="text-xs font-bold text-[#8B91E3] uppercase tracking-widest mb-1">Creator</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-white">{formatPrice(creatorPrice)}</span>
-                    <span className="text-white/40 text-xs">/ mo</span>
-                  </div>
-                </div>
-                <div className="space-y-3 flex-1 mb-6">
-                  {["150 generations / month", "Viral Score™ AI Rating", "Trend Engine Access", "Content Repurposer"].map((f) => (
-                    <div key={f} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
-                      <span className="text-white/70 text-xs font-medium">{f}</span>
-                    </div>
-                  ))}
-                </div>
-                <Button 
-                  onClick={() => handlePlanClick("creator")}
-                  className="w-full h-11 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: "#5E6AD2", color: 'white', boxShadow: '0 4px 15px rgba(94,106,210,0.3)' }}
-                >
-                  {getPlanState("creator") === "current" ? "Current Plan" : "Start 7-Day Free Trial"}
-                </Button>
-                {getPlanState("creator") !== "current" && (
-                  <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                    No charge until day 8 · Cancel anytime
-                  </p>
-                )}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-[280px] md:w-auto flex-shrink-0"
-            >
-              <div className="flex flex-col h-full" style={{ background: '#0e0e14', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '20px', padding: '28px' }}>
-                <div className="mb-6">
-                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">Infinity</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-white">{formatPrice(infinityPrice)}</span>
-                    <span className="text-white/40 text-xs">/ mo</span>
-                  </div>
-                </div>
-                <div className="space-y-3 flex-1 mb-6">
-                  {["Unlimited Generations*", "AI Content Coach", "Custom Brand Voice", "Ghostwriter Mode"].map((f) => (
-                    <div key={f} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-[#8B91E3] mt-0.5" />
-                      <span className="text-white/60 text-xs">{f}</span>
-                    </div>
-                  ))}
-                </div>
-                <Button 
-                  onClick={() => handlePlanClick("infinity")}
-                  className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10"
-                >
-                  {getPlanState("infinity") === "current" ? "Current Plan" : "Start 7-Day Free Trial"}
-                </Button>
-                {getPlanState("infinity") !== "current" && (
-                  <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                    No charge until day 8 · Cancel anytime
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center gap-2 mt-10 pt-6 border-t"
-          style={{ borderColor: 'var(--border)' }}>
-          <Shield className="w-4 h-4 flex-shrink-0" style={{ color: '#16A34A' }} />
-          <p className="text-xs text-center" style={{ color: '#55555F' }}>
-            <span style={{ color: '#9B9BA8', fontWeight: 600 }}>7-day free trial on all plans.</span>{' '}
-            No charge until day 8. Cancel before then — no questions asked. After trial, cancel within 7 days of any charge for a full refund.
-          </p>
-        </div>
-
-        {/* Agency Section */}
-          <div className="mb-16 border rounded-2xl p-8 relative overflow-hidden group mt-16" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-              <div className="space-y-4 text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-3">
-                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center border" style={{ background: 'rgba(94,106,210,0.1)', borderColor: 'rgba(94,106,210,0.2)' }}>
-                      <Users className="w-6 h-6 text-[#8B91E3]" />
-                   </div>
-                   <div>
-                      <h3 className="text-2xl font-bold text-white">For Agencies & Teams</h3>
-                      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(94,106,210,0.6)' }}>Enterprise Grade Scale</p>
-                   </div>
-                </div>
-              <p className="text-white/50 text-sm max-w-lg leading-relaxed">
-                Empower your entire team with collaborative content generation. Manage members, monitor usage, and maintain consistent brand voice across all accounts.
-              </p>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-[10px] font-black uppercase tracking-wider text-[#8B91E3]">
-                <span className="bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> 5 Member Seats</span>
-                <span className="bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> 1,000 Generations / mo</span>
-                <span className="bg-[#5E6AD2]/10 border border-[rgba(94,106,210,0.4)]/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Check className="w-3 h-3" /> Team Analytics</span>
-              </div>
-            </div>
-            <div className="flex flex-col items-center md:items-end gap-4 min-w-[200px]">
-              <div className="text-center md:text-right">
-                <div className="flex items-baseline gap-1 justify-center md:justify-end">
-                  <span className="text-4xl font-black text-white">{currency === "USD" ? "$39" : "₹2,999"}</span>
-                  <span className="text-white/40 text-sm">/ mo</span>
-                </div>
-                <p className="text-[#8B91E3]/40 text-[10px] font-bold uppercase tracking-tighter mt-1">Billed monthly</p>
-              </div>
-                <Button 
-                  onClick={() => setShowAgencyUpgrade(true)}
-                  disabled={getPlanState("agency") === "current"}
-                  className="w-full md:w-auto h-11 px-8 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: "#5E6AD2", color: 'white', boxShadow: '0 4px 15px rgba(94,106,210,0.3)' }}
-                >
-                  {getPlanState("agency") === "current" ? "Active Plan" : "Get Agency Plan"}
-                </Button>
-            </div>
-          </div>
-        </div>
-        <div className="mb-16">
-          <TopUpSection currency={currency} />
-        </div>
-
-        {/* ROI Anchor Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-16 rounded-2xl border border-[rgba(94,106,210,0.4)]/20 bg-gradient-to-br from-[#5E6AD2]/30 to-indigo-950/20 p-6 md:p-8"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            {currency === "INR" ? <IndianRupee className="w-4 h-4 text-[#8B91E3]" /> : <DollarSign className="w-4 h-4 text-[#8B91E3]" />}
-            <p className="text-xs font-bold uppercase tracking-widest text-[#8B91E3]">What {formatPrice(creatorPrice)} actually gets you</p>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold mb-6 text-white">
-            Creator pays for itself in one post.
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-red-400/70 mb-2">The old way</p>
-              <p className="text-3xl font-black text-red-300 mb-1">{currency === "INR" ? "₹5,000–₹15,000" : "$50–$150"}</p>
-              <p className="text-white/50 text-sm">A freelance content writer for 100 pieces. Slow turnaround, inconsistent quality, and it's still just one platform.</p>
-            </div>
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400/70 mb-2">With Creator</p>
-              <p className="text-3xl font-black text-emerald-300 mb-1">{formatPrice(creatorPrice)}</p>
-              <p className="text-white/50 text-sm">100 pieces of content across Instagram, YouTube, Twitter & LinkedIn. Instant. Optimized. Ready to post.</p>
-            </div>
-          </div>
-          <p className="text-center text-white/35 text-xs mt-5">
-            That's <span className="text-emerald-400 font-semibold">20–60× cheaper</span> than outsourcing — with better consistency.
-          </p>
-        </motion.div>
-
-        {/* Why Infinity Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mb-16"
-        >
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2">
-              Why creators choose{" "}
-              <span className="bg-gradient-to-r from-[#5E6AD2] to-indigo-400 bg-clip-text text-transparent">
-                Infinity
-              </span>
-            </h2>
-            <p className="text-white/50 text-sm max-w-md mx-auto">
-              Creator gives you volume.{" "}
-              <strong className="text-white/75">Infinity gives you volume that performs.</strong>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {INFINITY_EXCLUSIVES.map(({ icon: Icon, color, label, desc }) => (
-              <div
-                key={label}
-                className="rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 p-5 transition-all duration-200"
-              >
-                <div className="flex items-center gap-3 mb-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                    <Icon className={`w-4 h-4 ${color}`} />
-                  </div>
-                  <h3 className="font-semibold text-sm text-white">{label}</h3>
-                </div>
-                <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        <div className="mb-10 text-center flex flex-col items-center">
-          <div className="inline-flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-5 py-2 mb-2">
-            <Shield className="w-5 h-5 text-emerald-400" />
-            <span className="text-sm font-bold text-emerald-400">30-Day Money-Back Guarantee</span>
-          </div>
-          <p className="text-xs text-white/40 max-w-sm">If you don't grow your audience in the first 30 days, we'll refund your payment fully. No questions asked.</p>
-        </div>
-
-        <TestimonialSection />
-
-        {/* Feature Comparison Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="mb-16"
-        >
-          <h2 className="text-2xl font-bold text-center mb-8">Full feature comparison</h2>
-
-          <div className="rounded-2xl border border-white/10 overflow-hidden overflow-x-auto">
-            {/* Table Header */}
-            <div className="grid grid-cols-5 bg-white/[0.04] border-b border-white/10 min-w-[560px]">
-              <div className="p-3 text-xs text-white/40 font-medium">Feature</div>
-              <div className="p-3 text-center">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40">Explorer</p>
-                <p className="text-white font-bold mt-0.5 text-xs">Free</p>
-              </div>
-              <div className="p-3 text-center bg-emerald-950/20">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400">Starter</p>
-                <p className="text-emerald-100 font-bold mt-0.5 text-xs">{formatPrice(starterPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span></p>
-              </div>
-              <div className="p-3 text-center bg-[rgba(94,106,210,0.30)] relative">
-                <div className="flex justify-center mb-0.5">
-                  <span className="text-[8px] bg-[#5E6AD2]/20 text-[#8B91E3] border border-[rgba(94,106,210,0.4)]/30 rounded-full px-1.5 py-0.5 font-semibold">
-                    POPULAR
-                  </span>
-                </div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-[#8B91E3] text-shadow-sm">Creator</p>
-                <p className="text-white font-bold mt-0.5 text-xs">
-                  {formatPrice(creatorPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span>
-                </p>
-              </div>
-              <div className="p-3 text-center">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-teal-300">Infinity</p>
-                <p className="text-white font-bold mt-0.5 text-xs">
-                  {formatPrice(infinityPrice)}<span className="text-white/40 text-[10px] font-normal">/mo</span>
-                </p>
-              </div>
-            </div>
-
-            {(["core", "tools", "infinity"] as const).map((section) => (
-              <div key={section} className="min-w-[560px]">
-                <div className={`px-4 py-2 border-b border-white/5 ${section === "infinity" ? "bg-[rgba(94,106,210,0.20)]" : "bg-white/[0.01]"}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wider ${section === "infinity" ? "text-[#8B91E3]" : "text-white/30"}`}>
-                    {section === "core" ? "Core" : section === "tools" ? "Tools" : "Infinity Exclusives ✦"}
-                  </p>
-                </div>
-                {FEATURES.filter((f) => f.section === section).map((feature, i) => (
-                  <div
-                    key={feature.key}
-                    className={`grid grid-cols-5 border-b border-white/[0.04] ${i % 2 === 0 ? "" : "bg-white/[0.01]"}`}
-                  >
-                    <div className="p-3 text-xs text-white/70">{feature.label}</div>
-                    <div className="p-3 flex items-center justify-center">
-                      <CellContent value={feature.free} />
-                    </div>
-                    <div className="p-3 flex items-center justify-center bg-emerald-950/10">
-                      <CellContent value={feature.starter} />
-                    </div>
-                    <div className={`p-3 flex items-center justify-center bg-[rgba(94,106,210,0.10)]`}>
-                      <CellContent value={feature.creator} />
-                    </div>
-                    <div className={`p-3 flex items-center justify-center ${section === "infinity" ? "bg-[rgba(94,106,210,0.5)]" : ""}`}>
-                      <CellContent value={feature.infinity} infinityLabel={feature.infinityLabel} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-
-            {/* CTA Row */}
-            <div className="grid grid-cols-5 bg-white/[0.03] p-3 gap-2 min-w-[560px]">
-              <div />
-              <div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full border-white/20 text-white/60 hover:bg-white/5 text-xs"
-                  onClick={() => navigate(sub ? "/generate" : "/sign-in")}
-                >
-                  Try Free
-                </Button>
-              </div>
-              <div>
-                <Button
-                  size="sm"
-                  className="w-full bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-200 text-xs"
-                  onClick={() => handlePlanClick("starter")}
-                >
-                  Get Starter
-                </Button>
-              </div>
-              <div>
-                <Button
-                  size="sm"
-                  className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] border border-[rgba(94,106,210,0.4)]/30 text-white text-xs shadow-lg shadow-[rgba(94,106,210,0.25)]"
-                  onClick={() => handlePlanClick("creator")}
-                >
-                  Get Creator
-                </Button>
-              </div>
-              <div>
-                <Button
-                  size="sm"
-                  className="w-full bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs"
-                  onClick={() => handlePlanClick("infinity")}
-                >
-                  Get Infinity
-                </Button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Trust + FAQ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
-          >
-            <h3 className="font-bold mb-4 flex items-center gap-2 text-lg">
-              <Shield className="w-4 h-4 text-[#8B91E3]" />
-              You're always protected
-            </h3>
-            <div className="space-y-3.5">
-              {[
-                { icon: Shield, label: "Secure payments", desc: "Powered by Razorpay, India's #1 gateway" },
-                { icon: X, label: "Cancel anytime", desc: "No lock-in — cancel in one click" },
-                { icon: Star, label: "4.1/5 rating", desc: "2,400+ creators love GrowFlow AI" },
-              ].map(({ icon: Icon, label, desc }) => (
-                <div key={label} className="flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-[#5E6AD2]/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon className="w-3.5 h-3.5 text-[#8B91E3]" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{label}</p>
-                    <p className="text-white/50 text-xs">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
-          >
-            <h3 className="font-bold mb-4 text-lg">Common questions</h3>
-            <div className="space-y-4">
-              {[
-                { q: "What happens after my 5 free generations?", a: "You'll hit your free limit for the month and can't generate more content until the next cycle. You'll need to upgrade to continue without waiting." },
-                { q: "Can I switch between Creator and Infinity?", a: "Yes — upgrade or downgrade anytime from your settings. Changes take effect immediately." },
-                { q: "Can I cancel my subscription easily?", a: "Absolutely. You can cancel with a single click anytime inside your settings page before your next billing cycle." },
-                { q: "What is Viral Score™?", a: "An AI score (0–100) predicting how likely your content is to go viral, based on hook strength, platform patterns, and engagement signals." },
-              ].map(({ q, a }) => (
-                <div key={q}>
-                  <p className="text-sm font-semibold text-white mb-1">{q}</p>
-                  <p className="text-white/50 text-sm leading-relaxed">{a}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
 
       <UpgradeModal
         open={upgradeModal.open}
@@ -1147,7 +739,6 @@ export default function PricingPage() {
         billingPeriod={upgradeModal.billing}
         currency={upgradeModal.currency}
       />
-
       <UpgradeModal
         open={showAgencyUpgrade}
         onClose={() => setShowAgencyUpgrade(false)}
@@ -1157,31 +748,309 @@ export default function PricingPage() {
         billingPeriod={billing}
       />
 
-      {/* FAQ Section */}
-        <div className="max-w-2xl mx-auto mt-16">
-          <h3 className="text-center text-xl font-bold text-white mb-6">Frequently Asked Questions</h3>
-          <div className="space-y-3">
-            {[
-              { q: "Can I cancel anytime?", a: "Yes. Cancel from Settings anytime. You keep access until your billing period ends." },
-              { q: "Is there a free trial?", a: "Yes — 5 free generations with no credit card. Paid plans include a 7-day trial." },
-              { q: "Which payment methods are accepted?", a: "UPI, all Indian debit/credit cards, net banking, and wallets via Razorpay." },
-              { q: "What happens when I hit my generation limit?", a: "You'll see an upgrade prompt. Your previous content stays saved. No data is lost." },
-              { q: "Can I switch plans?", a: "Yes. Upgrade or downgrade anytime from Settings. Changes apply from your next billing date." },
-              { q: "Do you support Hindi and regional languages?", a: "Yes. GrowFlow AI supports English, Hindi, Hinglish, Bengali, Tamil, Telugu, and more." },
-            ].map(({ q, a }) => (
-              <details key={q} className="group rounded-xl border border-white/8 bg-white/[0.02] overflow-hidden">
-                <summary className="flex items-center justify-between px-5 py-4 cursor-pointer text-sm font-semibold text-white/80 hover:text-white transition-colors list-none">
-                  {q}
-                  <ChevronDown className="w-4 h-4 text-white/30 group-open:rotate-180 transition-transform duration-200" />
-                </summary>
-                <div className="px-5 pb-4 text-sm text-white/45 leading-relaxed border-t border-white/5 pt-3">
-                  {a}
+      {/* ── TOP HEADER ── */}
+      <div className="sticky top-0 z-40 bg-[#080810]/95 backdrop-blur-xl border-b border-white/5 px-4 py-3">
+        <div className="flex items-center justify-between max-w-lg mx-auto">
+          <button onClick={() => globalThis.history.back()} 
+            className="text-white/40 hover:text-white p-2 -ml-2">
+            ← Back
+          </button>
+          <h1 className="text-sm font-bold text-white">Choose Your Plan</h1>
+          {/* Currency toggle */}
+          <button
+            onClick={() => setCurrency(c => c === "INR" ? "USD" : "INR")}
+            className="text-xs font-bold text-white/40 hover:text-white/70 border border-white/10 px-2 py-1 rounded-lg transition-colors"
+          >
+            {currency === "INR" ? "₹ INR" : "$ USD"}
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto px-4 pb-32">
+        {/* ── HEADLINE ── */}
+        <div className="text-center pt-6 pb-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 mb-4">
+            <Sparkles className="w-3 h-3 text-violet-400" />
+            <span className="text-[11px] font-bold text-violet-400 uppercase tracking-wider">
+              3-Day Free Trial — No Charges Until Day 4
+            </span>
+          </div>
+          <h2 className="text-2xl font-black text-white mb-2">Grow faster with AI</h2>
+          <p className="text-sm text-white/40">Used by 2,400+ Indian creators on Instagram, YouTube & LinkedIn</p>
+        </div>
+
+        {/* Credit Top-Up Section — MOVED UP */}
+        <div id="topup" className="mb-10 scroll-mt-20">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-px flex-1 bg-white/5" />
+            <span className="text-[11px] uppercase tracking-widest font-bold text-white/30">
+              ⚡ Quick Credit Top-Up — No Subscription Needed
+            </span>
+            <div className="h-px flex-1 bg-white/5" />
+          </div>
+          <TopUpSection currency={currency} />
+        </div>
+
+        {/* ── PLAN SELECTOR TABS ── */}
+        <div className="grid grid-cols-4 gap-1.5 mb-5 p-1 rounded-2xl bg-white/3 border border-white/5">
+          {PLANS.map(p => {
+            const Icon = p.icon;
+            const isSel = selectedPlan === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPlan(p.id)}
+                className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl transition-all duration-200 ${
+                  isSel ? "bg-white/10 border border-white/10 shadow-lg" : "hover:bg-white/5"
+                }`}
+                style={isSel ? { boxShadow: `0 0 20px ${p.glow}`, borderColor: p.border } : {}}
+              >
+                <Icon className="w-4 h-4 transition-colors" style={{ color: isSel ? p.color : "rgba(255,255,255,0.3)" }} />
+                <span className={`text-[10px] font-bold transition-colors ${isSel ? "text-white" : "text-white/30"}`}>
+                  {p.name}
+                </span>
+                {p.badge && isSel && (
+                  <span className="text-[8px] font-black text-violet-300 bg-violet-500/20 px-1.5 rounded-full">
+                    HOT
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── MAIN PLAN CARD ── */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedPlan}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="rounded-3xl border p-5 mb-4"
+            style={{ 
+              background: `linear-gradient(135deg, ${plan.glow} 0%, transparent 60%)`,
+              borderColor: plan.border,
+              boxShadow: `0 8px 40px ${plan.glow}`,
+            }}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <plan.icon className="w-5 h-5" style={{ color: plan.color }} />
+                  <h3 className="text-lg font-black text-white">{plan.name}</h3>
+                  {plan.badge && (
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                      style={{ color: plan.color, background: plan.glow, border: `1px solid ${plan.border}` }}>
+                      {plan.badge}
+                    </span>
+                  )}
                 </div>
-              </details>
+                <p className="text-[11px] text-white/40">{plan.tagline}</p>
+              </div>
+              <div className="text-right">
+                <div className="flex items-end gap-0.5">
+                  <span className="text-2xl font-black text-white">
+                    {currency === "INR" ? "₹" : "$"}{price}
+                  </span>
+                  <span className="text-[11px] text-white/30 mb-0.5">/mo</span>
+                </div>
+                <p className="text-[10px] text-white/30">{plan.credits}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 mb-5">
+              {plan.features.map((f, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ background: plan.glow, border: `1px solid ${plan.border}` }}>
+                    <Check className="w-2.5 h-2.5" style={{ color: plan.color }} />
+                  </div>
+                  <span className="text-[12px] text-white/70">{f}</span>
+                </div>
+              ))}
+              {plan.notIncluded.map((f, i) => (
+                <div key={i} className="flex items-center gap-2 opacity-40">
+                  <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/10">
+                    <X className="w-2.5 h-2.5 text-white/40" />
+                  </div>
+                  <span className="text-[12px] text-white/30 line-through">{f}</span>
+                </div>
+              ))}
+            </div>
+
+            {isCurrentPlan && hasActivePlan && (
+              <div className="mb-4 p-3 rounded-xl border text-center"
+                style={{ borderColor: plan.border, background: plan.glow }}>
+                <p className="text-xs font-bold" style={{ color: plan.color }}>
+                  {sub?.plan === "trial" 
+                    ? `✅ You're on trial — ${sub.trialDaysLeft} day(s) left` 
+                    : "✅ Your current active plan"}
+                </p>
+              </div>
+            )}
+
+            {!isCurrentPlan || !hasActivePlan ? (
+              <button
+                onClick={() => handleCheckout(selectedPlan, billing, currency)}
+                disabled={hasActivePlan && !isCurrentPlan}
+                className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ 
+                  background: hasActivePlan && !isCurrentPlan ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg, ${plan.color} 0%, ${plan.color}CC 100%)`,
+                  boxShadow: hasActivePlan && !isCurrentPlan ? "none" : `0 4px 20px ${plan.glow}`,
+                }}
+              >
+                {hasActivePlan && !isCurrentPlan
+                  ? "Cancel current plan first"
+                  : sub?.hasUsedTrial
+                    ? `Subscribe — Charged Immediately`
+                    : `Start 3-Day Free Trial →`}
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/settings?tab=billing")}
+                className="w-full py-3.5 rounded-2xl font-black text-sm text-white/60 bg-white/5 border border-white/10 transition-all"
+              >
+                Manage Subscription →
+              </button>
+            )}
+            
+            {(!hasActivePlan || isCurrentPlan) && (
+              <p className="text-[10px] text-white/25 text-center mt-3">
+                UPI setup charges ₹1–5 as mandate fee → auto-refunded instantly
+              </p>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* ── BILLING PERIOD SELECTOR ── */}
+        <div className="mb-6">
+          <p className="text-[11px] text-white/40 uppercase tracking-widest font-semibold mb-3 text-center">Billing Period</p>
+          <div className="grid grid-cols-2 gap-2">
+            {availableBilling.map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => setBilling(opt.id as any)}
+                className={`relative py-3 px-4 rounded-2xl border transition-all text-left ${
+                  billing === opt.id ? "bg-white/10 border-white/20 text-white" : "bg-white/3 border-white/5 text-white/40 hover:text-white/60"
+                }`}
+              >
+                <p className="text-xs font-bold">{opt.label}</p>
+                {opt.save ? (
+                  <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">{opt.save}</p>
+                ) : (
+                  <p className="text-[10px] text-white/25 mt-0.5">Standard</p>
+                )}
+                {billing === opt.id && (
+                  <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </button>
             ))}
           </div>
         </div>
+
+        {/* ── QUICK COMPARE TABLE ── */}
+        <div className="mb-6 rounded-2xl border border-white/5 bg-white/[0.015] overflow-hidden">
+          <div className="p-4 border-b border-white/5">
+            <p className="text-xs font-bold text-white/50 uppercase tracking-widest">Quick Comparison</p>
+          </div>
+          <div className="divide-y divide-white/5">
+            {[
+              { label: "Generations/month", values: ["25", "150", "∞", "1000"] },
+              { label: "All tools included",  values: ["Core only", "All tools", "All tools", "All tools"] },
+              { label: "AI Coach",           values: ["Basic", "Full", "Full", "Full"] },
+              { label: "Team seats",         values: ["1", "1", "1", "5"] },
+            ].map((row, i) => (
+              <div key={i} className="grid grid-cols-5 gap-0">
+                <div className="col-span-2 px-4 py-2.5">
+                  <p className="text-[11px] text-white/40">{row.label}</p>
+                </div>
+                {row.values.map((val, j) => (
+                  <div key={j} className={`px-2 py-2.5 text-center ${PLANS[j].id === selectedPlan ? "bg-white/5" : ""}`}>
+                    <p className={`text-[11px] font-semibold ${PLANS[j].id === selectedPlan ? "text-white" : "text-white/30"}`}>
+                      {val}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div className="grid grid-cols-5 bg-white/3">
+              <div className="col-span-2" />
+              {PLANS.map(p => (
+                <div key={p.id} className={`py-2 text-center ${p.id === selectedPlan ? "bg-white/5" : ""}`}>
+                  <p className="text-[9px] font-black uppercase tracking-wide" style={{ color: p.id === selectedPlan ? p.color : "rgba(255,255,255,0.2)" }}>
+                    {p.name}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* ── TRUST SIGNALS ── */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {[
+            { icon: "🔒", text: "Secured by Razorpay" },
+            { icon: "↩️", text: "Cancel anytime" },
+            { icon: "✅", text: "3-day free trial" },
+          ].map((t, i) => (
+            <div key={i} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-white/3 border border-white/5 text-center">
+              <span className="text-lg">{t.icon}</span>
+              <p className="text-[10px] text-white/40 font-semibold">{t.text}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── FAQ ── */}
+        <div className="mb-6">
+          <p className="text-sm font-bold text-white mb-3">Common Questions</p>
+          <div className="space-y-2">
+            {[
+              { q: "Will I be charged right now?", a: "No. You get 3 days completely free. UPI AutoPay requires a ₹1–5 mandate setup fee that is automatically refunded within seconds. Your first actual charge happens on Day 4." },
+              { q: "What if I cancel before 3 days?", a: "Zero charges. Cancel from Settings → Subscription before Day 3 and you pay absolutely nothing." },
+              { q: "Can I switch plans?", a: "You need to cancel your current plan from Settings first. After cancellation, you can subscribe to a different plan immediately — but the 3-day trial is only available once per account." },
+              { q: "Why does Razorpay show my name instead of GrowFlow AI?", a: "This is being updated in our Razorpay merchant profile. The charges will appear as GrowFlow AI on your bank statement shortly." },
+              { q: "What are credit top-ups?", a: "If you run out of monthly credits, you can buy extra credits as a one-time purchase. They never expire and are added to your wallet instantly." },
+            ].map((item, i) => (
+              <div key={i} className="rounded-xl border border-white/5 bg-white/[0.015] overflow-hidden">
+                <button
+                  onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between p-4 text-left"
+                >
+                  <span className="text-xs font-semibold text-white/70 pr-4">{item.q}</span>
+                  {expandedFaq === i ? <ChevronUp className="w-4 h-4 text-white/30 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-white/30 flex-shrink-0" />}
+                </button>
+                <AnimatePresence>
+                  {expandedFaq === i && (
+                    <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+                      <p className="text-[11px] text-white/40 px-4 pb-4 leading-relaxed border-t border-white/5 pt-3">{item.a}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
+
+      {/* ── STICKY BOTTOM CTA (mobile) ── */}
+      {!hasActivePlan && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-[#080810]/95 backdrop-blur-xl border-t border-white/5">
+          <div className="max-w-lg mx-auto">
+            <button
+              onClick={() => handleCheckout(selectedPlan, billing, currency)}
+              className="w-full py-4 rounded-2xl font-black text-white text-sm transition-all active:scale-[0.98]"
+              style={{ background: `linear-gradient(135deg, ${plan.color} 0%, ${plan.color}CC 100%)`, boxShadow: `0 4px 24px ${plan.glow}` }}
+            >
+              {sub?.hasUsedTrial ? `Subscribe to ${plan.name} — ${currency === "INR" ? "₹" : "$"}${price}/mo` : `Try ${plan.name} Free for 3 Days →`}
+            </button>
+            <p className="text-[10px] text-white/25 text-center mt-2">
+              {sub?.hasUsedTrial ? "AutoPay setup — charged immediately" : "AutoPay setup · ₹1–5 mandate fee refunded instantly"}
+            </p>
+          </div>
+        </div>
+      )}
+      
     </div>
   );
 }

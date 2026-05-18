@@ -1,7 +1,19 @@
 import pg from "pg";
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const currentFileUrl = fileURLToPath(import.meta.url);
+const rootDir = path.resolve(path.dirname(currentFileUrl), "../../../../");
+dotenv.config({ path: path.join(rootDir, ".env") });
 
 const { Pool } = pg;
-const connectionString = "postgresql://postgres.kgcbsppffaapzemvuefh:Af2yKCk1AkYv8I4S@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres";
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error("[UPDATE] DATABASE_URL is missing in environment variables!");
+  process.exit(1);
+}
 
 const pool = new Pool({ 
   connectionString,

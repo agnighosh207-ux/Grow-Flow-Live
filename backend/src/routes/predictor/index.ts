@@ -5,6 +5,7 @@ import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, predictorResultsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
+import { logger } from "../../lib/logger";
 
 const router: IRouter = Router();
 
@@ -89,10 +90,35 @@ Return JSON:
     invalidateAuthCache(req.userId);
     return;
   } catch (err: any) {
-    console.error("PREDICTOR ANALYZE ERROR:", err);
-    await refundGenerationCredit(req.userId, req.user?.planTier);
+    if (abortController.signal.aborted) {
+      if (!res.headersSent) {
+        res.status(499).json({ error: "Request cancelled" });
+      }
+      return;
+    }
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited");
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ userId: req.userId, err: err?.message }, "[AI] Predictor analysis failed");
     res.status(503).json({ error: "Predictor service unavailable. Please try again." });
-    return;
   }
 });
 

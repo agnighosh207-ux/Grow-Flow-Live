@@ -175,7 +175,7 @@ export default function RepurposePage() {
          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-12">
            <div className="xl:col-span-5 space-y-6 md:space-y-8">
             <div className="space-y-4">
-              <label className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Original Format</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">What platform is this content from?</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                {formats.map(f => (
                 <button
@@ -232,9 +232,10 @@ export default function RepurposePage() {
 
            <div className="xl:col-span-7 space-y-4">
             <div className="flex justify-between items-end">
-              <label htmlFor="source-content" className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground italic">Input Intelligence Stream</label>
+              <label htmlFor="source-content" className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground italic">Paste the original content</label>
               <Badge variant="outline" className="bg-white/5 border-white/10 text-[10px] h-6 px-3">{sourceContent.length} / 3000</Badge>
             </div>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>We'll rewrite it natively for each platform you select below</p>
             <Textarea 
              id="source-content"
              placeholder="Paste your original caption, script, or blog post here for multi-channel transformation..."

@@ -27,6 +27,9 @@ import { redis } from "../../lib/redis";
 
 const router: IRouter = Router();
 
+// Simple in-memory queue per user (resets on restart)
+const userRequestQueue = new Map<string, number>();
+
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const demoLimiter = rateLimit({ windowMs: 60*1000, limit: 5, keyGenerator: (req: any, res: any) => ipKeyGenerator(req, res) });
@@ -245,6 +248,8 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }
 
 router.post("/generate", requireAuth, enforceGenerationLimit, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "content" }, "[AI] Request started");
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
   const { contentType, tone, brandVoiceId } = req.body || {};
@@ -277,6 +282,18 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
     res.status(401).json({ error: "User context synchronization failed. Please refresh." });
     return;
   }
+
+  const userId = req.userId;
+  const currentRequests = userRequestQueue.get(userId) || 0;
+  if (currentRequests >= 2) {
+    res.status(429).json({ 
+      error: "rate_limited",
+      message: "Please wait for your current generation to complete before starting another."
+    });
+    return;
+  }
+
+  userRequestQueue.set(userId, currentRequests + 1);
 
   const isAdminUser = user?.isAdmin === true;
   const status = isAdminUser ? "active" : (user?.subscriptionStatus ?? "free");
@@ -340,10 +357,39 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
       }
     }
   } catch (err: any) {
-    logger.error({ err, userId: req.userId }, "AI Generation Fast Error");
-    await refundGenerationCredit(req.userId, user?.planTier);
-    res.status(503).json({ error: "AI is temporarily unavailable. Please try again in a moment." });
+    try { await refundGenerationCredit(req.userId, user?.planTier); } catch {}
+    
+    const isAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited");
+      res.setHeader('Retry-After', '30');
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] Content generation failed");
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: "AI is temporarily unavailable. Please try again in 30 seconds.",
+      retryAfter: 30,
+    });
     return;
+  } finally {
+    const current = userRequestQueue.get(userId) || 1;
+    userRequestQueue.set(userId, Math.max(0, current - 1));
   }
 
   try {
@@ -373,6 +419,7 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: Authen
       }
     }
 
+    logger.info({ requestId, userId: req.userId, provider: "gemini/groq" }, "[AI] Request completed");
     res.json({
       id: savedGen.id,
       content,
@@ -555,9 +602,29 @@ Return ONLY this JSON:
       }
     }
   } catch (err: any) {
-    logger.error({ err: String(err) }, "Variations generation error");
-    await refundGenerationCredit(req.userId, user?.planTier);
-    res.status(503).json({ error: "AI is temporarily unavailable. Please try again in a moment." });
+    try { await refundGenerationCredit(req.userId, user?.planTier); } catch {}
+    
+    const isAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited in variations");
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ userId: req.userId, err: err?.message }, "[AI] Variations generation failed");
+    res.status(503).json({ error: "AI is temporarily unavailable. Please try again." });
     return;
   }
 

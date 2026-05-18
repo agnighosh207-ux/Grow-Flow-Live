@@ -52,7 +52,7 @@ const MODAL_COPY = {
   },
   upgrade: {
     title: "Unlock the full power",
-    subtitle: "Start your 7-day free trial — no charge until day 8.",
+    subtitle: "Start your 3-day free trial — no charge until day 4.",
     icon: "🚀",
   },
   expired: {
@@ -187,6 +187,11 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
 };
 
   const price = getPriceDisplay(selectedPlan, billingPeriod);
+  const parsedPrice = parseInt(price.replace(/[^\d]/g, '')) || 0;
+  const finalPriceNumeric = discountPercent > 0 
+    ? Math.round(parsedPrice * (1 - discountPercent / 100))
+    : parsedPrice;
+  const finalPriceString = currency === "USD" ? `$${finalPriceNumeric}` : `₹${finalPriceNumeric}`;
 
   const planLabel = selectedPlan === "agency" ? "Agency" : selectedPlan === "infinity" ? "Infinity" : selectedPlan === "creator" ? "Creator" : "Starter";
   const purchasedPlanLabel = purchasedPlan === "agency" ? "Agency" : purchasedPlan === "infinity" ? "Infinity" : purchasedPlan === "creator" ? "Creator" : "Starter";
@@ -234,13 +239,18 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
       }
 
       const razorpayKey = data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID;
+      if (!razorpayKey) {
+        throw new Error("Payment gateway is not configured (missing Razorpay Key).");
+      }
       if (import.meta.env.DEV) console.log("[UpgradeModal] Initializing Razorpay with key:", razorpayKey?.substring(0, 8) + "...");
 
       const options = {
         key: razorpayKey,
         subscription_id: data.subscriptionId,
         name: "GrowFlow AI",
-        description: `${planLabelForCheckout} plan · ${priceForCheckout}${billingPeriod === "yearly" ? '/year' : '/month'}`,
+        description: data.hasUsedTrial 
+          ? `${planLabelForCheckout} plan · ${priceForCheckout}${billingPeriod === "yearly" ? '/year' : '/month'} (Charged immediately)`
+          : `${planLabelForCheckout} plan · ${priceForCheckout}${billingPeriod === "yearly" ? '/year' : '/month'} (3-day free trial)`,
         theme: { color: "#5E6AD2" },
         prefill: {},
         handler: async (response: any) => {
@@ -294,6 +304,34 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
       if (import.meta.env.DEV) console.log("[UpgradeModal] rzp.open() called.");
     } catch (err: any) {
       console.error("Checkout error:", err);
+      
+      const errCode = err?.code || err?.message || "";
+      const errErrorType = err?.error || "";
+      
+      if (errErrorType === "subscription_exists" || errCode.includes("subscription_exists") || errCode.includes("trial") || errCode.includes("active")) {
+        toast({
+          variant: "destructive",
+          title: "Already Subscribed",
+          description: err.message || "You already have an active plan. Cancel it from Settings first.",
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+              onClick={() => {
+                handleClose();
+                setLocation("/settings?tab=billing");
+              }}
+            >
+              Fix Now
+            </Button>
+          )
+        });
+        setPaymentState("idle");
+        handleClose();
+        return;
+      }
+
       if (err.message === "email_required" || err.message?.includes("email")) {
         toast({
           variant: "destructive",
@@ -387,7 +425,7 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                         <div className="mt-2 px-4 py-2 rounded-xl mx-auto max-w-xs mb-5"
                           style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)' }}>
                           <p className="text-xs font-semibold text-emerald-400">
-                            ✓ 7-day free trial starts now · No charge until day 8
+                            ✓ 3-day free trial starts now · No charge until day 4
                           </p>
                         </div>
                       )}
@@ -501,13 +539,17 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       {paymentState === "pending" ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
                       ) : (
-                        <><Zap className="w-4 h-4 mr-2" /> Start 7-Day Free Trial →</>
+                        isTrialEligible ? (
+                          <><Zap className="w-4 h-4 mr-2" /> Start 3-Day Free Trial →</>
+                        ) : (
+                          <><Zap className="w-4 h-4 mr-2" /> Upgrade Plan →</>
+                        )
                       )}
                     </Button>
                     <p className="text-center text-[10px] text-white/35 mt-2 mb-2">
                       {hasUsedTrial 
-                        ? "Trial already used · Billing starts immediately · Cancel anytime"
-                        : "✓ No charge today · ✓ Cancel anytime before day 7 · ✓ Full access starts immediately"}
+                        ? "No free trial available — charged immediately after AutoPay setup"
+                        : "✓ No charge today · ✓ Cancel anytime before day 3 · ✓ Full access starts immediately"}
                     </p>
 
                     <button
@@ -545,13 +587,17 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                         {paymentState === "pending" ? (
                           <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Activating...</>
                         ) : (
-                          <><Zap className="w-5 h-5 mr-2" /> Start 7-Day Free Trial →</>
+                          isTrialEligible ? (
+                            <><Zap className="w-5 h-5 mr-2" /> Start 3-Day Free Trial →</>
+                          ) : (
+                            <><Zap className="w-5 h-5 mr-2" /> Upgrade Plan →</>
+                          )
                         )}
                       </Button>
                       <p className="text-center text-[10px] text-white/35">
                         {hasUsedTrial 
-                          ? "Trial already used · Billing starts immediately · Cancel anytime"
-                          : "✓ No charge today · ✓ Cancel anytime before day 7 · ✓ Full access starts immediately"}
+                          ? "No free trial available — charged immediately after AutoPay setup"
+                          : "✓ No charge today · ✓ Cancel anytime before day 3 · ✓ Full access starts immediately"}
                       </p>
                     </div>
 
@@ -664,6 +710,18 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       </ul>
                     </div>
 
+                    <div className="mt-4 p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 mb-4 text-left">
+                      <p className="text-[11px] font-bold text-amber-400 mb-1">
+                        💳 How payment works
+                      </p>
+                      <ul className="text-[11px] text-white/50 space-y-1">
+                        <li>• UPI setup requires a ₹1–5 mandate fee → <strong className="text-white/70">auto-refunded within seconds</strong></li>
+                        <li>• You get <strong className="text-white/70">3 days completely free</strong> — no charges until day 4</li>
+                        <li>• AutoPay will charge {finalPriceString}/month starting day 4 automatically</li>
+                        <li>• Cancel anytime before day 3 for zero charges</li>
+                      </ul>
+                    </div>
+
                     <Button
                       className="w-full bg-[#5E6AD2] hover:bg-[#5E6AD2] text-white font-semibold shadow-lg shadow-[rgba(94,106,210,0.40)] mb-2"
                       onClick={() => handleCheckout()}
@@ -674,19 +732,17 @@ const getPriceDisplay = (plan: PlanType, period: typeof billingPeriod) => {
                       ) : (
                         <span className="flex items-center justify-center gap-2">
                           <Zap className="w-4 h-4" />
-                          {isTrialEligible ? "Start 7-Day Free Trial →" : `Get ${planLabel} Plan →`}
+                          {isTrialEligible ? "Start 3-Day Free Trial — AutoPay Setup" : "Subscribe Now — AutoPay Setup"}
                         </span>
                       )}
                     </Button>
                     {isTrialEligible ? (
                       <p className="text-center text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>
-                        ✓ No charge today · ✓ Cancel before day 7 · ✓ Full access immediately
+                        ✓ No charge today · ✓ Cancel before day 3 · ✓ Full access immediately
                       </p>
                     ) : (
-                      <p className="text-center text-[10px] text-white/35 mt-2 mb-2">
-                        {hasUsedTrial 
-                          ? "Trial already used · Billing starts immediately · Cancel anytime"
-                          : "✓ No charge today · ✓ Cancel anytime before day 7 · ✓ Full access starts immediately"}
+                      <p className="text-center text-[10px] text-amber-400 font-medium mt-2 mb-2">
+                        Note: Your trial has been used. Payment charged immediately.
                       </p>
                     )}
 

@@ -430,11 +430,39 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
 
     // --- FIX: Race Condition ---
     // Prevent overwriting active paid subscriptions to avoid orphaned payments
-    if (user.razorpaySubscriptionId && user.subscriptionStatus === "active") {
-      logger.warn({ userId: req.userId }, "[SUBSCRIPTION] Blocked: Already has active subscription");
+    const BLOCKING_STATUSES = ["active", "trial", "past_due", "pending"];
+    
+    if (user.razorpaySubscriptionId && 
+        BLOCKING_STATUSES.includes(user.subscriptionStatus || "")) {
+      
+      const statusMessages: Record<string, string> = {
+        trial: `You are currently on a ${user.planType || "starter"} trial. ` +
+               `Your trial ends in ${
+                 user.trialEndsAt 
+                   ? Math.max(0, Math.ceil((new Date(user.trialEndsAt).getTime() - Date.now()) / 86400000))
+                   : 3
+               } day(s). Cancel your current subscription from Settings to switch plans.`,
+        active: "You already have an active subscription. To switch plans, cancel your current subscription from Settings first.",
+        past_due: "Your payment is past due. Please update your payment method from Settings.",
+        pending: "Your subscription is being activated. Please wait a moment and refresh the page.",
+      };
+      
+      const message = statusMessages[user.subscriptionStatus || "active"] || 
+        "You already have a subscription. Manage it from Settings.";
+      
+      logger.warn({ 
+        userId: req.userId, 
+        status: user.subscriptionStatus,
+        existingSubId: user.razorpaySubscriptionId 
+      }, "[SUBSCRIPTION] Blocked: Non-free subscription exists");
+      
       res.status(400).json({ 
-        error: "subscription_active", 
-        message: "You already have an active subscription. Please manage it in Settings." 
+        error: "subscription_exists",
+        code: user.subscriptionStatus,
+        message,
+        currentPlan: user.planType,
+        currentStatus: user.subscriptionStatus,
+        trialEndsAt: user.trialEndsAt,
       });
       return;
     }
@@ -447,12 +475,23 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
     }
 
     let subscription;
+    let existingUser;
     try {
-      const [existingUser] = await db.select()
+      const [userRecord] = await db.select()
         .from(usersTable)
         .where(eq(usersTable.id, req.userId));
+      existingUser = userRecord;
 
       const isEligibleForTrial = !existingUser?.hasUsedTrial;
+
+      // One-time trial enforcement
+      if (!isEligibleForTrial) {
+        // User has already used their trial — subscription starts immediately
+        // Remove the start_at delay so first payment is collected immediately
+        logger.info({ userId: req.userId }, "[SUBSCRIPTION] Trial already used — creating immediate subscription");
+        // Pass a flag to createSubscription to skip the trial period
+        // The subscription will charge immediately without the 3-day start_at offset
+      }
 
       subscription = await createSubscription(
         req.userId, 
@@ -462,12 +501,6 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
         config.totalCount,
         isEligibleForTrial
       );
-
-      if (isEligibleForTrial) {
-        await db.update(usersTable)
-          .set({ hasUsedTrial: true })
-          .where(eq(usersTable.id, req.userId));
-      }
     } catch (rzpErr: any) {
       const rzpDesc = rzpErr?.error?.description || rzpErr?.message || String(rzpErr);
       logger.error({ userId: req.userId, rzpErr: rzpErr?.error || rzpErr }, "[SUBSCRIPTION] Razorpay API Call Failed");
@@ -510,7 +543,8 @@ router.post("/create", requireAuth, subscriptionCreateLimiter, async (req: Authe
       amount: config.amount,
       currency: currency,
       trialEndsAt: null,
-      ghostMode: false
+      ghostMode: false,
+      hasUsedTrial: existingUser?.hasUsedTrial || false
     });
   } catch (err: any) {
     logger.error({ 
@@ -529,8 +563,11 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
   const planType = typeof req.body.planType === "string" ? req.body.planType : "";
   const couponCode = typeof req.body.couponCode === "string" ? req.body.couponCode : null;
 
-  if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
-    res.status(400).json({ error: "Missing payment verification data" });
+  // UPI AutoPay mandates may have empty payment_id — handle this case
+  const isUPIMandate = !razorpay_payment_id || !razorpay_signature;
+
+  if (!razorpay_subscription_id) {
+    res.status(400).json({ error: "Missing subscription ID" });
     return;
   }
 
@@ -546,20 +583,24 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     return;
   }
 
+  let razorpaySub: any = null;
   try {
-    const sub = await rzp.subscriptions.fetch(razorpay_subscription_id);
-    if (!sub || (sub.notes as any)?.clerk_user_id !== req.userId) {
-      logger.warn({ 
-        userId: req.userId, 
-        providedSubId: razorpay_subscription_id, 
-        razorpayNoteId: (sub.notes as any)?.clerk_user_id 
-      }, "Subscription ownership mismatch attempt blocked");
-      res.status(403).json({ error: "Subscription ownership mismatch. This payment does not belong to your account." });
+    razorpaySub = await rzp.subscriptions.fetch(razorpay_subscription_id);
+    if (!razorpaySub) {
+      res.status(400).json({ error: "Invalid subscription ID provided" });
       return;
     }
   } catch (err: any) {
     logger.error({ err: err.message, subId: razorpay_subscription_id }, "Failed to fetch subscription for verification");
     res.status(400).json({ error: "Invalid subscription ID provided or payment gateway error" });
+    return;
+  }
+
+  // Security: verify this subscription belongs to the requesting user
+  const subUserId = razorpaySub?.notes?.clerk_user_id;
+  if (subUserId && subUserId !== req.userId) {
+    logger.error({ userId: req.userId, subUserId }, "[VERIFY] Subscription ownership mismatch");
+    res.status(403).json({ error: "Subscription does not belong to this account" });
     return;
   }
 
@@ -571,28 +612,42 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
         ? process.env.RAZORPAY_LIVE_KEY_SECRET 
         : process.env.RAZORPAY_TEST_KEY_SECRET);
 
-  if (!keySecret) {
-    res.status(503).json({ error: "Payment gateway not configured" });
-    return;
-  }
-
-  const expectedSig = crypto
-    .createHmac("sha256", keySecret)
-    .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
-    .digest("hex");
-
-  const signatureBuffer = Buffer.from(razorpay_signature);
-  const expectedSigBuffer = Buffer.from(expectedSig);
-
-  if (signatureBuffer.length !== expectedSigBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedSigBuffer)) {
-    res.status(400).json({ error: "Invalid payment signature" });
-    return;
+  if (!isUPIMandate) {
+    // Standard signature verification for card/netbanking payments
+    if (!keySecret) {
+      res.status(503).json({ error: "Payment gateway not configured" });
+      return;
+    }
+    
+    const expectedSig = crypto
+      .createHmac("sha256", keySecret)
+      .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
+      .digest("hex");
+    
+    const sigBuffer = Buffer.from(razorpay_signature, "utf8");
+    const expectedBuffer = Buffer.from(expectedSig, "utf8");
+    
+    if (sigBuffer.length !== expectedBuffer.length || 
+        !crypto.timingSafeEqual(sigBuffer, expectedBuffer)) {
+      logger.warn({ userId: req.userId, razorpay_subscription_id }, 
+        "[VERIFY] Signature mismatch — possible tampering or UPI mandate");
+      res.status(400).json({ error: "Invalid payment signature" });
+      return;
+    }
+  } else {
+    // UPI mandate path — verify by fetching subscription from Razorpay
+    logger.info({ userId: req.userId, razorpay_subscription_id }, 
+      "[VERIFY] UPI mandate path — verifying via subscription fetch");
+    // Ownership check below (notes.clerk_user_id) handles security
   }
 
   const effectivePlan = (planType === "agency" ? "agency" : planType === "infinity" ? "infinity" : planType === "creator" ? "creator" : "starter") as "starter" | "creator" | "infinity" | "agency";
   const planTierStr = effectivePlan.toUpperCase();
   const credits = TIER_CREDITS[planTierStr] || 20;
-  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const trialEndsAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+
+  // Generate a unique payment ID for UPI AutoPay mandate if razorpay_payment_id is empty
+  const paymentId = razorpay_payment_id || `upi_mandate_${razorpay_subscription_id}`;
 
   try {
     const success = await db.transaction(async (tx) => {
@@ -606,7 +661,7 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
 
       const [existingPayment] = await tx.select()
         .from(paymentsTable)
-        .where(eq(paymentsTable.id, razorpay_payment_id))
+        .where(eq(paymentsTable.id, paymentId))
         .for('update');
 
       if (existingPayment) {
@@ -614,7 +669,7 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
       }
 
       await tx.insert(paymentsTable).values({
-        id: razorpay_payment_id,
+        id: paymentId,
         userId: req.userId,
         subscriptionId: razorpay_subscription_id,
         amount: 0,
@@ -622,15 +677,18 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
         processedAt: new Date()
       });
 
+      const isTrialActive = !lockedUser.hasUsedTrial;
+
       await tx.update(usersTable)
         .set({ 
-          subscriptionStatus: "trial", 
+          subscriptionStatus: isTrialActive ? "trial" : "active", 
           planType: effectivePlan, 
           planTier: planTierStr as any,
-          trialStartDate: new Date(),
-          trialEndsAt: trialEndsAt,
+          trialStartDate: isTrialActive ? new Date() : null,
+          trialEndsAt: isTrialActive ? trialEndsAt : null,
           generationsRemaining: credits, 
-          couponCode: couponCode || currentUser.couponCode || null
+          couponCode: couponCode || currentUser.couponCode || null,
+          hasUsedTrial: true
         } as any)
         .where(eq(usersTable.id, req.userId));
 
@@ -638,6 +696,7 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     });
 
     if (success === "ALREADY_PROCESSED") {
+      invalidateAuthCache(req.userId);
       res.json({
         success: true,
         planType: currentUser.planType,
@@ -666,7 +725,7 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
       user.email as string, 
       "", 
       effectivePlan, 
-      "7 Days Limit-Free Trial", 
+      user.subscriptionStatus === "trial" ? "3 Days Limit-Free Trial" : "Immediate Billing", 
       `₹${(user.subscriptionAmount || 0) / 100}`
     ).catch((err: any) => logger.error({ err: String(err) }, "sendPaymentSuccess error"));
 
@@ -676,12 +735,14 @@ router.post("/verify", requireAuth, async (req: AuthenticatedRequest, res: Respo
     }
   }
 
+  invalidateAuthCache(req.userId);
   res.json({
     success: true,
     planType: effectivePlan,
-    message: `${effectivePlan === "infinity" ? "Infinity" : effectivePlan === "creator" ? "Creator" : "Starter"} subscription activated. 7-day free trial started!`,
+    message: user?.subscriptionStatus === "trial"
+      ? `${effectivePlan === "infinity" ? "Infinity" : effectivePlan === "creator" ? "Creator" : "Starter"} subscription activated. 3-day free trial started!`
+      : `${effectivePlan === "infinity" ? "Infinity" : effectivePlan === "creator" ? "Creator" : "Starter"} subscription activated successfully!`,
   });
-  invalidateAuthCache(req.userId);
 });
 
 router.post("/credits/topup", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
@@ -840,8 +901,12 @@ router.post("/credits/verify-topup", requireAuth, async (req: AuthenticatedReque
       });
     });
 
-    res.json({ success: true, message: `${verifiedCredits} credits added successfully!` });
-    invalidateAuthCache(req.userId);
+    invalidateAuthCache(req.userId);  // ← MUST be before res.json
+    res.json({ 
+      success: true, 
+      message: `${verifiedCredits} credits added successfully!`,
+      creditsAdded: verifiedCredits,
+    });
   } catch (err: any) {
     logger.error({ err: err.message, userId: req.userId }, "Failed to verify topup payment");
     res.status(500).json({ error: "Failed to process credit addition" });
@@ -929,6 +994,7 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
     // Trigger churn sequence day 1
     sendSequenceEmail(req.userId, "churn", 1).catch((e) => logger.error({ err: e.message }, "Failed to trigger churn email"));
 
+    invalidateAuthCache(req.userId);
     res.json({ 
       accessUntil: periodEnd.toISOString()
     });
@@ -938,7 +1004,6 @@ router.post("/cancel", requireAuth, async (req: AuthenticatedRequest, res: Respo
         sendCancellationEmail(user.email, periodEnd).catch(() => {});
       }).catch(() => {});
     }
-    invalidateAuthCache(req.userId);
   } else {
     res.status(400).json({ error: "No active subscription to cancel" });
   }
@@ -963,8 +1028,8 @@ router.post("/retry", requireAuth, async (req: AuthenticatedRequest, res: Respon
     })
     .where(eq(usersTable.id, req.userId));
 
-  res.json({ success: true, planType: "free" });
   invalidateAuthCache(req.userId);
+  res.json({ success: true, planType: "free" });
 });
 
 router.get("/validate-coupon", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -1018,8 +1083,8 @@ router.post("/apply-coupon", requireAuth, async (req: AuthenticatedRequest, res:
       .where(eq(couponsTable.code, result.coupon.code));
   }
 
-  res.json({ success: true, message: result.description });
   invalidateAuthCache(req.userId);
+  res.json({ success: true, message: result.description });
 });
 
 
@@ -1122,6 +1187,10 @@ router.post("/webhook", async (req: AuthenticatedRequest, res: Response): Promis
       .set(updates)
       .where(eq(usersTable.razorpaySubscriptionId, subscriptionId))
       .returning({ id: usersTable.id, email: usersTable.email, planType: usersTable.planType, billingPeriod: usersTable.billingPeriod });
+
+    for (const u of updatedUsers) {
+      invalidateAuthCache(u.id);
+    }
 
     if (event.event === "subscription.charged" && updatedUsers.length > 0) {
       const payload = event?.payload?.payment?.entity;

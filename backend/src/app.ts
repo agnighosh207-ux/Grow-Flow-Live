@@ -158,6 +158,12 @@ function validateClerkConfig() {
 }
 validateClerkConfig();
 
+if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+  logger.error("[STARTUP_CRITICAL] RAZORPAY_WEBHOOK_SECRET is not set. Webhook signature verification will reject ALL incoming Razorpay webhooks. Set this in Railway env vars immediately.");
+} else {
+  logger.info("[STARTUP] RAZORPAY_WEBHOOK_SECRET is configured. Webhook handler is ready.");
+}
+
 import { isShuttingDown } from "./lib/state.js";
 
 const app: Express = express();

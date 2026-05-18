@@ -46,8 +46,10 @@ setInterval(() => {
 // Perplexity sonar searches the live web AND structures JSON in ONE call.
 // Groq is NOT involved here. JSON output enforced via prompt instructions.
 router.post("/generate", requireAuth, requirePlanOrTrial("ideas"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "ideas" }, "[AI] Request started");
   const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 25000);
+  const timeoutId = setTimeout(() => abortController.abort(), 22000);
   req.on('close', () => {
     clearTimeout(timeoutId);
     abortController.abort();
@@ -173,6 +175,7 @@ Return ONLY a JSON object.`;
       logger.error({ err, userId: req.userId }, "Failed to save ideas to history");
     }
 
+    logger.info({ requestId, userId: req.userId, provider: "perplexity" }, "[AI] Request completed");
     res.json(responseData);
     invalidateAuthCache(req.userId);
 
@@ -182,11 +185,41 @@ Return ONLY a JSON object.`;
       feature: "ideas"
     }).catch(err => logger.error({ err }, "Failed to log ideas usage"));
   } catch (err: any) {
-    if (abortController.signal.aborted) return;
-    console.error("IDEAS GEN ERROR:", err);
-    // --- H-20 FIX: Refund credit if ideas generation fails completely ---
-    await refundGenerationCredit(req.userId, req.user?.planTier);
-    res.status(503).json({ error: "AI temporarily unavailable. Please try again." });
+    if (abortController.signal.aborted) {
+      if (!res.headersSent) {
+        res.status(499).json({ error: "Request cancelled" });
+      }
+      return;
+    }
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited");
+      res.setHeader('Retry-After', '30');
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] Ideas generation failed");
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: "AI is temporarily unavailable. Please try again in 30 seconds.",
+      retryAfter: 30,
+    });
   }
 });
 

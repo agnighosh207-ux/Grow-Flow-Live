@@ -189,18 +189,21 @@ function StrategyPlannerInner() {
       />
      </div>
 
-     <div className="space-y-2">
-      <label className="text-white/70 text-sm font-medium">Duration</label>
-      <Select value={duration} onValueChange={(v) => setDuration(v as any)}>
-       <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-[rgba(94,106,210,0.40)] rounded-xl text-base min-h-[44px]">
-        <SelectValue />
-       </SelectTrigger>
-       <SelectContent className="bg-[#0f0a1e] border-white/10">
-        <SelectItem value="7" className="text-white/80 focus:text-white focus:bg-[rgba(94,106,210,0.20)]">7 Days Blueprint</SelectItem>
-        <SelectItem value="30" className="text-white/80 focus:text-white focus:bg-[rgba(94,106,210,0.20)]">30 Days Calendar (PRO)</SelectItem>
-       </SelectContent>
-      </Select>
-     </div>
+      <div className="space-y-2">
+       <label className="text-white/70 text-sm font-medium">Duration</label>
+       <Select value={duration} onValueChange={(v) => setDuration(v as any)}>
+        <SelectTrigger className="bg-black/20 border-white/10 text-white focus:ring-[rgba(94,106,210,0.40)] rounded-xl text-base min-h-[44px]">
+         <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-[#0f0a1e] border-white/10">
+         <SelectItem value="7" className="text-white/80 focus:text-white focus:bg-[rgba(94,106,210,0.20)]">7 Days Blueprint</SelectItem>
+         <SelectItem value="30" className="text-white/80 focus:text-white focus:bg-[rgba(94,106,210,0.20)]">30 Days Calendar (PRO)</SelectItem>
+        </SelectContent>
+       </Select>
+       <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
+         {duration === "7" ? "7 posts = 1 per day" : "30 posts = 1 per day for a month"}
+       </p>
+      </div>
 
      <div className="sm:col-span-3">
       <LanguageSelector

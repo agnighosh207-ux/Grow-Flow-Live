@@ -5,8 +5,8 @@ import { Logo } from "@/components/layout/Logo";
 
 const sections = [
   {
-    title: "7-Day Free Trial",
-    content: "All new subscriptions start with a 7-day free trial. Your card is saved for autopay but you are NOT charged until day 8. You can cancel anytime before day 7 with zero charge."
+    title: "3-Day Free Trial",
+    content: "All new subscriptions start with a 3-day free trial. Your card is saved for autopay but you are NOT charged until day 4. You can cancel anytime before day 3 with zero charge."
   },
   {
     title: "Cancellation During Trial",
@@ -14,7 +14,7 @@ const sections = [
   },
   {
     title: "Refunds After Trial",
-    content: "After your trial ends and the first payment is processed, you may request a full refund within 7 days of the charge. Email support with your registered email and reason. Refunds are processed within 5-7 business days to your original payment method."
+    content: "After your trial ends and the first payment is processed, you may request a full refund within 3 days of the charge. Email support with your registered email and reason. Refunds are processed within 5-7 business days to your original payment method."
   },
   {
     title: "Credit Top-Up Non-Refundable",

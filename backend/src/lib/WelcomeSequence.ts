@@ -100,7 +100,7 @@ export class WelcomeSequence {
       const isTrial = amountPaid === '₹0';
       const headingText = isTrial ? 'Trial Successfully Activated! ⚡' : 'Payment Confirmed! ⚡';
       const mainText = isTrial
-        ? `We've successfully activated your 7-day free trial of the <span class="accent">${planType.toUpperCase()}</span> plan. You now have full access to our premium suite limit-free for the next week!`
+        ? `We've successfully activated your 3-day free trial of the <span class="accent">${planType.toUpperCase()}</span> plan. You now have full access to our premium suite limit-free for the next 3 days!`
         : `Thank you for upgrading! Your seamless transition to the <span class="accent">${planType.toUpperCase()}</span> plan is complete. Everything is unlocked and ready to accelerate your growth.`;
 
       const content = `

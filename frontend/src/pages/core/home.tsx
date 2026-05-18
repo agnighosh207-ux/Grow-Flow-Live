@@ -434,7 +434,7 @@ export default function Home() {
           className="flex flex-wrap items-center justify-center gap-4 text-xs"
           style={{ color: '#52525b' }}
         >
-          <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-[#8B91E3]" /> 7-day free trial</span>
+          <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-[#8B91E3]" /> 3-day free trial</span>
           <span className="w-1 h-1 rounded-full bg-zinc-700" />
           <span className="flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-[#8B91E3]" /> Cancel anytime</span>
           <span className="w-1 h-1 rounded-full bg-zinc-700" />
@@ -518,7 +518,7 @@ export default function Home() {
             { value: "18+", label: "Indian Languages", sub: "Including Bhojpuri & Odia" },
             { value: "20+", label: "AI Tools", sub: "All in one dashboard" },
             { value: "₹149", label: "Starting Price", sub: "Less than a cup of coffee/week" },
-            { value: "7-day", label: "Free Trial", sub: "No credit card needed" },
+            { value: "3-day", label: "Free Trial", sub: "No credit card needed" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -1184,7 +1184,7 @@ export default function Home() {
               <p className="text-white/45 mb-4 leading-relaxed">
                 Join creators who generated {totalGenerations.toLocaleString()}+ pieces of content with GrowFlow AI
               </p>
-              <p className="text-sm text-white/30 mb-8">Free plan available · No credit card required · 7-day trial on paid plans</p>
+              <p className="text-sm text-white/30 mb-8">Free plan available · No credit card required · 3-day trial on paid plans</p>
               <div className="flex flex-wrap gap-2 justify-center mb-8">
                 {[
                   { Icon: SiInstagram, label: "Instagram", color: "text-pink-400" },

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useUser, useClerk, useAuth } from "@clerk/react";
+import { UserProfile, useUser, useClerk, useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useReferralInfo } from "@/hooks/useReferral";
 import { UpgradeModal } from "@/components/modals/UpgradeModal";
 import { AvatarPicker } from "@/components/shared/AvatarPicker";
 import { LanguageSelector } from "@/components/shared/LanguageSelector";
+import { CreditWallet } from "@/components/shared/CreditWallet";
 import {
   Settings, User, CreditCard, Bell, AlertTriangle,
   Loader2, Crown, Zap, Shield, Mail,
@@ -192,6 +193,7 @@ export default function SettingsPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [retryLoading, setRetryLoading] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -556,31 +558,45 @@ export default function SettingsPage() {
               <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
                 <h2 className="text-white/80 font-semibold text-sm mb-4">Public Profile</h2>
                 
-                {/* Profile picture section - add at TOP of profile tab content */}
-                <div className="flex flex-col items-center gap-3 mb-6 pt-2">
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-full overflow-hidden border-2"
-                      style={{ borderColor: 'rgba(94,106,210,0.3)', background: 'var(--surface-2)' }}>
-                      {user?.imageUrl ? (
-                        <img src={user.imageUrl} alt="Profile" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl font-black"
-                          style={{ color: '#8B91E3', background: 'rgba(94,106,210,0.1)' }}>
-                          {user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0] || "U"}
-                        </div>
-                      )}
+                {/* Profile picture section - add at TOP of profile tab content */}                <div className="flex items-center gap-4 pb-5 border-b mb-5" style={{ borderColor: 'var(--border)' }}>
+                  <div className="relative flex-shrink-0">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden"
+                      style={{ background: 'var(--surface-2)', border: '2px solid var(--border)' }}>
+                      {user?.imageUrl 
+                        ? <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-xl font-black"
+                            style={{ color: '#8B91E3' }}>
+                            {user?.firstName?.[0] || "U"}
+                          </div>
+                      }
                     </div>
-                    <button
-                      onClick={() => setShowAvatarPicker(true)}
-                      className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center border-2 cursor-pointer hover:scale-105 transition-transform"
+                    <button onClick={() => setShowProfileModal(true)}
+                      className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer"
                       style={{ background: '#5E6AD2', borderColor: 'var(--bg, #0A0A0F)' }}>
                       <Camera className="w-3 h-3 text-white" />
                     </button>
                   </div>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Tap the camera to change your photo
-                  </p>
+                  <div>
+                    <p className="text-sm font-bold text-white">{user?.fullName || "Your Name"}</p>
+                    <button onClick={() => setShowProfileModal(true)}
+                      className="text-xs mt-0.5 underline cursor-pointer text-left" style={{ color: '#8B91E3' }}>
+                      Change profile photo
+                    </button>
+                  </div>
                 </div>
+
+                {showProfileModal && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ background: 'rgba(0,0,0,0.7)' }}>
+                    <div className="relative w-full max-w-lg">
+                      <button onClick={() => setShowProfileModal(false)}
+                        className="absolute -top-10 right-0 text-white/60 hover:text-white bg-transparent border-0 cursor-pointer">
+                        ✕ Close
+                      </button>
+                      <UserProfile routing="hash" />
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
@@ -738,17 +754,123 @@ export default function SettingsPage() {
           )}
 
           {activeTab === "billing" && (
-            <section className="rounded-2xl border border-white/8 bg-white/[0.02] p-5 space-y-4">
-              <div className={`flex items-center gap-3 rounded-xl border ${plan.bg} px-4 py-3`}>
-                {plan.icon}
-                <div className="flex-1">
-                  <p className={`font-semibold text-sm ${plan.color}`}>{plan.label} Plan</p>
-                  <p className="text-white/30 text-xs mt-0.5">
-                    {sub?.plan === "free" ? `${sub.generationsUsed}/${sub.generationLimit} credits used` : "Subscription active"}
-                  </p>
+            <section className="space-y-4">
+              
+              {/* Current Plan Card */}
+              <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-xs text-white/40 uppercase tracking-widest font-semibold mb-1">Current Plan</p>
+                    <h3 className="text-xl font-black text-white capitalize">
+                      {sub?.planType === "free" ? "Free" : sub?.planType} Plan
+                    </h3>
+                  </div>
+                  {/* Status badge */}
+                  {sub?.plan === "trial" && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-xs font-bold text-amber-400">TRIAL ACTIVE</span>
+                    </div>
+                  )}
+                  {sub?.plan === "active" && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span className="text-xs font-bold text-emerald-400">ACTIVE</span>
+                    </div>
+                  )}
+                  {sub?.plan === "past_due" && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                      <span className="text-xs font-bold text-red-400">PAYMENT DUE</span>
+                    </div>
+                  )}
+                  {sub?.plan === "free" && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                      <span className="text-xs font-bold text-white/40">FREE</span>
+                    </div>
+                  )}
                 </div>
-                <Button size="sm" onClick={() => navigate("/pricing")} className="bg-white/10 hover:bg-white/20 text-white border-white/10">Manage</Button>
+
+                {/* Trial countdown */}
+                {sub?.plan === "trial" && sub.trialDaysLeft !== null && (
+                  <div className="mb-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/15">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-amber-400 font-semibold">Trial Period</span>
+                      <span className="text-xs text-white/40">
+                        Ends {sub.trialEndsAt ? new Date(sub.trialEndsAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "soon"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl font-black text-amber-400">{sub.trialDaysLeft}</span>
+                      <span className="text-sm text-white/50">
+                        {sub.trialDaysLeft === 1 ? "day" : "days"} remaining
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all"
+                        style={{ width: `${Math.max(0, (sub.trialDaysLeft / 3) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-white/30 mt-2">
+                      ✅ You have full {sub.planType} access during trial. AutoPay is set — your first charge happens after trial ends.
+                    </p>
+                  </div>
+                )}
+
+                {/* Credits display */}
+                {sub && sub.plan !== "free" && sub.planType !== "infinity" && (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/3 border border-white/5 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-violet-400" />
+                      <span className="text-sm text-white/60">Credits This Month</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">
+                        {sub.generationsRemaining} / {sub.generationLimit}
+                      </span>
+                      <span className="text-xs text-white/30">remaining</span>
+                    </div>
+                  </div>
+                )}
+                {sub?.planType === "infinity" && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-violet-500/5 border border-violet-500/15 mb-4">
+                    <Zap className="w-4 h-4 text-violet-400" />
+                    <span className="text-sm text-violet-300 font-semibold">Unlimited generations — no limits</span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  {(sub?.plan === "trial" || sub?.plan === "active") && (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={handleCancelSubscription}
+                      disabled={cancelLoading}
+                      className="border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs"
+                    >
+                      {cancelLoading ? "Cancelling..." : "Cancel Subscription"}
+                    </Button>
+                  )}
+                  {sub?.plan === "free" && (
+                    <Button size="sm" onClick={() => navigate("/pricing")}
+                      className="bg-violet-600 hover:bg-violet-500 text-white text-xs">
+                      Upgrade Plan
+                    </Button>
+                  )}
+                  {sub?.plan === "past_due" && (
+                    <Button size="sm" onClick={() => navigate("/pricing")}
+                      className="bg-red-600 hover:bg-red-500 text-white text-xs">
+                      Fix Payment
+                    </Button>
+                  )}
+                </div>
               </div>
+
+              {/* Credit Wallet — handled by CreditWallet component (PROMPT 10) */}
+              <CreditWallet />
+              
             </section>
           )}
         </motion.div>

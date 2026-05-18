@@ -31,6 +31,8 @@ const nicheGoalContext: Record<string, string> = {
 };
 
 router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "strategy" }, "[AI] Request started");
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), 25000);
   req.on('close', () => {
@@ -38,7 +40,7 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
     abortController.abort();
   });
 
-  const { niche = "General", goal = "grow my audience and establish authority", duration = 7, language = "English", improvementFocus = "all" } = req.body;
+  const { niche = "General", goal, duration = 7, language = "English", improvementFocus = "all" } = req.body;
   const planType = req.user?.planType ?? "free";
 
   // Free users only get English
@@ -50,6 +52,15 @@ router.post("/generate", requireAuth, requirePlanOrTrial("strategy"), enforceGen
     });
     return;
   }
+
+  if (typeof goal !== "string" || goal.trim().length < 3) {
+    res.status(400).json({ 
+      error: "goal_required",
+      message: "Please enter your content goal. Example: 'Get more Instagram followers who will buy my courses'"
+    });
+    return;
+  }
+
   const filterResult = filterUserInput(goal, "goal");
   if (!filterResult.allowed) {
     res.status(400).json({ 
@@ -159,6 +170,7 @@ Return ONLY a JSON object:
       logger.error({ err, userId: req.userId }, "Failed to save strategy to history");
     }
 
+    logger.info({ requestId, userId: req.userId, provider: "gemini/groq" }, "[AI] Request completed");
     res.json({ plan: parsed.plan ?? [] });
     invalidateAuthCache(req.userId);
 
@@ -168,11 +180,41 @@ Return ONLY a JSON object:
       feature: "strategy"
     }).catch(() => {});
   } catch (err: any) {
-    if (abortController.signal.aborted) return;
-    console.error("STRATEGY GEN ERROR:", err);
-    // --- H-19 FIX: Refund credit if strategy generation fails ---
-    await refundGenerationCredit(req.userId, req.user?.planTier);
-    res.status(503).json({ error: "Failed to generate strategy." });
+    if (abortController.signal.aborted) {
+      if (!res.headersSent) {
+        res.status(499).json({ error: "Request cancelled" });
+      }
+      return;
+    }
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited");
+      res.setHeader('Retry-After', '30');
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] Strategy generation failed");
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: "AI is temporarily unavailable. Please try again in 30 seconds.",
+      retryAfter: 30,
+    });
   }
 });
 

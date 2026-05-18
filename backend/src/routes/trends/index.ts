@@ -6,6 +6,7 @@ import { generateContent, webSearch, extractJson } from "../../services/ai-engin
 import { db, contentGenerationsTable, featureUsageLogsTable } from "@workspace/db";
 import crypto from "crypto";
 import { redis } from "../../lib/redis";
+import { logger } from "../../lib/logger";
 
 const router: IRouter = Router();
 
@@ -56,8 +57,10 @@ setInterval(() => {
 // Perplexity sonar searches the live web AND structures JSON in ONE call.
 // Groq is NOT involved here. JSON output enforced via prompt instructions.
 router.post("/generate", requireAuth, requirePlanOrTrial("trends"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "trends" }, "[AI] Request started");
   const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 25000);
+  const timeoutId = setTimeout(() => abortController.abort(), 22000);
   req.on('close', () => {
     clearTimeout(timeoutId);
     abortController.abort();
@@ -158,6 +161,7 @@ JSON schema:
       });
     } catch (e) { /* non-critical — don't block response */ }
 
+    logger.info({ requestId, userId: req.userId, provider: "perplexity" }, "[AI] Request completed");
     res.json(responseData);
     invalidateAuthCache(req.userId);
 
@@ -168,10 +172,15 @@ JSON schema:
     }).catch(() => {});
   } catch (err: any) {
     if (abortController.signal.aborted) return;
-    console.error("TRENDS GEN ERROR:", err);
+    logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] Trends generation failed");
     // --- H-19 FIX: Refund credit if trends generation fails ---
-    await refundGenerationCredit(req.userId, req.user?.planTier);
-    res.status(500).json({ error: "Generation failed. Please try again." });
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: "Trends generation failed. Please try again in 30 seconds.",
+      retryAfter: 30
+    });
   }
 });
 

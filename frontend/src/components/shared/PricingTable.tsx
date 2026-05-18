@@ -334,7 +334,7 @@ export function PricingTable() {
          </div>
          <div className="flex items-center gap-2.5 text-[10px] font-bold text-white/20 uppercase tracking-widest">
            <span className="text-[#5E6AD2]/50">🎁</span>
-           7-day trial on all paid plans
+           3-day trial on all paid plans
          </div>
       </div>
     </div>

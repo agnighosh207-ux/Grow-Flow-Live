@@ -28,7 +28,7 @@ export const getRazorpayClient = () => {
 
 export const createSubscription = async (userId: string, planId: string, planTier: string, customerEmail?: string, totalCount?: number, withTrial: boolean = true) => {
   try {
-    const sevenDaysFromNow = Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60);
+    const threeDaysFromNow = Math.floor(Date.now() / 1000) + (3 * 24 * 60 * 60);
 
     const options: any = {
       plan_id: planId,
@@ -42,7 +42,7 @@ export const createSubscription = async (userId: string, planId: string, planTie
     };
 
     if (withTrial) {
-      options.start_at = sevenDaysFromNow;
+      options.start_at = threeDaysFromNow;
     }
 
     logger.info(`[Razorpay Service] Creating subscription for user ${userId} with plan ${planId}...`);

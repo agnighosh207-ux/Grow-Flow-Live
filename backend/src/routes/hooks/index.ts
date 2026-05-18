@@ -54,6 +54,8 @@ const HOOK_PATTERNS = [
 ];
 
 router.post("/generate", requireAuth, requirePlanOrTrial("hooks"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "hooks" }, "[AI] Request started");
   let isAborted = false;
   req.on('close', () => { isAborted = true; });
 
@@ -148,6 +150,7 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
       logger.error({ err, userId: req.userId }, "Failed to save hooks to history");
     }
 
+    logger.info({ requestId, userId: req.userId, provider: "gemini/groq" }, "[AI] Request completed");
     res.json({ hooks });
     invalidateAuthCache(req.userId);
 
@@ -157,10 +160,41 @@ Return ONLY a JSON object: {"hooks": ["hook1", ..., "hook10"]}`;
       feature: "hooks"
     }).catch(err => logger.error({ err }, "Failed to log hooks usage"));
   } catch (err: any) {
-    if (isAborted) return;
-    console.error("HOOK GEN ERROR:", err);
-    await refundGenerationCredit(req.userId, req.user?.planTier);
-    res.status(503).json({ error: "AI temporarily unavailable. Please try again." });
+    if (isAborted) {
+      if (!res.headersSent) {
+        res.status(499).json({ error: "Request cancelled" });
+      }
+      return;
+    }
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited");
+      res.setHeader('Retry-After', '30');
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] Hooks generation failed");
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: "AI is temporarily unavailable. Please try again in 30 seconds.",
+      retryAfter: 30,
+    });
   }
 });
 

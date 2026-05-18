@@ -5,10 +5,13 @@ import { enforceGenerationLimit, refundGenerationCredit } from "../../middleware
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
 import { logger } from "../../lib/logger";
 import { generateContent, extractJson } from "../../services/ai-engine";
+import crypto from "node:crypto";
 
 const router: IRouter = Router();
 
 router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "bio" }, "[AI] Request started");
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
@@ -33,8 +36,11 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
       return;
     }
 
-    if (!name) {
-      res.status(400).json({ error: "Name is required as a string" });
+    if (!name || typeof name !== 'string' || name.trim().length < 1) {
+      res.status(400).json({ 
+        error: "name_required",
+        message: "Please enter your name to generate a bio."
+      });
       return;
     }
     const filterResult = filterUserInput(mainTopic, "mainTopic");
@@ -106,16 +112,47 @@ router.post("/generate", requireAuth, enforceGenerationLimit, async (req: any, r
       signal: abortController.signal,
     });
 
+    logger.info({ requestId, userId: req.userId, provider: "gemini/groq" }, "[AI] Request completed");
     const parsed = extractJson(response.choices[0]?.message?.content || "{}");
     res.json(parsed);
     invalidateAuthCache(req.userId);
   } catch (err: any) {
-    if (abortController.signal.aborted) return;
-    console.error("BIO GENERATE ERROR:", err);
-    await refundGenerationCredit(req.userId, req.user?.planTier);
+    if (abortController.signal.aborted) {
+      if (!res.headersSent) {
+        res.status(499).json({ error: "Request cancelled" });
+      }
+      return;
+    }
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
     invalidateAuthCache(req.userId);
-    logger.error({ err: err?.message }, "[Bio] Generation failed");
-    res.status(503).json({ error: "Bio generation failed. Please try again." });
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited");
+      res.setHeader('Retry-After', '30');
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] Bio generation failed");
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: "AI is temporarily unavailable. Please try again in 30 seconds.",
+      retryAfter: 30,
+    });
   }
 });
 

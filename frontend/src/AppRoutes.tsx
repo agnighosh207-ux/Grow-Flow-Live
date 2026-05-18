@@ -118,12 +118,19 @@ function HomeRedirect() {
   );
 }
 
+const MinimalFallback = () => (
+  <div className="flex items-center justify-center h-32">
+    <div className="w-5 h-5 rounded-full border-2 animate-spin"
+      style={{ borderColor: 'rgba(94,106,210,0.2)', borderTopColor: '#5E6AD2' }} />
+  </div>
+);
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
   return (
     <>
       <SignedIn>
         <Layout>
-          <React.Suspense fallback={<PageSkeleton />}>
+          <React.Suspense fallback={<MinimalFallback />}>
             <Component />
           </React.Suspense>
         </Layout>

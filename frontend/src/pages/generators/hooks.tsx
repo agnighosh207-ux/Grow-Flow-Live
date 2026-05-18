@@ -136,6 +136,9 @@ function HooksGeneratorInner() {
        render={({ field }) => (
         <FormItem className="flex-1 w-full">
          <FormLabel className="text-white/70 text-sm font-medium">Topic</FormLabel>
+         <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
+           The first 3 seconds of your video/post that makes people stop scrolling
+         </p>
          <FormControl>
           <Input
            placeholder="e.g. Why most diets fail in the first 2 weeks..."
@@ -143,6 +146,16 @@ function HooksGeneratorInner() {
            {...field}
           />
          </FormControl>
+         <div className="flex flex-wrap gap-2 mt-2">
+           <p className="text-[10px] w-full" style={{ color: 'var(--text-disabled)' }}>Try these:</p>
+           {["Why most diets fail in 2 weeks", "I tried waking up at 5am for 30 days", "Nobody tells you this about investing"].map(s => (
+             <button type="button" key={s} onClick={() => form.setValue("topic", s)}
+               className="text-[10px] px-2.5 py-1 rounded-full border transition-colors hover:border-[rgba(94,106,210,0.4)]"
+               style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--surface-2)' }}>
+               {s}
+             </button>
+           ))}
+         </div>
          <FormMessage />
         </FormItem>
        )}

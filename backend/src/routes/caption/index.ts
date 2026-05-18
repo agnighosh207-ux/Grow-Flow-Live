@@ -20,6 +20,8 @@ const PLATFORM_CONTEXT: Record<string, string> = {
 };
 
 router.post("/enhance", requireAuth, requirePlanOrTrial("caption"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "caption" }, "[AI] Request started");
   const abortController = new AbortController();
   req.on('close', () => abortController.abort());
 
@@ -121,6 +123,7 @@ Return ONLY this JSON: {
       logger.warn({ err: String(e) }, "Failed to auto-save caption generation history");
     }
 
+    logger.info({ requestId, userId: req.userId, provider: "gemini/groq" }, "[AI] Request completed");
     res.json(parsed);
     invalidateAuthCache(req.userId);
 
@@ -130,11 +133,41 @@ Return ONLY this JSON: {
       feature: "caption"
     }).catch(() => {});
   } catch (err: any) {
-    if (abortController.signal.aborted) return;
-    console.error("Caption enhance error:", err);
-    // --- H-19 FIX: Refund credit if caption enhancement fails ---
-    await refundGenerationCredit(req.userId, req.user?.planTier);
-    res.status(503).json({ error: "AI temporarily unavailable." });
+    if (abortController.signal.aborted) {
+      if (!res.headersSent) {
+        res.status(499).json({ error: "Request cancelled" });
+      }
+      return;
+    }
+    try { await refundGenerationCredit(req.userId, req.user?.planTier); } catch {}
+
+    const isErrAborted = err?.name === 'AbortError' || err?.message === 'ABORTED';
+    if (isErrAborted) {
+      res.status(499).json({ error: "Request cancelled" });
+      return;
+    }
+
+    const isRateLimit = err?.message?.includes('429') || err?.message?.includes('rate') || err?.message?.includes('quota');
+    const isAllFailed = err?.message === 'ALL_PROVIDERS_FAILED';
+
+    if (isRateLimit || isAllFailed) {
+      logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] All providers failed or rate limited");
+      res.setHeader('Retry-After', '30');
+      res.status(503).json({ 
+        error: "ai_overloaded",
+        message: "AI providers are under high load. Your credits have not been deducted. Please retry in 30 seconds.",
+        retryAfter: 30,
+      });
+      return;
+    }
+
+    logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] Caption enhancement failed");
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: "AI is temporarily unavailable. Please try again in 30 seconds.",
+      retryAfter: 30,
+    });
   }
 });
 

@@ -4,6 +4,7 @@ import { generateContent, extractJson } from "../../services/ai-engine";
 import { db, contentGenerationsTable, usersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { redis } from "../../lib/redis";
+import { logger } from "../../lib/logger";
 
 import { enforceGenerationLimit, refundGenerationCredit } from "../../middlewares/generationLimiter";
 import { invalidateAuthCache } from "../../middlewares/authSyncMiddleware";
@@ -14,6 +15,8 @@ const COACH_CACHE = new Map<string, { data: any, timestamp: number }>();
 const COACH_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 router.post("/analyze", requireAuth, requirePlanOrTrial("coach"), enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "coach/analyze" }, "[AI] Request started");
   const userId = req.userId;
 
   // 1. Cache Check
@@ -141,21 +144,29 @@ Analyze the data and return a JSON object with the following structure:
       console.error("Coach cache write error:", err);
     }
 
+    logger.info({ requestId, userId, provider: "gemini/groq" }, "[AI] Request completed");
     res.json(parsed);
 
   } catch (err: any) {
-    console.error("COACH ANALYZE ERROR:", err);
-    await refundGenerationCredit(userId, req.user?.planTier);
+    logger.error({ requestId, userId, err: err?.message }, "[AI] Coach analyze failed");
+    try { await refundGenerationCredit(userId, req.user?.planTier); } catch {}
     
     const message = err.message === "AI engine exhausted all providers." 
       ? "AI systems are currently overloaded. Please try again in a few minutes."
       : "Coach is temporarily unavailable.";
       
-    res.status(503).json({ error: message });
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: message + " Please retry in 30 seconds.",
+      retryAfter: 30
+    });
   }
 });
 
 router.post("/chat", requireAuth, enforceGenerationLimit, async (req: any, res): Promise<void> => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  logger.info({ requestId, userId: req.userId, route: "coach/chat" }, "[AI] Request started");
   const { message, history = [] } = req.body;
   if (!message || typeof message !== "string") {
     res.status(400).json({ error: "Message required" });
@@ -173,10 +184,16 @@ router.post("/chat", requireAuth, enforceGenerationLimit, async (req: any, res):
   try {
     const completion = await generateContent({ messages: chatMessages, maxTokens: 300, temperature: 0.7 });
     const reply = completion.choices[0]?.message?.content || "I couldn't generate a response right now. Please try again.";
+    logger.info({ requestId, userId: req.userId, provider: "gemini/groq" }, "[AI] Request completed");
     res.json({ reply });
   } catch (err: any) {
-    console.error("Coach chat error:", err);
-    res.status(503).json({ error: "Coach unavailable right now. Please try again in a moment." });
+    logger.error({ requestId, userId: req.userId, err: err?.message }, "[AI] Coach chat failed");
+    res.setHeader('Retry-After', '30');
+    res.status(503).json({ 
+      error: "ai_overloaded",
+      message: "Coach is temporarily unavailable. Please try again in 30 seconds.",
+      retryAfter: 30
+    });
   }
 });
 

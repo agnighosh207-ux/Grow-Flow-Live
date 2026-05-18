@@ -207,11 +207,11 @@ export default function CaptionEnhancer() {
      className="rounded-2xl bg-white/[0.03] border border-white/8 p-5 space-y-4">
 
      <div>
-      <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Your Caption *</label>
+      <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-1.5">Your Existing Caption (paste what you already wrote) *</label>
       <textarea
        value={caption}
        onChange={(e) => setCaption(e.target.value)}
-       placeholder="Paste any caption here — Instagram, LinkedIn, YouTube description, tweet, anything. The worse it is, the more dramatic the transformation."
+       placeholder="Paste your existing Instagram/YouTube/Twitter caption here. We'll make it 10x better."
        rows={5}
        className="w-full px-3.5 py-3 rounded-xl text-white placeholder-white/25 text-sm focus:outline-none focus:border-[rgba(94,106,210,0.50)] focus:bg-white/7 resize-none leading-relaxed" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "#ffffff" }}
       />
